@@ -44,14 +44,14 @@ ACCENT = "#FF7A59"
 
 def world_map():
     chapters = [
-        ("Meadow Street", "level_meadow", .30, .88, "done"),
-        ("Driving School", "level_driving", .70, .78, "done"),
-        ("Robot Lab", "level_robot", .32, .67, "open"),
-        ("Lily River", "level_lily", .70, .57, "locked"),
-        ("City Rally", "level_rally", .30, .47, "locked"),
-        ("Castle Hill", "level_castle", .68, .37, "locked"),
+        ("Meadow Street", "level_meadow", .30, .765, "done"),
+        ("Driving School", "level_driving", .70, .685, "done"),
+        ("Robot Lab", "level_robot", .30, .60, "open"),
+        ("Lily River", "level_lily", .70, .515, "locked"),
+        ("City Rally", "level_rally", .30, .43, "locked"),
+        ("Castle Hill", "level_castle", .68, .345, "locked"),
     ]
-    pts = [(x * W, y * H) for _, _, x, y, _ in chapters] + [(W * .5, H * .26)]
+    pts = [(x * W, 47 + y * 763) for _, _, x, y, _ in chapters] + [(W * .5, 47 + 763 * .26)]
     d = f"M{pts[0][0]},{pts[0][1]}"
     for (ax, ay), (bx, by) in zip(pts, pts[1:]):
         mx, my = (ax + bx) / 2, (ay + by) / 2
@@ -67,7 +67,7 @@ def world_map():
         if state == "done":
             badge = f'<img src="{img("goal_star")}" class="abs" style="width:30px;left:50px;top:-4px">'
         nodes += f"""
-        <div class="abs" style="left:{x*W}px;top:{y*H}px;transform:translate(-50%,-38px);display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="abs" style="left:{x*W}px;top:{47 + y*763}px;transform:translate(-50%,-38px);display:flex;flex-direction:column;align-items:center;gap:4px">
           <div style="position:relative;width:76px;height:76px;border-radius:50%;background:{'#EDEFF3' if locked else '#fff'};{ring}">
             <img src="{img(art)}" class="abs" style="width:58px;left:9px;top:9px;{'filter:grayscale(1);opacity:.45' if locked else ''}">
             {badge}
@@ -81,9 +81,9 @@ def world_map():
       <path d="{d}" fill="none" stroke="#F3D99B" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="{d}" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 14"/>
     </svg>
-    <img src="{img('castle_rainbow')}" class="abs" style="width:{164*1.15}px;left:{W/2}px;top:{H*.2}px;transform:translate(-50%,-55%)">
+    <img src="{img('castle_rainbow')}" class="abs" style="width:{164*1.15}px;left:{W/2}px;top:{47+763*.2}px;transform:translate(-50%,-55%)">
     {nodes}
-    <img src="{img('char_lavender')}" class="abs" style="width:64px;left:{.32*W+30}px;top:{.67*H-70}px">
+    <img src="{img('char_lavender')}" class="abs" style="width:64px;left:{.30*W+30}px;top:{47+.60*763-70}px">
     <div class="abs" style="left:12px;right:12px;top:54px;background:rgba(255,255,255,.75);border-radius:26px;padding:10px 16px;display:flex;align-items:center;gap:10px">
       <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center">
         <img src="{img('char_lavender')}" style="width:50px"></div>
@@ -93,8 +93,12 @@ def world_map():
         <img src="{img('icon_together')}" style="width:30px"><div style="font-size:11px;font-weight:900">Together</div></div>
       <div style="width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;color:#7C4DFF">⚙︎</div>
     </div>
-    <div class="abs btn3d" style="right:16px;bottom:34px;background:#FF7A59;box-shadow:0 5px 0 #C2410C;display:flex;align-items:center;gap:6px;padding:4px 22px 4px 10px;font-size:20px">
-      <img src="{img('icon_kart')}" style="width:46px">Bubble Kart</div>
+    <div class="abs" style="left:12px;right:12px;bottom:42px;background:rgba(255,255,255,.8);border-radius:28px;padding:8px;display:flex;gap:8px">
+      <div style="flex:1;position:relative;background:#FF9F45;box-shadow:0 5px 0 #D9731C;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:14px"><img src="{img('icon_stickers')}" style="width:44px;display:block;margin:0 auto">Stickers
+        <div class="abs" style="right:-6px;top:-8px;width:26px;height:26px;border-radius:50%;background:#FF5A5F;border:2px solid #fff;font-size:15px;line-height:22px">1</div></div>
+      <div style="flex:1;background:#B983FF;box-shadow:0 5px 0 #7C4DFF;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:14px"><img src="{img('icon_bop')}" style="width:44px;display:block;margin:0 auto">Pillow Bop</div>
+      <div style="flex:1;background:#FF7A59;box-shadow:0 5px 0 #C2410C;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:14px"><img src="{img('icon_kart')}" style="width:44px;display:block;margin:0 auto">Bubble Kart</div>
+    </div>
     {STATUS}</body>"""
 
 
@@ -216,8 +220,89 @@ def balloon_flight():
     {STATUS}</body>"""
 
 
+def bop_arena():
+    gy = 844 - 844 * 0.40
+    iw = 390 * 0.92
+    ih = iw * 380 / 800
+    def char(cid, x, feet, flip=False, pillow=True, me=False):
+        w, h = 62, 68
+        top = feet - h + 0.07 * h
+        sx = -1 if flip else 1
+        pil = (f'<img src="{img("pillow")}" class="abs" style="width:46px;left:{31 + 22 - 23}px;top:{h - 0.07*h - 29.7 - 15.5}px;transform:rotate(-28deg)">'
+               if pillow else "")
+        arrow = f'<div class="abs" style="left:{x-10}px;top:{top-30}px;color:#FF7A59;font-size:20px;font-weight:900">▼</div>' if me else ""
+        return (f'<div class="abs" style="left:{x-27}px;top:{feet-4}px;width:44px;height:9px;border-radius:50%;background:rgba(0,0,0,.15)"></div>'
+                f'<div class="abs" style="left:{x-31}px;top:{top}px;width:{w}px;height:{h}px;transform:scaleX({sx})">'
+                f'<img src="{img("char_"+cid)}" class="abs" style="left:0;top:0;width:{w}px;height:{h}px;z-index:1">{pil}</div>' + arrow)
+    def cloud(cx, walk, w):
+        h = w * 138 / 360
+        return f'<img src="{img("cloud_platform")}" class="abs" style="width:{w}px;left:{cx-w/2}px;top:{walk - h*46/138}px">'
+    score = [("lavender", 7, .25, True), ("pixelpup", 5, .55, False), ("broccoli", 3, .15, False), ("ellie", 4, .7, False)]
+    cells = "".join(f"""<div style="flex:1;background:rgba(255,255,255,{.95 if me else .75});border-radius:16px;padding:6px 0;text-align:center;{'box-shadow:inset 0 0 0 3px #FF7A59' if me else ''}">
+        <img src="{img('char_'+c)}" style="height:44px"><div style="font-size:18px;font-weight:900">{n}</div>
+        <div style="margin:2px auto 0;width:46px;height:7px;border-radius:4px;background:rgba(43,27,61,.12)"><div style="width:{max(4,46*g)}px;height:7px;border-radius:4px;background:{'#FF5A5F' if g>.6 else '#FFB020' if g>.3 else '#34C77B'}"></div></div></div>""" for c, n, g, me in score)
+    return f"""{BASE}<body style="background:#BFE6FF">
+    <img src="{img('arena_bg')}" class="abs" style="left:0;top:0;width:390px;height:844px">
+    <img src="{img('arena_island')}" class="abs" style="width:{iw}px;left:{195-iw/2}px;top:{gy - ih*50/380}px">
+    {cloud(390*.24, gy-140, 120)}{cloud(390*.76, gy-140, 120)}{cloud(195, gy-235, 110)}
+    <img src="{img('brain_bubble')}" class="abs" style="width:58px;left:{195-29}px;top:{gy-64-29}px">
+    {char('lavender', 130, gy, me=True)}{char('pixelpup', 186, gy, flip=True)}
+    {char('broccoli', 390*.76, gy-140, flip=True)}{char('ellie', 300, gy-60, flip=True, pillow=True)}
+    <div class="abs" style="left:150px;top:{gy-112}px;font-size:26px;font-weight:900;color:#fff;text-shadow:2px 3px 0 #7C4DFF">BOP!</div>
+    <div class="abs" style="left:14px;right:14px;top:53px;display:flex;align-items:center;justify-content:space-between">
+      <div style="width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#7C4DFF;font-size:22px">⌂</div>
+      <div style="background:rgba(255,255,255,.92);border-radius:99px;height:44px;padding:0 16px;display:flex;align-items:center;gap:6px;font-size:22px;font-weight:900">⏱ 42</div>
+      <div style="width:48px"></div></div>
+    <div class="abs" style="left:14px;right:14px;top:110px;display:flex;gap:8px">{cells}</div>
+    <div class="abs" style="left:0;right:0;bottom:0;height:150px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.3))"></div>
+    <div class="abs" style="left:14px;right:14px;bottom:44px;display:flex;align-items:flex-end;gap:12px">
+      <div style="width:70px;height:70px;border-radius:20px;background:rgba(255,255,255,.9);box-shadow:0 5px 0 rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:30px">◀</div>
+      <div style="width:70px;height:70px;border-radius:20px;background:rgba(255,255,255,.9);box-shadow:0 5px 0 rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:30px">▶</div>
+      <div style="flex:1"></div>
+      <div style="width:74px;height:74px;border-radius:50%;background:#4D96FF;border:3px solid #fff;box-shadow:0 5px 0 #4D96FF99;color:#fff;font-weight:900;font-size:18px;display:flex;align-items:center;justify-content:center">JUMP</div>
+      <div style="width:92px;height:92px;border-radius:50%;background:#FF7FC4;border:3px solid #fff;box-shadow:0 5px 0 #FF7FC499;color:#fff;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center">BOP!</div>
+    </div>
+    {STATUS}</body>"""
+
+
+def sticker_book():
+    pets = [("lavender", "Lavender Lop", "#9B6BDF", True), ("pixelpup", "Pixel Pup", "#FFC95E", True), ("mochi", "Mochi Cat", "#FFB3C7", False),
+            ("ollie", "Ollie Owl", "#8FD3C8", True), ("coral", "Coral Turtle", "#5EC8E5", False), ("sunny", "Sunny Chick", "#FFE66D", True)]
+    heroes = [("comet", "Captain Comet", "#FF8A5E", True), ("midnight", "Midnight Mask", "#6C7BD9", False), ("starspark", "Star Spark", "#F7A8E0", True),
+              ("acorn", "Iron Acorn", "#C9A27E", False), ("novawing", "Nova Wing", "#7FD8FF", False)]
+    tilts = [-5, 4, -2, 6, -4, 3]
+    def grid(lst):
+        out = ""
+        for i, (cid, name, col, own) in enumerate(lst):
+            if own:
+                out += f"""<div style="text-align:center"><div style="margin:0 auto;width:84px;height:84px;border-radius:24px;background:#fff;box-shadow:0 3px 3px rgba(0,0,0,.15);padding:6px;transform:rotate({tilts[i%6]}deg)">
+                  <div style="width:100%;height:100%;border-radius:18px;background:{col}73;display:flex;align-items:center;justify-content:center"><img src="{img('char_'+cid)}" style="height:72px"></div></div>
+                  <div style="font-size:11px;font-weight:700;margin-top:3px">{name}</div></div>"""
+            else:
+                out += f'<div style="height:112px;display:flex;align-items:center;justify-content:center"><img src="{img("sticker_locked")}" style="width:80px"></div>'
+        return out
+    def sec(title, lst):
+        n = sum(1 for x in lst if x[3])
+        return f"""<div style="background:rgba(255,255,255,.6);border-radius:24px;padding:14px;margin-top:14px">
+          <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:800">{title}<span style="color:#7C4DFF;font-size:15px">{n}/{len(lst)}</span></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px">{grid(lst)}</div></div>"""
+    return f"""{BASE}<body style="background:linear-gradient(#FFF4E0,#F3ECFF)">
+    <div style="padding:54px 18px 0">
+      <div style="display:flex;justify-content:space-between"><div style="width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#7C4DFF;font-size:22px">⌂</div>
+        <div style="width:44px;height:44px;border-radius:50%;background:#F3ECFF;display:flex;align-items:center;justify-content:center">🔊</div></div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:-6px"><img src="{img('icon_stickers')}" style="width:58px"><span style="font-size:34px;font-weight:900;color:#7C4DFF">Sticker Book</span></div>
+      <div style="text-align:center;font-size:16px;font-weight:700">8 of 23 buddies</div>
+      <div style="margin:4px 30px 0;height:12px;border-radius:6px;background:rgba(43,27,61,.1)"><div style="width:35%;height:12px;border-radius:6px;background:linear-gradient(90deg,#FF7FC4,#7C4DFF)"></div></div>
+      <div style="margin-top:16px;background:#7C4DFF;box-shadow:0 5px 0 #5B32D6;border-radius:22px;padding:14px;display:flex;align-items:center;gap:14px">
+        <div style="width:64px;height:82px;border-radius:14px;border:3px solid #2B1B3D;background:linear-gradient(#FFD93D,#FF9F45);display:flex;align-items:center;justify-content:center;transform:rotate(-6deg)"><img src="{img('goal_star')}" style="width:40px"></div>
+        <div><div style="color:#fff;font-size:20px;font-weight:900">Open your sticker pack!</div><div style="color:rgba(255,255,255,.9);font-size:14px;font-weight:700">Tap to find out who's inside!</div></div></div>
+      {sec('Retro Pets', pets)}{sec('Hero Squad', heroes)}
+    </div>{STATUS}</body>"""
+
+
 SCREENS = {"world-map": world_map, "buddy-picker": buddy_picker, "brain-gate": brain_gate,
-           "robot-lab": robot_lab, "welcome": welcome, "balloon-flight": balloon_flight}
+           "robot-lab": robot_lab, "welcome": welcome, "balloon-flight": balloon_flight,
+           "pillow-bop": bop_arena, "sticker-book": sticker_book}
 
 with sync_playwright() as p:
     b = p.chromium.launch()

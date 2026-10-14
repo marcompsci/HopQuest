@@ -1,10 +1,10 @@
 # HopQuest 🐰🎈🏰
 
-**A kid-safe educational adventure for iPhone and iPad.** Hop across busy streets like a crossy-road game. Learn to drive in a gentle driving school. Build and code a robot. Race Bubble Karts. Fly a hot air balloon to the castle at the end of every level. Along the way, kids answer quick "Brain Gate" questions about math, road safety, nature, science and words.
+**A kid-safe educational adventure for iPhone and iPad.** Hop across busy streets like a crossy-road game. Learn to drive in a gentle driving school. Build and code a robot. Race Bubble Karts. Bop friends with pillows on a floating island. Collect every buddy in a Sticker Book. Fly a hot air balloon to the castle at the end of every level. Along the way, kids answer quick "Brain Gate" questions about math, road safety, nature, science and words.
 
 There's no blood, no bad words, no ads, no chat and no accounts. Every crash is soft and bouncy, and a wrong answer just gets a hint and another try.
 
-> Version **0.9**, the world art pass. Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
+> Version **1.0**: Pillow Bop Arena and the Sticker Book. Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
 
 ---
 
@@ -16,9 +16,13 @@ There's no blood, no bad words, no ads, no chat and no accounts. Every crash is 
 |:---:|:---:|:---:|
 | <img src="docs/screenshots/welcome.png" width="240"> | <img src="docs/screenshots/buddy-picker.png" width="240"> | <img src="docs/screenshots/world-map.png" width="240"> |
 
-| Brain Gate (Ollie Owl) | Robot Lab | Balloon flight |
+| Pillow Bop Arena | Sticker Book | Brain Gate (Ollie Owl) |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/brain-gate.png" width="240"> | <img src="docs/screenshots/robot-lab.png" width="240"> | <img src="docs/screenshots/balloon-flight.png" width="240"> |
+| <img src="docs/screenshots/pillow-bop.png" width="240"> | <img src="docs/screenshots/sticker-book.png" width="240"> | <img src="docs/screenshots/brain-gate.png" width="240"> |
+
+| Robot Lab | Balloon flight |
+|:---:|:---:|
+| <img src="docs/screenshots/robot-lab.png" width="240"> | <img src="docs/screenshots/balloon-flight.png" width="240"> |
 
 ### Original art
 
@@ -29,6 +33,8 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 <img src="docs/art/world.png" width="760">
 
 <img src="docs/art/robot.png" width="760">
+
+<img src="docs/art/arena.png" width="760">
 
 ---
 
@@ -41,6 +47,8 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 | **Driving School and City Rally** | Steer with a wheel, use the **brake** and **gas** pedals (gas on the far right, like a real car), use blinkers and stop at lights | Real road rules, in a kid-friendly way |
 | **Robot Lab** | Build a robot part by part, then "code" it with arrow commands to reach the star | Engineering basics: chassis, battery, motors, wheels, sensors, microcontroller, sequencing |
 | **Bubble Kart** | Kart racing with bubble shields, carrot boosts and jelly pads (three cups) | Steering, items, fair play |
+| **Pillow Bop Arena** | A gentle party-brawler: walk, jump and swing a pillow to push three buddy bots toward the edge of a floating island. Falling off just means a balloon floats you back. Pop the Brain Bubble and answer it for a GIANT pillow | Sportsmanship, timing, quick thinking |
+| **Sticker Book** | Every 6 stars earns a sticker pack with a new buddy and a fun fact read aloud. Collect all 23 | Animal and nature facts, goal-setting |
 | **Together mode** | A grown-up and a kid play side by side (Team Hop and Team Drive) | Co-op play and talking it through |
 | **Hot air balloon finish** | Your buddy rides a balloon from big to little and lands on the next level | |
 
@@ -68,8 +76,8 @@ Requires **iOS 17** or later.
 HopQuest.swiftpm/
 ├── App/            Entry point and screen routing (map → level → balloon → map)
 ├── Models/         Profile and save, characters, chapters, questions, narrator, sound and music
-├── Scenes/         SpriteKit: HopScene, DriveScene, KartScene, plus art helpers
-├── Views/          SwiftUI: onboarding, world map, quiz card, Robot Lab, kart, team mode, parent area
+├── Scenes/         SpriteKit: HopScene, DriveScene, KartScene, BopScene, plus art helpers
+├── Views/          SwiftUI: onboarding, world map, quiz card, Robot Lab, kart, Pillow Bop, Sticker Book, team mode, parent area
 ├── Assets.xcassets Character, world and robot art; music and sound effects
 ├── ArtSource/      Python generators for all art and audio, and the README previews
 └── GAME_DESIGN.md  Full design brief, parent research, version history and roadmap
@@ -83,6 +91,7 @@ cd HopQuest.swiftpm/ArtSource
 python3 render.py           # characters
 python3 render_robot.py     # Robot Lab parts
 python3 render_world.py     # castles, balloons, map, icons, kart items
+python3 render_arena.py     # Pillow Bop island, clouds, pillow, Brain Bubble, Sticker Book icons
 python3 make_previews.py ../Assets.xcassets ../../docs/screenshots
 ```
 

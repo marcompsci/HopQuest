@@ -1,4 +1,4 @@
-# HopQuest — Game Design Brief (v0.9)
+# HopQuest — Game Design Brief (v1.0)
 
 A kid-safe, educational hop-and-drive adventure for iPhone and iPad (ages ~5–10).
 Kids hop across roads and rivers, learn to drive at Driving School, build and code a robot,
@@ -27,6 +27,9 @@ and finish every level by jumping into a hot air balloon at their castle.
 | Sound & hop world (v0.7) | Original sound everywhere (all synthesized; no licensed audio): hops, coins, boings, splashes, countdown, item pickups, engine hum that rises with speed, blinker tick-tock, star chimes, level-complete fanfare. Two music loops: an adventure theme (map, hops, Robot Lab) and a racing theme (Driving School, Bubble Kart); music dips while the narrator talks. Grown-ups can turn music and sound effects off separately. Hop levels repainted: textured grass, roads with curbs and lane paint, animated water, side-view cars, school buses and trucks with friendly faces, wobbling wooden logs, lily-pad rafts on Lily River, trees and bushes. Characters now leap in an arc with squash-and-stretch, a ground shadow, and dust puffs on landing |
 | Robot Lab redesign (v0.8) | All Robot Lab art redrawn from scratch in the buddy style (ArtSource/make_robot.py): six illustrated part cards (chassis, battery, motors, wheels, sensors, brain chip), a robot that assembles layer by layer on a blueprint workbench over a dashed outline, spinning motor gears, a glowing antenna, and a smile when it's finished. Wrong picks shake the card; a color progress bar fills as parts snap on. Coding grid restyled: tiled floor, a smiling goal star, the robot with a direction arrow, a dotted trail of where it's been, color-coded command buttons and numbered code chips that light up as each step runs. Finish screen: the robot dances |
 | World art pass (v0.9) | Everything left in emoji or flat shapes redrawn in the buddy style (ArtSource/make_world.py): painted world-map landscape with tree clumps, a pond and village houses, a winding dirt road between levels, illustrated icons for every level plus a padlock and a gold star for finished levels; three illustrated castles (Sparkle, Stone Fortress, Rainbow) used on the map, at every finish line and in onboarding; striped hot air balloons with your buddy sitting inside the wicker basket (map, flight screen, levels); Bubble Kart and Together buttons with art; Bubble Kart ? boxes, Bubble Shield, Carrot Boost and Jelly Pad drawn as art in the race, HUD and how-to; Brain Gate card hosted by Ollie Owl with lettered, color-coded answers |
+| Pillow Bop Arena (v1.0) | The Smash-style party mode, made gentle. You and 3 buddy bots on a floating island with two cloud platforms and a high cloud. Walk, jump, double-jump, and swing a fluffy pillow (BOP!). Every bop scores a point; bopped buddies get giggly (a meter on the scoreboard), and the gigglier you are, the farther a bop pushes you. Fall off and a hot air balloon floats you back after 2 seconds, no "KO". Pushing someone off earns a +2 bonus. Brain Bubbles float in twice a match: pop one, answer the Brain Gate, and get a GIANT pillow for 10 seconds. 60-second matches, stars for placing and for Brain Bubbles, feathers and "FLUFF!" pop words, and friendly bots that never gang up on the player |
+| Sticker Book (v1.0) | Collect all 23 buddies. Every 6 stars earns a sticker pack; opening one flips over a die-cut sticker of a new buddy and reads its fun fact aloud. Stickers are grouped by family with progress bars; tap one to hear its fact or play as that buddy. Your own buddy is always in the book, and resetting progress never takes stickers away |
+| Map dock (v1.0) | The world map's bottom dock holds Stickers (with a badge for unopened packs), Pillow Bop, and Bubble Kart; level stops moved up so nothing overlaps |
 | Privacy | No network calls, ads, purchases, chat, analytics, or accounts. Profile stored locally only |
 
 Characters are original vector illustrations generated from ArtSource/make_characters.py (rendered to PNG); everything else is drawn in code. No third-party images to license. Swap in real illustrated art later without changing game logic.
@@ -108,7 +111,7 @@ These borrow **mechanics** that made top kids' games great, with original everyt
 
 **Bubble Kart (kart-racing mode)** — ✅ v0.4 shipped the lane-racing version with Math Gates. Next: 2-player kart in Grown-up & Me, more cups, unlockable kart colors with stars. Original plan: 3D-ish lane racing on loop tracks. Items: Bubble Shield, Carrot Boost, Jelly Bounce Pad (instead of attack items). Getting hit = car bounces in a bubble for 1 second. Auto-steer + auto-gas assists for little kids. Grand Prix cups through each castle world.
 
-**Pillow Bop Arena (party-brawler mode)** — 2–4 characters on a floating island; bop each other with giant pillows to push them toward the edge. Fall off → you float back in a balloon after 2 seconds (no "KO"). Score = bops landed, not damage.
+**Pillow Bop Arena (party-brawler mode)** — ✅ shipped in v1.0 (1 player + 3 bots). Next: 2-player on one iPad, more arenas. 2–4 characters on a floating island; bop each other with giant pillows to push them toward the edge. Fall off → you float back in a balloon after 2 seconds (no "KO"). Score = bops landed, not damage.
 
 **Fort Friends (build-and-explore mode)** — build ramps, bridges, and towers from blocks to reach balloons and treasure; a gentle rain cloud slowly shrinks the play area (the "storm," re-imagined). Cooperative goals only, no combat.
 
@@ -116,7 +119,7 @@ These borrow **mechanics** that made top kids' games great, with original everyt
 
 **Robot Lab 2** — add gears and ramps (simple machines), then loops ("repeat 3×") in the coding grid.
 
-**More** — sticker book for collected characters, seasonal castle skins, VoiceOver labels on all game objects.
+**More** — ✅ sticker book shipped in v1.0. Still to do: seasonal castle skins, VoiceOver labels on all game objects.
 
 ---
 

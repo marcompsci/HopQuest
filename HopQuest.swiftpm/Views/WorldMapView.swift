@@ -6,6 +6,8 @@ struct WorldMapView: View {
     var onPlay: (Chapter) -> Void
     var onTeam: () -> Void = {}
     var onKart: () -> Void = {}
+    var onBop: () -> Void = {}
+    var onStickers: () -> Void = {}
 
     @State private var showParent = false
     @State private var showCharacters = false
@@ -47,12 +49,9 @@ struct WorldMapView: View {
                 VStack {
                     header
                     Spacer()
-                    HStack {
-                        Spacer()
-                        kartButton
-                    }
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 10)
+                    dock
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 8)
                 }
             }
         }
@@ -114,23 +113,52 @@ struct WorldMapView: View {
         .padding(.horizontal, 12)
     }
 
-    private var kartButton: some View {
+    /// Bottom dock: Sticker Book, Pillow Bop, and Bubble Kart.
+    private var dock: some View {
+        let packs = store.packsAvailable
+        return HStack(spacing: 8) {
+            dockButton(art: "icon_stickers", title: "Stickers", color: Color(hex: 0xFF9F45), shadow: Color(hex: 0xD9731C),
+                       badge: packs, label: packs > 0 ? "Sticker Book, \(packs) new packs" : "Sticker Book", action: onStickers)
+            dockButton(art: "icon_bop", title: "Pillow Bop", color: Color(hex: 0xB983FF), shadow: Palette.purple,
+                       badge: 0, label: "Pillow Bop party game", action: onBop)
+            dockButton(art: "icon_kart", title: "Bubble Kart", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
+                       badge: 0, label: "Bubble Kart racing", action: onKart)
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 28).fill(.white.opacity(0.8)))
+    }
+
+    private func dockButton(art: String, title: String, color: Color, shadow: Color, badge: Int,
+                            label: String, action: @escaping () -> Void) -> some View {
         Button {
             Haptics.tap()
-            onKart()
+            action()
         } label: {
-            HStack(spacing: 6) {
-                ArtImage("icon_kart").frame(width: 46, height: 46)
-                Text("Bubble Kart").font(.kid(20, .black))
+            VStack(spacing: 0) {
+                ArtImage(art).frame(width: 44, height: 44)
+                Text(title)
+                    .font(.kid(14, .black))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .foregroundStyle(.white)
-            .padding(.leading, 10)
-            .padding(.trailing, 22)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(Color(hex: 0xFF7A59)).shadow(color: Color(hex: 0xC2410C), radius: 0, x: 0, y: 5))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: 20).fill(color).shadow(color: shadow, radius: 0, x: 0, y: 5))
+            .overlay(alignment: .topTrailing) {
+                if badge > 0 {
+                    Text("\(badge)")
+                        .font(.kid(15, .black))
+                        .foregroundStyle(.white)
+                        .frame(width: 26, height: 26)
+                        .background(Circle().fill(Palette.red))
+                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                        .offset(x: 6, y: -8)
+                }
+            }
         }
         .buttonStyle(BouncyButtonStyle())
-        .accessibilityLabel("Bubble Kart racing")
+        .accessibilityLabel(label)
     }
 
     private func point(_ chapter: Chapter, _ size: CGSize) -> CGPoint {

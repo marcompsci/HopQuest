@@ -23,12 +23,12 @@ struct Chapter: Identifiable, Equatable {
 
 enum Chapters {
     static let all: [Chapter] = [
-        Chapter(id: 1, title: "Meadow Street", kind: .hop, icon: "🐾", rows: 24, gateEvery: 8, trackLength: 0, difficulty: 0.0, mapX: 0.30, mapY: 0.88),
-        Chapter(id: 2, title: "Driving School", kind: .drive, icon: "🚗", rows: 0, gateEvery: 0, trackLength: 4200, difficulty: 0.0, mapX: 0.70, mapY: 0.78),
-        Chapter(id: 3, title: "Robot Lab", kind: .robot, icon: "🤖", rows: 0, gateEvery: 0, trackLength: 0, difficulty: 0.0, mapX: 0.32, mapY: 0.67),
-        Chapter(id: 4, title: "Lily River", kind: .hop, icon: "🪷", rows: 32, gateEvery: 8, trackLength: 0, difficulty: 0.45, mapX: 0.70, mapY: 0.57),
-        Chapter(id: 5, title: "City Rally", kind: .drive, icon: "🏁", rows: 0, gateEvery: 0, trackLength: 6000, difficulty: 0.5, mapX: 0.30, mapY: 0.47),
-        Chapter(id: 6, title: "Castle Hill", kind: .hop, icon: "🏰", rows: 40, gateEvery: 10, trackLength: 0, difficulty: 0.85, mapX: 0.68, mapY: 0.37),
+        Chapter(id: 1, title: "Meadow Street", kind: .hop, icon: "🐾", rows: 24, gateEvery: 8, trackLength: 0, difficulty: 0.0, mapX: 0.30, mapY: 0.765),
+        Chapter(id: 2, title: "Driving School", kind: .drive, icon: "🚗", rows: 0, gateEvery: 0, trackLength: 4200, difficulty: 0.0, mapX: 0.70, mapY: 0.685),
+        Chapter(id: 3, title: "Robot Lab", kind: .robot, icon: "🤖", rows: 0, gateEvery: 0, trackLength: 0, difficulty: 0.0, mapX: 0.30, mapY: 0.60),
+        Chapter(id: 4, title: "Lily River", kind: .hop, icon: "🪷", rows: 32, gateEvery: 8, trackLength: 0, difficulty: 0.45, mapX: 0.70, mapY: 0.515),
+        Chapter(id: 5, title: "City Rally", kind: .drive, icon: "🏁", rows: 0, gateEvery: 0, trackLength: 6000, difficulty: 0.5, mapX: 0.30, mapY: 0.43),
+        Chapter(id: 6, title: "Castle Hill", kind: .hop, icon: "🏰", rows: 40, gateEvery: 10, trackLength: 0, difficulty: 0.85, mapX: 0.68, mapY: 0.345),
     ]
 
     /// Grown-up & Me levels. Not on the map path and never locked; they don't change story progress.

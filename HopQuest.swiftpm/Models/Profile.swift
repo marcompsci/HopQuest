@@ -113,9 +113,17 @@ struct PlayerProfile: Codable, Equatable {
     var coopCharacterID: String? = nil
     /// Best finishing place per Bubble Kart cup (1 = first).
     var kartBest: [Int: Int] = [:]
+    /// Sticker Book: buddies collected from sticker packs.
+    var stickers: Set<String> = []
+    var packsOpened: Int = 0
+    /// Every star ever earned (resetting progress doesn't take sticker packs away).
+    var lifetimeStars: Int = 0
+    /// Best Pillow Bop score.
+    var bopBest: Int = 0
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
+        case stickers, packsOpened, lifetimeStars, bopBest
     }
 }
 
@@ -133,6 +141,10 @@ extension PlayerProfile {
         narration = try c.decodeIfPresent(Bool.self, forKey: .narration) ?? true
         coopCharacterID = try c.decodeIfPresent(String.self, forKey: .coopCharacterID)
         kartBest = try c.decodeIfPresent([Int: Int].self, forKey: .kartBest) ?? [:]
+        stickers = try c.decodeIfPresent(Set<String>.self, forKey: .stickers) ?? []
+        packsOpened = try c.decodeIfPresent(Int.self, forKey: .packsOpened) ?? 0
+        lifetimeStars = try c.decodeIfPresent(Int.self, forKey: .lifetimeStars) ?? stars
+        bopBest = try c.decodeIfPresent(Int.self, forKey: .bopBest) ?? 0
     }
 }
 
@@ -178,7 +190,49 @@ final class GameStore: ObservableObject {
     func addStars(_ n: Int) {
         guard n > 0, var p = profile else { return }
         p.stars += n
+        p.lifetimeStars += n
         profile = p
+    }
+
+    func recordBop(_ bops: Int) {
+        guard var p = profile, bops > p.bopBest else { return }
+        p.bopBest = bops
+        profile = p
+    }
+
+    // MARK: Sticker Book
+
+    /// Stars needed for each sticker pack.
+    static let starsPerPack = 6
+
+    /// Your own buddy is always in the book.
+    var ownedStickers: Set<String> {
+        var s = profile?.stickers ?? []
+        if let id = profile?.characterID { s.insert(id) }
+        return s
+    }
+
+    var packsAvailable: Int {
+        guard let p = profile else { return 0 }
+        let locked = Roster.all.count - ownedStickers.count
+        return max(0, min(p.lifetimeStars / Self.starsPerPack - p.packsOpened, locked))
+    }
+
+    /// Stars still needed for the next pack.
+    var starsToNextPack: Int {
+        let earned = profile?.lifetimeStars ?? 0
+        return Self.starsPerPack - earned % Self.starsPerPack
+    }
+
+    /// Opens one pack and returns the new buddy sticker.
+    func openPack() -> GameCharacter? {
+        guard packsAvailable > 0, var p = profile else { return nil }
+        let owned = ownedStickers
+        guard let pick = Roster.all.filter({ !owned.contains($0.id) }).randomElement() else { return nil }
+        p.stickers.insert(pick.id)
+        p.packsOpened += 1
+        profile = p
+        return pick
     }
 
     var nextChapterID: Int {
@@ -195,6 +249,7 @@ final class GameStore: ObservableObject {
         guard var p = profile else { return }
         p.completedChapters.insert(chapter)
         p.stars += earned
+        p.lifetimeStars += earned
         profile = p
     }
 

@@ -18,6 +18,8 @@ enum Route: Equatable {
     case playing(Int)
     case teamSetup
     case kartSelect
+    case bop
+    case stickers
     case balloon(next: Int?)
 }
 
@@ -65,7 +67,23 @@ struct RootView: View {
             WorldMapView(landing: landing,
                          onPlay: { chapter in route = .playing(chapter.id) },
                          onTeam: { route = .teamSetup },
-                         onKart: { route = .kartSelect })
+                         onKart: { route = .kartSelect },
+                         onBop: { route = .bop },
+                         onStickers: { route = .stickers })
+
+        case .bop:
+            BopGameView(onExit: { route = .map(landing: nil) }) { stars, again in
+                store.addStars(stars)
+                if again {
+                    raceNonce += 1
+                } else {
+                    route = .balloon(next: nil)
+                }
+            }
+            .id("bop-\(raceNonce)")
+
+        case .stickers:
+            StickerBookView(onBack: { route = .map(landing: nil) })
 
         case .kartSelect:
             KartSelectView(onBack: { route = .map(landing: nil) },
@@ -119,7 +137,7 @@ struct RootView: View {
     /// Racing music for driving and karts; the adventure theme everywhere else.
     private func updateMusic() {
         switch route {
-        case .kartSelect:
+        case .kartSelect, .bop:
             SoundFX.shared.playMusic(.race)
         case .playing(let id):
             let kind = Chapters.chapter(id).kind
