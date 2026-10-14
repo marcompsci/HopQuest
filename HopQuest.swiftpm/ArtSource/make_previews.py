@@ -93,11 +93,12 @@ def world_map():
         <img src="{img('icon_together')}" style="width:30px"><div style="font-size:11px;font-weight:900">Together</div></div>
       <div style="width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;color:#7C4DFF">⚙︎</div>
     </div>
-    <div class="abs" style="left:12px;right:12px;bottom:42px;background:rgba(255,255,255,.8);border-radius:28px;padding:8px;display:flex;gap:8px">
-      <div style="flex:1;position:relative;background:#FF9F45;box-shadow:0 5px 0 #D9731C;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:14px"><img src="{img('icon_stickers')}" style="width:44px;display:block;margin:0 auto">Stickers
+    <div class="abs" style="left:12px;right:12px;bottom:42px;background:rgba(255,255,255,.8);border-radius:28px;padding:8px;display:flex;gap:6px">
+      <div style="flex:1;position:relative;background:#FF9F45;box-shadow:0 5px 0 #D9731C;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:13px"><img src="{img('icon_stickers')}" style="width:44px;display:block;margin:0 auto">Stickers
         <div class="abs" style="right:-6px;top:-8px;width:26px;height:26px;border-radius:50%;background:#FF5A5F;border:2px solid #fff;font-size:15px;line-height:22px">1</div></div>
-      <div style="flex:1;background:#B983FF;box-shadow:0 5px 0 #7C4DFF;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:14px"><img src="{img('icon_bop')}" style="width:44px;display:block;margin:0 auto">Pillow Bop</div>
-      <div style="flex:1;background:#FF7A59;box-shadow:0 5px 0 #C2410C;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:14px"><img src="{img('icon_kart')}" style="width:44px;display:block;margin:0 auto">Bubble Kart</div>
+      <div style="flex:1;background:#34C77B;box-shadow:0 5px 0 #239A5C;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:13px"><img src="{img('icon_fort')}" style="width:44px;display:block;margin:0 auto">Fort Friends</div>
+      <div style="flex:1;background:#B983FF;box-shadow:0 5px 0 #7C4DFF;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:13px"><img src="{img('icon_bop')}" style="width:44px;display:block;margin:0 auto">Pillow Bop</div>
+      <div style="flex:1;background:#FF7A59;box-shadow:0 5px 0 #C2410C;border-radius:20px;padding:6px 0;text-align:center;color:#fff;font-weight:900;font-size:13px"><img src="{img('icon_kart')}" style="width:44px;display:block;margin:0 auto">Bubble Kart</div>
     </div>
     {STATUS}</body>"""
 
@@ -300,9 +301,64 @@ def sticker_book():
     </div>{STATUS}</body>"""
 
 
+def fort_friends():
+    rows = ["..............................", "..............................", "..............................",
+            ".......B..............B.......", "......###........B...###......", "S..C..###.....G......###...F..",
+            "##########~~~~################", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"]
+    built = {(4, 2): ("piece_ramp", 1), (5, 2): ("piece_block", 1), (5, 3): ("piece_ramp", 1)}
+    c = 54
+    base = 186 - 0.7 * c
+    nrow = len(rows)
+    def top(y): return 844 - (base + (y + 1) * c)
+    tiles = ""
+    for ri, line in enumerate(rows):
+        y = nrow - 1 - ri
+        for x, ch in enumerate(line[:8]):
+            name = None
+            if ch == "#":
+                above = rows[ri - 1][x] if ri > 0 else "."
+                name = "fort_grass" if above != "#" else "fort_dirt"
+            elif ch == "~":
+                name = "fort_water"
+            if name:
+                tiles += f'<img src="{img(name)}" class="abs" style="left:{x*c}px;top:{top(y)}px;width:{c+1}px;height:{c+1}px">'
+    for (x, y), (n, d) in built.items():
+        tiles += f'<img src="{img(n)}" class="abs" style="left:{x*c}px;top:{top(y)}px;width:{c+1}px;height:{c+1}px;transform:scaleX({d})">'
+    items = f'<img src="{img("crate")}" class="abs" style="left:{3*c+5}px;top:{top(2)+11}px;width:{c*0.8}px">'
+    items += f'<img src="{img("party_balloon")}" class="abs" style="left:{7*c+4}px;top:{top(4)+2}px;width:{c*0.85}px">'
+    # player standing on the pillar at (6,4)
+    pw = c * 0.95 * 1.15
+    items += f'<img src="{img("char_lavender")}" class="abs" style="left:{6.5*c - pw/2}px;top:{top(4) + c - pw*460/420 + 4}px;width:{pw}px">'
+    ghosts = "".join(f'<div class="abs" style="left:{x*c+4}px;top:{top(y)+4}px;width:{c-8}px;height:{c-8}px;border:3px solid #34C77B;border-radius:10px;background:rgba(255,255,255,.25)"></div>'
+                     for (x, y) in [(3, 3), (4, 3), (6, 5), (7, 5), (8, 4), (9, 4), (9, 3)])
+    rain = f'<div class="abs" style="left:0;top:{top(7)}px;width:{c*0.9}px;height:{8*c}px;background:rgba(91,107,140,.28)"></div><img src="{img("rain_cloud")}" class="abs" style="left:{-c*1.6}px;top:{top(7)+4}px;width:{c*3.2}px">'
+    tools = [("piece_ramp", "Ramp", "2 🧱", True), ("piece_block", "Block", "1 🧱", False), ("piece_bridge", "Bridge", "1 🧱", False), (None, "Take back", "", False)]
+    tb = "".join(f"""<div style="flex:1;height:72px;border-radius:18px;background:{'#FFF4C2' if sel else 'rgba(255,255,255,.92)'};{'box-shadow:inset 0 0 0 4px #FFB020' if sel else 'box-shadow:0 4px 0 rgba(0,0,0,.2)'};text-align:center;padding-top:4px;font-size:12px;font-weight:900">
+        {f'<img src="{img(a)}" style="width:34px;height:34px">' if a else '<div style="width:34px;height:34px;margin:0 auto;border-radius:50%;background:#FF5A5F;color:#fff;font-size:20px;line-height:34px">↺</div>'}<div>{t}</div><div style="font-size:11px;opacity:.75">{cst}</div></div>""" for a, t, cst, sel in tools)
+    return f"""{BASE}<body style="background:#BFE6FF">
+    <img src="{img('arena_bg')}" class="abs" style="left:0;top:0;width:390px;height:844px">
+    <div class="abs" style="left:0;right:0;bottom:0;height:{base + 0.2*c}px;background:#5EC8F2"></div>
+    {tiles}{rain}{ghosts}{items}
+    <div class="abs" style="left:14px;right:14px;top:53px;display:flex;gap:8px;align-items:center">
+      <div style="width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#7C4DFF;font-size:22px">⌂</div>
+      <div style="background:rgba(255,255,255,.92);border-radius:99px;height:42px;padding:0 12px;display:flex;align-items:center;gap:4px;font-size:20px;font-weight:900"><img src="{img('icon_bricks')}" style="width:26px">7</div>
+      <div style="background:rgba(255,255,255,.92);border-radius:99px;height:42px;padding:0 12px;display:flex;align-items:center;gap:4px;font-size:20px;font-weight:900"><img src="{img('party_balloon')}" style="width:26px">0/3</div>
+    </div>
+    <div class="abs" style="left:16px;right:16px;top:108px;background:#fff;border-radius:18px;padding:10px 14px;font-size:15px;font-weight:700;box-shadow:0 3px 0 rgba(124,77,255,.3)">A ramp is an inclined plane. It's a simple machine that makes going up easier!</div>
+    <div class="abs" style="left:0;right:0;bottom:0;height:170px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.35))"></div>
+    <div class="abs" style="left:14px;right:14px;bottom:110px;display:flex;gap:8px">{tb}</div>
+    <div class="abs" style="left:14px;right:14px;bottom:30px;display:flex;align-items:center;gap:12px">
+      <div style="width:70px;height:70px;border-radius:20px;background:rgba(255,255,255,.9);box-shadow:0 5px 0 rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:30px">◀</div>
+      <div style="width:70px;height:70px;border-radius:20px;background:rgba(255,255,255,.9);box-shadow:0 5px 0 rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:30px">▶</div>
+      <div style="flex:1;text-align:right;color:#fff;font-size:13px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.4)">Tap a glowing square to build.</div>
+    </div>
+    {STATUS}</body>"""
+
+
 SCREENS = {"world-map": world_map, "buddy-picker": buddy_picker, "brain-gate": brain_gate,
            "robot-lab": robot_lab, "welcome": welcome, "balloon-flight": balloon_flight,
-           "pillow-bop": bop_arena, "sticker-book": sticker_book}
+           "pillow-bop": bop_arena, "sticker-book": sticker_book,
+           "fort-friends": fort_friends}
 
 with sync_playwright() as p:
     b = p.chromium.launch()

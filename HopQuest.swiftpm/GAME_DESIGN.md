@@ -1,4 +1,4 @@
-# HopQuest — Game Design Brief (v1.0)
+# HopQuest — Game Design Brief (v1.1)
 
 A kid-safe, educational hop-and-drive adventure for iPhone and iPad (ages ~5–10).
 Kids hop across roads and rivers, learn to drive at Driving School, build and code a robot,
@@ -29,7 +29,8 @@ and finish every level by jumping into a hot air balloon at their castle.
 | World art pass (v0.9) | Everything left in emoji or flat shapes redrawn in the buddy style (ArtSource/make_world.py): painted world-map landscape with tree clumps, a pond and village houses, a winding dirt road between levels, illustrated icons for every level plus a padlock and a gold star for finished levels; three illustrated castles (Sparkle, Stone Fortress, Rainbow) used on the map, at every finish line and in onboarding; striped hot air balloons with your buddy sitting inside the wicker basket (map, flight screen, levels); Bubble Kart and Together buttons with art; Bubble Kart ? boxes, Bubble Shield, Carrot Boost and Jelly Pad drawn as art in the race, HUD and how-to; Brain Gate card hosted by Ollie Owl with lettered, color-coded answers |
 | Pillow Bop Arena (v1.0) | The Smash-style party mode, made gentle. You and 3 buddy bots on a floating island with two cloud platforms and a high cloud. Walk, jump, double-jump, and swing a fluffy pillow (BOP!). Every bop scores a point; bopped buddies get giggly (a meter on the scoreboard), and the gigglier you are, the farther a bop pushes you. Fall off and a hot air balloon floats you back after 2 seconds, no "KO". Pushing someone off earns a +2 bonus. Brain Bubbles float in twice a match: pop one, answer the Brain Gate, and get a GIANT pillow for 10 seconds. 60-second matches, stars for placing and for Brain Bubbles, feathers and "FLUFF!" pop words, and friendly bots that never gang up on the player |
 | Sticker Book (v1.0) | Collect all 23 buddies. Every 6 stars earns a sticker pack; opening one flips over a die-cut sticker of a new buddy and reads its fun fact aloud. Stickers are grouped by family with progress bars; tap one to hear its fact or play as that buddy. Your own buddy is always in the book, and resetting progress never takes stickers away |
-| Map dock (v1.0) | The world map's bottom dock holds Stickers (with a badge for unopened packs), Pillow Bop, and Bubble Kart; level stops moved up so nothing overlaps |
+| Map dock (v1.0) | The world map's bottom dock holds Stickers (with a badge for unopened packs), Fort Friends (v1.1), Pillow Bop, and Bubble Kart; level stops moved up so nothing overlaps |
+| Fort Friends (v1.1) | The Fortnite-style build mode with no combat. Your buddy rides a balloon down onto the level, then walks a side-view grid world. Kids build **ramps** (2 bricks; walk into one to climb a step), **blocks** (1 brick; hold ramps up for taller climbs) and **bridges** (1 brick; cross gaps and water), and can **take pieces back** for a refund. Pieces must attach to the ground or another piece (a lesson about support), and glowing squares show where building is allowed. Crates give bricks; a golden crate asks a Brain Gate question for 5–8 bricks; if bricks ever run out with no crates left, helper bricks arrive, so no one gets stuck. The "storm" is a sleepy rain cloud drifting behind you; if it catches you, you drop 2 bricks and it floats back. Short engineering ideas are read aloud the first time each piece is built (ramps are inclined planes, support, recycling). 3 levels (Sunny Cliffs, Rainbow River, Sky Fort), each with 3 balloons and a tree-house fort finish. Levels are text maps, so new ones need no code |
 | Privacy | No network calls, ads, purchases, chat, analytics, or accounts. Profile stored locally only |
 
 Characters are original vector illustrations generated from ArtSource/make_characters.py (rendered to PNG); everything else is drawn in code. No third-party images to license. Swap in real illustrated art later without changing game logic.
@@ -113,7 +114,7 @@ These borrow **mechanics** that made top kids' games great, with original everyt
 
 **Pillow Bop Arena (party-brawler mode)** — ✅ shipped in v1.0 (1 player + 3 bots). Next: 2-player on one iPad, more arenas. 2–4 characters on a floating island; bop each other with giant pillows to push them toward the edge. Fall off → you float back in a balloon after 2 seconds (no "KO"). Score = bops landed, not damage.
 
-**Fort Friends (build-and-explore mode)** — build ramps, bridges, and towers from blocks to reach balloons and treasure; a gentle rain cloud slowly shrinks the play area (the "storm," re-imagined). Cooperative goals only, no combat.
+**Fort Friends (build-and-explore mode)** — ✅ shipped in v1.1 (3 levels). Next: more levels, a free-build sandbox, and a co-op version where a grown-up builds while the kid explores. build ramps, bridges, and towers from blocks to reach balloons and treasure; a gentle rain cloud slowly shrinks the play area (the "storm," re-imagined). Cooperative goals only, no combat.
 
 **Grown-up & Me (co-op)** — ✅ shipped in v0.3 (Team Hop + Team Drive). Next: Team Robot Lab (one builds, one codes) and two-kid sibling mode.
 
@@ -128,7 +129,7 @@ These borrow **mechanics** that made top kids' games great, with original everyt
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.
 2. Commission or generate original illustrated art + sound (soft boings, balloon whoosh, castle fanfare).
 3. ~~Add narration for every Brain Gate question and tip~~ — done in v0.2 with the built-in voice. Later: swap in recorded voice acting for the characters.
-4. Move levels to data files so new worlds don't need code changes.
+4. Move levels to data files so new worlds don't need code changes. (Fort Friends levels are already text maps in `FortScene.swift`.)
 5. Privacy policy + App Store Kids Category submission.
 
 ---

@@ -7,6 +7,7 @@ struct WorldMapView: View {
     var onTeam: () -> Void = {}
     var onKart: () -> Void = {}
     var onBop: () -> Void = {}
+    var onFort: () -> Void = {}
     var onStickers: () -> Void = {}
 
     @State private var showParent = false
@@ -113,12 +114,14 @@ struct WorldMapView: View {
         .padding(.horizontal, 12)
     }
 
-    /// Bottom dock: Sticker Book, Pillow Bop, and Bubble Kart.
+    /// Bottom dock: Sticker Book, Fort Friends, Pillow Bop, and Bubble Kart.
     private var dock: some View {
         let packs = store.packsAvailable
-        return HStack(spacing: 8) {
+        return HStack(spacing: 6) {
             dockButton(art: "icon_stickers", title: "Stickers", color: Color(hex: 0xFF9F45), shadow: Color(hex: 0xD9731C),
                        badge: packs, label: packs > 0 ? "Sticker Book, \(packs) new packs" : "Sticker Book", action: onStickers)
+            dockButton(art: "icon_fort", title: "Fort Friends", color: Color(hex: 0x34C77B), shadow: Color(hex: 0x239A5C),
+                       badge: 0, label: "Fort Friends building game", action: onFort)
             dockButton(art: "icon_bop", title: "Pillow Bop", color: Color(hex: 0xB983FF), shadow: Palette.purple,
                        badge: 0, label: "Pillow Bop party game", action: onBop)
             dockButton(art: "icon_kart", title: "Bubble Kart", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
@@ -137,9 +140,9 @@ struct WorldMapView: View {
             VStack(spacing: 0) {
                 ArtImage(art).frame(width: 44, height: 44)
                 Text(title)
-                    .font(.kid(14, .black))
+                    .font(.kid(13, .black))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)

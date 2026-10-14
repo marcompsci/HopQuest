@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "idiom": "universal",
+      "filename": "crate_gold.png"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

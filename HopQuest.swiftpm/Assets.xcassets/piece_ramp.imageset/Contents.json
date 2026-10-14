@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "idiom": "universal",
+      "filename": "piece_ramp.png"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

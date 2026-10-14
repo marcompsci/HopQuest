@@ -19,6 +19,8 @@ enum Route: Equatable {
     case teamSetup
     case kartSelect
     case bop
+    case fortSelect
+    case fort(Int)
     case stickers
     case balloon(next: Int?)
 }
@@ -69,6 +71,7 @@ struct RootView: View {
                          onTeam: { route = .teamSetup },
                          onKart: { route = .kartSelect },
                          onBop: { route = .bop },
+                         onFort: { route = .fortSelect },
                          onStickers: { route = .stickers })
 
         case .bop:
@@ -81,6 +84,22 @@ struct RootView: View {
                 }
             }
             .id("bop-\(raceNonce)")
+
+        case .fortSelect:
+            FortSelectView(onBack: { route = .map(landing: nil) },
+                           onStart: { level in route = .fort(level.id) })
+
+        case .fort(let id):
+            FortGameView(level: FortLevel.level(id), onExit: { route = .fortSelect }) { stars, balloons, again in
+                store.addStars(stars)
+                store.recordFort(level: id, balloons: balloons)
+                if again {
+                    raceNonce += 1
+                } else {
+                    route = .balloon(next: nil)
+                }
+            }
+            .id("fort-\(id)-\(raceNonce)")
 
         case .stickers:
             StickerBookView(onBack: { route = .map(landing: nil) })

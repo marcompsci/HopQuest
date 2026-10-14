@@ -120,10 +120,12 @@ struct PlayerProfile: Codable, Equatable {
     var lifetimeStars: Int = 0
     /// Best Pillow Bop score.
     var bopBest: Int = 0
+    /// Most balloons found per Fort Friends level.
+    var fortBest: [Int: Int] = [:]
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
-        case stickers, packsOpened, lifetimeStars, bopBest
+        case stickers, packsOpened, lifetimeStars, bopBest, fortBest
     }
 }
 
@@ -145,6 +147,7 @@ extension PlayerProfile {
         packsOpened = try c.decodeIfPresent(Int.self, forKey: .packsOpened) ?? 0
         lifetimeStars = try c.decodeIfPresent(Int.self, forKey: .lifetimeStars) ?? stars
         bopBest = try c.decodeIfPresent(Int.self, forKey: .bopBest) ?? 0
+        fortBest = try c.decodeIfPresent([Int: Int].self, forKey: .fortBest) ?? [:]
     }
 }
 
@@ -191,6 +194,12 @@ final class GameStore: ObservableObject {
         guard n > 0, var p = profile else { return }
         p.stars += n
         p.lifetimeStars += n
+        profile = p
+    }
+
+    func recordFort(level: Int, balloons: Int) {
+        guard var p = profile, balloons > (p.fortBest[level] ?? -1) else { return }
+        p.fortBest[level] = balloons
         profile = p
     }
 

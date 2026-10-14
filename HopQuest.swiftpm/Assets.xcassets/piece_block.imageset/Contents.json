@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "idiom": "universal",
+      "filename": "piece_block.png"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}
