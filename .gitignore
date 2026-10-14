@@ -1,0 +1,5 @@
+.DS_Store
+xcuserdata/
+.build/
+.swiftpm/xcode/xcuserdata/
+__pycache__/
