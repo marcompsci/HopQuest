@@ -1,4 +1,4 @@
-# HopQuest — Game Design Brief (v1.1)
+# HopQuest — Game Design Brief (v1.2)
 
 A kid-safe, educational hop-and-drive adventure for iPhone and iPad (ages ~5–10).
 Kids hop across roads and rivers, learn to drive at Driving School, build and code a robot,
@@ -31,6 +31,7 @@ and finish every level by jumping into a hot air balloon at their castle.
 | Sticker Book (v1.0) | Collect all 23 buddies. Every 6 stars earns a sticker pack; opening one flips over a die-cut sticker of a new buddy and reads its fun fact aloud. Stickers are grouped by family with progress bars; tap one to hear its fact or play as that buddy. Your own buddy is always in the book, and resetting progress never takes stickers away |
 | Map dock (v1.0) | The world map's bottom dock holds Stickers (with a badge for unopened packs), Fort Friends (v1.1), Pillow Bop, and Bubble Kart; level stops moved up so nothing overlaps |
 | Fort Friends (v1.1) | The Fortnite-style build mode with no combat. Your buddy rides a balloon down onto the level, then walks a side-view grid world. Kids build **ramps** (2 bricks; walk into one to climb a step), **blocks** (1 brick; hold ramps up for taller climbs) and **bridges** (1 brick; cross gaps and water), and can **take pieces back** for a refund. Pieces must attach to the ground or another piece (a lesson about support), and glowing squares show where building is allowed. Crates give bricks; a golden crate asks a Brain Gate question for 5–8 bricks; if bricks ever run out with no crates left, helper bricks arrive, so no one gets stuck. The "storm" is a sleepy rain cloud drifting behind you; if it catches you, you drop 2 bricks and it floats back. Short engineering ideas are read aloud the first time each piece is built (ramps are inclined planes, support, recycling). 3 levels (Sunny Cliffs, Rainbow River, Sky Fort), each with 3 balloons and a tree-house fort finish. Levels are text maps, so new ones need no code |
+| App icon (v1.2) | "Sunset Hop": Lavender Lop hops a crosswalk at sunset while a hot air balloon lands beside the rainbow castle, combining the game's two signature moments (crossing the road and the balloon finish). Built from the game's own vector art (ArtSource/make_icons.py); the other candidates are kept in ArtSource/icons |
 | Privacy | No network calls, ads, purchases, chat, analytics, or accounts. Profile stored locally only |
 
 Characters are original vector illustrations generated from ArtSource/make_characters.py (rendered to PNG); everything else is drawn in code. No third-party images to license. Swap in real illustrated art later without changing game logic.

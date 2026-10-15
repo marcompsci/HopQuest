@@ -1,10 +1,12 @@
+<p align="center"><img src="docs/icon.png" width="180" style="border-radius:40px" alt="HopQuest app icon"></p>
+
 # HopQuest 🐰🎈🏰
 
 **A kid-safe educational adventure for iPhone and iPad.** Hop across busy streets like a crossy-road game. Learn to drive in a gentle driving school. Build and code a robot. Race Bubble Karts. Build ramps and bridges to reach a fort. Bop friends with pillows on a floating island. Collect every buddy in a Sticker Book. Fly a hot air balloon to the castle at the end of every level. Along the way, kids answer quick "Brain Gate" questions about math, road safety, nature, science and words.
 
 There's no blood, no bad words, no ads, no chat and no accounts. Every crash is soft and bouncy, and a wrong answer just gets a hint and another try.
 
-> Version **1.1**: Fort Friends, the building mode. Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
+> Version **1.2**: Fort Friends, the building mode, and the new Sunset Hop app icon. Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
 
 ---
 
