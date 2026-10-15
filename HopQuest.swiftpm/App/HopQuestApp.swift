@@ -22,6 +22,7 @@ enum Route: Equatable {
     case fortSelect
     case fort(Int)
     case stickers
+    case codeClub
     case balloon(next: Int?)
 }
 
@@ -67,7 +68,14 @@ struct RootView: View {
         switch route {
         case .map(let landing):
             WorldMapView(landing: landing,
-                         onPlay: { chapter in route = .playing(chapter.id) },
+                         onPlay: { chapter in
+                             // once the robot is built, the Robot Lab stop opens Code Club
+                             if chapter.kind == .robot && store.state(of: chapter) == .done {
+                                 route = .codeClub
+                             } else {
+                                 route = .playing(chapter.id)
+                             }
+                         },
                          onTeam: { route = .teamSetup },
                          onKart: { route = .kartSelect },
                          onBop: { route = .bop },
@@ -100,6 +108,10 @@ struct RootView: View {
                 }
             }
             .id("fort-\(id)-\(raceNonce)")
+
+        case .codeClub:
+            CodeClubView(onBack: { route = .map(landing: nil) },
+                         onEarn: { stars in store.addStars(stars) })
 
         case .stickers:
             StickerBookView(onBack: { route = .map(landing: nil) })
@@ -142,7 +154,11 @@ struct RootView: View {
                 .id("\(id)-\(raceNonce)")
             case .robot:
                 RobotLabView(onExit: exit,
-                             onComplete: { stars in finish(chapter, stars: stars) })
+                             onComplete: { stars in finish(chapter, stars: stars) },
+                             onCodeClub: { stars in
+                                 store.complete(chapter: chapter.id, stars: stars)
+                                 route = .codeClub
+                             })
                     .id(id)
             }
 

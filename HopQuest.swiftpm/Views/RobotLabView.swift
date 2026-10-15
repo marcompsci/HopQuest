@@ -6,6 +6,8 @@ import SwiftUI
 struct RobotLabView: View {
     var onExit: () -> Void
     var onComplete: (Int) -> Void
+    /// Finish the chapter and jump straight into Code Club.
+    var onCodeClub: ((Int) -> Void)? = nil
 
     enum Part: Int, CaseIterable, Identifiable {
         case chassis, battery, motors, wheels, sensors, brain
@@ -572,8 +574,12 @@ struct RobotLabView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
             Spacer()
+            let stars = 1 + (buildMistakes == 0 ? 1 : 0) + (codeMistakes == 0 ? 1 : 0)
+            if let onCodeClub {
+                BigButton(title: "More coding: Code Club 🤖", color: Palette.purple) { onCodeClub(stars) }
+                    .padding(.horizontal, 24)
+            }
             BigButton(title: "Fly to the next adventure 🎈", color: Palette.green) {
-                let stars = 1 + (buildMistakes == 0 ? 1 : 0) + (codeMistakes == 0 ? 1 : 0)
                 onComplete(stars)
             }
             .padding(.horizontal, 24)

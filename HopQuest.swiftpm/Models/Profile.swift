@@ -122,10 +122,16 @@ struct PlayerProfile: Codable, Equatable {
     var bopBest: Int = 0
     /// Most balloons found per Fort Friends level.
     var fortBest: [Int: Int] = [:]
+    /// Best stars per Code Club puzzle.
+    var codeBest: [Int: Int] = [:]
+    /// Brain Gate questions answered, and answered on the first try, by subject.
+    var brainAnswered: [String: Int] = [:]
+    var brainFirstTry: [String: Int] = [:]
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
         case stickers, packsOpened, lifetimeStars, bopBest, fortBest
+        case codeBest, brainAnswered, brainFirstTry
     }
 }
 
@@ -148,6 +154,9 @@ extension PlayerProfile {
         lifetimeStars = try c.decodeIfPresent(Int.self, forKey: .lifetimeStars) ?? stars
         bopBest = try c.decodeIfPresent(Int.self, forKey: .bopBest) ?? 0
         fortBest = try c.decodeIfPresent([Int: Int].self, forKey: .fortBest) ?? [:]
+        codeBest = try c.decodeIfPresent([Int: Int].self, forKey: .codeBest) ?? [:]
+        brainAnswered = try c.decodeIfPresent([String: Int].self, forKey: .brainAnswered) ?? [:]
+        brainFirstTry = try c.decodeIfPresent([String: Int].self, forKey: .brainFirstTry) ?? [:]
     }
 }
 
@@ -194,6 +203,20 @@ final class GameStore: ObservableObject {
         guard n > 0, var p = profile else { return }
         p.stars += n
         p.lifetimeStars += n
+        profile = p
+    }
+
+    func recordCode(challenge: Int, stars: Int) {
+        guard var p = profile, stars > (p.codeBest[challenge] ?? 0) else { return }
+        p.codeBest[challenge] = stars
+        profile = p
+    }
+
+    /// Counts a solved Brain Gate for the grown-ups' Learning Report.
+    func recordAnswer(subject: String, firstTry: Bool) {
+        guard var p = profile else { return }
+        p.brainAnswered[subject, default: 0] += 1
+        if firstTry { p.brainFirstTry[subject, default: 0] += 1 }
         profile = p
     }
 

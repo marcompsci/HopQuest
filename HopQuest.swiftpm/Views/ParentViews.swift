@@ -125,6 +125,8 @@ struct ParentSettingsView: View {
                 Button("Start over with a new player", role: .destructive) { confirmStartOver = true }
             }
 
+            LearningReportSection()
+
             Section("Privacy & safety") {
                 Label("No ads", systemImage: "nosign")
                 Label("No in-app purchases", systemImage: "cart.badge.minus")
@@ -152,5 +154,50 @@ struct ParentSettingsView: View {
             get: { store.profile?[keyPath: keyPath] ?? fallback },
             set: { store.profile?[keyPath: keyPath] = $0 }
         )
+    }
+}
+
+/// What the child has practiced, for grown-ups. Everything is counted on this device only.
+struct LearningReportSection: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        let p = store.profile
+        Section {
+            ForEach(Array(subjects.enumerated()), id: \.offset) { _, s in
+                let answered = p?.brainAnswered[s.name] ?? 0
+                let first = p?.brainFirstTry[s.name] ?? 0
+                HStack {
+                    Label(s.name, systemImage: s.icon)
+                    Spacer()
+                    if answered == 0 {
+                        Text("Not yet").foregroundStyle(.secondary)
+                    } else {
+                        Text("\(answered) solved · \(Int((Double(first) / Double(answered) * 100).rounded()))% first try")
+                            .foregroundStyle(.secondary)
+                            .font(.subheadline)
+                    }
+                }
+            }
+            LabeledContent("Story levels", value: "\(p?.completedChapters.count ?? 0) of \(Chapters.all.count)")
+            LabeledContent("Coding (Code Club)", value: "\(p?.codeBest.count ?? 0) of \(CodeChallenge.all.count) puzzles")
+            LabeledContent("Engineering (Fort Friends)", value: "\(p?.fortBest.count ?? 0) of \(FortLevel.all.count) forts")
+            LabeledContent("Bubble Kart cups", value: "\(p?.kartBest.count ?? 0) of \(Chapters.kartCups.count)")
+            LabeledContent("Pillow Bop best", value: "\(p?.bopBest ?? 0) bops")
+            LabeledContent("Buddy stickers", value: "\(store.ownedStickers.count) of \(Roster.all.count)")
+            LabeledContent("Stars ever earned", value: "\(p?.lifetimeStars ?? 0)")
+        } header: {
+            Text("Learning report")
+        } footer: {
+            Text("Brain Gate questions never count against a child: a wrong pick just gets a hint and another try. \"First try\" shows how often they knew it right away. Counts start from this version of the app.")
+        }
+    }
+
+    private var subjects: [(name: String, icon: String)] {
+        [(Subject.math.rawValue, "plus.forwardslash.minus"),
+         (Subject.road.rawValue, "car.fill"),
+         (Subject.nature.rawValue, "leaf.fill"),
+         (Subject.science.rawValue, "atom"),
+         (Subject.words.rawValue, "textformat.abc")]
     }
 }

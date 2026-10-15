@@ -275,6 +275,7 @@ struct BopGameView: View {
         .background(RoundedRectangle(cornerRadius: 30).fill(.white))
         .padding(18)
         .onAppear {
+            store.recordBop(hud.ranking.first { $0.isPlayer }?.bops ?? 0)
             let words = ["first", "second", "third", "fourth"][min(place, 4) - 1]
             Narrator.shared.say("You came in \(words) with \(hud.ranking.first { $0.isPlayer }?.bops ?? 0) bops, and earned \(stars) stars! Great sportsmanship!")
         }

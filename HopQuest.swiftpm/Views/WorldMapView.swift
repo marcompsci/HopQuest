@@ -222,7 +222,7 @@ struct WorldMapView: View {
                     }
                 }
                 .overlay(Circle().stroke(store.theme.accent, lineWidth: state == .open ? 5 : 0).frame(width: 76, height: 76))
-                Text(chapter.title)
+                Text(chapter.kind == .robot && state == .done ? "Code Club ▶" : chapter.title)
                     .font(.kid(13, .bold))
                     .foregroundStyle(Palette.ink)
                     .padding(.horizontal, 10).padding(.vertical, 4)

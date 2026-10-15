@@ -167,6 +167,8 @@ struct QuizCard: View {
     @State private var shake: CGFloat = 0
     @State private var hostHop = false
 
+    @EnvironmentObject private var store: GameStore
+
     private static let letterColors: [UInt32] = [0x4D96FF, 0xFF7A59, 0x34C77B, 0xB983FF]
     private static let host = Roster.character(id: "ollie")
 
@@ -296,6 +298,7 @@ struct QuizCard: View {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.4).repeatCount(3, autoreverses: true)) { hostHop = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { withAnimation(.spring()) { hostHop = false } }
             Narrator.shared.say((wrong.isEmpty ? "Yes! " : "You got it! ") + question.explain)
+            store.recordAnswer(subject: question.subject.rawValue, firstTry: wrong.isEmpty)
         } else {
             Haptics.bump(.oops)
             Narrator.shared.say("Almost! Try another one.")

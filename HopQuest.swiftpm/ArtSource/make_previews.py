@@ -355,10 +355,58 @@ def fort_friends():
     {STATUS}</body>"""
 
 
+def code_club():
+    cell, gap = 50, 4
+    step = cell + gap
+    rocks = [(2, 5), (0, 3), (3, 4)]
+    gears = [(3, 3)]
+    trail = [(0, 5), (1, 5), (1, 4), (2, 4), (2, 3)]
+    tiles = ""
+    for y in range(6):
+        for x in range(6):
+            col = "#F6F0FF" if (x + y) % 2 == 0 else "#EADFFF"
+            dot = '<div style="width:10px;height:10px;border-radius:50%;background:rgba(124,77,255,.35)"></div>' if (x, y) in trail else ""
+            tiles += f'<div class="abs" style="left:{x*step}px;top:{y*step}px;width:{cell}px;height:{cell}px;border-radius:11px;background:{col};display:flex;align-items:center;justify-content:center">{dot}</div>'
+    for (x, y) in rocks:
+        tiles += f'<img src="{img("code_rock")}" class="abs" style="left:{x*step+2}px;top:{y*step+2}px;width:{cell-4}px">'
+    for (x, y) in gears:
+        tiles += f'<img src="{img("robot_gear")}" class="abs" style="left:{x*step+10}px;top:{y*step+10}px;width:{cell-20}px">'
+    tiles += f'<img src="{img("goal_star")}" class="abs" style="left:{3*step+4}px;top:{2*step+4}px;width:{cell-8}px">'
+    tiles += f'<img src="{img("robot_full")}" class="abs" style="left:{2*step+4}px;top:{3*step+2}px;width:{cell-8}px">'
+    tiles += f'<div class="abs" style="left:{2*step+18}px;top:{3*step-14}px;color:#FFB020;font-size:14px">▲</div>'
+    w = 6 * step - gap
+    def chip(sym, col, small=False, active=False):
+        sz = 34 if small else 42
+        return f'<div style="width:{sz}px;height:{sz if small else 46}px;border-radius:11px;background:{col};color:#fff;font-weight:900;font-size:{15 if small else 18}px;display:flex;align-items:center;justify-content:center;{"box-shadow:0 0 0 4px #FFD93D;transform:scale(1.1)" if active else ""}">{sym}</div>'
+    F, L, R = ("↑", "#34C77B"), ("↰", "#4D96FF"), ("↱", "#FF7A59")
+    loop = (f'<div style="display:flex;align-items:center;gap:5px;padding:3px 6px;border-radius:14px;background:#FFF4C2;box-shadow:inset 0 0 0 4px #FFD93D">'
+            f'<div style="width:42px;text-align:center"><img src="{img("icon_loop")}" style="width:22px"><div style="font-weight:900;font-size:14px">×3</div></div>'
+            + chip(*F, small=True) + chip(*L, small=True, active=True) + chip(*F, small=True) + chip(*R, small=True)
+            + '<div style="color:rgba(43,27,61,.35);font-size:16px">✕</div></div>')
+    pal = "".join(f'<div style="flex:1;height:60px;border-radius:16px;background:{c};box-shadow:0 5px 0 {c}99;color:#fff;text-align:center;font-weight:900;padding-top:6px"><div style="font-size:22px">{sym}</div><div style="font-size:11px">{t}</div></div>'
+                  for sym, c, t in (("↰", "#4D96FF", "Turn left"), ("↑", "#34C77B", "Forward"), ("↱", "#FF7A59", "Turn right")))
+    pal += f'<div style="flex:1;height:60px;border-radius:16px;background:#FFD93D;box-shadow:0 5px 0 #E0A800b3;text-align:center;font-weight:900;padding-top:6px"><img src="{img("icon_loop")}" style="width:26px"><div style="font-size:11px">Repeat</div></div>'
+    return f"""{BASE}<body style="background:linear-gradient(#E0F2FF,#F3ECFF)">
+    <div style="padding:54px 14px 0;display:flex;align-items:center">
+      <div style="width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#7C4DFF;font-size:22px">‹</div>
+      <div style="flex:1;text-align:center;font-size:24px;font-weight:900">Staircase</div>
+      <div style="width:56px;height:48px;border-radius:14px;background:rgba(255,255,255,.9);text-align:center;padding-top:5px"><div style="font-size:17px;font-weight:900;color:#34C77B">5/5</div><div style="font-size:10px;font-weight:700;opacity:.6">blocks</div></div>
+    </div>
+    <div style="text-align:center;font-size:15px;font-weight:700;opacity:.85;padding:10px 18px;min-height:60px">See a pattern? Forward, turn left, forward, turn right... and again! Put the whole pattern inside one Repeat block.</div>
+    <div style="margin:0 auto;width:{w + 18}px;padding:9px;border-radius:22px;background:#C9B8F5;box-shadow:0 6px 0 #9B86E0"><div style="position:relative;width:{w}px;height:{w}px">{tiles}</div></div>
+    <div style="margin:14px 14px 0;height:70px;border-radius:18px;background:rgba(255,255,255,.85);display:flex;align-items:center;padding:0 12px">{loop}</div>
+    <div style="margin:12px 14px 0;display:flex;gap:8px">{pal}</div>
+    <div style="margin:16px 22px 0;display:flex;gap:12px">
+      <div style="flex:1;height:62px;border-radius:22px;background:#9AA0AE;box-shadow:0 6px 0 #9AA0AE73;color:#fff;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center">Clear</div>
+      <div style="flex:1;height:62px;border-radius:22px;background:#34C77B;box-shadow:0 6px 0 #34C77B73;color:#fff;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center">Running…</div>
+    </div>
+    {STATUS}</body>"""
+
+
 SCREENS = {"world-map": world_map, "buddy-picker": buddy_picker, "brain-gate": brain_gate,
            "robot-lab": robot_lab, "welcome": welcome, "balloon-flight": balloon_flight,
            "pillow-bop": bop_arena, "sticker-book": sticker_book,
-           "fort-friends": fort_friends}
+           "fort-friends": fort_friends, "code-club": code_club}
 
 with sync_playwright() as p:
     b = p.chromium.launch()

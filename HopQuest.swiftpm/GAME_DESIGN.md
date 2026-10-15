@@ -1,4 +1,4 @@
-# HopQuest — Game Design Brief (v1.2)
+# HopQuest — Game Design Brief (v1.3)
 
 A kid-safe, educational hop-and-drive adventure for iPhone and iPad (ages ~5–10).
 Kids hop across roads and rivers, learn to drive at Driving School, build and code a robot,
@@ -32,6 +32,8 @@ and finish every level by jumping into a hot air balloon at their castle.
 | Map dock (v1.0) | The world map's bottom dock holds Stickers (with a badge for unopened packs), Fort Friends (v1.1), Pillow Bop, and Bubble Kart; level stops moved up so nothing overlaps |
 | Fort Friends (v1.1) | The Fortnite-style build mode with no combat. Your buddy rides a balloon down onto the level, then walks a side-view grid world. Kids build **ramps** (2 bricks; walk into one to climb a step), **blocks** (1 brick; hold ramps up for taller climbs) and **bridges** (1 brick; cross gaps and water), and can **take pieces back** for a refund. Pieces must attach to the ground or another piece (a lesson about support), and glowing squares show where building is allowed. Crates give bricks; a golden crate asks a Brain Gate question for 5–8 bricks; if bricks ever run out with no crates left, helper bricks arrive, so no one gets stuck. The "storm" is a sleepy rain cloud drifting behind you; if it catches you, you drop 2 bricks and it floats back. Short engineering ideas are read aloud the first time each piece is built (ramps are inclined planes, support, recycling). 3 levels (Sunny Cliffs, Rainbow River, Sky Fort), each with 3 balloons and a tree-house fort finish. Levels are text maps, so new ones need no code |
 | App icon (v1.2) | "Sunset Hop": Lavender Lop hops a crosswalk at sunset while a hot air balloon lands beside the rainbow castle, combining the game's two signature moments (crossing the road and the balloon finish). Built from the game's own vector art (ArtSource/make_icons.py); the other candidates are kept in ArtSource/icons |
+| Code Club, Robot Lab 2 (v1.3) | Five coding puzzles on a 6×6 grid, opened from the Robot Lab map stop once the robot is built (or from the Robot Lab finish screen). Adds a **Repeat block** (loops): tap Repeat, add steps inside, tap ×2 to change it to ×3/×4/×5, then End repeat. Puzzles teach loops (Loop Launch), loops plus turns (Corner Turn), patterns (Staircase: one loop holds forward-left-forward-right), planning around rocks (Rock Garden), and shapes (Square Dance: collect 3 gears and return, solved with repeat 4). Stars: reach the star; use the target number of blocks or fewer (a live counter shows it); collect every gear, or solve it first try. Puzzles unlock in order, and replaying only earns stars for improvements. Rocks block the robot with a gentle "Bonk!" and a hint |
+| Learning Report (v1.3) | Behind the parent gate: Brain Gate questions solved per subject (math, road safety, nature, science, words) with the share solved on the first try, plus progress in story levels, Code Club, Fort Friends, Bubble Kart, Pillow Bop, and stickers. Counted on the device only. Also fixes Pillow Bop best scores not being saved |
 | Privacy | No network calls, ads, purchases, chat, analytics, or accounts. Profile stored locally only |
 
 Characters are original vector illustrations generated from ArtSource/make_characters.py (rendered to PNG); everything else is drawn in code. No third-party images to license. Swap in real illustrated art later without changing game logic.
@@ -119,7 +121,7 @@ These borrow **mechanics** that made top kids' games great, with original everyt
 
 **Grown-up & Me (co-op)** — ✅ shipped in v0.3 (Team Hop + Team Drive). Next: Team Robot Lab (one builds, one codes) and two-kid sibling mode.
 
-**Robot Lab 2** — add gears and ramps (simple machines), then loops ("repeat 3×") in the coding grid.
+**Robot Lab 2** — ✅ loops shipped in v1.3 as Code Club (5 puzzles with Repeat blocks, rocks, and gears). Next: if/else with sensors ("if a rock is ahead, turn"), and simple machines (gears and levers).
 
 **More** — ✅ sticker book shipped in v1.0. Still to do: seasonal castle skins, VoiceOver labels on all game objects.
 
