@@ -17,6 +17,8 @@ struct MyCastleView: View {
     @State private var hearts: [Heart] = []
     @State private var message: String?
 
+    private static let startX: [CGFloat] = [0.3, 0.7, 0.5, 0.2]
+
     private let walkTimer = Timer.publish(every: 2.6, on: .main, in: .common).autoconnect()
 
     enum Panel { case shop, guests }
@@ -241,7 +243,7 @@ struct MyCastleView: View {
     private func buddy(_ c: GameCharacter, index: Int, w: CGFloat, h: CGFloat) -> some View {
         let lanes: [CGFloat] = [0.9, 0.78, 0.84, 0.72]
         let y = lanes[index % lanes.count]
-        let x = walkerX[c.id] ?? [0.3, 0.7, 0.5, 0.2][index % 4]
+        let x = walkerX[c.id] ?? Self.startX[index % 4]
         let size = w * (0.2 + 0.08 * (y - 0.7) / 0.2)
         let isHappy = happy == c.id
         return CharacterBadge(character: c, size: size, animated: true)
@@ -259,7 +261,7 @@ struct MyCastleView: View {
     private func wander() {
         guard panel == nil else { return }
         for (i, c) in residents.enumerated() where Int.random(in: 0..<3) != 0 || walkerX[c.id] == nil {
-            let current = walkerX[c.id] ?? [0.3, 0.7, 0.5, 0.2][i % 4]
+            let current = walkerX[c.id] ?? Self.startX[i % 4]
             let next = min(max(current + CGFloat.random(in: -0.25...0.25), 0.12), 0.88)
             walkerFacing[c.id] = next < current ? -1 : 1
             walkerX[c.id] = next
