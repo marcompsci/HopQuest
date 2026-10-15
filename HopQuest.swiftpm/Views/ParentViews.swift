@@ -105,6 +105,35 @@ struct ParentSettingsView: View {
 
             }
 
+            Section {
+                Picker("Question level", selection: binding(\.learnerTier, .auto)) {
+                    ForEach(LearnerTier.allCases) { Text($0.label).tag($0) }
+                }
+                LabeledContent("Right now", value: store.tierNote)
+            } header: {
+                Text("Learning level")
+            } footer: {
+                Text("Brain Gate questions match your child's level: picture counting for little learners, times tables and harder words for big learners. Automatic starts in the middle, then steps up after lots of first-try answers or eases down if questions feel too hard.")
+            }
+
+            Section {
+                Picker("Daily play limit", selection: binding(\.dailyLimitMinutes, 0)) {
+                    Text("No limit").tag(0)
+                    Text("20 minutes").tag(20)
+                    Text("30 minutes").tag(30)
+                    Text("45 minutes").tag(45)
+                    Text("1 hour").tag(60)
+                    Text("1½ hours").tag(90)
+                }
+                if (store.profile?.dailyLimitMinutes ?? 0) > 0 {
+                    LabeledContent("Played today", value: "\((store.profile?.playedSeconds ?? 0) / 60) min")
+                }
+            } header: {
+                Text("Daily play")
+            } footer: {
+                Text("When time is up, your child's buddy says a gentle goodbye and the game rests until tomorrow. HopQuest has no streaks, no daily-login rewards, and never sends notifications, so it won't nag kids to come back.")
+            }
+
             Section("Play time") {
                 Picker("Stretch-break reminder", selection: binding(\.breakReminderMinutes, 30)) {
                     Text("Off").tag(0)
@@ -179,6 +208,7 @@ struct LearningReportSection: View {
                     }
                 }
             }
+            LabeledContent("Question level", value: store.tierNote)
             LabeledContent("Story levels", value: "\(p?.completedChapters.count ?? 0) of \(Chapters.all.count)")
             LabeledContent("Coding (Code Club)", value: "\(p?.codeBest.count ?? 0) of \(CodeChallenge.all.count) puzzles")
             LabeledContent("Engineering (Fort Friends)", value: "\(p?.fortBest.count ?? 0) of \(FortLevel.all.count) forts")
@@ -199,5 +229,84 @@ struct LearningReportSection: View {
          (Subject.nature.rawValue, "leaf.fill"),
          (Subject.science.rawValue, "atom"),
          (Subject.words.rawValue, "textformat.abc")]
+    }
+}
+
+/// The gentle end of today's play time. A grown-up can add 15 minutes after the parental gate.
+struct RestTimeView: View {
+    @EnvironmentObject var store: GameStore
+    var onMore: () -> Void
+
+    @State private var showGate = false
+    @State private var a = Int.random(in: 6...12)
+    @State private var b = Int.random(in: 6...12)
+    @State private var answer = ""
+    @State private var sway = false
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(hex: 0x2E3A8C), Color(hex: 0x6C5BD9), Color(hex: 0xFF9ECF)], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            ForEach(0..<18, id: \.self) { i in
+                Image(systemName: "sparkle")
+                    .font(.system(size: CGFloat(8 + (i * 5) % 12)))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .position(x: CGFloat((i * 61) % 380) + 10, y: CGFloat((i * 97) % 420) + 40)
+            }
+            VStack(spacing: 18) {
+                Spacer()
+                Text("🌙").font(.system(size: 70))
+                CharacterBadge(character: store.character, size: 150)
+                    .rotationEffect(.degrees(sway ? 3 : -3), anchor: .bottom)
+                Text("Time to rest, \(store.profile?.name ?? "friend")!")
+                    .font(.kid(32, .black))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                Text("You played so well today. \(store.character.name) is getting sleepy too. Your castle and stars will be right here tomorrow!")
+                    .font(.kid(18, .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30)
+                Spacer()
+                if showGate {
+                    gate
+                } else {
+                    Button("Grown-ups") { showGate = true }
+                        .font(.kid(16, .bold))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .padding(.bottom, 20)
+                }
+            }
+        }
+        .onAppear {
+            Narrator.shared.say("Time to rest! You played so well today. See you tomorrow!")
+            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { sway = true }
+        }
+    }
+
+    private var gate: some View {
+        VStack(spacing: 10) {
+            Text("Grown-ups: \(a) × \(b) = ?").font(.kid(20, .black)).foregroundStyle(Palette.ink)
+            TextField("Answer", text: $answer)
+                .keyboardType(.numberPad)
+                .font(.kid(24, .bold))
+                .multilineTextAlignment(.center)
+                .padding(.vertical, 8)
+                .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0xF3ECFF)))
+            BigButton(title: "Add 15 minutes", color: Palette.green) {
+                if Int(answer) == a * b {
+                    store.grantExtraTime(minutes: 15)
+                    onMore()
+                } else {
+                    answer = ""
+                    a = Int.random(in: 6...12)
+                    b = Int.random(in: 6...12)
+                }
+            }
+        }
+        .padding(20)
+        .background(RoundedRectangle(cornerRadius: 26).fill(.white))
+        .padding(.horizontal, 28)
+        .padding(.bottom, 24)
     }
 }

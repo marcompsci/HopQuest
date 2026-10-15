@@ -2,11 +2,11 @@
 
 # HopQuest 🐰🎈🏰
 
-**A kid-safe educational adventure for iPhone and iPad.** Hop across busy streets like a crossy-road game. Learn to drive in a gentle driving school. Build and code a robot. Race Bubble Karts. Build ramps and bridges to reach a fort. Bop friends with pillows on a floating island. Collect every buddy in a Sticker Book. Fly a hot air balloon to the castle at the end of every level. Along the way, kids answer quick "Brain Gate" questions about math, road safety, nature, science and words.
+**A kid-safe educational adventure for iPhone and iPad.** Hop across busy streets like a crossy-road game. Learn to drive in a gentle driving school. Build and code a robot. Race Bubble Karts. Build ramps and bridges to reach a fort. Bop friends with pillows on a floating island. Collect every buddy in a Sticker Book, then decorate a cozy castle home for them. Fly a hot air balloon to the castle at the end of every level. Along the way, kids answer quick "Brain Gate" questions about math, road safety, nature, science and words.
 
 There's no blood, no bad words, no ads, no chat and no accounts. Every crash is soft and bouncy, and a wrong answer just gets a hint and another try.
 
-> Version **1.3**: Code Club coding puzzles with loops, and a Learning Report for grown-ups. Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
+> Version **1.4**: My Castle (decorate your home and care for your buddies), learning levels that adapt to each child, and a gentle daily play limit. Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
 
 ---
 
@@ -18,17 +18,17 @@ There's no blood, no bad words, no ads, no chat and no accounts. Every crash is 
 |:---:|:---:|:---:|
 | <img src="docs/screenshots/welcome.png" width="240"> | <img src="docs/screenshots/buddy-picker.png" width="240"> | <img src="docs/screenshots/world-map.png" width="240"> |
 
-| Fort Friends | Pillow Bop Arena | Sticker Book |
+| My Castle | Fort Friends | Pillow Bop Arena |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/fort-friends.png" width="240"> | <img src="docs/screenshots/pillow-bop.png" width="240"> | <img src="docs/screenshots/sticker-book.png" width="240"> |
+| <img src="docs/screenshots/my-castle.png" width="240"> | <img src="docs/screenshots/fort-friends.png" width="240"> | <img src="docs/screenshots/pillow-bop.png" width="240"> |
 
 | Code Club | Robot Lab | Brain Gate (Ollie Owl) |
 |:---:|:---:|:---:|
 | <img src="docs/screenshots/code-club.png" width="240"> | <img src="docs/screenshots/robot-lab.png" width="240"> | <img src="docs/screenshots/brain-gate.png" width="240"> |
 
-| Balloon flight |
-|:---:|
-| <img src="docs/screenshots/balloon-flight.png" width="240"> |
+| Sticker Book | Balloon flight |
+|:---:|:---:|
+| <img src="docs/screenshots/sticker-book.png" width="240"> | <img src="docs/screenshots/balloon-flight.png" width="240"> |
 
 ### Original art
 
@@ -44,6 +44,8 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 
 <img src="docs/art/fort.png" width="760">
 
+<img src="docs/art/home.png" width="760">
+
 ---
 
 ## What's in the game
@@ -55,6 +57,7 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 | **Driving School and City Rally** | Steer with a wheel, use the **brake** and **gas** pedals (gas on the far right, like a real car), use blinkers and stop at lights | Real road rules, in a kid-friendly way |
 | **Robot Lab** | Build a robot part by part, then "code" it with arrow commands to reach the star | Engineering basics: chassis, battery, motors, wheels, sensors, microcontroller, sequencing |
 | **Bubble Kart** | Kart racing with bubble shields, carrot boosts and jelly pads (three cups) | Steering, items, fair play |
+| **My Castle** | Tap the castle on the map to decorate your own room with furniture bought with stars, change the walls, invite Sticker Book buddies, and share treats with them (no hunger or guilt mechanics) | Creativity, planning, caring for others |
 | **Code Club** | 5 coding puzzles after the robot is built: program the robot with Forward, Turn and **Repeat** blocks, steer around rocks, collect gears, and try to use as few blocks as possible | Coding: sequences, loops, patterns, planning (algorithms), shapes |
 | **Fort Friends** | A building game with no fighting. Build ramps, blocks and bridges with bricks to reach balloons and a tree-house fort, while a sleepy rain cloud drifts along behind you | Engineering: inclined planes, support, planning a budget of bricks, recycling |
 | **Pillow Bop Arena** | A gentle party-brawler: walk, jump and swing a pillow to push three buddy bots toward the edge of a floating island. Falling off just means a balloon floats you back. Pop the Brain Bubble and answer it for a GIANT pillow | Sportsmanship, timing, quick thinking |
@@ -68,6 +71,8 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 - **Narrator:** reads questions, tips and lessons aloud, and the music ducks while it speaks.
 - **Original music and sound effects**, synthesized in code or generated by `ArtSource/make_audio.py`.
 - **Grown-ups area** behind a parent gate, with break reminders, narration and sound settings, plus a **Learning Report**: Brain Gate questions solved per subject (with first-try rates) and progress in every mode.
+- **Learning level:** questions fit the child's age: picture counting for 4–5, the classic mix for 6–7, times tables and harder science and words for 8–10. Automatic mode adapts to how the child is doing.
+- **Daily play limit** with a gentle "time to rest" goodbye. HopQuest has **no streaks, no daily-login rewards and no notifications**.
 - Saves only on the device, with no data collection.
 
 ---
@@ -104,6 +109,7 @@ python3 render_world.py     # castles, balloons, map, icons, kart items
 python3 render_arena.py     # Pillow Bop island, clouds, pillow, Brain Bubble, Sticker Book icons
 python3 render_fort.py      # Fort Friends tiles, pieces, crates, fort, rain cloud
 python3 render_code.py      # Code Club rock, loop and menu icons
+python3 render_home.py      # My Castle furniture, room, and treats
 python3 make_icons.py icons # app icon options
 python3 make_previews.py ../Assets.xcassets ../../docs/screenshots
 ```

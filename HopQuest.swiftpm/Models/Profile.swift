@@ -98,6 +98,29 @@ enum CastleTheme: String, Codable, CaseIterable, Identifiable {
     var sky: [Color] { skyHex.map { Color(hex: $0) } }
 }
 
+/// One piece of furniture placed in My Castle. Position is 0...1 of the room.
+struct DecorPlacement: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var item: String
+    var x: Double
+    var y: Double
+    var flipped = false
+}
+
+/// Who the Brain Gate questions are pitched at. Auto starts in the middle and adjusts.
+enum LearnerTier: Int, Codable, CaseIterable, Identifiable {
+    case auto = 0, little = 1, middle = 2, big = 3
+    var id: Int { rawValue }
+    var label: String {
+        switch self {
+        case .auto: return "Automatic"
+        case .little: return "Little learner (4–5)"
+        case .middle: return "Growing learner (6–7)"
+        case .big: return "Big learner (8–10)"
+        }
+    }
+}
+
 struct PlayerProfile: Codable, Equatable {
     var name: String
     var identity: KidIdentity
@@ -127,11 +150,26 @@ struct PlayerProfile: Codable, Equatable {
     /// Brain Gate questions answered, and answered on the first try, by subject.
     var brainAnswered: [String: Int] = [:]
     var brainFirstTry: [String: Int] = [:]
+    /// The last few Brain Gates (true = right on the first try), used to adjust difficulty.
+    var recentFirstTry: [Bool] = []
+    var learnerTier: LearnerTier = .auto
+    /// My Castle: furniture you own, where it's placed, and the wall color.
+    var decorOwned: Set<String> = ["decor_rug", "decor_plant"]
+    var decorPlaced: [DecorPlacement] = []
+    var wallpaper: Int = 0
+    /// Buddies invited to hang out in My Castle (besides your own).
+    var castleGuests: [String] = []
+    /// Daily play limit in minutes (0 = off), and today's play time.
+    var dailyLimitMinutes: Int = 0
+    var playDay: String = ""
+    var playedSeconds: Int = 0
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
         case stickers, packsOpened, lifetimeStars, bopBest, fortBest
         case codeBest, brainAnswered, brainFirstTry
+        case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
+        case dailyLimitMinutes, playDay, playedSeconds
     }
 }
 
@@ -157,6 +195,15 @@ extension PlayerProfile {
         codeBest = try c.decodeIfPresent([Int: Int].self, forKey: .codeBest) ?? [:]
         brainAnswered = try c.decodeIfPresent([String: Int].self, forKey: .brainAnswered) ?? [:]
         brainFirstTry = try c.decodeIfPresent([String: Int].self, forKey: .brainFirstTry) ?? [:]
+        recentFirstTry = try c.decodeIfPresent([Bool].self, forKey: .recentFirstTry) ?? []
+        learnerTier = try c.decodeIfPresent(LearnerTier.self, forKey: .learnerTier) ?? .auto
+        decorOwned = try c.decodeIfPresent(Set<String>.self, forKey: .decorOwned) ?? ["decor_rug", "decor_plant"]
+        decorPlaced = try c.decodeIfPresent([DecorPlacement].self, forKey: .decorPlaced) ?? []
+        wallpaper = try c.decodeIfPresent(Int.self, forKey: .wallpaper) ?? 0
+        castleGuests = try c.decodeIfPresent([String].self, forKey: .castleGuests) ?? []
+        dailyLimitMinutes = try c.decodeIfPresent(Int.self, forKey: .dailyLimitMinutes) ?? 0
+        playDay = try c.decodeIfPresent(String.self, forKey: .playDay) ?? ""
+        playedSeconds = try c.decodeIfPresent(Int.self, forKey: .playedSeconds) ?? 0
     }
 }
 
@@ -177,6 +224,7 @@ final class GameStore: ObservableObject {
             profile = saved
         }
         Narrator.shared.enabled = profile?.narration ?? true
+        QuestionBank.tier = effectiveTier
     }
 
     var theme: CastleTheme { profile?.theme ?? .rainbow }
@@ -212,11 +260,92 @@ final class GameStore: ObservableObject {
         profile = p
     }
 
-    /// Counts a solved Brain Gate for the grown-ups' Learning Report.
+    /// Counts a solved Brain Gate for the grown-ups' Learning Report, and feeds difficulty tuning.
     func recordAnswer(subject: String, firstTry: Bool) {
         guard var p = profile else { return }
         p.brainAnswered[subject, default: 0] += 1
         if firstTry { p.brainFirstTry[subject, default: 0] += 1 }
+        p.recentFirstTry.append(firstTry)
+        if p.recentFirstTry.count > 12 { p.recentFirstTry.removeFirst(p.recentFirstTry.count - 12) }
+        profile = p
+    }
+
+    // MARK: Learning level
+
+    /// The level questions are actually pitched at right now (1 little, 2 middle, 3 big).
+    var effectiveTier: Int {
+        guard let p = profile else { return 2 }
+        let base = p.learnerTier == .auto ? 2 : p.learnerTier.rawValue
+        let recent = p.recentFirstTry
+        guard recent.count >= 8 else { return base }
+        let rate = Double(recent.filter { $0 }.count) / Double(recent.count)
+        if rate >= 0.85 { return min(3, base + 1) }
+        if rate <= 0.45 { return max(1, base - 1) }
+        return base
+    }
+
+    /// For the Learning Report: is the game nudging questions up or down?
+    var tierNote: String {
+        let names = [1: "Little (4–5)", 2: "Growing (6–7)", 3: "Big (8–10)"]
+        let base = (profile?.learnerTier ?? .auto) == .auto ? 2 : (profile?.learnerTier.rawValue ?? 2)
+        let now = effectiveTier
+        let name = names[now] ?? ""
+        if now > base { return "\(name), stepped up because they're acing it" }
+        if now < base { return "\(name), eased down to build confidence" }
+        return name
+    }
+
+    // MARK: My Castle
+
+    static let decorPrices: [String: Int] = [
+        "decor_rug": 0, "decor_plant": 0, "decor_lamp": 3, "decor_painting": 3, "decor_balloons": 3,
+        "decor_beanbag": 4, "decor_toybox": 4, "decor_banner": 4, "decor_bookshelf": 5, "decor_cake": 5,
+        "decor_bed": 6, "decor_aquarium": 7, "decor_telescope": 7, "decor_rocket": 8, "decor_piano": 9,
+        "decor_trophy": 10
+    ]
+
+    /// Spend stars on a decoration. Returns false if there aren't enough.
+    func buyDecor(_ item: String) -> Bool {
+        guard var p = profile, !p.decorOwned.contains(item) else { return false }
+        let price = Self.decorPrices[item] ?? 5
+        guard p.stars >= price else { return false }
+        p.stars -= price
+        p.decorOwned.insert(item)
+        profile = p
+        return true
+    }
+
+    // MARK: Daily play limit
+
+    private static let dayFormat: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    /// Adds play time for today (resets at midnight). Returns true when today's limit is used up.
+    @discardableResult
+    func addPlayTime(_ seconds: Int) -> Bool {
+        guard var p = profile else { return false }
+        let today = Self.dayFormat.string(from: Date())
+        if p.playDay != today {
+            p.playDay = today
+            p.playedSeconds = 0
+        }
+        p.playedSeconds += seconds
+        profile = p
+        return timeIsUp
+    }
+
+    var timeIsUp: Bool {
+        guard let p = profile, p.dailyLimitMinutes > 0 else { return false }
+        return p.playDay == Self.dayFormat.string(from: Date()) && p.playedSeconds >= p.dailyLimitMinutes * 60
+    }
+
+    /// A grown-up grants a little more time today.
+    func grantExtraTime(minutes: Int) {
+        guard var p = profile else { return }
+        p.playedSeconds = max(0, p.playedSeconds - minutes * 60)
         profile = p
     }
 
@@ -298,6 +427,7 @@ final class GameStore: ObservableObject {
 
     private func persist() {
         Narrator.shared.enabled = profile?.narration ?? true
+        QuestionBank.tier = effectiveTier
         if let profile, let data = try? JSONEncoder().encode(profile) {
             UserDefaults.standard.set(data, forKey: key)
         } else {

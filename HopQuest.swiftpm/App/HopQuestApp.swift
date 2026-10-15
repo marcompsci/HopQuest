@@ -22,6 +22,7 @@ enum Route: Equatable {
     case fortSelect
     case fort(Int)
     case stickers
+    case castle
     case codeClub
     case balloon(next: Int?)
 }
@@ -31,6 +32,8 @@ struct RootView: View {
     @State private var route: Route = .map(landing: nil)
     @State private var sessionStart = Date()
     @State private var showBreak = false
+    @State private var restTime = false
+    @Environment(\.scenePhase) private var scenePhase
     @State private var raceNonce = 0
     private let ticker = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
 
@@ -50,12 +53,34 @@ struct RootView: View {
                 }
                 .transition(.opacity)
             }
+            if restTime && store.profile != nil {
+                RestTimeView {
+                    restTime = false
+                    sessionStart = Date()
+                }
+                .transition(.opacity)
+                .zIndex(10)
+            }
         }
         .animation(.easeInOut(duration: 0.35), value: route)
         .animation(.easeInOut(duration: 0.35), value: store.profile == nil)
-        .onAppear { updateMusic() }
+        .onAppear {
+            updateMusic()
+            if store.timeIsUp { restTime = true }
+        }
+        .onChange(of: restTime) { _, resting in
+            if resting {
+                Narrator.shared.stop()
+                SoundFX.shared.playMusic(.adventure)
+            }
+        }
         .onChange(of: route) { _, _ in updateMusic() }
         .onReceive(ticker) { _ in
+            // daily play limit (counts only while the app is open and in front)
+            if scenePhase == .active, store.profile != nil, !restTime, store.addPlayTime(20) {
+                restTime = true
+                return
+            }
             guard let minutes = store.profile?.breakReminderMinutes, minutes > 0, !showBreak else { return }
             if Date().timeIntervalSince(sessionStart) >= Double(minutes * 60) {
                 showBreak = true
@@ -80,7 +105,8 @@ struct RootView: View {
                          onKart: { route = .kartSelect },
                          onBop: { route = .bop },
                          onFort: { route = .fortSelect },
-                         onStickers: { route = .stickers })
+                         onStickers: { route = .stickers },
+                         onCastle: { route = .castle })
 
         case .bop:
             BopGameView(onExit: { route = .map(landing: nil) }) { stars, again in
@@ -112,6 +138,9 @@ struct RootView: View {
         case .codeClub:
             CodeClubView(onBack: { route = .map(landing: nil) },
                          onEarn: { stars in store.addStars(stars) })
+
+        case .castle:
+            MyCastleView(onBack: { route = .map(landing: nil) })
 
         case .stickers:
             StickerBookView(onBack: { route = .map(landing: nil) })

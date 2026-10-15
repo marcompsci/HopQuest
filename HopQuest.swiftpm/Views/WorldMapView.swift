@@ -9,6 +9,7 @@ struct WorldMapView: View {
     var onBop: () -> Void = {}
     var onFort: () -> Void = {}
     var onStickers: () -> Void = {}
+    var onCastle: () -> Void = {}
 
     @State private var showParent = false
     @State private var showCharacters = false
@@ -36,8 +37,22 @@ struct WorldMapView: View {
 
                 trail(size)
 
-                CastleView(theme: store.theme, width: min(size.width * 0.42, 190))
-                    .position(x: size.width * 0.5, y: size.height * 0.2)
+                Button {
+                    Haptics.tap()
+                    onCastle()
+                } label: {
+                    VStack(spacing: -18) {
+                        CastleView(theme: store.theme, width: min(size.width * 0.42, 190))
+                        Text("🏠 My Castle")
+                            .font(.kid(14, .black))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12).padding(.vertical, 5)
+                            .background(Capsule().fill(Palette.purple).shadow(color: Color(hex: 0x5B32D6), radius: 0, x: 0, y: 3))
+                    }
+                }
+                .buttonStyle(BouncyButtonStyle())
+                .accessibilityLabel("My Castle: decorate your room and visit your buddies")
+                .position(x: size.width * 0.5, y: size.height * 0.19)
 
                 ForEach(Chapters.all) { chapter in
                     node(chapter)

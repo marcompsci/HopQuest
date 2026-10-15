@@ -403,10 +403,50 @@ def code_club():
     {STATUS}</body>"""
 
 
+def my_castle():
+    W, rw = 390, 362
+    rh = rw / 0.92
+    ft = rh * 0.5
+    def item(name, x, y, flip=False):
+        wall = name in ("decor_painting", "decor_banner")
+        sc = 0.95 if wall else 0.75 + 0.45 * y
+        size = rw * 0.3 * sc
+        return f'<img src="{img(name)}" class="abs" style="left:{x*rw - size/2}px;top:{y*rh - size*0.96}px;width:{size}px;transform:scaleX({-1 if flip else 1})">'
+    def bud(cid, x, y):
+        size = rw * (0.2 + 0.08 * (y - 0.7) / 0.2) * 1.15
+        return f'<img src="{img("char_" + cid)}" class="abs" style="left:{x*rw - size/2}px;top:{y*rh - size*1.05}px;width:{size}px">'
+    room = (f'<div class="abs" style="left:0;top:0;width:{rw}px;height:{ft+4}px;background:linear-gradient(#E9D5FF,#D2B8FF)"></div>'
+            f'<img src="{img("room_window")}" class="abs" style="left:{rw*0.5 - rw*0.13}px;top:{ft*0.47 - rw*0.143}px;width:{rw*0.26}px">'
+            f'<img src="{img("room_floor")}" class="abs" style="left:0;top:{ft}px;width:{rw}px;height:{rh-ft}px;object-fit:cover">')
+    room += item("decor_rug", 0.5, 0.86) + item("decor_painting", 0.2, 0.36) + item("decor_banner", 0.8, 0.34)
+    room += item("decor_bookshelf", 0.14, 0.64) + item("decor_lamp", 0.86, 0.62) + item("decor_aquarium", 0.74, 0.72)
+    room += item("decor_plant", 0.32, 0.66) + item("decor_beanbag", 0.18, 0.95)
+    room += bud("lavender", 0.5, 0.9) + bud("pixelpup", 0.33, 0.8) + bud("ollie", 0.66, 0.85)
+    room += '<div class="abs" style="left:150px;top:255px;font-size:24px">💖 😋 💖</div>'
+    snacks = "".join(f'<div style="width:52px;height:52px;border-radius:50%;background:{"#FFF4C2" if i == 1 else "#fff"};{"box-shadow:inset 0 0 0 3px #FFB020" if i == 1 else ""};display:flex;align-items:center;justify-content:center"><img src="{img(n)}" style="width:40px"></div>'
+                     for i, n in enumerate(("snack_apple", "snack_cookie", "snack_ball")))
+    return f"""{BASE}<body style="background:linear-gradient(#F3ECFF,#FFF4E0)">
+    <div style="padding:54px 14px 0;display:flex;align-items:center;gap:10px">
+      <div style="width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#7C4DFF;font-size:22px">⌂</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px"><img src="{img('castle_rainbow')}" style="width:40px"><span style="font-size:28px;font-weight:900;color:#7C4DFF">My Castle</span></div>
+      <div style="height:44px;border-radius:99px;background:rgba(255,255,255,.92);padding:0 12px;display:flex;align-items:center;gap:4px;font-size:20px;font-weight:900"><img src="{img('goal_star')}" style="width:24px">12</div>
+    </div>
+    <div style="margin:10px 16px 0;background:#fff;border-radius:18px;padding:10px 14px;font-size:15px;font-weight:700;box-shadow:0 3px 0 rgba(124,77,255,.3)">Yum! Pixel Pup loves the cookie! Thank you for sharing.</div>
+    <div style="position:relative;margin:10px 14px 0;width:{rw}px;height:{rh}px;border-radius:28px;overflow:hidden;box-shadow:inset 0 0 0 4px #2B1B3D">{room}
+      <div class="abs" style="inset:0;border-radius:28px;box-shadow:inset 0 0 0 4px #2B1B3D;pointer-events:none"></div></div>
+    <div style="margin:10px 16px 0;display:flex;align-items:center;gap:10px"><span style="font-size:15px;font-weight:900">Tap a buddy!</span>{snacks}
+      <div style="margin-left:auto;width:48px;height:48px;border-radius:50%;background:linear-gradient(#E9D5FF,#D2B8FF);box-shadow:inset 0 0 0 3px #2B1B3D;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px">🖌</div></div>
+    <div style="margin:10px 16px 0;display:flex;gap:12px">
+      <div style="flex:1;height:60px;border-radius:22px;background:#FF9F45;box-shadow:0 6px 0 #FF9F4573;color:#fff;font-size:21px;font-weight:900;display:flex;align-items:center;justify-content:center">Decorate 🛋️</div>
+      <div style="flex:1;height:60px;border-radius:22px;background:#7C4DFF;box-shadow:0 6px 0 #7C4DFF73;color:#fff;font-size:21px;font-weight:900;display:flex;align-items:center;justify-content:center">Invite 💌</div>
+    </div>
+    {STATUS}</body>"""
+
+
 SCREENS = {"world-map": world_map, "buddy-picker": buddy_picker, "brain-gate": brain_gate,
            "robot-lab": robot_lab, "welcome": welcome, "balloon-flight": balloon_flight,
            "pillow-bop": bop_arena, "sticker-book": sticker_book,
-           "fort-friends": fort_friends, "code-club": code_club}
+           "fort-friends": fort_friends, "code-club": code_club, "my-castle": my_castle}
 
 with sync_playwright() as p:
     b = p.chromium.launch()

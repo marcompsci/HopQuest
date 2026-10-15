@@ -20,12 +20,61 @@ struct Question: Identifiable {
 
 /// Questions shown at Brain Gates. Answers never "fail" a kid — wrong picks just get a hint and another try.
 enum QuestionBank {
+    /// Who questions are pitched at: 1 little (4–5), 2 growing (6–7), 3 big (8–10).
+    /// GameStore keeps this in sync with the grown-ups' setting and how the child is doing.
+    static var tier = 2
+
     static func deck(for chapter: Chapter) -> [Question] {
-        var deck = road + nature + science + words
-        for _ in 0..<8 {
-            deck.append(math(level: chapter.difficulty))
+        var deck: [Question]
+        switch tier {
+        case 1:
+            deck = road + nature
+            deck += Array(science.prefix(4))
+            deck += littleWords
+            for _ in 0..<8 { deck.append(littleMath()) }
+        case 3:
+            deck = Array(road.shuffled().prefix(4))
+            deck += Array(nature.shuffled().prefix(3))
+            deck += Array(science.shuffled().prefix(2))
+            deck += bigScience
+            deck += bigWords
+            deck += bigNature
+            for _ in 0..<8 { deck.append(bigMath(level: chapter.difficulty)) }
+        default:
+            deck = road + nature + science + words
+            for _ in 0..<8 { deck.append(math(level: chapter.difficulty)) }
         }
         return deck.shuffled()
+    }
+
+    /// Little learners: counting pictures and adding within 5, with only three answers to pick from.
+    static func littleMath() -> Question {
+        if Bool.random() {
+            let things = ["🍎", "⭐", "🐟", "🎈", "🌼"].randomElement()!
+            let n = Int.random(in: 2...6)
+            return number("How many \(things) do you see?\n\(String(repeating: things + " ", count: n))", n,
+                          explain: "Let's count them together: \((1...n).map(String.init).joined(separator: ", ")). That's \(n)!", choices: 3)
+        }
+        let a = Int.random(in: 1...3), b = Int.random(in: 1...2)
+        return number("What is \(a) + \(b)?", a + b,
+                      explain: "Hold up \(a) fingers, then \(b) more. Count them all: \(a + b)!", choices: 3)
+    }
+
+    /// Big learners: times tables, two-digit adding, and sharing (division).
+    static func bigMath(level: CGFloat) -> Question {
+        switch Int.random(in: 0..<3) {
+        case 0:
+            let a = Int.random(in: 3...9), b = Int.random(in: 3...9)
+            return number("What is \(a) × \(b)?", a * b, explain: "\(a) groups of \(b) is \(a * b).")
+        case 1:
+            let a = Int.random(in: 15...49), b = Int.random(in: 11...39)
+            return number("What is \(a) + \(b)?", a + b,
+                          explain: "Add the tens, then the ones: \(a / 10 * 10 + b / 10 * 10) + \(a % 10 + b % 10) = \(a + b).")
+        default:
+            let b = Int.random(in: 2...6), q = Int.random(in: 2...8)
+            return number("Share \(b * q) cookies equally with \(b) friends. How many does each friend get?", q,
+                          explain: "\(b * q) ÷ \(b) = \(q), because \(b) × \(q) = \(b * q).")
+        }
     }
 
     static func math(level: CGFloat) -> Question {
@@ -44,9 +93,9 @@ enum QuestionBank {
         }
     }
 
-    private static func number(_ prompt: String, _ correct: Int, explain: String) -> Question {
+    private static func number(_ prompt: String, _ correct: Int, explain: String, choices: Int = 4) -> Question {
         var set: Set<Int> = [correct]
-        while set.count < 4 {
+        while set.count < choices {
             let candidate = correct + Int.random(in: -3...3)
             if candidate >= 0 { set.insert(candidate) }
         }
@@ -128,5 +177,53 @@ enum QuestionBank {
           "S-T-A-R: that's 4 letters."),
         q(.words, "Which word means a big home for a king or queen?", ["Castle", "Tent", "Cave"],
           "Castles are where kings and queens live in stories."),
+    ] }
+
+    // MARK: Little learners (short words, pictures)
+
+    static var littleWords: [Question] { [
+        q(.words, "Which word rhymes with CAT?", ["Hat", "Dog", "Sun"],
+          "Cat and hat both end with \"-at\"."),
+        q(.words, "What's the opposite of BIG?", ["Small", "Red", "Fast"],
+          "Big and small are opposites."),
+        q(.words, "Which one starts with the B sound? 🐻", ["Bear", "Moon", "Cake"],
+          "B-B-Bear starts with B."),
+        q(.words, "What sound does a cow make?", ["Moo", "Quack", "Woof"],
+          "Cows say moo!"),
+    ] }
+
+    // MARK: Big learners (8–10)
+
+    static var bigScience: [Question] { [
+        q(.science, "Which planet is closest to the Sun?", ["Mercury", "Mars", "Jupiter"],
+          "Mercury is the closest planet to the Sun, and the smallest."),
+        q(.science, "What do plants take in from the air to make food?", ["Carbon dioxide", "Salt", "Smoke"],
+          "Plants use sunlight, water, and carbon dioxide to make sugar. That's photosynthesis!"),
+        q(.science, "When water boils and turns into a gas, what is it called?", ["Steam", "Ice", "Juice"],
+          "Boiling turns liquid water into a gas called water vapor, or steam."),
+        q(.science, "A ramp that makes lifting easier is which simple machine?", ["Inclined plane", "Magnet", "Battery"],
+          "Ramps are inclined planes, one of the six simple machines."),
+        q(.science, "What part of a robot follows the code people write?", ["The computer chip", "The wheels", "The paint"],
+          "A tiny computer called a microcontroller runs the code."),
+    ] }
+
+    static var bigWords: [Question] { [
+        q(.words, "Which word means the same as HAPPY?", ["Joyful", "Tired", "Angry"],
+          "Joyful and happy are synonyms: words that mean the same thing."),
+        q(.words, "Which word is spelled correctly?", ["Because", "Becuase", "Becawse"],
+          "B-E-C-A-U-S-E spells because."),
+        q(.words, "Which word is a verb (an action word)?", ["Jump", "Blue", "Table"],
+          "Jump is something you do, so it's a verb."),
+        q(.words, "What is the plural of MOUSE?", ["Mice", "Mouses", "Meese"],
+          "One mouse, two mice. Some plurals are irregular!"),
+    ] }
+
+    static var bigNature: [Question] { [
+        q(.nature, "Which animal is a mammal?", ["Dolphin", "Shark", "Salmon"],
+          "Dolphins breathe air and feed their babies milk, so they're mammals."),
+        q(.nature, "What do caterpillars turn into?", ["Butterflies", "Bees", "Spiders"],
+          "Caterpillars make a chrysalis and come out as butterflies. That's metamorphosis!"),
+        q(.nature, "Where does most rain come from?", ["Water evaporating from oceans", "Mountains", "The Moon"],
+          "The Sun warms ocean water into vapor, it forms clouds, then falls as rain: the water cycle."),
     ] }
 }

@@ -1,4 +1,4 @@
-# HopQuest — Game Design Brief (v1.3)
+# HopQuest — Game Design Brief (v1.4)
 
 A kid-safe, educational hop-and-drive adventure for iPhone and iPad (ages ~5–10).
 Kids hop across roads and rivers, learn to drive at Driving School, build and code a robot,
@@ -34,6 +34,9 @@ and finish every level by jumping into a hot air balloon at their castle.
 | App icon (v1.2) | "Sunset Hop": Lavender Lop hops a crosswalk at sunset while a hot air balloon lands beside the rainbow castle, combining the game's two signature moments (crossing the road and the balloon finish). Built from the game's own vector art (ArtSource/make_icons.py); the other candidates are kept in ArtSource/icons |
 | Code Club, Robot Lab 2 (v1.3) | Five coding puzzles on a 6×6 grid, opened from the Robot Lab map stop once the robot is built (or from the Robot Lab finish screen). Adds a **Repeat block** (loops): tap Repeat, add steps inside, tap ×2 to change it to ×3/×4/×5, then End repeat. Puzzles teach loops (Loop Launch), loops plus turns (Corner Turn), patterns (Staircase: one loop holds forward-left-forward-right), planning around rocks (Rock Garden), and shapes (Square Dance: collect 3 gears and return, solved with repeat 4). Stars: reach the star; use the target number of blocks or fewer (a live counter shows it); collect every gear, or solve it first try. Puzzles unlock in order, and replaying only earns stars for improvements. Rocks block the robot with a gentle "Bonk!" and a hint |
 | Learning Report (v1.3) | Behind the parent gate: Brain Gate questions solved per subject (math, road safety, nature, science, words) with the share solved on the first try, plus progress in story levels, Code Club, Fort Friends, Bubble Kart, Pillow Bop, and stickers. Counted on the device only. Also fixes Pillow Bop best scores not being saved |
+| My Castle (v1.4) | A cozy home kids decorate (the Toca Boca / Animal Crossing gap). Tap the castle on the map. Spend stars on 16 furniture pieces (bed, bookshelf, fish tank, telescope, piano, rocket, trophy, and more; rug and plant are free), drag them anywhere, flip them, or put them away, and pick from 6 wall colors. Your buddy plus up to 3 invited Sticker Book buddies wander the room; tap one to hear its fun fact, or give an apple, cookie, or ball for hearts and a happy hop. Buddies never get hungry or sad: no guilt or decay mechanics |
+| Learning level (v1.4) | Brain Gates now match the child: Little (4–5) gets picture counting and adding within 5 with only 3 answers; Growing (6–7) keeps the original mix; Big (8–10) gets times tables to 9×9, two-digit adding, sharing/division, planets, photosynthesis, synonyms, spelling, verbs, plurals, mammals, metamorphosis, and the water cycle. Grown-ups pick the level, or Automatic steps up after a run of first-try answers and eases down when it's too hard. The Learning Report shows the current level and why |
+| Daily play limit (v1.4) | Grown-ups can set 20 min to 1½ hours a day. When time is up, the buddy says a gentle "time to rest" goodbye over a night sky, and the game waits until tomorrow; a grown-up can add 15 minutes behind a multiplication gate. Deliberately no streaks, daily-login rewards, or notifications |
 | Privacy | No network calls, ads, purchases, chat, analytics, or accounts. Profile stored locally only |
 
 Characters are original vector illustrations generated from ArtSource/make_characters.py (rendered to PNG); everything else is drawn in code. No third-party images to license. Swap in real illustrated art later without changing game logic.
@@ -134,6 +137,20 @@ These borrow **mechanics** that made top kids' games great, with original everyt
 3. ~~Add narration for every Brain Gate question and tip~~ — done in v0.2 with the built-in voice. Later: swap in recorded voice acting for the characters.
 4. Move levels to data files so new worlds don't need code changes. (Fort Friends levels are already text maps in `FortScene.swift`.)
 5. Privacy policy + App Store Kids Category submission.
+
+---
+
+## 8. Market check (October 2026): what leads, and what was missing
+
+**What's leading.** Curated lists and charts for kids' games are led by: Toca Boca World and Dr. Panda Town (open-ended role-play and decorating), Minecraft and Townscaper (building and creating), PBS Kids Games and Khan Academy Kids (trusted, no ads, learning built in), Pokémon Playhouse and Pou (caring for a character), Crossy Road and Where's My Water (quick arcade/puzzle play), and Build a Bridge! and Cut the Rope (physics/engineering puzzles).
+
+**What parents say (Lingokids Kids Interactive Entertainment Report 2026, a vendor survey of US parents):** safety is the top priority (87.7%), ahead of fun (67.3%) and learning (64.8%); 73% prefer interactive over passive screen time; 76% see screen time as family time; 85% feel screen-time guilt; 55% feel "almost anything" gets onto kids' platforms; and they want curated, closed environments over endless feeds.
+
+**Top parent complaints in app reviews (Unstar, 2026):** ads and purchases aimed at kids; paywalls; inappropriate content; data collection; addictive design (autoplay, streaks, daily-login rewards, push notifications); weak parental controls (guessable PINs); one-size "ages 3–8" content that doesn't fit younger or older kids; poor performance on older devices.
+
+**How HopQuest lines up.** Already covered: no ads, purchases, chat, data collection, or network; a typed math parental gate; co-play (Grown-up & Me); learning built into play; building (Fort Friends); coding (Code Club). **Gaps filled in v1.4:** open-ended creativity and decorating (My Castle); nurturing a character, without guilt mechanics (buddy treats); questions that fit the child's age and adapt (Learning level); healthy limits with no nagging (Daily play limit).
+
+Sources: [Lingokids report](https://lingokids.com/research/kids-interactive-entertainment-report-2026) · [Lingokids press release](https://www.prnewswire.com/news-releases/report-parents-feel-like-almost-anything-can-get-on-a-kids-app-302831847.html) · [Unstar: parent complaints](https://unstar.app/blog/kids-parenting-app-reviews-what-parents-complain-about-2026) · [NipsApp: top kids learning games](https://nipsapp.com/top-10-kids-learning-games-2025/) · [Gaming.net: best kids games](https://www.gaming.net/best-kids-games-on-ios-android/) · [Vecosys: free games parents trust](https://www.vecosys.com/best-free-mobile-games-kids-2026/) · [ScreenWise: gaming trends](https://screenwiseapp.com/guides/gaming-trends-parents-should-know)
 
 ---
 
