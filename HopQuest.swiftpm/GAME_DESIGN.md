@@ -156,6 +156,19 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - **Life.** Animated water and fountain, butterflies, falling leaves and cloud shadows. In the evening (by the device clock) there are fireflies and lamps. Grown-ups can turn on "lighter effects" for older phones.
 - **Tests.** `Tests/VillageLogic/run.sh` compiles the pure village logic (map, A*, collision, movement, NPC brains, save state) with `swiftc` and runs about 149,000 checks.
 
+### v2.2: smooth 3D buddies and a real Hop
+- **Buddies look 3D.** `ArtSource/make_buddies3d.py` bakes soft volume lighting into each original illustration:
+  - a height field (a silhouette dome plus a "pillow" for every inked part), turned into normals
+  - light from the top-left: diffuse, a soft toy-like shine, and a cool rim light
+  - a touch of ambient occlusion toward the feet
+- **Smooth motion.** The village now draws these `buddy3d_<id>` textures with smooth filtering and procedural animation instead of pixel frame-flips:
+  - bounce, sway and squash-and-stretch while walking
+  - a quick flip when turning
+  - breathing while idle
+  - jumps when cheering
+  - a soft contact shadow
+- **Hop button.** It now hops the buddy about 2 tiles forward in an arc, with stretch on takeoff and squash on landing. Walls, trees and water stop the hop early, and the joystick waits until landing. Tested.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

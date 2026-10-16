@@ -17,6 +17,39 @@ struct VillagePlayerController {
 
     /// Tiles per second at full joystick tilt.
     static let speed = 3.6
+    /// The Hop button: how far (tiles) and how long (seconds) one hop forward takes.
+    static let hopDistance = 2.0
+    static let hopDuration = 0.45
+
+    /// 0...1 through a hop, or nil on the ground.
+    private(set) var hopProgress: Double?
+    private var hopFrom = VPoint.zero
+    private var hopTo = VPoint.zero
+    /// True for the one step a hop lands on.
+    private(set) var justLanded = false
+
+    var isHopping: Bool { hopProgress != nil }
+    /// 0 on the ground, 1 at the top of the arc.
+    var hopHeight: Double { hopProgress.map { sin($0 * .pi) } ?? 0 }
+
+    /// Hop forward a couple of tiles the way the buddy is facing. Walls, trees and water stop the hop early
+    /// (the buddy lands right in front of them). Returns false if already mid-hop.
+    @discardableResult
+    mutating func hopForward() -> Bool {
+        guard hopProgress == nil else { return false }
+        let dir: VPoint
+        switch facing {
+        case .north: dir = VPoint(0, -1)
+        case .south: dir = VPoint(0, 1)
+        case .east: dir = VPoint(1, 0)
+        case .west: dir = VPoint(-1, 0)
+        }
+        waypoints = []
+        hopFrom = position
+        hopTo = collision.move(position, by: dir * Self.hopDistance)
+        hopProgress = 0
+        return true
+    }
 
     init(map: VillageMap, start: GridPoint, facing: Facing = .south) {
         collision = VillageCollision(map: map)
@@ -45,6 +78,10 @@ struct VillagePlayerController {
         waypoints = []
         joystick = .zero
         isMoving = false
+        if hopProgress != nil {
+            position = hopTo
+            hopProgress = nil
+        }
     }
 
     /// Put the buddy somewhere directly (spawning, coming back through a door).
@@ -59,6 +96,24 @@ struct VillagePlayerController {
     /// One fixed step. Returns the distance actually moved.
     @discardableResult
     mutating func step(dt: Double) -> Double {
+        justLanded = false
+        if let p = hopProgress {
+            // mid-air: glide along the (already collision-checked) straight line; the joystick waits
+            let np = min(1, p + dt / Self.hopDuration)
+            let eased = np * np * (3 - 2 * np)
+            let before = position
+            position = hopFrom + (hopTo - hopFrom) * eased
+            let moved = position.distance(to: before)
+            stride += moved
+            isMoving = false
+            if np >= 1 {
+                hopProgress = nil
+                justLanded = true
+            } else {
+                hopProgress = np
+            }
+            return moved
+        }
         var velocity = VPoint.zero
         let stick = joystick.length
         if stick > 0.15 {

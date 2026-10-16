@@ -71,139 +71,267 @@ enum VillageArt {
     }
 }
 
-/// The animation frames for one buddy, sliced from its px_<id> sheet (see ArtSource/make_village.py).
-final class BuddyAnimations {
-    let frames: [String: [SKTexture]]
-    private static var cache: [String: BuddyAnimations] = [:]
+/// Smooth, shaded ("3D") buddy textures: buddy3d_<id>, baked by ArtSource/make_buddies3d.py from the
+/// original illustrations. Falls back to the plain illustration if one is missing.
+enum BuddyTextures {
+    private static var cache: [String: SKTexture] = [:]
+    private static var shadowTex: SKTexture?
 
-    private init(frames: [String: [SKTexture]]) { self.frames = frames }
-
-    static func load(_ characterID: String) -> BuddyAnimations? {
-        if let a = cache[characterID] { return a }
-        guard let sheet = VillageArt.sheet("px_\(characterID)") else { return nil }
-        let cell = VillageAtlas.buddyCell
-        let sheetSize = CGSize(width: cell.width * 4, height: cell.height * CGFloat(VillageAtlas.buddyRows.count))
-        var out: [String: [SKTexture]] = [:]
-        for (row, entry) in VillageAtlas.buddyRows.enumerated() {
-            out[entry.name] = (0..<entry.frames).map { col in
-                VillageArt.slice(sheet, pixels: CGRect(x: CGFloat(col) * cell.width, y: CGFloat(row) * cell.height,
-                                                       width: cell.width, height: cell.height), sheetSize: sheetSize)
-            }
+    static func texture(_ c: GameCharacter) -> SKTexture? {
+        if let t = cache[c.id] { return t }
+        let t: SKTexture?
+        if let img = ArtLibrary.image("buddy3d_\(c.id)") {
+            t = SKTexture(image: img)
+        } else {
+            t = SpriteFactory.texture(c)
         }
-        let a = BuddyAnimations(frames: out)
-        cache[characterID] = a
-        return a
+        t?.filteringMode = .linear
+        cache[c.id] = t
+        return t
+    }
+
+    /// A soft, round contact shadow.
+    static var shadow: SKTexture {
+        if let shadowTex { return shadowTex }
+        let size = CGSize(width: 64, height: 24)
+        let img = UIGraphicsImageRenderer(size: size).image { ctx in
+            let colors = [UIColor(white: 0, alpha: 0.32).cgColor, UIColor(white: 0, alpha: 0).cgColor] as CFArray
+            guard let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) else { return }
+            ctx.cgContext.scaleBy(x: 1, y: size.height / size.width)
+            let c = CGPoint(x: size.width / 2, y: size.width / 2)
+            ctx.cgContext.drawRadialGradient(g, startCenter: c, startRadius: 0, endCenter: c, endRadius: size.width / 2, options: [])
+        }
+        let t = SKTexture(image: img)
+        shadowTex = t
+        return t
     }
 }
 
-/// A buddy in the village: a pixel sprite with a shadow, a walk cycle on every side, hop arcs and
-/// one-shot moves (celebrate, talk, interact). Its position is the point between its feet.
+/// A buddy in the village: a smooth, shaded figure that bounces, sways and squashes as it walks, turns around
+/// with a quick flip, hops in an arc, and breathes when standing still. Its position is the point between its feet.
+///
+/// Node layers: root (position) → shadow, rig (per-frame walk/hop motion) → actor (looping and one-shot moves)
+/// → art (left/right turn).
 final class BuddySprite: SKNode {
     let character: GameCharacter
-    private let art: SKSpriteNode
     private let shadowNode: SKSpriteNode
-    private let anims: BuddyAnimations?
-    private var looping = ""
-    private var lastHop = 0
+    private let rig = SKNode()
+    private let actor = SKNode()
+    private let art: SKSpriteNode
+    private var facingSign: CGFloat = 1
+    private var loop = ""
     private var oneShot = false
-    /// Called each time a hop lands (for dust puffs and lily pad dips).
+    private var lastStep = 0
+    private var wasHopping = false
+    /// Called each time a step or hop lands (for dust puffs and lily pad dips).
     var onLand: (() -> Void)?
 
-    static let hopsPerTile = 1.6
-    static let hopHeight: CGFloat = 7
+    /// On-screen height in points (about 1.9 tiles).
+    static let height: CGFloat = 92
+    static let stepsPerTile = 1.6
+    static let hopArc: CGFloat = 38
 
     init(character: GameCharacter) {
         self.character = character
-        anims = BuddyAnimations.load(character.id)
-        let cell = VillageAtlas.buddyCell
-        art = SKSpriteNode(texture: anims?.frames["idle"]?.first)
-        art.size = CGSize(width: cell.width * VillageArt.scale, height: cell.height * VillageArt.scale)
-        art.anchorPoint = CGPoint(x: 0.5, y: VillageAtlas.buddyFeet / cell.height)
-        shadowNode = VillageArt.propNode("shadow")
-        shadowNode.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        shadowNode.position = CGPoint(x: 0, y: 2)
+        let tex = BuddyTextures.texture(character)
+        art = SKSpriteNode(texture: tex)
+        let aspect = tex.map { $0.size().width / max(1, $0.size().height) } ?? 0.9
+        art.size = CGSize(width: Self.height * aspect, height: Self.height)
+        art.anchorPoint = CGPoint(x: 0.5, y: 0.05)
+        shadowNode = SKSpriteNode(texture: BuddyTextures.shadow)
+        shadowNode.size = CGSize(width: max(46, Self.height * aspect * 0.78), height: 18)
+        shadowNode.position = CGPoint(x: 0, y: 3)
         shadowNode.zPosition = -0.5
         super.init()
         addChild(shadowNode)
-        if anims == nil {
-            // art missing: fall back to the regular illustrated buddy so the game still works
-            art.isHidden = true
-            addChild(SpriteFactory.character(character, size: 60))
+        addChild(rig)
+        rig.addChild(actor)
+        if tex == nil {
+            actor.addChild(SpriteFactory.character(character, size: 60))
+        } else {
+            actor.addChild(art)
         }
-        addChild(art)
-        playLoop("idle", fps: 2.5)
+        startLoop("idle")
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    private func textures(_ name: String) -> [SKTexture] { anims?.frames[name] ?? [] }
+    // MARK: Per-frame motion
 
-    func playLoop(_ name: String, fps: Double) {
-        guard looping != name, !oneShot else { return }
-        looping = name
-        art.removeAction(forKey: "anim")
-        let tex = textures(name)
-        guard tex.count > 1 else { if let t = tex.first { art.texture = t }; return }
-        art.run(.repeatForever(.animate(with: tex, timePerFrame: 1 / fps)), withKey: "anim")
-    }
-
-    /// Plays a move once, then goes back to idle.
-    func playOnce(_ name: String, fps: Double = 8, repeats: Int = 1) {
-        let tex = textures(name)
-        guard !tex.isEmpty else { return }
-        oneShot = true
-        looping = ""
-        art.removeAction(forKey: "anim")
-        art.position.y = 0
-        art.run(.sequence([.repeat(.animate(with: tex, timePerFrame: 1 / fps), count: repeats),
-                           .run { [weak self] in self?.oneShot = false; self?.playLoop("idle", fps: 2.5) }]),
-                withKey: "anim")
-    }
-
-    /// Called every frame with the mover's state. Walking is frame-by-frame from the distance walked,
-    /// so feet and hops always match the ground speed.
-    func update(stride: Double, facing: Facing, moving: Bool) {
-        art.xScale = facing == .west ? -1 : 1
-        guard !oneShot else { return }
+    /// Called every frame with the mover's state. `hop` is 0...1 through a hop (0 = on the ground).
+    func update(stride: Double, facing: Facing, moving: Bool, hop: Double = 0) {
+        face(facing)
+        if hop > 0 {
+            wasHopping = true
+            stopLoop()
+            let h = CGFloat(sin(hop * .pi))
+            rig.position.y = h * Self.hopArc
+            // stretch on the way up, squash just before landing
+            let stretch = CGFloat(hop < 0.5 ? 0.10 * (1 - hop * 2) : -0.08 * (hop - 0.5) * 2)
+            rig.yScale = 1 + stretch
+            rig.xScale = 1 - stretch * 0.6
+            rig.zRotation = -facingSign * 0.12 * h
+            shadowNode.setScale(1 - 0.45 * h)
+            shadowNode.alpha = 1 - 0.5 * h
+            return
+        }
+        if wasHopping {
+            wasHopping = false
+            land()
+        }
         if moving {
-            looping = ""
-            art.removeAction(forKey: "anim")
-            let row: String
-            switch facing {
-            case .south: row = "walkS"
-            case .north: row = "walkN"
-            case .east, .west: row = "walkE"
-            }
-            let tex = textures(row)
-            let phase = stride * Self.hopsPerTile
-            if !tex.isEmpty { art.texture = tex[Int(phase * 2) % tex.count] }
-            // a little hop on every step
-            let frac = phase - floor(phase)
-            art.position.y = CGFloat(sin(frac * .pi)) * Self.hopHeight
-            shadowNode.setScale(1 - 0.18 * CGFloat(sin(frac * .pi)))
-            let hop = Int(phase)
-            if hop != lastHop { lastHop = hop; onLand?() }
+            stopLoop()
+            let phase = stride * Self.stepsPerTile
+            let f = phase - floor(phase)
+            let lift = CGFloat(sin(f * .pi))
+            let contact = 1 - lift
+            rig.position.y = lift * 7
+            // sway side to side each step, lean a little into the walk
+            let lean: CGFloat = (facing == .east || facing == .west) ? -facingSign * 0.06 : 0
+            rig.zRotation = CGFloat(sin(phase * .pi)) * 0.07 + lean
+            rig.yScale = 1 - 0.07 * contact * contact
+            rig.xScale = 1 + 0.05 * contact * contact
+            shadowNode.setScale(1 - 0.15 * lift)
+            shadowNode.alpha = 1
+            let step = Int(phase)
+            if step != lastStep { lastStep = step; onLand?() }
         } else {
-            art.position.y = 0
+            rig.position.y = 0
+            rig.zRotation *= 0.6
+            rig.xScale = 1
+            rig.yScale = 1
             shadowNode.setScale(1)
-            if facing == .south {
-                playLoop("idle", fps: 2.5)
-            } else {
-                // standing still facing away or sideways: the standing frame of that walk cycle
-                looping = ""
-                art.removeAction(forKey: "anim")
-                let row = facing == .north ? "walkN" : "walkE"
-                if let t = textures(row).dropFirst().first { art.texture = t }
-            }
+            shadowNode.alpha = 1
+            startLoop("idle")
         }
     }
 
-    /// Turns the sprite without changing its animation.
-    func face(_ facing: Facing) { art.xScale = facing == .west ? -1 : 1 }
+    /// Turns to face left/right with a quick flip; facing away dims the buddy a touch (we see their back).
+    func face(_ facing: Facing) {
+        let sign: CGFloat
+        switch facing {
+        case .west: sign = -1
+        case .east: sign = 1
+        default: sign = facingSign
+        }
+        if sign != facingSign {
+            facingSign = sign
+            art.run(SKAction.scaleX(to: sign, duration: 0.14), withKey: "turn")
+        }
+        art.color = .black
+        art.colorBlendFactor = facing == .north ? 0.14 : 0
+    }
 
-    /// Looping move used while talking or performing an activity.
+    // MARK: Moves
+
+    /// Looping move while talking or doing an activity ("talk" or "celebrate").
     func setActivity(_ name: String?) {
-        guard !oneShot else { return }
-        if let name { playLoop(name, fps: name == "talk" ? 4 : 6) }
+        guard let name else { return }
+        rig.position.y = 0
+        rig.zRotation = 0
+        startLoop(name)
+    }
+
+    /// Plays a move once ("hop", "celebrate", "interact"), then goes back to idle.
+    func playOnce(_ name: String, fps: Double = 8, repeats: Int = 1) {
+        let move: SKAction
+        switch name {
+        case "hop":
+            move = jump(height: 30, duration: 0.42)
+        case "celebrate":
+            let spin = SKAction.sequence([.scaleX(to: -facingSign, duration: 0.12), .scaleX(to: facingSign, duration: 0.12)])
+            art.run(.repeat(spin, count: max(1, repeats)), withKey: "turn")
+            move = .repeat(jump(height: 26, duration: 0.4), count: max(1, repeats))
+            sparkle()
+        default: // "interact": a friendly wave (wiggle)
+            let wiggle = SKAction.sequence([.rotate(toAngle: 0.12, duration: 0.12), .rotate(toAngle: -0.12, duration: 0.18),
+                                            .rotate(toAngle: 0, duration: 0.12)])
+            move = .repeat(wiggle, count: max(1, repeats))
+        }
+        oneShot = true
+        loop = ""
+        actor.removeAction(forKey: "loop")
+        actor.run(.sequence([move, .run { [weak self] in
+            self?.oneShot = false
+            self?.startLoop("idle")
+        }]), withKey: "once")
+    }
+
+    private func jump(height: CGFloat, duration: Double) -> SKAction {
+        let crouch = SKAction.group([.scaleX(to: 1.08, duration: 0.06), .scaleY(to: 0.9, duration: 0.06)])
+        let up = SKAction.group([.moveTo(y: height, duration: duration * 0.45), .scaleX(to: 0.95, duration: duration * 0.2),
+                                 .scaleY(to: 1.07, duration: duration * 0.2)])
+        up.timingMode = .easeOut
+        let down = SKAction.group([.moveTo(y: 0, duration: duration * 0.4), .scaleX(to: 1, duration: duration * 0.4),
+                                   .scaleY(to: 1, duration: duration * 0.4)])
+        down.timingMode = .easeIn
+        let land = SKAction.sequence([.group([.scaleX(to: 1.1, duration: 0.05), .scaleY(to: 0.9, duration: 0.05)]),
+                                      .group([.scaleX(to: 1, duration: 0.1), .scaleY(to: 1, duration: 0.1)])])
+        return .sequence([crouch, up, down, .run { [weak self] in self?.onLand?() }, land])
+    }
+
+    private func land() {
+        onLand?()
+        rig.position.y = 0
+        rig.zRotation = 0
+        rig.xScale = 1
+        rig.yScale = 1
+        actor.run(.sequence([.group([.scaleX(to: 1.12, duration: 0.05), .scaleY(to: 0.86, duration: 0.05)]),
+                             .group([.scaleX(to: 1, duration: 0.14), .scaleY(to: 1, duration: 0.14)])]), withKey: "land")
+        shadowNode.setScale(1)
+        shadowNode.alpha = 1
+    }
+
+    private func sparkle() {
+        for i in 0..<5 {
+            let s = VillageArt.propNode("sparkle")
+            s.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            let a = Double(i) / 5 * 2 * .pi
+            s.position = CGPoint(x: 0, y: Self.height * 0.55)
+            s.setScale(0.6)
+            s.zPosition = 2
+            addChild(s)
+            s.run(.sequence([.group([.moveBy(x: CGFloat(cos(a)) * 46, y: CGFloat(sin(a)) * 46 + 20, duration: 0.5),
+                                     .scale(to: 1.1, duration: 0.5), .fadeOut(withDuration: 0.6)]),
+                             .removeFromParent()]))
+        }
+    }
+
+    // MARK: Loops
+
+    private func startLoop(_ name: String) {
+        guard !oneShot, loop != name else { return }
+        loop = name
+        actor.removeAction(forKey: "loop")
+        actor.position = .zero
+        actor.zRotation = 0
+        actor.setScale(1)
+        let action: SKAction
+        switch name {
+        case "talk":
+            let nod = SKAction.sequence([.group([.rotate(toAngle: 0.05, duration: 0.18), .scaleY(to: 0.97, duration: 0.18)]),
+                                         .group([.rotate(toAngle: -0.04, duration: 0.2), .scaleY(to: 1.0, duration: 0.2)])])
+            action = .repeatForever(nod)
+        case "celebrate":
+            action = .repeatForever(.sequence([jump(height: 22, duration: 0.38), .wait(forDuration: 0.15)]))
+        default: // idle: gentle breathing with a tiny sway
+            let inhale = SKAction.group([.scaleY(to: 1.035, duration: 0.95), .scaleX(to: 0.985, duration: 0.95),
+                                         .rotate(toAngle: 0.015, duration: 0.95)])
+            inhale.timingMode = .easeInEaseOut
+            let exhale = SKAction.group([.scaleY(to: 1.0, duration: 0.95), .scaleX(to: 1.0, duration: 0.95),
+                                         .rotate(toAngle: -0.015, duration: 0.95)])
+            exhale.timingMode = .easeInEaseOut
+            action = .repeatForever(.sequence([inhale, exhale]))
+        }
+        actor.run(action, withKey: "loop")
+    }
+
+    private func stopLoop() {
+        guard !loop.isEmpty, !oneShot else { return }
+        loop = ""
+        actor.removeAction(forKey: "loop")
+        actor.position = .zero
+        actor.zRotation = 0
+        actor.setScale(1)
     }
 }

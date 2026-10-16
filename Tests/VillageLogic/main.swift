@@ -148,6 +148,36 @@ test("tapping a building or a tree walks to the nearest open tile") {
     check(p.tile.r == castle.maxR + 1, "stopped just in front of the castle")
 }
 
+test("Hop button: hops forward about 2 tiles, never into walls, joystick waits") {
+    var p = VillagePlayerController(map: map, start: map.spawn, facing: .south)
+    let start = p.position
+    check(p.hopForward(), "hop starts")
+    check(!p.hopForward(), "no double hop mid-air")
+    p.joystick = VPoint(1, 0)
+    var frames = 0
+    var peak = 0.0
+    while p.isHopping && frames < 120 { p.step(dt: 1.0 / 60); peak = max(peak, p.hopHeight); frames += 1
+        check(col.fits(p.position), "never inside a wall mid-hop") }
+    check(abs(p.position.y - start.y - VillagePlayerController.hopDistance) < 1e-6 && p.position.x == start.x, "landed 2 tiles south (\(p.position))")
+    check(p.justLanded, "landing reported")
+    check(abs(frames - Int(VillagePlayerController.hopDuration * 60)) <= 1, "takes the hop duration (\(frames) frames)")
+    check(peak > 0.95, "rises to full height")
+    p.step(dt: 1.0 / 60)
+    check(p.position.x > start.x, "joystick works again after landing")
+
+    // hop toward the castle wall: stops at the wall
+    let castle = map.building(.castle)!
+    var q = VillagePlayerController(map: map, start: castle.doorstep, facing: .north)
+    q.hopForward()
+    for _ in 0..<60 { q.step(dt: 1.0 / 60) }
+    check(col.fits(q.position) && q.position.y >= Double(castle.maxR + 1) + col.radius - 1e-6, "can't hop into the castle")
+    // hop toward water: lands on the shore
+    var w = VillagePlayerController(map: map, start: GridPoint(17, 46), facing: .east)
+    w.hopForward()
+    for _ in 0..<60 { w.step(dt: 1.0 / 60) }
+    check(col.fits(w.position) && map.isWalkable(w.tile), "stops at the water's edge")
+}
+
 test("joystick overrides a tap path") {
     var p = VillagePlayerController(map: map, start: map.spawn)
     p.walk(to: map.building(.cottage)!.doorstep)

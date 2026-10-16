@@ -199,7 +199,7 @@ struct HopVillageView: View {
         case nil:
             VillageActionButton(title: "Hop!", icon: "hare.fill", color: Color(hex: 0xFF7A59)) {
                 Haptics.bump(.hop)
-                scene?.hopInPlace()
+                scene?.hopForward()
             }
         }
     }

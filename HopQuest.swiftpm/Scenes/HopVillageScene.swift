@@ -117,11 +117,13 @@ final class HopVillageScene: SKScene {
         frozen = false
     }
 
-    /// The action button with nothing in reach: a happy hop on the spot.
-    func hopInPlace() {
+    /// The Hop button: a big hop forward (a couple of tiles) the way the buddy is facing.
+    func hopForward() {
         guard !frozen else { return }
-        playerSprite.playOnce("hop", fps: 9)
-        environment?.dust(at: scenePoint(player.position), z: playerSprite.zPosition)
+        pendingActivate = nil
+        if player.hopForward() {
+            environment?.dust(at: scenePoint(player.position), z: playerSprite.zPosition)
+        }
     }
 
     /// The buddy cheers (after a reward).
@@ -422,7 +424,7 @@ final class HopVillageScene: SKScene {
         let pp = scenePoint(player.position)
         playerSprite.position = pp
         playerSprite.zPosition = depth(pp.y)
-        playerSprite.update(stride: player.stride, facing: player.facing, moving: player.isMoving)
+        playerSprite.update(stride: player.stride, facing: player.facing, moving: player.isMoving, hop: player.hopProgress ?? 0)
 
         for npc in npcs {
             let p = scenePoint(npc.position)
