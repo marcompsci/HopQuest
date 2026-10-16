@@ -163,6 +163,8 @@ struct PlayerProfile: Codable, Equatable {
     var dailyLimitMinutes: Int = 0
     var playDay: String = ""
     var playedSeconds: Int = 0
+    /// Hop Village: where the buddy is standing, who they've met, and village settings.
+    var village = VillageSaveState()
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -170,6 +172,7 @@ struct PlayerProfile: Codable, Equatable {
         case codeBest, brainAnswered, brainFirstTry
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
+        case village
     }
 }
 
@@ -204,6 +207,8 @@ extension PlayerProfile {
         dailyLimitMinutes = try c.decodeIfPresent(Int.self, forKey: .dailyLimitMinutes) ?? 0
         playDay = try c.decodeIfPresent(String.self, forKey: .playDay) ?? ""
         playedSeconds = try c.decodeIfPresent(Int.self, forKey: .playedSeconds) ?? 0
+        // Saves from before Hop Village have no village block; a damaged one never blocks the rest of the save.
+        village = (try? c.decodeIfPresent(VillageSaveState.self, forKey: .village)) ?? VillageSaveState()
     }
 }
 
@@ -347,6 +352,34 @@ final class GameStore: ObservableObject {
         guard var p = profile else { return }
         p.playedSeconds = max(0, p.playedSeconds - minutes * 60)
         profile = p
+    }
+
+    // MARK: Hop Village
+
+    /// Changes the village save block (only writes when something actually changed).
+    func updateVillage(_ change: (inout VillageSaveState) -> Void) {
+        guard var p = profile else { return }
+        var v = p.village
+        change(&v)
+        guard v != p.village else { return }
+        p.village = v
+        profile = p
+    }
+
+    /// A village buddy's riddle was solved. Returns true (and gives one star) only the first time ever.
+    @discardableResult
+    func solveVillageRiddle(_ npcID: String) -> Bool {
+        guard var p = profile, !p.village.solved.contains(npcID) else { return false }
+        p.village.solved.insert(npcID)
+        p.stars += 1
+        p.lifetimeStars += 1
+        profile = p
+        return true
+    }
+
+    /// Can this story chapter be played now (open or already done)?
+    func isPlayable(_ chapterID: Int) -> Bool {
+        state(of: Chapters.chapter(chapterID)) != .locked
     }
 
     func recordFort(level: Int, balloons: Int) {

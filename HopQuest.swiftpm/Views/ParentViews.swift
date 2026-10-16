@@ -134,6 +134,15 @@ struct ParentSettingsView: View {
                 Text("When time is up, your child's buddy says a gentle goodbye and the game rests until tomorrow. HopQuest has no streaks, no daily-login rewards, and never sends notifications, so it won't nag kids to come back.")
             }
 
+            Section {
+                Toggle("Lighter effects (older phones)", isOn: villageBinding(\.lightEffects))
+                Toggle("Evening lights follow the clock", isOn: villageBinding(\.eveningLights))
+            } header: {
+                Text("Hop Village")
+            } footer: {
+                Text("HopQuest reopens wherever your child left off: the village or the map. Lighter effects shows fewer butterflies, leaves, and fireflies. Village buddies only say pre-written, kid-safe lines; there's no chat and nothing goes online.")
+            }
+
             Section("Play time") {
                 Picker("Stretch-break reminder", selection: binding(\.breakReminderMinutes, 30)) {
                     Text("Off").tag(0)
@@ -182,6 +191,13 @@ struct ParentSettingsView: View {
         Binding(
             get: { store.profile?[keyPath: keyPath] ?? fallback },
             set: { store.profile?[keyPath: keyPath] = $0 }
+        )
+    }
+
+    private func villageBinding(_ keyPath: WritableKeyPath<VillageSaveState, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { store.profile?.village[keyPath: keyPath] ?? false },
+            set: { value in store.updateVillage { $0[keyPath: keyPath] = value } }
         )
     }
 }

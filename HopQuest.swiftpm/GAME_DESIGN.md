@@ -1,4 +1,4 @@
-# HopQuest — Game Design Brief (v1.4)
+# HopQuest — Game Design Brief (v2.0 in progress: Hop Village)
 
 A kid-safe, educational hop-and-drive adventure for iPhone and iPad (ages ~5–10).
 Kids hop across roads and rivers, learn to drive at Driving School, build and code a robot,
@@ -129,6 +129,32 @@ These borrow **mechanics** that made top kids' games great, with original everyt
 **More** — ✅ sticker book shipped in v1.0. Still to do: seasonal castle skins, VoiceOver labels on all game objects.
 
 ---
+
+## 6b. HopQuest 2.0: Hop Village (branch `feature/hop-village`)
+
+A walkable pixel-art overworld. The child moves their buddy around a village and walks through doors into every existing mode. Full architecture is in `docs/VILLAGE_ARCHITECTURE.md` in the repo.
+
+- **World.** 40×48 tiles, top-down three-quarter view, drawn as crisp 16 px pixel art at 3×. Places:
+  - Village Square, with a fountain
+  - My Castle
+  - Sticker Book Museum
+  - Pillow Bop Arena, on a lake island
+  - Robot Workshop
+  - Driving Academy, with a practice road
+  - Fort Friends Construction Yard
+  - Bubble Kart Stadium
+  - Adventure Forest, with a lily-pad pond and three portals to the Hop levels
+- **Controls.** Drag the joystick, or tap anywhere to walk there (A* pathfinding). One big action button shows Talk, Go in, Hop in!, or Hop! for fun. Walking into a door also opens it.
+- **Buddies.** Every one of the 23 buddies has a pixel animation sheet made from its original art: idle, walk in 4 directions, hop, celebrate, talk and interact. Village NPCs run a state machine (idle, wander, approach, talk, activity, return home) and are deterministic.
+  - Ollie Owl: science
+  - Pixel Pup: road safety
+  - Iron Acorn: math
+  - Pip Penguin: nature
+  - Stella Strawberry: words
+- **Learning.** Each buddy has fixed, written dialogue and a Brain Gate riddle pitched at the child's learning level. The first solve per buddy gives 1 star, once ever: no daily resets, no streaks.
+- **Progress.** Every game still reports through `RootView`. The village only decides where the balloon lands (back in the village). The village block in the save is optional and versioned, so older saves load unchanged.
+- **Life.** Animated water and fountain, butterflies, falling leaves and cloud shadows. In the evening (by the device clock) there are fireflies and lamps. Grown-ups can turn on "lighter effects" for older phones.
+- **Tests.** `Tests/VillageLogic/run.sh` compiles the pure village logic (map, A*, collision, movement, NPC brains, save state) with `swiftc` and runs about 149,000 checks.
 
 ## 7. Next engineering steps
 

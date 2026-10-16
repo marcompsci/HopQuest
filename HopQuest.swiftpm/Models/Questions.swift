@@ -47,6 +47,26 @@ enum QuestionBank {
         return deck.shuffled()
     }
 
+    /// One question on a subject, pitched at the current learning level (used by Hop Village buddies).
+    static func one(_ subject: Subject) -> Question {
+        let pool: [Question]
+        switch (subject, tier) {
+        case (.math, 1): return littleMath()
+        case (.math, 3): return bigMath(level: 0.4)
+        case (.math, _): return math(level: 0.3)
+        case (.road, _): pool = road
+        case (.nature, 3): pool = nature + bigNature
+        case (.nature, _): pool = nature
+        case (.science, 1): pool = Array(science.prefix(4))
+        case (.science, 3): pool = science + bigScience
+        case (.science, _): pool = science
+        case (.words, 1): pool = littleWords
+        case (.words, 3): pool = words + bigWords
+        case (.words, _): pool = words
+        }
+        return pool.randomElement() ?? math(level: 0.3)
+    }
+
     /// Little learners: counting pictures and adding within 5, with only three answers to pick from.
     static func littleMath() -> Question {
         if Bool.random() {

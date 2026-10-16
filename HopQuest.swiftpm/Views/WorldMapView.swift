@@ -10,6 +10,7 @@ struct WorldMapView: View {
     var onFort: () -> Void = {}
     var onStickers: () -> Void = {}
     var onCastle: () -> Void = {}
+    var onVillage: () -> Void = {}
 
     @State private var showParent = false
     @State private var showCharacters = false
@@ -65,6 +66,7 @@ struct WorldMapView: View {
                 VStack {
                     header
                     Spacer()
+                    villageButton
                     dock
                         .padding(.horizontal, 12)
                         .padding(.bottom, 8)
@@ -127,6 +129,30 @@ struct WorldMapView: View {
         .padding(.vertical, 10)
         .background(RoundedRectangle(cornerRadius: 26).fill(.white.opacity(0.75)))
         .padding(.horizontal, 12)
+    }
+
+    /// Walk around Hop Village (HopQuest 2.0).
+    private var villageButton: some View {
+        Button {
+            Haptics.tap()
+            onVillage()
+        } label: {
+            HStack(spacing: 10) {
+                CharacterBadge(character: store.character, size: 38)
+                Text("Explore Hop Village")
+                    .font(.kid(19, .black))
+                Image(systemName: "figure.walk")
+                    .font(.system(size: 18, weight: .black))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Color(hex: 0x34C77B)).shadow(color: Color(hex: 0x239A5C), radius: 0, x: 0, y: 5))
+            .overlay(Capsule().stroke(.white, lineWidth: 3))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .padding(.bottom, 4)
+        .accessibilityLabel("Explore Hop Village: walk around and visit every game")
     }
 
     /// Bottom dock: Sticker Book, Fort Friends, Pillow Bop, and Bubble Kart.

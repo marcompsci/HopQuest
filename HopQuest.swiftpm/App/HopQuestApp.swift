@@ -24,6 +24,7 @@ enum Route: Equatable {
     case stickers
     case castle
     case codeClub
+    case village
     case balloon(next: Int?)
 }
 
@@ -35,6 +36,8 @@ struct RootView: View {
     @State private var restTime = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var raceNonce = 0
+    /// True when the child is playing from Hop Village, so "back" and balloon landings return there.
+    @State private var homeIsVillage = false
     private let ticker = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -65,6 +68,10 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.35), value: route)
         .animation(.easeInOut(duration: 0.35), value: store.profile == nil)
         .onAppear {
+            if store.profile?.village.startInVillage == true {
+                homeIsVillage = true
+                route = .village
+            }
             updateMusic()
             if store.timeIsUp { restTime = true }
         }
@@ -93,23 +100,38 @@ struct RootView: View {
         switch route {
         case .map(let landing):
             WorldMapView(landing: landing,
-                         onPlay: { chapter in
-                             // once the robot is built, the Robot Lab stop opens Code Club
-                             if chapter.kind == .robot && store.state(of: chapter) == .done {
-                                 route = .codeClub
-                             } else {
-                                 route = .playing(chapter.id)
-                             }
-                         },
+                         onPlay: { chapter in play(chapter) },
                          onTeam: { route = .teamSetup },
                          onKart: { route = .kartSelect },
                          onBop: { route = .bop },
                          onFort: { route = .fortSelect },
                          onStickers: { route = .stickers },
-                         onCastle: { route = .castle })
+                         onCastle: { route = .castle },
+                         onVillage: {
+                             homeIsVillage = true
+                             route = .village
+                         })
+                .onAppear { homeIsVillage = false }
+
+        case .village:
+            HopVillageView(onOpen: { destination in
+                               switch destination {
+                               case .castle: route = .castle
+                               case .stickers: route = .stickers
+                               case .bop: route = .bop
+                               case .fortSelect: route = .fortSelect
+                               case .kartSelect: route = .kartSelect
+                               case .chapter(let id): play(Chapters.chapter(id))
+                               }
+                           },
+                           onMap: {
+                               homeIsVillage = false
+                               route = .map(landing: nil)
+                           })
+                .onAppear { homeIsVillage = true }
 
         case .bop:
-            BopGameView(onExit: { route = .map(landing: nil) }) { stars, again in
+            BopGameView(onExit: goHome) { stars, again in
                 store.addStars(stars)
                 if again {
                     raceNonce += 1
@@ -120,7 +142,7 @@ struct RootView: View {
             .id("bop-\(raceNonce)")
 
         case .fortSelect:
-            FortSelectView(onBack: { route = .map(landing: nil) },
+            FortSelectView(onBack: goHome,
                            onStart: { level in route = .fort(level.id) })
 
         case .fort(let id):
@@ -136,21 +158,21 @@ struct RootView: View {
             .id("fort-\(id)-\(raceNonce)")
 
         case .codeClub:
-            CodeClubView(onBack: { route = .map(landing: nil) },
+            CodeClubView(onBack: goHome,
                          onEarn: { stars in store.addStars(stars) })
 
         case .castle:
-            MyCastleView(onBack: { route = .map(landing: nil) })
+            MyCastleView(onBack: goHome)
 
         case .stickers:
-            StickerBookView(onBack: { route = .map(landing: nil) })
+            StickerBookView(onBack: goHome)
 
         case .kartSelect:
-            KartSelectView(onBack: { route = .map(landing: nil) },
+            KartSelectView(onBack: goHome,
                            onStart: { cup in route = .playing(cup.id) })
 
         case .teamSetup:
-            TeamSetupView(onBack: { route = .map(landing: nil) },
+            TeamSetupView(onBack: goHome,
                           onStart: { chapter in route = .playing(chapter.id) })
 
         case .playing(let id):
@@ -159,7 +181,7 @@ struct RootView: View {
             let exit: () -> Void = {
                 if team { route = .teamSetup }
                 else if chapter.kind == .kart { route = .kartSelect }
-                else { route = .map(landing: nil) }
+                else { goHome() }
             }
             switch chapter.kind {
             case .hop:
@@ -193,7 +215,8 @@ struct RootView: View {
 
         case .balloon(let next):
             BalloonFlightView(theme: store.theme, character: store.character) {
-                route = .map(landing: next)
+                // the balloon lands back where the child set off from: the village or the map
+                route = homeIsVillage ? .village : .map(landing: next)
             }
         }
     }
@@ -208,6 +231,20 @@ struct RootView: View {
             SoundFX.shared.playMusic(kind == .drive || kind == .kart ? .race : .adventure)
         default:
             SoundFX.shared.playMusic(.adventure)
+        }
+    }
+
+    /// Back to wherever the child came from (Hop Village or the world map).
+    private func goHome() {
+        route = homeIsVillage ? .village : .map(landing: nil)
+    }
+
+    /// Opens a story chapter. Once the robot is built, the Robot Lab stop opens Code Club.
+    private func play(_ chapter: Chapter) {
+        if chapter.kind == .robot && store.state(of: chapter) == .done {
+            route = .codeClub
+        } else {
+            route = .playing(chapter.id)
         }
     }
 
