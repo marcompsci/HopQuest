@@ -240,7 +240,8 @@ struct LearningReportSection: View {
             }
             LabeledContent("Question level", value: store.tierNote)
             LabeledContent("Story levels", value: "\(p?.completedChapters.count ?? 0) of \(Chapters.all.count)")
-            LabeledContent("Coding (Code Club)", value: "\(p?.codeBest.count ?? 0) of \(CodeChallenge.all.count) puzzles")
+            LabeledContent("Coding (Code Club)", value: "\(CodeChallenge.all.filter { p?.codeBest[$0.id] != nil }.count) of \(CodeChallenge.all.count) puzzles")
+            LabeledContent("Machine Workshop", value: "\(MachinePuzzle.all.filter { p?.codeBest[$0.id] != nil }.count) of \(MachinePuzzle.all.count) machines")
             LabeledContent("Coding Lab lessons", value: "\(p?.codeLab.completed.count ?? 0) of \(CodeCurriculum.lessons.count)")
             LabeledContent("Village missions", value: "\(p?.missions.done.count ?? 0) of \(MissionCatalog.all.count)")
             LabeledContent("Engineering (Fort Friends)", value: "\(p?.fortBest.count ?? 0) of \(FortLevel.all.count) forts")

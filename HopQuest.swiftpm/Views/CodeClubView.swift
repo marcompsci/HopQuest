@@ -1,64 +1,40 @@
 import SwiftUI
 
-/// A Code Club puzzle: get the robot to the star on a 6×6 grid.
-struct CodeChallenge: Identifiable {
-    typealias Cell = RobotLabView.Cell
+// Code Club: program the robot to reach the star. Robot Lab 2 adds sensors (Repeat until ⭐, If blocked … else)
+// and the Machine Workshop (gears, levers and pulleys). The robot's language lives in Models/RobotCode.swift.
 
-    let id: Int
-    let title: String
-    /// The idea this puzzle teaches, read aloud when it opens.
-    let lesson: String
-    let start: Cell
-    /// 0 up, 1 right, 2 down, 3 left
-    let dir: Int
-    let goal: Cell
-    let rocks: Set<Cell>
-    let gears: Set<Cell>
-    /// When true, the robot must pick up every gear before the star counts.
-    let needsGears: Bool
-    /// Bonus star for solving it with this many blocks or fewer.
-    let blockLimit: Int
+extension RobotCmd {
+    var icon: String {
+        switch self {
+        case .forward: return "arrow.up"
+        case .left: return "arrow.turn.up.left"
+        case .right: return "arrow.turn.up.right"
+        }
+    }
 
-    static let size = 6
+    var label: String {
+        switch self {
+        case .forward: return "Forward"
+        case .left: return "Turn left"
+        case .right: return "Turn right"
+        }
+    }
 
-    static let all: [CodeChallenge] = [
-        CodeChallenge(id: 401, title: "Loop Launch",
-                      lesson: "Meet the Repeat block! It runs the steps inside it again and again. Coders call that a loop. Can you reach the star with just two blocks?",
-                      start: Cell(x: 0, y: 5), dir: 0, goal: Cell(x: 0, y: 0),
-                      rocks: [], gears: [], needsGears: false, blockLimit: 2),
-        CodeChallenge(id: 402, title: "Corner Turn",
-                      lesson: "Use a loop to go up, turn, then another loop to go across. Grab the gears on the way for a bonus star!",
-                      start: Cell(x: 0, y: 5), dir: 0, goal: Cell(x: 4, y: 1),
-                      rocks: [Cell(x: 2, y: 3), Cell(x: 3, y: 4)], gears: [Cell(x: 0, y: 2), Cell(x: 3, y: 1)],
-                      needsGears: false, blockLimit: 5),
-        CodeChallenge(id: 403, title: "Staircase",
-                      lesson: "See a pattern? Forward, turn left, forward, turn right... and again! Put the whole pattern inside one Repeat block.",
-                      start: Cell(x: 0, y: 5), dir: 1, goal: Cell(x: 3, y: 2),
-                      rocks: [Cell(x: 2, y: 5), Cell(x: 0, y: 3), Cell(x: 3, y: 4)], gears: [Cell(x: 1, y: 4), Cell(x: 3, y: 3)],
-                      needsGears: false, blockLimit: 5),
-        CodeChallenge(id: 404, title: "Rock Garden",
-                      lesson: "Rocks are in the way! Plan a path around them. Engineers call planning steps an algorithm.",
-                      start: Cell(x: 0, y: 2), dir: 1, goal: Cell(x: 5, y: 2),
-                      rocks: [Cell(x: 2, y: 2), Cell(x: 3, y: 2), Cell(x: 2, y: 1), Cell(x: 3, y: 1)],
-                      gears: [Cell(x: 1, y: 3), Cell(x: 4, y: 3)], needsGears: false, blockLimit: 10),
-        CodeChallenge(id: 405, title: "Square Dance",
-                      lesson: "Collect all three gears and come back to the star. Hint: a square has four sides that are all the same!",
-                      start: Cell(x: 1, y: 4), dir: 0, goal: Cell(x: 1, y: 4),
-                      rocks: [Cell(x: 2, y: 2), Cell(x: 3, y: 3)],
-                      gears: [Cell(x: 1, y: 1), Cell(x: 4, y: 1), Cell(x: 4, y: 4)], needsGears: true, blockLimit: 5)
-    ]
+    var color: Color {
+        switch self {
+        case .forward: return Color(hex: 0x34C77B)
+        case .left: return Color(hex: 0x4D96FF)
+        case .right: return Color(hex: 0xFF7A59)
+        }
+    }
 }
 
-/// One block in the kid's program: a single step, or a Repeat loop with steps inside.
-struct CodeBlock: Identifiable, Equatable {
-    let id = UUID()
-    var cmd: RobotLabView.Cmd?
-    var times = 2
-    var body: [RobotLabView.Cmd] = []
-
-    var isLoop: Bool { cmd == nil }
-    /// Each step counts as one block, a loop counts as one plus what's inside it.
-    var pieces: Int { isLoop ? 1 + body.count : 1 }
+private enum ClubColors {
+    static let loop = Color(hex: 0xFFF4C2)
+    static let loopEdge = Color(hex: 0xFFB020)
+    static let sensor = Color(hex: 0xD6F5EF)
+    static let sensorEdge = Color(hex: 0x1FA58A)
+    static let active = Color(hex: 0xFFD93D)
 }
 
 // MARK: - Picker
@@ -68,41 +44,61 @@ struct CodeClubView: View {
     var onBack: () -> Void
     var onEarn: (Int) -> Void
 
-    @State private var playing: CodeChallenge?
+    private enum Open: Equatable {
+        case code(CodeChallenge)
+        case machine(MachinePuzzle)
+        var key: Int {
+            switch self {
+            case .code(let c): return c.id
+            case .machine(let m): return m.id
+            }
+        }
+    }
 
-    private let intro = "Welcome to Code Club! Program your robot to reach the star. Each puzzle teaches a new coding idea."
+    @State private var open: Open?
+
+    private let intro = "Welcome to Code Club! Program your robot to reach the star. Each puzzle teaches a new coding idea. Then visit the Machine Workshop to build with gears, levers and pulleys!"
 
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0xE0F2FF), Color(hex: 0xF3ECFF)], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
-            if let playing {
-                CodeChallengeView(challenge: playing,
-                                  onBack: { self.playing = nil },
-                                  onSolved: { stars in
-                                      // only improvements earn stars, so replays can't farm them
-                                      let before = store.profile?.codeBest[playing.id] ?? 0
-                                      onEarn(max(0, stars - before))
-                                      store.recordCode(challenge: playing.id, stars: stars)
-                                  },
-                                  onNext: { next in self.playing = next })
-                    .id(playing.id)
+            switch open {
+            case .code(let c):
+                CodeChallengeView(challenge: c,
+                                  onBack: { open = nil },
+                                  onSolved: { stars in award(c.id, stars) },
+                                  onNext: { next in open = .code(next) })
+                    .id(c.id)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
-            } else {
-                list
-                    .transition(.opacity)
+            case .machine(let m):
+                MachineWorkshopView(puzzle: m,
+                                    onBack: { open = nil },
+                                    onSolved: { stars in award(m.id, stars) },
+                                    onNext: { next in open = .machine(next) })
+                    .id(m.id)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            case nil:
+                list.transition(.opacity)
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: playing?.id)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: open?.key)
         .onAppear { Narrator.shared.say(intro) }
         .onDisappear { Narrator.shared.stop() }
+    }
+
+    /// Only improvements earn stars, so replays can't farm them.
+    private func award(_ id: Int, _ stars: Int) {
+        let before = store.profile?.codeBest[id] ?? 0
+        onEarn(max(0, stars - before))
+        store.recordCode(challenge: id, stars: stars)
     }
 
     private var list: some View {
         ScrollView {
             VStack(spacing: 16) {
                 HStack {
-                    CircleIconButton(systemName: "house.fill", label: "Back to map", action: onBack)
+                    CircleIconButton(systemName: "house.fill", label: "Back", action: onBack)
                     Spacer()
                     SpeakButton { Narrator.shared.say(intro) }
                 }
@@ -121,8 +117,21 @@ struct CodeClubView: View {
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 20).fill(.white.opacity(0.85)))
 
+                sectionTitle("🤖 Robot code")
                 ForEach(Array(CodeChallenge.all.enumerated()), id: \.element.id) { i, c in
-                    card(c, index: i)
+                    let isOpen = i == 0 || store.profile?.codeBest[CodeChallenge.all[i - 1].id] != nil
+                    card(number: i + 1, title: c.title, topic: c.sensors ? "📡 " + c.topic : c.topic,
+                         best: store.profile?.codeBest[c.id] ?? 0, open: isOpen, colorIndex: i) { open = .code(c) }
+                }
+
+                sectionTitle("⚙️ Machine Workshop")
+                Text("Simple machines help people lift and move heavy things. Build with gears, levers and pulleys!")
+                    .font(.kid(15, .semibold)).foregroundStyle(Palette.ink.opacity(0.8))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                ForEach(Array(MachinePuzzle.all.enumerated()), id: \.element.id) { i, m in
+                    let isOpen = i == 0 || store.profile?.codeBest[MachinePuzzle.all[i - 1].id] != nil
+                    card(number: i + 1, title: m.title, topic: Self.topic(m),
+                         best: store.profile?.codeBest[m.id] ?? 0, open: isOpen, colorIndex: i + 2) { open = .machine(m) }
                 }
             }
             .padding(.horizontal, 18)
@@ -130,15 +139,24 @@ struct CodeClubView: View {
         }
     }
 
-    private func unlocked(_ index: Int) -> Bool {
-        index == 0 || store.profile?.codeBest[CodeChallenge.all[index - 1].id] != nil
+    private static func topic(_ m: MachinePuzzle) -> String {
+        switch m.kind {
+        case .gears: return "Gears"
+        case .lever: return "Levers"
+        case .pulley: return "Pulleys"
+        }
     }
 
-    private func card(_ c: CodeChallenge, index: Int) -> some View {
-        let best = store.profile?.codeBest[c.id] ?? 0
-        let open = unlocked(index)
-        let colors: [UInt32] = [0x34C77B, 0x4D96FF, 0xFFB020, 0xFF7A59, 0xB983FF]
-        let color = Color(hex: colors[index % colors.count])
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text).font(.kid(22, .black)).foregroundStyle(Palette.ink)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 6)
+    }
+
+    private func card(number: Int, title: String, topic: String, best: Int, open: Bool, colorIndex: Int,
+                      action: @escaping () -> Void) -> some View {
+        let colors: [UInt32] = [0x34C77B, 0x4D96FF, 0xFFB020, 0xFF7A59, 0xB983FF, 0x1FA58A]
+        let color = Color(hex: colors[colorIndex % colors.count])
         return Button {
             guard open else {
                 Haptics.bump(.oops)
@@ -146,18 +164,17 @@ struct CodeClubView: View {
                 return
             }
             Haptics.tap()
-            playing = c
+            action()
         } label: {
             HStack(spacing: 14) {
-                Text("\(index + 1)")
+                Text("\(number)")
                     .font(.kid(26, .black))
                     .foregroundStyle(color)
                     .frame(width: 48, height: 48)
                     .background(Circle().fill(.white))
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(c.title).font(.kid(21, .black)).foregroundStyle(.white)
-                    Text(index == 0 ? "Loops" : index == 2 ? "Patterns" : index == 3 ? "Planning" : index == 4 ? "Shapes + loops" : "Loops + turns")
-                        .font(.kid(13, .bold)).foregroundStyle(.white.opacity(0.9))
+                    Text(title).font(.kid(21, .black)).foregroundStyle(.white)
+                    Text(topic).font(.kid(13, .bold)).foregroundStyle(.white.opacity(0.9))
                 }
                 Spacer()
                 if open {
@@ -175,31 +192,32 @@ struct CodeClubView: View {
                 .shadow(color: (open ? color : .gray).opacity(0.6), radius: 0, x: 0, y: 5))
         }
         .buttonStyle(BouncyButtonStyle())
-        .accessibilityLabel(open ? "Puzzle \(index + 1): \(c.title), \(best) stars" : "Puzzle \(index + 1) is locked")
+        .accessibilityLabel(open ? "Puzzle \(number): \(title), \(best) stars" : "Puzzle \(number) is locked")
     }
 }
 
-// MARK: - One puzzle
+// MARK: - One robot puzzle
 
 struct CodeChallengeView: View {
-    typealias Cmd = RobotLabView.Cmd
-    typealias Cell = RobotLabView.Cell
-
     let challenge: CodeChallenge
     var onBack: () -> Void
     var onSolved: (Int) -> Void
     var onNext: (CodeChallenge) -> Void
 
-    @State private var program: [CodeBlock] = []
-    @State private var openLoop: UUID?
-    @State private var robot: Cell
-    @State private var dir: Int
+    @State private var program: [RobotBlock] = []
+    /// Open containers, outermost first: new blocks go into the last one.
+    @State private var cursor: [UUID] = []
+    /// True when new blocks go into the open If's "else" part.
+    @State private var inElse = false
+    @State private var mapIndex = 0
+    @State private var mapResults: [Bool?]
+    @State private var robot: RobotCell
     @State private var angle: Double
-    @State private var trail: [Cell] = []
-    @State private var gotGears: Set<Cell> = []
+    @State private var trail: [RobotCell] = []
+    @State private var gotGears: Set<RobotCell> = []
     @State private var running = false
-    @State private var activeBlock: UUID?
-    @State private var activeInner: Int?
+    @State private var active: Set<UUID> = []
+    @State private var sensed: Bool?
     @State private var message: String?
     @State private var mistakes = 0
     @State private var solvedStars: Int?
@@ -213,39 +231,46 @@ struct CodeChallengeView: View {
         self.onBack = onBack
         self.onSolved = onSolved
         self.onNext = onNext
-        _robot = State(initialValue: challenge.start)
-        _dir = State(initialValue: challenge.dir)
-        _angle = State(initialValue: Double(challenge.dir) * 90)
+        let first = challenge.maps[0]
+        _robot = State(initialValue: first.start)
+        _angle = State(initialValue: Double(first.dir) * 90)
+        _mapResults = State(initialValue: Array(repeating: nil, count: challenge.maps.count))
     }
 
-    private var pieces: Int { program.reduce(0) { $0 + $1.pieces } }
+    private var world: RobotWorld { challenge.maps[mapIndex] }
+    private var pieces: Int { program.pieces }
+    private var openBlock: RobotBlock? { cursor.last.flatMap { program.find($0) } }
 
     var body: some View {
         ZStack {
-            VStack(spacing: 10) {
-                header
-                Text(message ?? challenge.lesson)
-                    .font(.kid(15, .bold))
-                    .foregroundStyle(message == nil ? Palette.ink.opacity(0.85) : Palette.purple)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 18)
-                    .frame(minHeight: 60)
-                    .animation(.easeInOut, value: message)
-                grid
-                programStrip
-                palette
-                HStack(spacing: 12) {
-                    BigButton(title: "Clear", color: Color(hex: 0x9AA0AE)) {
-                        guard !running else { return }
-                        withAnimation { program.removeAll(); openLoop = nil }
-                        reset()
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 10) {
+                    header
+                    Text(message ?? challenge.lesson)
+                        .font(.kid(15, .bold))
+                        .foregroundStyle(message == nil ? Palette.ink.opacity(0.85) : Palette.purple)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 18)
+                        .frame(minHeight: 54)
+                        .animation(.easeInOut, value: message)
+                    if challenge.maps.count > 1 { mapTabs }
+                    grid
+                    programStrip
+                    palette
+                    HStack(spacing: 12) {
+                        BigButton(title: "Clear", color: Color(hex: 0x9AA0AE)) {
+                            guard !running else { return }
+                            withAnimation { program.removeAll(); cursor = []; inElse = false }
+                            reset(map: 0)
+                            mapResults = Array(repeating: nil, count: challenge.maps.count)
+                        }
+                        BigButton(title: running ? "Running…" : "Run ▶", color: Palette.green) { run() }
                     }
-                    BigButton(title: running ? "Running…" : "Run ▶", color: Palette.green) { run() }
+                    .padding(.horizontal, 22)
                 }
-                .padding(.horizontal, 22)
-                Spacer(minLength: 0)
+                .padding(.top, 6)
+                .padding(.bottom, 16)
             }
-            .padding(.top, 6)
 
             if let stars = solvedStars {
                 Color.black.opacity(0.4).ignoresSafeArea()
@@ -255,7 +280,7 @@ struct CodeChallengeView: View {
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.75), value: solvedStars)
         .onAppear {
-            trail = [challenge.start]
+            trail = [world.start]
             Narrator.shared.say(challenge.lesson)
         }
     }
@@ -280,13 +305,39 @@ struct CodeChallengeView: View {
         .padding(.horizontal, 14)
     }
 
+    // MARK: Maps
+
+    private var mapTabs: some View {
+        HStack(spacing: 8) {
+            Text("One program, \(challenge.maps.count) maps:").font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.7))
+            ForEach(challenge.maps.indices, id: \.self) { i in
+                Button {
+                    guard !running else { return }
+                    Haptics.tap()
+                    reset(map: i)
+                } label: {
+                    HStack(spacing: 3) {
+                        Text("Map \(i + 1)").font(.kid(14, .black))
+                        if let r = mapResults[i] { Text(r ? "✓" : "✗").font(.kid(14, .black)) }
+                    }
+                    .foregroundStyle(i == mapIndex ? .white : Palette.ink)
+                    .padding(.horizontal, 10).frame(height: 32)
+                    .background(Capsule().fill(i == mapIndex ? Palette.purple : .white.opacity(0.9)))
+                }
+                .buttonStyle(BouncyButtonStyle())
+                .accessibilityLabel("Map \(i + 1)\(mapResults[i] == true ? ", solved" : mapResults[i] == false ? ", not solved yet" : "")")
+            }
+        }
+    }
+
     // MARK: Grid
 
     private var grid: some View {
         let n = CodeChallenge.size
-        let cell: CGFloat = 50
+        let cell: CGFloat = challenge.maps.count > 1 ? 46 : 50
         let gap: CGFloat = 4
         let step = cell + gap
+        let w = world
         return ZStack(alignment: .topLeading) {
             VStack(spacing: gap) {
                 ForEach(0..<n, id: \.self) { y in
@@ -295,7 +346,7 @@ struct CodeChallengeView: View {
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
                                 .fill((x + y) % 2 == 0 ? Color(hex: 0xF6F0FF) : Color(hex: 0xEADFFF))
                                 .overlay {
-                                    if trail.contains(Cell(x: x, y: y)) {
+                                    if trail.contains(RobotCell(x: x, y: y)) {
                                         Circle().fill(Palette.purple.opacity(0.35)).frame(width: 10, height: 10)
                                     }
                                 }
@@ -304,14 +355,14 @@ struct CodeChallengeView: View {
                     }
                 }
             }
-            ForEach(Array(challenge.rocks), id: \.self) { r in
+            ForEach(Array(w.rocks), id: \.self) { r in
                 ArtImage("code_rock")
                     .frame(width: cell * 0.9, height: cell * 0.9)
                     .frame(width: cell, height: cell)
                     .offset(x: CGFloat(r.x) * step, y: CGFloat(r.y) * step)
                     .accessibilityLabel("Rock")
             }
-            ForEach(Array(challenge.gears.subtracting(gotGears)), id: \.self) { g in
+            ForEach(Array(w.gears.subtracting(gotGears)), id: \.self) { g in
                 ArtImage("robot_gear")
                     .frame(width: cell * 0.62, height: cell * 0.62)
                     .rotationEffect(.degrees(gearSpin ? 360 : 0))
@@ -323,9 +374,9 @@ struct CodeChallengeView: View {
             ArtImage("goal_star")
                 .frame(width: cell * 0.85, height: cell * 0.85)
                 .scaleEffect(starBounce ? 1.08 : 0.92)
-                .opacity(challenge.needsGears && gotGears.count < challenge.gears.count ? 0.45 : 1)
+                .opacity(challenge.needsGears && gotGears.count < w.gears.count ? 0.45 : 1)
                 .frame(width: cell, height: cell)
-                .offset(x: CGFloat(challenge.goal.x) * step, y: CGFloat(challenge.goal.y) * step)
+                .offset(x: CGFloat(w.goal.x) * step, y: CGFloat(w.goal.y) * step)
             ZStack {
                 Image(systemName: "arrowtriangle.up.fill")
                     .font(.system(size: 13, weight: .black))
@@ -334,11 +385,21 @@ struct CodeChallengeView: View {
                     .rotationEffect(.degrees(angle))
                 ArtImage("robot_full")
                     .frame(width: cell * 0.84, height: cell * 0.92)
+                if let s = sensed {
+                    // the sensor's answer pops up over the robot
+                    Text(s ? "🧱!" : "👀✓")
+                        .font(.kid(13, .black))
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(Capsule().fill(.white))
+                        .offset(y: -cell * 0.62)
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
             .frame(width: cell, height: cell)
             .offset(x: CGFloat(robot.x) * step, y: CGFloat(robot.y) * step)
             .animation(.spring(response: 0.33, dampingFraction: 0.65), value: robot)
             .animation(.easeInOut(duration: 0.28), value: angle)
+            .animation(.spring(response: 0.25), value: sensed)
         }
         .padding(9)
         .background(
@@ -347,6 +408,7 @@ struct CodeChallengeView: View {
                 .shadow(color: Color(hex: 0x9B86E0), radius: 0, x: 0, y: 6)
         )
         .animation(.spring(), value: gotGears)
+        .animation(.easeInOut(duration: 0.25), value: mapIndex)
         .onAppear {
             withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { starBounce = true }
             withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) { gearSpin = true }
@@ -366,271 +428,280 @@ struct CodeChallengeView: View {
                             .padding(.horizontal, 12)
                     }
                     ForEach(program) { block in
-                        if block.isLoop {
-                            loopChip(block)
-                        } else if let cmd = block.cmd {
-                            stepChip(cmd, active: activeBlock == block.id) {
-                                guard !running else { return }
-                                withAnimation { program.removeAll { $0.id == block.id } }
-                            }
-                            .accessibilityLabel("\(cmd.label). Tap to remove.")
-                        }
+                        RobotBlockChip(block: block, active: active, cursor: cursor, inElse: inElse, actions: chipActions)
                     }
                     Color.clear.frame(width: 1).id("end")
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
             }
-            .frame(height: 70)
+            .frame(minHeight: 70)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.white.opacity(0.85)))
             .padding(.horizontal, 14)
             .onChange(of: pieces) { _, _ in withAnimation { proxy.scrollTo("end") } }
         }
     }
 
-    private func stepChip(_ cmd: Cmd, active: Bool, small: Bool = false, onTap: @escaping () -> Void) -> some View {
-        Button(action: onTap) {
-            Image(systemName: cmd.icon)
-                .font(.system(size: small ? 14 : 17, weight: .black))
-                .foregroundStyle(.white)
-                .frame(width: small ? 34 : 42, height: small ? 34 : 46)
-                .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(cmd.color))
-                .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .stroke(Color(hex: 0xFFD93D), lineWidth: active ? 4 : 0))
-                .scaleEffect(active ? 1.12 : 1)
-        }
-        .transition(.scale.combined(with: .opacity))
-    }
-
-    private func loopChip(_ block: CodeBlock) -> some View {
-        let isOpen = openLoop == block.id
-        let isActive = activeBlock == block.id
-        return HStack(spacing: 5) {
-            Button {
+    private var chipActions: RobotBlockChip.Actions {
+        RobotBlockChip.Actions(
+            remove: { id in
+                guard !running else { return }
+                Haptics.tap()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _ = program.remove(id) }
+                if let i = cursor.firstIndex(of: id) { cursor = Array(cursor.prefix(i)); inElse = false }
+            },
+            cycleTimes: { id in
                 guard !running else { return }
                 Haptics.tap(.pop)
-                update(block.id) { $0.times = $0.times >= 5 ? 2 : $0.times + 1 }
-            } label: {
-                VStack(spacing: 0) {
-                    ArtImage("icon_loop").frame(width: 22, height: 22)
-                    Text("×\(block.times)").font(.kid(14, .black)).foregroundStyle(Palette.ink)
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    _ = program.update(id) { b in
+                        if case .repeatTimes(let n) = b.kind { b.kind = .repeatTimes(n >= 5 ? 2 : n + 1) }
+                    }
                 }
-                .frame(width: 42, height: 50)
-            }
-            .accessibilityLabel("Repeat \(block.times) times. Tap to change.")
-            ForEach(Array(block.body.enumerated()), id: \.offset) { i, cmd in
-                stepChip(cmd, active: isActive && activeInner == i, small: true) {
-                    guard !running else { return }
-                    update(block.id) { _ = $0.body.remove(at: i) }
-                }
-                .accessibilityLabel("Inside repeat: \(cmd.label). Tap to remove.")
-            }
-            if isOpen {
-                RoundedRectangle(cornerRadius: 9)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
-                    .foregroundStyle(Color(hex: 0xFFB020))
-                    .frame(width: 30, height: 34)
-            }
-            Button {
+            },
+            open: { id in
                 guard !running else { return }
-                withAnimation {
-                    program.removeAll { $0.id == block.id }
-                    if openLoop == block.id { openLoop = nil }
-                }
-            } label: {
-                Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Palette.ink.opacity(0.35))
-            }
-            .accessibilityLabel("Delete this repeat block")
-        }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 3)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xFFF4C2)))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .stroke(isActive ? Color(hex: 0xFFD93D) : Color(hex: 0xFFB020), lineWidth: isActive ? 4 : 2))
-        .transition(.scale.combined(with: .opacity))
+                Haptics.tap()
+                cursor = path(to: id)
+                inElse = false
+            })
     }
 
-    private func update(_ id: UUID, _ change: (inout CodeBlock) -> Void) {
-        guard let i = program.firstIndex(where: { $0.id == id }) else { return }
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { change(&program[i]) }
+    /// The containers to open so that `id` is the innermost one.
+    private func path(to id: UUID) -> [UUID] {
+        for b in program {
+            if b.id == id { return [id] }
+            if b.body.contains(where: { $0.id == id }) || b.elseBody.contains(where: { $0.id == id }) { return [b.id, id] }
+        }
+        return []
     }
 
     private var palette: some View {
-        HStack(spacing: 8) {
-            ForEach([Cmd.left, .forward, .right]) { cmd in
-                Button { add(cmd) } label: {
-                    VStack(spacing: 2) {
-                        Image(systemName: cmd.icon).font(.system(size: 22, weight: .black))
-                        Text(cmd.label).font(.kid(11, .heavy)).lineLimit(1).minimumScaleFactor(0.8)
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                ForEach(RobotCmd.allCases.sorted { order($0) < order($1) }, id: \.self) { cmd in
+                    Button { insert(.step(cmd)) } label: {
+                        VStack(spacing: 2) {
+                            Image(systemName: cmd.icon).font(.system(size: 22, weight: .black))
+                            Text(cmd.label).font(.kid(11, .heavy)).lineLimit(1).minimumScaleFactor(0.8)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 58)
+                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(cmd.color)
+                            .shadow(color: cmd.color.opacity(0.6), radius: 0, x: 0, y: 5))
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 60)
-                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(cmd.color)
-                        .shadow(color: cmd.color.opacity(0.6), radius: 0, x: 0, y: 5))
+                    .buttonStyle(BouncyButtonStyle())
+                    .accessibilityLabel(cursor.isEmpty ? "Add step: \(cmd.label)" : "Add inside the open block: \(cmd.label)")
                 }
-                .buttonStyle(BouncyButtonStyle())
-                .accessibilityLabel(openLoop == nil ? "Add step: \(cmd.label)" : "Add inside repeat: \(cmd.label)")
             }
-            Button(action: toggleLoop) {
-                VStack(spacing: 2) {
-                    ArtImage("icon_loop").frame(width: 26, height: 26)
-                    Text(openLoop == nil ? "Repeat" : "End repeat").font(.kid(11, .heavy)).lineLimit(1).minimumScaleFactor(0.7)
+            HStack(spacing: 8) {
+                ForEach(controls, id: \.title) { c in
+                    Button {
+                        guard !running else { return }
+                        Haptics.tap(.pop)
+                        c.action()
+                    } label: {
+                        Text(c.title)
+                            .font(.kid(14, .black))
+                            .foregroundStyle(Palette.ink)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 46)
+                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(c.fill)
+                                .shadow(color: c.edge.opacity(0.7), radius: 0, x: 0, y: 4))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(c.edge, lineWidth: c.outlined ? 3 : 0))
+                    }
+                    .buttonStyle(BouncyButtonStyle())
+                    .accessibilityLabel(c.spoken)
                 }
-                .foregroundStyle(Palette.ink)
-                .frame(maxWidth: .infinity)
-                .frame(height: 60)
-                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(hex: openLoop == nil ? 0xFFD93D : 0xFFF4C2))
-                    .shadow(color: Color(hex: 0xE0A800).opacity(0.7), radius: 0, x: 0, y: 5))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFFB020), lineWidth: openLoop == nil ? 0 : 3))
             }
-            .buttonStyle(BouncyButtonStyle())
-            .accessibilityLabel(openLoop == nil ? "Add a repeat block" : "Finish the repeat block")
         }
         .padding(.horizontal, 14)
     }
 
-    private func add(_ cmd: Cmd) {
+    private func order(_ c: RobotCmd) -> Int { c == .left ? 0 : c == .forward ? 1 : 2 }
+
+    private struct Control {
+        let title: String
+        let spoken: String
+        let fill: Color
+        let edge: Color
+        var outlined = false
+        let action: () -> Void
+    }
+
+    /// Container buttons change with what's open: start a block, switch to else, or finish it.
+    private var controls: [Control] {
+        var out: [Control] = []
+        let loopFill = Color(hex: 0xFFD93D)
+        if let open = openBlock {
+            if challenge.sensors && open.isLoop {
+                out.append(Control(title: "If blocked 🧱", spoken: "Add an If blocked block inside the loop",
+                                   fill: ClubColors.sensor, edge: ClubColors.sensorEdge) { insertContainer(RobotBlock(.ifBlocked)) })
+            }
+            if open.isIf && !inElse {
+                out.append(Control(title: "Else ➜", spoken: "Now add what to do when the way is clear",
+                                   fill: ClubColors.sensor, edge: ClubColors.sensorEdge, outlined: true) {
+                    inElse = true
+                    say("Now add what the robot does when the way is clear.")
+                })
+            }
+            out.append(Control(title: open.isIf ? "End if" : "End repeat", spoken: open.isIf ? "Finish the If block" : "Finish the repeat block",
+                               fill: open.isIf ? ClubColors.sensor : ClubColors.loop,
+                               edge: open.isIf ? ClubColors.sensorEdge : ClubColors.loopEdge, outlined: true) { closeInnermost() })
+        } else {
+            out.append(Control(title: "Repeat ×", spoken: "Add a repeat block", fill: loopFill, edge: Color(hex: 0xE0A800)) {
+                insertContainer(RobotBlock(.repeatTimes(2)))
+                say("Now add the steps to repeat. Tap times two to change how many times.")
+            })
+            if challenge.sensors {
+                out.append(Control(title: "Until ⭐", spoken: "Add a repeat until star block", fill: loopFill, edge: Color(hex: 0xE0A800)) {
+                    insertContainer(RobotBlock(.repeatUntilGoal))
+                    say("The steps inside will repeat until the robot is on the star.")
+                })
+                out.append(Control(title: "If blocked 🧱", spoken: "Add an If blocked block",
+                                   fill: ClubColors.sensor, edge: ClubColors.sensorEdge) {
+                    insertContainer(RobotBlock(.ifBlocked))
+                    say("Add what the robot does if a rock or wall is ahead. Then tap Else.")
+                })
+            }
+        }
+        return out
+    }
+
+    private func say(_ text: String) {
+        message = text
+        Narrator.shared.say(text)
+    }
+
+    private func insert(_ block: RobotBlock) {
         guard !running else { return }
-        guard pieces < maxPieces else {
-            message = "That's a lot of blocks! Can a Repeat block make it shorter?"
-            Narrator.shared.say(message ?? "")
+        guard pieces + block.pieces <= maxPieces else {
+            say("That's a lot of blocks! Can a Repeat block make it shorter?")
             return
         }
         Haptics.tap(.pop)
-        if let id = openLoop {
-            update(id) { $0.body.append(cmd) }
-        } else {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { program.append(CodeBlock(cmd: cmd)) }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            if let open = cursor.last {
+                _ = program.update(open) { c in
+                    if c.isIf && inElse { c.elseBody.append(block) } else { c.body.append(block) }
+                }
+            } else {
+                program.append(block)
+            }
         }
     }
 
-    private func toggleLoop() {
-        guard !running else { return }
-        Haptics.tap(.pop)
-        if let id = openLoop {
-            openLoop = nil
-            // an empty loop does nothing, so drop it
-            if program.first(where: { $0.id == id })?.body.isEmpty == true {
-                withAnimation { program.removeAll { $0.id == id } }
-            }
-        } else {
-            guard pieces < maxPieces else { return }
-            let loop = CodeBlock(cmd: nil)
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { program.append(loop) }
-            openLoop = loop.id
-            message = "Now add the steps to repeat. Tap ×2 to change how many times. Tap End repeat when you're done."
-            Narrator.shared.say("Now add the steps to repeat. Tap times two to change how many times.")
+    private func insertContainer(_ block: RobotBlock) {
+        let before = pieces
+        insert(block)
+        guard pieces > before else { return }
+        cursor.append(block.id)
+        inElse = false
+    }
+
+    /// Finishes the innermost open block. An empty one does nothing, so it's dropped.
+    private func closeInnermost() {
+        guard let id = cursor.popLast() else { return }
+        inElse = false
+        if let b = program.find(id), b.body.isEmpty && b.elseBody.isEmpty {
+            withAnimation { _ = program.remove(id) }
         }
+        message = nil
     }
 
     // MARK: Running
 
-    private func reset() {
-        robot = challenge.start
-        dir = challenge.dir
-        angle = Double(challenge.dir) * 90
-        trail = [challenge.start]
+    private func reset(map: Int) {
+        mapIndex = map
+        let w = challenge.maps[map]
+        robot = w.start
+        angle = Double(w.dir) * 90
+        trail = [w.start]
         gotGears = []
-        activeBlock = nil
-        activeInner = nil
+        active = []
+        sensed = nil
         message = nil
-    }
-
-    private var solved: Bool {
-        robot == challenge.goal && (!challenge.needsGears || gotGears.count == challenge.gears.count)
     }
 
     private func run() {
         guard !running, !program.isEmpty else { return }
-        openLoop = nil
-        program.removeAll { $0.isLoop && $0.body.isEmpty }
-        reset()
+        cursor = []
+        inElse = false
+        program = program.withoutEmptyContainers()
+        guard !program.isEmpty else { return }
         running = true
-        let steps = flatten(program)
+        let traces = challenge.runAll(program)
+        mapResults = Array(repeating: nil, count: challenge.maps.count)
         Task { @MainActor in
-            for (cmd, blockID, inner) in steps {
-                activeBlock = blockID
-                activeInner = inner
-                try? await Task.sleep(nanoseconds: 420_000_000)
-                switch cmd {
-                case .forward:
-                    let moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
-                    let next = Cell(x: robot.x + moves[dir].0, y: robot.y + moves[dir].1)
-                    let n = CodeChallenge.size
-                    guard (0..<n).contains(next.x), (0..<n).contains(next.y) else {
-                        fail("Bonk! The robot bumped the wall. Look at the highlighted block!")
-                        return
+            for (i, trace) in traces.enumerated() {
+                reset(map: i)
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                for step in trace.steps {
+                    active = Set(step.path)
+                    try? await Task.sleep(nanoseconds: 380_000_000)
+                    sensed = nil
+                    switch step.event {
+                    case .moved(let gear):
+                        SoundFX.shared.play(.hop, volume: 0.6)
+                        robot = step.robot
+                        trail.append(step.robot)
+                        if gear {
+                            gotGears.insert(step.robot)
+                            Haptics.success(.coin)
+                        }
+                    case .turned(let cmd):
+                        SoundFX.shared.play(.tap)
+                        angle += cmd == .left ? -90 : 90
+                    case .sensed(let blocked):
+                        SoundFX.shared.play(.beep, volume: 0.4)
+                        sensed = blocked
+                    case .bonked:
+                        Haptics.bump()
                     }
-                    guard !challenge.rocks.contains(next) else {
-                        fail("Bonk! A rock is in the way. Find a path around it!")
-                        return
-                    }
-                    SoundFX.shared.play(.hop, volume: 0.6)
-                    robot = next
-                    trail.append(next)
-                    if challenge.gears.contains(next) && !gotGears.contains(next) {
-                        gotGears.insert(next)
-                        Haptics.success(.coin)
-                    }
-                case .left:
-                    SoundFX.shared.play(.tap)
-                    dir = (dir + 3) % 4
-                    angle -= 90
-                case .right:
-                    SoundFX.shared.play(.tap)
-                    dir = (dir + 1) % 4
-                    angle += 90
                 }
-                if solved { break }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                sensed = nil
+                mapResults[i] = trace.solved
+                if !trace.solved {
+                    running = false
+                    active = []
+                    mistakes += 1
+                    let prefix = challenge.maps.count > 1 ? "Map \(i + 1): " : ""
+                    say(prefix + Self.explain(trace.outcome))
+                    return
+                }
+                if i + 1 < traces.count {
+                    SoundFX.shared.play(.chime)
+                    try? await Task.sleep(nanoseconds: 450_000_000)
+                }
             }
-            try? await Task.sleep(nanoseconds: 350_000_000)
             running = false
-            activeBlock = nil
-            activeInner = nil
-            if solved {
-                finish()
-            } else if robot == challenge.goal && challenge.needsGears {
-                mistakes += 1
-                message = "You made it back, but some gears are still out there. Collect them all!"
-                Narrator.shared.say(message ?? "")
-            } else {
-                mistakes += 1
-                message = "So close! The robot stopped before the star. Add or change a block."
-                Narrator.shared.say(message ?? "")
-            }
+            active = []
+            finish(gears: traces.first?.gears ?? [])
         }
     }
 
-    /// The program as single steps: (command, block id, index inside a loop).
-    private func flatten(_ blocks: [CodeBlock]) -> [(Cmd, UUID, Int?)] {
-        var steps: [(Cmd, UUID, Int?)] = []
-        for b in blocks {
-            if let c = b.cmd {
-                steps.append((c, b.id, nil))
-            } else {
-                for _ in 0..<b.times {
-                    for (i, c) in b.body.enumerated() { steps.append((c, b.id, i)) }
-                }
-            }
+    private static func explain(_ outcome: RobotTrace.Outcome) -> String {
+        switch outcome {
+        case .reachedGoal: return "You did it!"
+        case .bonkedWall: return "Bonk! The robot bumped the wall. Look at the highlighted block!"
+        case .bonkedRock: return "Bonk! A rock is in the way. Find a path around it!"
+        case .stoppedShort: return "So close! The robot stopped before the star. Add or change a block."
+        case .passedGoal: return "Zoomed past the star! The robot has to stop ON it. Can a sensor block help?"
+        case .missingGears: return "You made it back, but some gears are still out there. Collect them all!"
+        case .wentInCircles: return "The robot is going around in circles! Check which way it turns."
         }
-        return steps
     }
 
-    private func fail(_ text: String) {
-        Haptics.bump()
-        mistakes += 1
-        message = text
-        Narrator.shared.say(text)
-        running = false
-    }
-
-    private func finish() {
+    private func finish(gears: Set<RobotCell>) {
         var stars = 1
         if pieces <= challenge.blockLimit { stars += 1 }
-        if challenge.gears.isEmpty || challenge.needsGears {
-            if mistakes == 0 { stars += 1 }
-        } else if gotGears.count == challenge.gears.count {
+        let bonusGears = challenge.maps.count == 1 && !challenge.needsGears && !challenge.maps[0].gears.isEmpty
+        if bonusGears {
+            if gears.count == challenge.maps[0].gears.count { stars += 1 }
+        } else if mistakes == 0 {
             stars += 1
         }
         Haptics.success(.fanfare)
@@ -642,6 +713,7 @@ struct CodeChallengeView: View {
         let next = CodeChallenge.all.firstIndex { $0.id == challenge.id }.flatMap { i in
             i + 1 < CodeChallenge.all.count ? CodeChallenge.all[i + 1] : nil
         }
+        let bonusGears = challenge.maps.count == 1 && !challenge.needsGears && !challenge.maps[0].gears.isEmpty
         return VStack(spacing: 14) {
             RobotDrawing(built: Set(RobotLabView.Part.allCases), size: 130, happy: true, dancing: true)
             Text("Code complete!").font(.kid(30, .black)).foregroundStyle(Palette.purple)
@@ -651,10 +723,10 @@ struct CodeChallengeView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
-                tick(true, "Reached the star")
+                tick(true, challenge.maps.count > 1 ? "Solved all \(challenge.maps.count) maps" : "Reached the star")
                 tick(pieces <= challenge.blockLimit, "Used \(pieces) blocks (goal: \(challenge.blockLimit) or fewer)")
-                if !challenge.gears.isEmpty && !challenge.needsGears {
-                    tick(gotGears.count == challenge.gears.count, "Collected every gear")
+                if bonusGears {
+                    tick(gotGears.count == challenge.maps[0].gears.count, "Collected every gear")
                 } else {
                     tick(mistakes == 0, "Worked on the first try")
                 }
@@ -663,7 +735,8 @@ struct CodeChallengeView: View {
                 BigButton(title: "Try again", color: Palette.purple) {
                     solvedStars = nil
                     mistakes = 0
-                    reset()
+                    reset(map: 0)
+                    mapResults = Array(repeating: nil, count: challenge.maps.count)
                 }
                 if let next {
                     BigButton(title: "Next ➜", color: Palette.green) { onNext(next) }
@@ -686,5 +759,119 @@ struct CodeChallengeView: View {
                 .foregroundStyle(ok ? Palette.green : Palette.ink.opacity(0.3))
             Text(text).font(.kid(15, .semibold)).foregroundStyle(Palette.ink)
         }
+    }
+}
+
+// MARK: - A block in the program strip
+
+/// Draws one block. Loops and ifs draw the blocks inside them, so this view nests.
+struct RobotBlockChip: View {
+    struct Actions {
+        var remove: (UUID) -> Void
+        var cycleTimes: (UUID) -> Void
+        var open: (UUID) -> Void
+    }
+
+    let block: RobotBlock
+    let active: Set<UUID>
+    let cursor: [UUID]
+    let inElse: Bool
+    let actions: Actions
+    var small = false
+
+    private var isActive: Bool { active.contains(block.id) }
+    private var isOpen: Bool { cursor.last == block.id }
+
+    var body: some View {
+        switch block.kind {
+        case .step(let cmd):
+            Button { actions.remove(block.id) } label: {
+                Image(systemName: cmd.icon)
+                    .font(.system(size: small ? 14 : 17, weight: .black))
+                    .foregroundStyle(.white)
+                    .frame(width: small ? 34 : 42, height: small ? 34 : 46)
+                    .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(cmd.color))
+                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .stroke(ClubColors.active, lineWidth: isActive ? 4 : 0))
+                    .scaleEffect(isActive ? 1.12 : 1)
+            }
+            .transition(.scale.combined(with: .opacity))
+            .accessibilityLabel("\(cmd.label). Tap to remove.")
+        case .repeatTimes, .repeatUntilGoal:
+            container(fill: ClubColors.loop, edge: ClubColors.loopEdge) {
+                loopHeader
+                children(block.body, openHere: isOpen)
+            }
+        case .ifBlocked:
+            container(fill: ClubColors.sensor, edge: ClubColors.sensorEdge) {
+                Button { actions.open(block.id) } label: {
+                    VStack(spacing: 0) {
+                        Text("if").font(.kid(12, .black))
+                        Text("🧱").font(.system(size: 16))
+                    }
+                    .foregroundStyle(ClubColors.sensorEdge)
+                    .frame(width: 34, height: 46)
+                }
+                .accessibilityLabel("If blocked. Tap to add blocks inside.")
+                children(block.body, openHere: isOpen && !inElse)
+                Text("else").font(.kid(12, .black)).foregroundStyle(ClubColors.sensorEdge)
+                    .padding(.horizontal, 2)
+                children(block.elseBody, openHere: isOpen && inElse)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var loopHeader: some View {
+        if case .repeatTimes(let n) = block.kind {
+            Button { if isOpen { actions.cycleTimes(block.id) } else { actions.open(block.id); actions.cycleTimes(block.id) } } label: {
+                VStack(spacing: 0) {
+                    ArtImage("icon_loop").frame(width: 22, height: 22)
+                    Text("×\(n)").font(.kid(14, .black)).foregroundStyle(Palette.ink)
+                }
+                .frame(width: 42, height: 50)
+            }
+            .accessibilityLabel("Repeat \(n) times. Tap to change.")
+        } else {
+            Button { actions.open(block.id) } label: {
+                VStack(spacing: 0) {
+                    ArtImage("icon_loop").frame(width: 22, height: 22)
+                    Text("until ⭐").font(.kid(11, .black)).foregroundStyle(Palette.ink)
+                }
+                .frame(width: 48, height: 50)
+            }
+            .accessibilityLabel("Repeat until on the star. Tap to add blocks inside.")
+        }
+    }
+
+    private func children(_ blocks: [RobotBlock], openHere: Bool) -> some View {
+        HStack(spacing: 5) {
+            ForEach(blocks) { b in
+                AnyView(RobotBlockChip(block: b, active: active, cursor: cursor, inElse: inElse, actions: actions, small: true))
+            }
+            if openHere {
+                RoundedRectangle(cornerRadius: 9)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                    .foregroundStyle(ClubColors.loopEdge)
+                    .frame(width: 30, height: 34)
+                    .accessibilityLabel("New blocks go here")
+            }
+        }
+    }
+
+    private func container<Content: View>(fill: Color, edge: Color, @ViewBuilder content: () -> Content) -> some View {
+        HStack(spacing: 5) {
+            content()
+            Button { actions.remove(block.id) } label: {
+                Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Palette.ink.opacity(0.35))
+            }
+            .accessibilityLabel("Delete this block")
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(fill))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .stroke(isActive ? ClubColors.active : edge, lineWidth: isActive || isOpen ? 4 : 2))
+        .transition(.scale.combined(with: .opacity))
     }
 }
