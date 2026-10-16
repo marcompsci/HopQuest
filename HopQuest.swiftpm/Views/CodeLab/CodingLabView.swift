@@ -10,6 +10,8 @@ struct CodingLabView: View {
     @State private var openProject: CodeTrack?
     @State private var openSandbox: CodeTrack?
     @State private var expanded: CodeTrack?
+    /// Greet once: closing a lesson brings this screen back, and Ocho shouldn't say hello again.
+    @State private var greeted = false
 
     private static let teacher = Roster.character(id: "ocho")
     private var save: CodeLabSave { store.profile?.codeLab ?? CodeLabSave() }
@@ -48,6 +50,8 @@ struct CodingLabView: View {
                 .environmentObject(store)
         }
         .onAppear {
+            guard !greeted else { return }
+            greeted = true
             Narrator.shared.say("Welcome to the Coding Lab! Pick a track and let's build something.")
         }
     }
@@ -56,6 +60,8 @@ struct CodingLabView: View {
         HStack(spacing: 10) {
             CircleIconButton(systemName: "chevron.left", label: "Back", action: onBack)
             Text("Coding Lab 💻").font(.kid(28, .black)).foregroundStyle(.white)
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .accessibilityLabel("Coding Lab")
             Spacer()
             HStack(spacing: 4) {
                 ArtImage("goal_star").frame(width: 22, height: 22)
@@ -121,8 +127,9 @@ struct CodingLabView: View {
                 } label: {
                     Image(systemName: expanded == track ? "chevron.up.circle.fill" : "list.bullet.circle.fill")
                         .font(.system(size: 30))
+                        .frame(width: 44, height: 44)
                 }
-                .accessibilityLabel("Show all \(track.title) lessons")
+                .accessibilityLabel(expanded == track ? "Hide the \(track.title) lessons" : "Show all \(track.title) lessons")
             }
             freeBuildButton(track, tint: tint)
             if expanded == track {

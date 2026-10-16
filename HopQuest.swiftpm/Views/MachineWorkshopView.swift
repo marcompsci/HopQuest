@@ -22,6 +22,8 @@ struct MachineWorkshopView: View {
     @State private var shake: CGFloat = 0
 
     @State private var testing = false
+    /// The running test, so leaving the workshop stops it (and it can't award stars afterwards).
+    @State private var testTask: Task<Void, Never>?
     @State private var misses = 0
     @State private var feedback: String?
     @State private var solvedStars: Int?
@@ -58,6 +60,10 @@ struct MachineWorkshopView: View {
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.75), value: solvedStars)
         .onAppear { Narrator.shared.say(puzzle.lesson) }
+        .onDisappear {
+            testTask?.cancel()
+            Narrator.shared.stop()
+        }
     }
 
     private var header: some View {
@@ -98,6 +104,9 @@ struct MachineWorkshopView: View {
         let train = teeth(crank: crank)
         return TimelineView(.animation(paused: crankStart == nil)) { context in
             let elapsed = crankStart.map { context.date.timeIntervalSince($0) } ?? 0
+            // the whole gear row shrinks to fit narrow phones
+            let total = train.reduce(CGFloat(0)) { $0 + (CGFloat($1) * 1.7 + 14) * 2 } - CGFloat(10 * (train.count - 1))
+            GeometryReader { geo in
             HStack(spacing: -10) {
                 ForEach(Array(train.enumerated()), id: \.offset) { i, t in
                     let r = CGFloat(t) * 1.7 + 14
@@ -119,7 +128,9 @@ struct MachineWorkshopView: View {
                     .rotationEffect(.degrees(direction * speed * 120 * elapsed))
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .scaleEffect(min(1, (geo.size.width - 24) / max(total, 1)))
+            .frame(width: geo.size.width, height: geo.size.height)
+            }
             .overlay(alignment: .bottom) {
                 HStack {
                     Text("crank").font(.kid(13, .black)).foregroundStyle(Color(hex: 0x4D96FF))
@@ -230,7 +241,8 @@ struct MachineWorkshopView: View {
         case .lever:
             HStack(spacing: 14) {
                 stepButton("arrow.left", "Move the fulcrum left") { fulcrum = max(1, fulcrum - 1); resetMachine() }
-                Text("Fulcrum at \(fulcrum)").font(.kid(18, .black)).foregroundStyle(Palette.ink)
+                Text("▲ at \(fulcrum)").font(.kid(20, .black)).foregroundStyle(Palette.ink)
+                    .accessibilityLabel("The pivot triangle is at \(fulcrum)")
                 stepButton("arrow.right", "Move the fulcrum right") { fulcrum = min(9, fulcrum + 1); resetMachine() }
             }
         case .pulley:
@@ -296,7 +308,7 @@ struct MachineWorkshopView: View {
         let ok = puzzle.check(choice: choice, size: lastSize)
         let best = puzzle.isBest(choice: choice, size: lastSize)
         let explanation = explain()
-        Task { @MainActor in
+        testTask = Task { @MainActor in
             switch puzzle.kind {
             case .gears:
                 crankStart = Date()
@@ -318,16 +330,20 @@ struct MachineWorkshopView: View {
                 }
                 try? await Task.sleep(nanoseconds: 700_000_000)
             }
-            testing = false
+            guard !Task.isCancelled else { return }
             feedback = explanation
             Narrator.shared.say(explanation)
             if ok {
+                // stay "testing" until the card shows, so a second tap can't start another test
                 try? await Task.sleep(nanoseconds: 1_400_000_000)
+                guard !Task.isCancelled else { return }
+                testing = false
                 let stars = 1 + (misses == 0 ? 1 : 0) + (best ? 1 : 0)
                 Haptics.success(.fanfare)
                 solvedStars = stars
                 onSolved(stars)
             } else {
+                testing = false
                 misses += 1
                 Haptics.bump(.oops)
             }
@@ -339,7 +355,7 @@ struct MachineWorkshopView: View {
         switch puzzle.kind {
         case .gears(let wantCW, let wantFast, let crank):
             let train = GearTrain(teeth: teeth(crank: crank))
-            let way = train.lastTurnsClockwise ? "clockwise ↻" : "the other way ↺"
+            let way = train.lastTurnsClockwise ? "the same way as the crank ↻" : "the other way ↺"
             let ratio = train.turnsPerCrank
             let speed = ratio > 1 ? "faster than the crank" : ratio == 1 ? "the same speed as the crank" : "slower than the crank"
             var text = "The fan turned \(way), \(speed). "
@@ -355,10 +371,10 @@ struct MachineWorkshopView: View {
             let lever = Lever(fulcrum: fulcrum, load: load, effort: effort)
             let boxSide = load * fulcrum
             let buddySide = effort * (Lever.length - fulcrum)
-            let math = "Box: \(load) × \(fulcrum) = \(boxSide). Buddy: \(effort) × \(Lever.length - fulcrum) = \(buddySide). "
-            if lever.lifts { return math + "Your buddy wins and lifts the box! 🎉" }
-            if lever.balanced { return math + "A perfect balance! Move the fulcrum a little closer to the box." }
-            return math + "The box is winning. Slide the fulcrum closer to the box."
+            let math = " (The math: box \(load) × \(fulcrum) = \(boxSide), buddy \(effort) × \(Lever.length - fulcrum) = \(buddySide).)"
+            if lever.lifts { return "Your buddy wins and lifts the box! 🎉" + math }
+            if lever.balanced { return "A perfect balance! Move the triangle a little closer to the box." + math }
+            return "The box is too heavy from there. Slide the triangle closer to the box." + math
         case .pulley(let load, let strength):
             let p = Pulley(ropes: ropes, load: load)
             let math = ropes == 1 ? "One rope means pulling all \(load). " : "\(load) shared by \(ropes) ropes is about \(p.effort) each. "

@@ -99,7 +99,10 @@ struct BopGameView: View {
                 Spacer()
                 SpeakButton { Narrator.shared.say(introText) }
             }
-            ArtImage("icon_bop").frame(width: 110, height: 110)
+            // the art and rows scroll on small phones; the start button always stays on screen
+            ScrollView(showsIndicators: false) {
+            VStack(spacing: 14) {
+            ArtImage("icon_bop").frame(width: 90, height: 90)
             Text("Pillow Bop")
                 .font(.kid(36, .black))
                 .foregroundStyle(Palette.purple)
@@ -114,6 +117,8 @@ struct BopGameView: View {
             }
             .padding(14)
             .background(RoundedRectangle(cornerRadius: 20).fill(Color(hex: 0xF3ECFF)))
+            }
+            }
             BigButton(title: "Let's bop! 🪶", color: Palette.green) {
                 showIntro = false
                 scene?.begin()
@@ -357,6 +362,9 @@ struct WalkButton: View {
     let icon: String
     let label: String
     @Binding var pressed: Bool
+    /// Resets by itself if the touch is interrupted (a call, Control Center, the app going to the background),
+    /// so a buddy never keeps walking on its own.
+    @GestureState private var holding = false
 
     var body: some View {
         Image(systemName: icon)
@@ -371,12 +379,20 @@ struct WalkButton: View {
             .offset(y: pressed ? 4 : 0)
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in if !pressed { pressed = true; Haptics.tap(nil) } }
-                    .onEnded { _ in pressed = false }
+                    .updating($holding) { _, state, _ in state = true }
             )
+            .onChange(of: holding) { _, isDown in
+                pressed = isDown
+                if isDown { Haptics.tap(nil) }
+            }
             .accessibilityElement()
             .accessibilityLabel(label)
             .accessibilityAddTraits(.isButton)
+            .accessibilityAction {
+                // VoiceOver: a short walk
+                pressed = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { pressed = false }
+            }
     }
 }
 
@@ -386,7 +402,8 @@ struct TapDownButton: View {
     let color: Color
     let size: CGFloat
     var action: () -> Void
-    @State private var down = false
+    /// Resets by itself if the touch is interrupted, so the button never gets stuck.
+    @GestureState private var down = false
 
     var body: some View {
         Text(title)
@@ -401,17 +418,13 @@ struct TapDownButton: View {
             .offset(y: down ? 4 : 0)
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        if !down {
-                            down = true
-                            action()
-                        }
-                    }
-                    .onEnded { _ in down = false }
+                    .updating($down) { _, state, _ in state = true }
             )
+            .onChange(of: down) { _, isDown in if isDown { action() } }
             .accessibilityElement()
             .accessibilityLabel(title == "BOP!" ? "Bop" : "Jump")
             .accessibilityAddTraits(.isButton)
+            .accessibilityAction { action() }
             .accessibilityAction { action() }
     }
 }

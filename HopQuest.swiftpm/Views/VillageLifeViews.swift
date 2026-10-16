@@ -38,7 +38,7 @@ struct VillageTodayPill: View {
             .font(.kid(13, .black))
             .foregroundStyle(Palette.ink)
             .lineLimit(1).minimumScaleFactor(0.7)
-            .padding(.horizontal, 12).frame(height: 32)
+            .padding(.horizontal, 12).frame(minHeight: 44)
             .background(Capsule().fill(.white.opacity(0.92)).shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 3))
         }
         .buttonStyle(BouncyButtonStyle())
@@ -54,6 +54,7 @@ struct FestivalBoardView: View {
     let current: Festival
     let missions: MissionSave
     let seasonsOn: Bool
+    var maxHeight: CGFloat = 480
     var onPick: (Festival) -> Void
     var onGoToHost: () -> Void
     var onClose: () -> Void
@@ -75,7 +76,7 @@ struct FestivalBoardView: View {
                     ForEach(Festival.allCases, id: \.self) { f in row(f) }
                 }
             }
-            .frame(maxHeight: 480)
+            .frame(maxHeight: min(480, max(260, maxHeight)))
         }
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
@@ -92,7 +93,9 @@ struct FestivalBoardView: View {
             Button {
                 Narrator.shared.say("Today is a \(day.weather.title.lowercased()) \(day.season.title.lowercased()) day. \(day.season.fact) \(day.weather.lines[0])")
             } label: {
-                Label("Read it to me", systemImage: "speaker.wave.2.fill").font(.kid(13, .black))
+                Label("Read it to me", systemImage: "speaker.wave.2.fill").font(.kid(14, .black))
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
         }
         .padding(14)
@@ -110,16 +113,16 @@ struct FestivalBoardView: View {
                 .frame(width: 50, height: 50)
                 .background(Circle().fill(Color(hex: 0xF3F1FA)))
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(f.title).font(.kid(17, .black)).foregroundStyle(Palette.ink)
-                    if thisWeek {
-                        Text("this week").font(.kid(11, .black)).foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Capsule().fill(Palette.purple))
-                    }
+                Text(f.title).font(.kid(17, .black)).foregroundStyle(Palette.ink)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                if thisWeek {
+                    Text("this week").font(.kid(11, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().fill(Palette.purple))
                 }
-                Text(status == .done ? "Celebrated! \(f.houseReward.icon) is on your house list" : "Gives your house: \(f.houseReward.icon) \(f.houseReward.title)")
+                Text(status == .done ? "Celebrated! \(f.houseReward.icon)" : "Your house gets: \(f.houseReward.icon)")
                     .font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.7))
+                    .lineLimit(1).minimumScaleFactor(0.8)
             }
             Spacer(minLength: 4)
             if isCurrent {
@@ -129,7 +132,7 @@ struct FestivalBoardView: View {
                 } label: {
                     Text(status == .done ? "Party! 🎉" : "Go!")
                         .font(.kid(15, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 14).frame(height: 40)
+                        .padding(.horizontal, 14).frame(minHeight: 44)
                         .background(Capsule().fill(Palette.green))
                 }
                 .buttonStyle(BouncyButtonStyle())
@@ -141,7 +144,7 @@ struct FestivalBoardView: View {
                 } label: {
                     Text("Celebrate")
                         .font(.kid(14, .black)).foregroundStyle(Palette.purple)
-                        .padding(.horizontal, 12).frame(height: 40)
+                        .padding(.horizontal, 12).frame(minHeight: 44)
                         .background(Capsule().stroke(Palette.purple, lineWidth: 2))
                 }
                 .buttonStyle(BouncyButtonStyle())
@@ -158,6 +161,7 @@ struct HomeDecorView: View {
     let style: HomeStyle
     let unlocked: [HomeExtra]
     let ownerName: String
+    var maxHeight: CGFloat = 560
     var onChange: (HomeStyle) -> Void
     var onClose: () -> Void
 
@@ -188,7 +192,7 @@ struct HomeDecorView: View {
                     decorations
                 }
             }
-            .frame(maxHeight: 560)
+            .frame(maxHeight: min(560, max(300, maxHeight)))
         }
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))

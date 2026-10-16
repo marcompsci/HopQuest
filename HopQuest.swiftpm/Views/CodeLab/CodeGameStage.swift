@@ -147,6 +147,10 @@ final class CodeGameScene: SKScene {
         l.fontName = "AvenirNext-Heavy"
         l.fontSize = 16
         l.fontColor = UIColor(hex: 0x2B1B3D)
+        l.numberOfLines = 0
+        l.preferredMaxLayoutWidth = size.width - 40
+        l.horizontalAlignmentMode = .center
+        l.verticalAlignmentMode = .center
         l.position = CGPoint(x: size.width / 2, y: y)
         l.zPosition = 20
         addChild(l)
@@ -237,10 +241,19 @@ final class CodeGameScene: SKScene {
         onScore?(program.score)
     }
 
+    private var lastMessage: (text: String, at: TimeInterval)?
+
+    /// Sends a message up, but not the same one again within 3 seconds (fast tapping won't restart the voice).
+    private func tell(_ text: String) {
+        if let last = lastMessage, last.text == text, lastTime - last.at < 3 { return }
+        lastMessage = (text, lastTime)
+        onMessage?(text)
+    }
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard hero != nil else { return }
         guard program.hasTapEvent else {
-            onMessage?("Your hero needs an on_tap() event to jump. That's lesson 3!")
+            tell("Your hero needs an on_tap() event to jump. That's lesson 3!")
             return
         }
         do {
@@ -262,7 +275,7 @@ final class CodeGameScene: SKScene {
                 SoundFX.shared.play(.hop)
             case .say(let text):
                 showBubble(text)
-                onMessage?(text)
+                tell(text)
             case .background(let w):
                 guard w != world else { continue }
                 paint(w, animated: true)
@@ -281,8 +294,10 @@ final class CodeGameScene: SKScene {
         l.fontName = "AvenirNext-Heavy"
         l.fontSize = 17
         l.fontColor = UIColor(hex: 0x2B1B3D)
+        l.numberOfLines = 0
+        l.preferredMaxLayoutWidth = min(240, size.width - 60)
         l.verticalAlignmentMode = .center
-        let bg = SKShapeNode(rectOf: CGSize(width: l.frame.width + 28, height: 36), cornerRadius: 16)
+        let bg = SKShapeNode(rectOf: CGSize(width: l.frame.width + 28, height: max(36, l.frame.height + 16)), cornerRadius: 16)
         bg.fillColor = .white
         bg.strokeColor = UIColor(hex: 0x2B1B3D)
         bg.lineWidth = 3

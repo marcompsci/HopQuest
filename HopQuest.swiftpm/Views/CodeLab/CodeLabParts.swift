@@ -93,7 +93,7 @@ struct CodeLineView: View {
                 segment(seg)
             }
         }
-        .frame(minHeight: 30)
+        .frame(minHeight: line.segments.contains { if case .slot = $0 { return true }; return false } ? 44 : 30)
         .padding(.horizontal, 6)
     }
 
@@ -117,9 +117,9 @@ struct CodeLineView: View {
                         .foregroundStyle(value == nil ? Palette.ink : Color(hex: 0x1E1B2E))
                         .fixedSize()
                 }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(RoundedRectangle(cornerRadius: 7)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
+                .background(RoundedRectangle(cornerRadius: 8)
                     .fill(value == nil ? Color(hex: 0xFFD24D) : Color(hex: 0xBDF3C8)))
                 .overlay(RoundedRectangle(cornerRadius: 7)
                     .stroke(selectedSlot == key ? Color.white : .clear, lineWidth: 2))

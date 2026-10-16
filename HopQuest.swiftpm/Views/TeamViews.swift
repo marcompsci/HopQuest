@@ -100,9 +100,11 @@ struct TeamSetupView: View {
             Text(name).font(.kid(17, .black)).foregroundStyle(Palette.ink)
             Text(side).font(.kid(12, .bold)).foregroundStyle(Palette.ink.opacity(0.6))
             if let action {
-                Button("Change", action: action)
-                    .font(.kid(13, .bold))
-                    .foregroundStyle(Palette.purple)
+                Button(action: action) {
+                    Text("Change").font(.kid(14, .bold)).foregroundStyle(Palette.purple)
+                        .frame(minWidth: 64, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
                     .accessibilityLabel("Change the grown-up's character")
             } else {
                 Text(" ").font(.kid(13, .bold))

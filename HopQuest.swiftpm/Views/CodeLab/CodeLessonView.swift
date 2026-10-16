@@ -85,7 +85,9 @@ struct CodeLessonView: View {
     private func learnCard(_ i: Int) -> some View {
         let card = lesson.cards[i]
         return VStack(spacing: 16) {
-            Spacer(minLength: 0)
+            // the words scroll on small phones; the buttons below always stay on screen
+            ScrollView(showsIndicators: false) {
+            VStack(spacing: 16) {
             HStack(alignment: .top, spacing: 12) {
                 CharacterBadge(character: Self.teacher, size: 70, animated: true)
                 VStack(alignment: .leading, spacing: 8) {
@@ -107,7 +109,9 @@ struct CodeLessonView: View {
                 Label("You'll build: \(lesson.goal)", systemImage: "hammer.fill")
                     .font(.kid(16, .black)).foregroundStyle(Color(hex: lesson.track.colorHex))
             }
-            Spacer(minLength: 0)
+            }
+            .padding(.vertical, 8)
+            }
             HStack(spacing: 12) {
                 SpeakButton { Narrator.shared.say(card.title + ". " + card.text) }
                 BigButton(title: i + 1 < lesson.cards.count ? "Next" : "Let's build! 🔨", color: Color(hex: lesson.track.colorHex)) {

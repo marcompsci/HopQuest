@@ -31,6 +31,8 @@ struct HopVillageView: View {
     @State private var homeOpen = false
     @State private var festivalOpen = false
     @State private var storyTurn = 0
+    /// Screen height, so tall panels fit small phones.
+    @State private var screenHeight: CGFloat = 800
 
     private var anyOverlay: Bool {
         dialogue != nil || quiz != nil || boardOpen || missionsOpen || castleParty || showParent || showCharacters
@@ -104,8 +106,12 @@ struct HopVillageView: View {
             .onAppear {
                 build(size: geo.size)
                 startNetwork()
+                screenHeight = geo.size.height
             }
-            .onChange(of: geo.size) { _, newSize in build(size: newSize) }
+            .onChange(of: geo.size) { _, newSize in
+                build(size: newSize)
+                screenHeight = newSize.height
+            }
             .onChange(of: store.profile?.characterID) { _, _ in
                 if store.character.id != builtFor {
                     rebuild(size: geo.size)
@@ -159,6 +165,7 @@ struct HopVillageView: View {
             HomeDecorView(style: store.profile?.village.home ?? HomeStyle(),
                           unlocked: HomeStyle.unlocked(missionsDone: store.profile?.missions.done ?? []),
                           ownerName: store.profile?.name ?? "My",
+                          maxHeight: screenHeight - 200,
                           onChange: { style in
                               store.updateVillage { $0.home = style }
                               scene?.updateHome(style)
@@ -172,6 +179,7 @@ struct HopVillageView: View {
         if festivalOpen {
             Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { festivalOpen = false }
             FestivalBoardView(day: today, current: festival, missions: store.profile?.missions ?? MissionSave(), seasonsOn: seasonsOn,
+                              maxHeight: screenHeight - 200,
                               onPick: { f in
                                   store.updateVillage { $0.festivalPick = f == today.weekFestival ? nil : f.rawValue }
                                   scene?.setFestival(f)
@@ -321,7 +329,7 @@ struct HopVillageView: View {
         s.onRegionChange = { name in showBanner(name) }
         s.onGreet = { [weak s] id in
             guard let c = s?.npcCharacter(id) else { return }
-            showNote("\(c.name): Hi, \(store.profile?.name ?? "friend")! 👋")
+            showNote("\(c.name): Hi, \(store.profile?.name ?? "friend")! 👋", speak: false)
         }
         s.onPopQuiz = { character in popQuiz(from: character) }
         s.onPickup = { key in pickedUp(key) }
@@ -590,7 +598,7 @@ struct HopVillageView: View {
             showNote("\(m.icon) All found! Go back to \(giver) for your stars.")
         } else if let c = missions.collectedCount(m) {
             Haptics.tap(nil)
-            showNote("\(m.icon) \(c.have) of \(c.need)!")
+            showNote("\(m.icon) \(c.have) of \(c.need)!", speak: false)
         }
     }
 
@@ -701,9 +709,11 @@ struct HopVillageView: View {
         }
     }
 
-    private func showNote(_ text: String) {
+    /// A message on screen. `speak: false` for little things (hellos, item counts) so the voice
+    /// doesn't keep cutting itself off while walking around.
+    private func showNote(_ text: String, speak: Bool = true) {
         note = text
-        Narrator.shared.say(text)
+        if speak { Narrator.shared.say(text) }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
             if note == text { note = nil }
         }

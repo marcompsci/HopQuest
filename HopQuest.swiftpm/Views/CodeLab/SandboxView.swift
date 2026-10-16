@@ -12,6 +12,8 @@ struct SandboxView: View {
     @State private var editing: String?
     @State private var showPalette = false
     @State private var toast: String?
+    /// The project before the last line was deleted (for Undo).
+    @State private var undoLines: [SandboxLine]?
 
     private var codeLab: CodeLabSave { store.profile?.codeLab ?? CodeLabSave() }
     private var lines: [SandboxLine] { codeLab.sandbox.lines(for: track) }
@@ -48,6 +50,20 @@ struct SandboxView: View {
                     Text("\(lines.count)/\(Sandbox.maxLines) lines")
                         .font(.kid(13, .bold)).foregroundStyle(.secondary)
                     Spacer()
+                    if let previous = undoLines {
+                        Button {
+                            Haptics.tap()
+                            store.editSandbox { sb in sb.lines[track.rawValue] = previous }
+                            undoLines = nil
+                        } label: {
+                            Label("Undo", systemImage: "arrow.uturn.backward")
+                                .font(.kid(15, .black)).foregroundStyle(.white)
+                                .padding(.horizontal, 14).frame(height: 46)
+                                .background(Capsule().fill(Palette.purple))
+                        }
+                        .buttonStyle(BouncyButtonStyle())
+                        .accessibilityLabel("Undo, put the line back")
+                    }
                 }
                 CodeOutputView(track: track, runner: runner,
                                onMessage: { text in showToast(text); Narrator.shared.say(text) })
@@ -159,8 +175,10 @@ struct SandboxView: View {
                 toolButton("increase.indent", "Push right") { change { Sandbox.indenting($0, at: index, by: 1) } }
             }
             toolButton("trash", "Delete line", color: Color(hex: 0xFF8A8E)) {
+                undoLines = lines
                 change { Sandbox.removing($0, at: index) }
                 selected = nil
+                showToast("Line deleted. Tap Undo to bring it back.")
             }
         }
         .padding(.leading, 46)
@@ -175,7 +193,7 @@ struct SandboxView: View {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(color)
-                .frame(width: 44, height: 36)
+                .frame(width: 44, height: 44)
                 .background(RoundedRectangle(cornerRadius: 10).fill(.white.opacity(0.14)))
         }
         .buttonStyle(BouncyButtonStyle())
@@ -229,10 +247,27 @@ struct SandboxView: View {
         }
         if !quiet { Haptics.tap(.pop) }
         let ok = runner.run(track: track, source: p.source, buddyID: store.character.id, theme: store.theme, speak: !quiet)
+        undoLines = nil
         if !ok, !quiet {
             Haptics.bump(.oops)
-            showToast("A bug! 🐞 Check the red line. Is it pushed in the right amount?")
+            let hint = runner.error.map { Self.friendly($0) } ?? "Check the red line."
+            showToast("A bug! 🐞 " + hint)
         }
+    }
+
+    /// Plain-words help for the bugs kids make most in Free Build (moving lines in and out).
+    static func friendly(_ e: PyError) -> String {
+        let m = e.message
+        if m.contains("too many spaces") {
+            return "Line \(e.line) is pushed too far right. Tap it, then tap ⬅ to move it left."
+        }
+        if m.contains("need to be pushed in") {
+            return "The line after line \(e.line) should move right. Tap it, then tap ➡."
+        }
+        if m.contains("indented in a way") {
+            return "Line \(e.line) is in the wrong spot. Try moving it left ⬅ or right ➡."
+        }
+        return "Check line \(e.line), the red one."
     }
 
     private func showToast(_ text: String) {

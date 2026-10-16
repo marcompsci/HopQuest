@@ -62,7 +62,7 @@ struct VillageChallengeBoard: View {
                     onGo(c.building)
                 } label: {
                     Text("Go!").font(.kid(15, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 14).frame(height: 36)
+                        .padding(.horizontal, 14).frame(minHeight: 44)
                         .background(Capsule().fill(Palette.purple))
                 }
                 .buttonStyle(BouncyButtonStyle())
@@ -194,8 +194,19 @@ struct BrainDuelView: View {
                         VStack(spacing: 10) {
                             ProgressView().scaleEffect(1.5)
                             Text("Waiting for \(network.opponentNick)…").font(.kid(19, .black)).foregroundStyle(Palette.ink)
+                            // never stuck: you've answered everything, so leaving doesn't hold up your friend
+                            Button {
+                                Haptics.tap()
+                                onClose()
+                            } label: {
+                                Text("Leave the duel").font(.kid(16, .black)).foregroundStyle(Palette.purple)
+                                    .padding(.horizontal, 18).frame(minHeight: 44)
+                                    .background(Capsule().stroke(Palette.purple, lineWidth: 2))
+                            }
+                            .buttonStyle(BouncyButtonStyle())
+                            .padding(.top, 8)
                         }
-                        .padding(.vertical, 30)
+                        .padding(.vertical, 24)
                     }
                 }
                 .padding(20)
@@ -361,7 +372,7 @@ struct MissionLogView: View {
                     onGo(m)
                 } label: {
                     Text("Go!").font(.kid(15, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 14).frame(height: 36)
+                        .padding(.horizontal, 14).frame(minHeight: 44)
                         .background(Capsule().fill(Palette.purple))
                 }
                 .buttonStyle(BouncyButtonStyle())

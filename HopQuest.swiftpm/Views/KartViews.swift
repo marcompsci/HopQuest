@@ -213,7 +213,7 @@ struct KartGameView: View {
                 pill(placeText(hud.place), big: true)
             }
             pill("Lap \(hud.lap)/\(hud.laps)")
-            pill("🧠 \(hud.mathRight)")
+            if partner == nil { pill("🧠 \(hud.mathRight)") }
             Spacer()
         }
         .padding(.horizontal, 14)
@@ -227,6 +227,7 @@ struct KartGameView: View {
         Text(text)
             .font(.kid(big ? 22 : 16, .black))
             .foregroundStyle(Palette.ink)
+            .lineLimit(1).minimumScaleFactor(0.7)
             .padding(.horizontal, 12)
             .frame(height: 40)
             .background(Capsule().fill(.white.opacity(0.92)))

@@ -235,6 +235,10 @@ struct CodeChallengeView: View {
     /// Team mode: whose turn it is (0 ⭐, 1 💜), and who added each block.
     @State private var turn = 0
     @State private var owners: [UUID: Int] = [:]
+    /// The running program's animation, so leaving the puzzle stops it (and it can't award stars afterwards).
+    @State private var runTask: Task<Void, Never>?
+    /// The program before the last block was removed (for Undo).
+    @State private var undoProgram: [RobotBlock]?
 
     private let maxPieces = 14
 
@@ -296,6 +300,10 @@ struct CodeChallengeView: View {
             trail = [world.start]
             Narrator.shared.say(challenge.lesson + (team ? " Team tip: take turns adding blocks, and talk it over before you press Run!" : ""))
         }
+        .onDisappear {
+            runTask?.cancel()
+            Narrator.shared.stop()
+        }
     }
 
     private var header: some View {
@@ -332,8 +340,9 @@ struct CodeChallengeView: View {
     // MARK: Maps
 
     private var mapTabs: some View {
+        VStack(spacing: 4) {
+        Text("One program, \(challenge.maps.count) maps:").font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.7))
         HStack(spacing: 8) {
-            Text("One program, \(challenge.maps.count) maps:").font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.7))
             ForEach(challenge.maps.indices, id: \.self) { i in
                 Button {
                     guard !running else { return }
@@ -345,13 +354,15 @@ struct CodeChallengeView: View {
                         if let r = mapResults[i] { Text(r ? "✓" : "✗").font(.kid(14, .black)) }
                     }
                     .foregroundStyle(i == mapIndex ? .white : Palette.ink)
-                    .padding(.horizontal, 10).frame(height: 32)
+                    .padding(.horizontal, 14).frame(minHeight: 44)
                     .background(Capsule().fill(i == mapIndex ? Palette.purple : .white.opacity(0.9)))
                 }
                 .buttonStyle(BouncyButtonStyle())
                 .accessibilityLabel("Map \(i + 1)\(mapResults[i] == true ? ", solved" : mapResults[i] == false ? ", not solved yet" : "")")
             }
         }
+        }
+        .padding(.horizontal, 14)
     }
 
     // MARK: Grid
@@ -417,6 +428,7 @@ struct CodeChallengeView: View {
                         .background(Capsule().fill(.white))
                         .offset(y: -cell * 0.62)
                         .transition(.scale.combined(with: .opacity))
+                        .accessibilityLabel(s ? "Blocked" : "The way is clear")
                 }
             }
             .frame(width: cell, height: cell)
@@ -459,6 +471,26 @@ struct CodeChallengeView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
             }
+            .overlay(alignment: .topTrailing) {
+                if let previous = undoProgram {
+                    Button {
+                        Haptics.tap()
+                        withAnimation(.spring()) { program = previous; undoProgram = nil; cursor = []; inElse = false }
+                    } label: {
+                        Label("Undo", systemImage: "arrow.uturn.backward")
+                            .font(.kid(14, .black)).foregroundStyle(.white)
+                            .padding(.horizontal, 12).frame(minHeight: 44)
+                            .background(Capsule().fill(Palette.purple))
+                    }
+                    .offset(y: -30)
+                    .transition(.scale.combined(with: .opacity))
+                    .task(id: previous.count) {
+                        try? await Task.sleep(nanoseconds: 4_000_000_000)
+                        withAnimation { undoProgram = nil }
+                    }
+                    .accessibilityLabel("Undo, put the block back")
+                }
+            }
             .frame(minHeight: 70)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.white.opacity(0.85)))
             .padding(.horizontal, 14)
@@ -471,6 +503,7 @@ struct CodeChallengeView: View {
             remove: { id in
                 guard !running else { return }
                 Haptics.tap()
+                undoProgram = program
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _ = program.remove(id) }
                 if let i = cursor.firstIndex(of: id) { cursor = Array(cursor.prefix(i)); inElse = false }
             },
@@ -565,13 +598,13 @@ struct CodeChallengeView: View {
                                    fill: ClubColors.sensor, edge: ClubColors.sensorEdge) { insertContainer(RobotBlock(.ifBlocked)) })
             }
             if open.isIf && !inElse {
-                out.append(Control(title: "Else ➜", spoken: "Now add what to do when the way is clear",
+                out.append(Control(title: "Otherwise ➜", spoken: "Else: now add what to do when the way is clear",
                                    fill: ClubColors.sensor, edge: ClubColors.sensorEdge, outlined: true) {
                     inElse = true
                     say("Now add what the robot does when the way is clear.")
                 })
             }
-            out.append(Control(title: open.isIf ? "End if" : "End repeat", spoken: open.isIf ? "Finish the If block" : "Finish the repeat block",
+            out.append(Control(title: open.isIf ? "Done with If ✓" : "Done with loop ✓", spoken: open.isIf ? "Finish the If block" : "Finish the repeat block",
                                fill: open.isIf ? ClubColors.sensor : ClubColors.loop,
                                edge: open.isIf ? ClubColors.sensorEdge : ClubColors.loopEdge, outlined: true) { closeInnermost() })
         } else {
@@ -587,7 +620,7 @@ struct CodeChallengeView: View {
                 out.append(Control(title: "If blocked 🧱", spoken: "Add an If blocked block",
                                    fill: ClubColors.sensor, edge: ClubColors.sensorEdge) {
                     insertContainer(RobotBlock(.ifBlocked))
-                    say("Add what the robot does if a rock or wall is ahead. Then tap Else.")
+                    say("Add what the robot does if a rock or wall is ahead. Then tap Otherwise.")
                 })
             }
         }
@@ -662,13 +695,14 @@ struct CodeChallengeView: View {
         running = true
         let traces = challenge.runAll(program)
         mapResults = Array(repeating: nil, count: challenge.maps.count)
-        Task { @MainActor in
+        undoProgram = nil
+        runTask = Task { @MainActor in
             for (i, trace) in traces.enumerated() {
                 reset(map: i)
-                try? await Task.sleep(nanoseconds: 250_000_000)
+                guard await pause(250_000_000) else { return }
                 for step in trace.steps {
                     active = Set(step.path)
-                    try? await Task.sleep(nanoseconds: 380_000_000)
+                    guard await pause(380_000_000) else { return }
                     sensed = nil
                     switch step.event {
                     case .moved(let gear):
@@ -689,7 +723,7 @@ struct CodeChallengeView: View {
                         Haptics.bump()
                     }
                 }
-                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard await pause(300_000_000) else { return }
                 sensed = nil
                 mapResults[i] = trace.solved
                 if !trace.solved {
@@ -702,13 +736,20 @@ struct CodeChallengeView: View {
                 }
                 if i + 1 < traces.count {
                     SoundFX.shared.play(.chime)
-                    try? await Task.sleep(nanoseconds: 450_000_000)
+                    guard await pause(450_000_000) else { return }
                 }
             }
+            guard !Task.isCancelled else { return }
             running = false
             active = []
             finish(gears: traces.first?.gears ?? [])
         }
+    }
+
+    /// Waits; false if the child left the puzzle meanwhile.
+    private func pause(_ ns: UInt64) async -> Bool {
+        try? await Task.sleep(nanoseconds: ns)
+        return !Task.isCancelled
     }
 
     private static func explain(_ outcome: RobotTrace.Outcome) -> String {
@@ -819,12 +860,14 @@ struct RobotBlockChip: View {
                 Image(systemName: cmd.icon)
                     .font(.system(size: small ? 14 : 17, weight: .black))
                     .foregroundStyle(.white)
-                    .frame(width: small ? 34 : 42, height: small ? 34 : 46)
+                    .frame(width: small ? 38 : 42, height: small ? 40 : 46)
                     .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(cmd.color))
                     .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .stroke(ClubColors.active, lineWidth: isActive ? 4 : 0))
                     .scaleEffect(isActive ? 1.12 : 1)
                     .overlay(alignment: .topTrailing) { ownerBadge }
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .transition(.scale.combined(with: .opacity))
             .accessibilityLabel("\(cmd.label)\(ownerSpoken). Tap to remove.")
@@ -841,7 +884,7 @@ struct RobotBlockChip: View {
                         Text("🧱").font(.system(size: 16))
                     }
                     .foregroundStyle(ClubColors.sensorEdge)
-                    .frame(width: 34, height: 46)
+                    .frame(width: 44, height: 46)
                 }
                 .accessibilityLabel("If blocked. Tap to add blocks inside.")
                 children(block.body, openHere: isOpen && !inElse)
@@ -906,7 +949,9 @@ struct RobotBlockChip: View {
         HStack(spacing: 5) {
             content()
             Button { actions.remove(block.id) } label: {
-                Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Palette.ink.opacity(0.35))
+                Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundStyle(Palette.ink.opacity(0.4))
+                    .frame(width: 36, height: 44)
+                    .contentShape(Rectangle())
             }
             .accessibilityLabel("Delete this block")
         }
