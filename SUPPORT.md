@@ -21,7 +21,10 @@ Grown-up settings → *Reset level progress* (keeps the player) or *Start over w
 Grown-up settings → *Learning level*. Pick Little (4–5), Growing (6–7), or Big (8–10), or leave it on Automatic so it adjusts to how your child is doing.
 
 **Does HopQuest need the internet, collect data, or show ads?**
-No. HopQuest works offline, has no ads or in-app purchases, and never collects personal information. See our [Privacy Policy](PRIVACY.md).
+No. HopQuest works offline, has no ads or in-app purchases, and never collects personal information. The only optional online part is playing with others in Hop Village through Game Center, which is off until a grown-up turns it on. See our [Privacy Policy](PRIVACY.md).
+
+**How do I let my child play with friends?**
+Open Grown-up settings (the gear on the home screen), answer the parental-gate question, and set Hop Village → Play with others to Nearby only, Game Center friends, or Anyone. Other players only see your child's buddy name, and there is no chat. Set it back to Off any time.
 
 **My child played too long!**
 Set a daily play limit in Grown-up settings. When time is up, the game says a gentle goodbye until tomorrow. HopQuest never sends notifications or uses streaks.

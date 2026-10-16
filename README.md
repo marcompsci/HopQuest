@@ -6,13 +6,13 @@
 
 There's no blood, no bad words, no ads, no chat and no accounts. Every crash is soft and bouncy, and a wrong answer just gets a hint and another try.
 
-> **HopQuest 2.1 (in progress, branch `feature/hop-village`): Hop Village.** Press **PLAY** on the new main menu to walk your buddy around a pixel-art village with a building for every game. Finish all 9 challenges to open your castle, answer pop-quiz questions for bonus stars, and challenge friends to Brain Duels. See [docs/VILLAGE_ARCHITECTURE.md](docs/VILLAGE_ARCHITECTURE.md).
+> **HopQuest 2.0 (branch `feature/hop-village`, ready for App Store review): Hop Village, Coding Lab, Snowy Peaks and more.** Press **PLAY** on the main menu to walk your buddy around a pixel-art village with seasons, weather, festivals and a house to decorate. Learn real HTML, CSS and Python in the Coding Lab, program a robot with sensors, solve gear and lever puzzles, hop through a second world, and play two-player games on one device. See [docs/VILLAGE_ARCHITECTURE.md](docs/VILLAGE_ARCHITECTURE.md) and [APPSTORE.md](APPSTORE.md).
 >
-> Version **1.4**: My Castle (decorate your home and care for your buddies), learning levels that adapt to each child, and a gentle daily play limit. Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
+> Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
 
 ---
 
-## Hop Village (2.7)
+## Hop Village (2.0 release)
 
 | On the phone (3× pixel scale) | The whole village |
 |:---:|:---:|
@@ -64,18 +64,18 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 |---|---|---|
 | **Hop Village** | Walk anywhere with the joystick or by tapping. Every game has a building. Finish all 10 challenges to open your castle. Chat with 12 villagers, take on 7 missions (fix the clock, water the garden, deliver mail, hop the lily pads and more). Hop forward a few feet with the Hop button, even across water. **Seasons** follow the calendar, the **weather** changes daily (sun, clouds, wind, rain, snow), and Gemma Giraffe hosts a **festival** each week (7 in all, any of them playable any time from the notice board). **Your own house** on the hill can be painted and decorated, with a new decoration from every festival. A pop-quiz buddy drops by every 2 minutes with a follow-up question | Road safety, math, science, nature and words riddles; seasons and weather science; recall of what each game taught; exploring and wayfinding |
 | **Coding Lab** 💻 | A building in the village (and a menu tile). Ocho the octopus teaches 24 beginner lessons in 3 tracks, and every lesson adds to a real project the child keeps and can remix: **Web Designer** (HTML & CSS: a live web page with fonts, flexbox and a CSS animation), **Python Coder** (print, variables, math, loops, if/else, functions with parameters and return, and the Hop-Skip counting game, run in a safe built-in Python), **Game Maker** (a Python star-catching game with speed, bubbles to dodge and a level-up). **Free Build** in each track: make your own project from the blocks you've learned | HTML tags, CSS colors, fonts, layout and animation; print, variables, loops, if/else, functions, return, remainders; events and game design |
-| **Brain Duels** (live play) | Friends in the same room (or Game Center friends, if a grown-up allows) see each other's buddies and can duel: 5 questions, fastest right answers win. No chat, ever | Quick recall, sportsmanship |
-| **Hop levels** (Meadow Street, Lily River, Castle Hill) | Hop across roads, rivers and lily pads to reach the castle | Looking both ways, timing, patience |
+| **Brain Duels** (live play) | Off until a grown-up turns it on. Then friends in the same room (or Game Center friends) see each other's buddies and can duel: 5 questions, fastest right answers win. Only buddy names are shared, never the child's name. No chat, ever | Quick recall, sportsmanship |
+| **Hop levels** (Meadow Street, Lily River, Castle Hill, then **Snowy Peaks**: Frosty Path, Icy Lake, Peak Castle) | Hop across roads, rivers and lily pads to reach the castle, then across snowy roads and ice floes in the second world. Worlds after the first are data (`worlds.json`), not code | Looking both ways, timing, patience |
 | **Brain Gates** | Ollie Owl asks a question, answered with lettered, color-coded buttons | Math, road safety, nature, science, words |
 | **Driving School and City Rally** | Steer with a wheel, use the **brake** and **gas** pedals (gas on the far right, like a real car), use blinkers and stop at lights | Real road rules, in a kid-friendly way |
 | **Robot Lab** | Build a robot part by part, then "code" it with arrow commands to reach the star | Engineering basics: chassis, battery, motors, wheels, sensors, microcontroller, sequencing |
 | **Bubble Kart** | Kart racing with bubble shields, carrot boosts and jelly pads (three cups) | Steering, items, fair play |
 | **My Castle** | Tap the castle on the map to decorate your own room with furniture bought with stars, change the walls, invite Sticker Book buddies, and share treats with them (no hunger or guilt mechanics) | Creativity, planning, caring for others |
 | **Code Club** | 9 coding puzzles after the robot is built: program the robot with Forward, Turn and **Repeat** blocks, then sensor blocks (**Repeat until ⭐**, **If blocked … else**) where one program must solve several maps. Plus the **Machine Workshop**: 6 puzzles with gears, levers and pulleys | Coding: sequences, loops, patterns, algorithms, conditionals, sensors; simple machines and the math behind them |
-| **Fort Friends** | A building game with no fighting. Build ramps, blocks and bridges with bricks to reach balloons and a tree-house fort, while a sleepy rain cloud drifts along behind you | Engineering: inclined planes, support, planning a budget of bricks, recycling |
+| **Fort Friends** | A building game with no fighting. Build ramps, blocks and bridges with bricks to reach balloons and a tree-house fort, while a sleepy rain cloud drifts along behind you. Six levels (Lily Lagoon, Treetop Towers and Moat Castle are new) plus **Builder's Island**, an endless sandbox that remembers what you built | Engineering: inclined planes, support, planning a budget of bricks, recycling |
 | **Pillow Bop Arena** | A gentle party-brawler: walk, jump and swing a pillow to push three buddy bots toward the edge of a floating island. Falling off just means a balloon floats you back. Pop the Brain Bubble and answer it for a GIANT pillow | Sportsmanship, timing, quick thinking |
 | **Sticker Book** | Every 6 stars earns a sticker pack with a new buddy and a fun fact read aloud. Collect all 29 | Animal and nature facts, goal-setting |
-| **Together mode** | A grown-up and a kid play on one device: Team Hop, Team Drive, **two-player Bubble Kart**, **two-player Pillow Bop**, and **Team Robot Code** (take turns adding blocks, like pair programmers) | Co-op play, fair play, and talking it through |
+| **Together mode** | A grown-up and a kid play on one device: Team Hop, Team Drive, **two-player Bubble Kart**, **two-player Pillow Bop**, **Team Robot Code** (take turns adding blocks, like pair programmers) and **Team Fort** (two builders, longer reach) | Co-op play, fair play, and talking it through |
 | **Hot air balloon finish** | Your buddy rides a balloon from big to little and lands on the next level | |
 
 **Kid- and parent-friendly by design:**
@@ -86,7 +86,7 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 - **Grown-ups area** behind a parent gate, with break reminders, narration and sound settings, plus a **Learning Report**: Brain Gate questions solved per subject (with first-try rates) and progress in every mode.
 - **Learning level:** questions fit the child's age: picture counting for 4–5, the classic mix for 6–7, times tables and harder science and words for 8–10. Automatic mode adapts to how the child is doing.
 - **Daily play limit** with a gentle "time to rest" goodbye. HopQuest has **no streaks, no daily-login rewards and no notifications**.
-- Saves only on the device, with no data collection.
+- Saves only on the device, with no data collection. Live play is off until a grown-up turns it on, and shares only the buddy's name.
 
 ---
 
@@ -106,6 +106,8 @@ The village's logic (map, A* pathfinding, collision, movement, NPC behavior, sav
 Tests/VillageLogic/run.sh      # needs swiftc (Xcode command-line tools on a Mac, or any Swift toolchain)
 Tests/CodeLab/run.sh           # the mini Python, all 24 lessons, every project, and Free Build
 Tests/RobotLab/run.sh          # Code Club's robot language, every puzzle's solvability, and the Machine Workshop
+python3 Tests/FortLevels/check_levels.py   # every Fort Friends level can be finished within its brick budget
+Tests/Worlds/run.sh            # worlds.json decodes and passes every content check
 ```
 
 ## Project layout

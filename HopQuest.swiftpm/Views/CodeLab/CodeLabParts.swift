@@ -205,8 +205,11 @@ struct WebPreviewView: UIViewRepresentable {
     func updateUIView(_ view: WKWebView, context: Context) {
         guard context.coordinator.lastHTML != html else { return }
         context.coordinator.lastHTML = html
-        view.loadHTMLString(html, baseURL: nil)
+        view.loadHTMLString(Self.offlineOnly + html, baseURL: nil)
     }
+
+    /// A content policy that stops the page loading anything from the internet (pictures are embedded as data).
+    static let offlineOnly = #"<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:">"#
 
     final class Coordinator: NSObject, WKNavigationDelegate {
         var lastHTML = ""
@@ -214,7 +217,8 @@ struct WebPreviewView: UIViewRepresentable {
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             // only the page itself; nothing navigates away
-            decisionHandler(action.navigationType == .other ? .allow : .cancel)
+            let local = action.request.url.map { $0.scheme == "about" } ?? true
+            decisionHandler(action.navigationType == .other && local ? .allow : .cancel)
         }
     }
 }

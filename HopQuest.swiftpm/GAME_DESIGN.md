@@ -204,13 +204,31 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - **Team Robot Code:** Code Club with turn-taking, like pair programmers. Each block shows who added it.
 - Two-player games earn stars together, but cup trophies and best scores stay solo records.
 
+### v2.8: Polish and kid-test pass
+- A code audit of every v2.3–v2.7 screen found 25 issues, all fixed: robot and machine runs are cancelled when you leave (no stars awarded after Back), a Brain Duel can't get stuck ("Leave the duel"), tap targets are at least 44 points, hold-to-walk buttons can't stick after an interrupted touch, and pop-ups fit small phones.
+
+### v2.9: Fort Friends 2
+- Three new levels: Lily Lagoon, Treetop Towers and Moat Castle. A checker (`Tests/FortLevels/check_levels.py`) proves each one can be finished within its brick budget.
+- **Builder's Island:** an endless sandbox that saves what you build, with a two-tap "Start over".
+- **Team Fort** in Together mode: two builders with a longer reach.
+
+### v3.0: Snowy Peaks, the second story world
+- Opens after Castle Hill: Frosty Path, Icy Lake and Peak Castle, with snow, ice floes, snowplows and winter Brain Gate questions.
+- Worlds after the first are **data**: `Assets.xcassets/worlds.dataset/worlds.json` sets each level's ground, floaters, decorations, vehicle colors, rivers and questions. `WorldData.problems` checks a file before the game uses it (`Tests/Worlds`), so a new world needs no code.
+
+### v3.1: App Store update prep (version 2.0, build 2)
+- **Live play is off by default.** Kids can't turn it on; a grown-up chooses Nearby, Game Center friends or Anyone behind the parental gate. That also means the Local Network prompt never surprises a child.
+- **Only the buddy's name is shared**, in every mode (before, Nearby showed the child's first name).
+- The Web Builder preview gets a content policy that blocks every network load, on top of JavaScript off and navigation blocked.
+- Listing, What's New, review notes, age-rating and privacy answers for 2.0 are in `APPSTORE.md`; `PRIVACY.md` and `SUPPORT.md` cover playing with others.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.
 2. Commission or generate original illustrated art + sound (soft boings, balloon whoosh, castle fanfare).
 3. ~~Add narration for every Brain Gate question and tip~~ — done in v0.2 with the built-in voice. Later: swap in recorded voice acting for the characters.
-4. Move levels to data files so new worlds don't need code changes. (Fort Friends levels are already text maps in `FortScene.swift`.)
-5. Privacy policy + App Store Kids Category submission.
+4. ~~Move levels to data files so new worlds don't need code changes~~ — done in v3.0 for story worlds (`worlds.json`). Fort Friends levels are text maps in `FortScene.swift`.
+5. Privacy policy + App Store Kids Category submission. Version 2.0's listing is ready in `APPSTORE.md` (v3.1).
 
 ---
 

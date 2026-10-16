@@ -45,7 +45,7 @@ struct VillageSaveState: Codable, Equatable {
     var duelStarsToday: Int = 0
     /// Rotates the pop-quiz questions.
     var popTurn: Int = 0
-    var playMode: VillagePlayMode = .nearby
+    var playMode: VillagePlayMode = .off
     /// The festival the child picked on the notice board (nil = this week's festival).
     var festivalPick: String?
     /// The child's house on the hill.
@@ -87,7 +87,7 @@ struct VillageSaveState: Codable, Equatable {
         duelDay = (try? c.decodeIfPresent(String.self, forKey: .duelDay)) ?? ""
         duelStarsToday = (try? c.decodeIfPresent(Int.self, forKey: .duelStarsToday)) ?? 0
         popTurn = (try? c.decodeIfPresent(Int.self, forKey: .popTurn)) ?? 0
-        playMode = (try? c.decodeIfPresent(VillagePlayMode.self, forKey: .playMode)) ?? .nearby
+        playMode = (try? c.decodeIfPresent(VillagePlayMode.self, forKey: .playMode)) ?? .off
         festivalPick = try? c.decodeIfPresent(String.self, forKey: .festivalPick)
         home = (try? c.decodeIfPresent(HomeStyle.self, forKey: .home)) ?? HomeStyle()
         seasons = (try? c.decodeIfPresent(Bool.self, forKey: .seasons)) ?? true

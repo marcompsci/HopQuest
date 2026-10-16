@@ -365,8 +365,8 @@ struct HopVillageView: View {
     /// Starts (or restarts) live play the way the grown-ups set it up.
     private func startNetwork() {
         let mode = store.profile?.village.playMode ?? .off
-        // Nearby friends are in the same room, so they see the child's first name. Online, only the buddy's name.
-        let nick = mode == .nearby ? (store.profile?.name ?? store.character.name) : store.character.name
+        // Only the buddy's name ever leaves the device (nearby or online), never the child's name.
+        let nick = store.character.name
         if mode == .off {
             network.stop()
         } else {

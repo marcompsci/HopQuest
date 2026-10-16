@@ -64,7 +64,7 @@ final class VillageNetwork: ObservableObject {
 
     // MARK: Start / stop
 
-    /// `nick` must already be safe for the mode (online modes pass the buddy's name, never the child's).
+    /// `nick` is always the buddy's name (never the child's), in every mode.
     func start(mode: VillagePlayMode, nick: String, characterID: String) {
         guard mode != self.mode || transport == nil else { updateHello(nick: nick, characterID: characterID); return }
         stop()
