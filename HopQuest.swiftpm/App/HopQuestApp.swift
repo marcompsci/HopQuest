@@ -3,17 +3,20 @@ import SwiftUI
 @main
 struct HopQuestApp: App {
     @StateObject private var store = GameStore()
+    @StateObject private var network = VillageNetwork()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store)
+                .environmentObject(network)
                 .preferredColorScheme(.light)
         }
     }
 }
 
 enum Route: Equatable {
+    case menu
     case map(landing: Int?)
     case playing(Int)
     case teamSetup
@@ -30,14 +33,16 @@ enum Route: Equatable {
 
 struct RootView: View {
     @EnvironmentObject var store: GameStore
-    @State private var route: Route = .map(landing: nil)
+    @State private var route: Route = .menu
     @State private var sessionStart = Date()
     @State private var showBreak = false
     @State private var restTime = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var raceNonce = 0
-    /// True when the child is playing from Hop Village, so "back" and balloon landings return there.
-    @State private var homeIsVillage = false
+    /// Where "back" and balloon landings return: the menu, the world map, or Hop Village.
+    private enum Hub { case menu, map, village }
+    @State private var hub: Hub = .menu
+    @State private var castleNote: String?
     private let ticker = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -65,13 +70,14 @@ struct RootView: View {
                 .zIndex(10)
             }
         }
+        .overlay(alignment: .bottom) {
+            if let castleNote {
+                MessageBubble(text: castleNote).padding(.bottom, 40)
+            }
+        }
         .animation(.easeInOut(duration: 0.35), value: route)
         .animation(.easeInOut(duration: 0.35), value: store.profile == nil)
         .onAppear {
-            if store.profile?.village.startInVillage == true {
-                homeIsVillage = true
-                route = .village
-            }
             updateMusic()
             if store.timeIsUp { restTime = true }
         }
@@ -98,6 +104,18 @@ struct RootView: View {
     @ViewBuilder
     private var content: some View {
         switch route {
+        case .menu:
+            MainMenuView(onPlay: { hub = .village; route = .village },
+                         onChapter: { chapter in play(chapter) },
+                         onStickers: { route = .stickers },
+                         onFort: { route = .fortSelect },
+                         onBop: { route = .bop },
+                         onKart: { route = .kartSelect },
+                         onTeam: { route = .teamSetup },
+                         onCastle: { openCastle() },
+                         onMap: { hub = .map; route = .map(landing: nil) })
+                .onAppear { hub = .menu }
+
         case .map(let landing):
             WorldMapView(landing: landing,
                          onPlay: { chapter in play(chapter) },
@@ -106,12 +124,12 @@ struct RootView: View {
                          onBop: { route = .bop },
                          onFort: { route = .fortSelect },
                          onStickers: { route = .stickers },
-                         onCastle: { route = .castle },
+                         onCastle: { openCastle() },
                          onVillage: {
-                             homeIsVillage = true
+                             hub = .village
                              route = .village
                          })
-                .onAppear { homeIsVillage = false }
+                .onAppear { hub = .map }
 
         case .village:
             HopVillageView(onOpen: { destination in
@@ -121,14 +139,15 @@ struct RootView: View {
                                case .bop: route = .bop
                                case .fortSelect: route = .fortSelect
                                case .kartSelect: route = .kartSelect
+                               case .together: route = .teamSetup
                                case .chapter(let id): play(Chapters.chapter(id))
                                }
                            },
-                           onMap: {
-                               homeIsVillage = false
-                               route = .map(landing: nil)
+                           onMenu: {
+                               hub = .menu
+                               route = .menu
                            })
-                .onAppear { homeIsVillage = true }
+                .onAppear { hub = .village }
 
         case .bop:
             BopGameView(onExit: goHome) { stars, again in
@@ -216,7 +235,11 @@ struct RootView: View {
         case .balloon(let next):
             BalloonFlightView(theme: store.theme, character: store.character) {
                 // the balloon lands back where the child set off from: the village or the map
-                route = homeIsVillage ? .village : .map(landing: next)
+                switch hub {
+                case .village: route = .village
+                case .menu: route = .menu
+                case .map: route = .map(landing: next)
+                }
             }
         }
     }
@@ -234,9 +257,25 @@ struct RootView: View {
         }
     }
 
-    /// Back to wherever the child came from (Hop Village or the world map).
+    /// Back to wherever the child came from (the menu, Hop Village or the world map).
     private func goHome() {
-        route = homeIsVillage ? .village : .map(landing: nil)
+        switch hub {
+        case .village: route = .village
+        case .menu: route = .menu
+        case .map: route = .map(landing: nil)
+        }
+    }
+
+    /// My Castle opens once every Hop Village challenge is done.
+    private func openCastle() {
+        if store.castleOpen {
+            route = .castle
+        } else {
+            let text = "Your castle opens after all \(ChallengeProgress.total) Hop Village challenges. You've done \(store.challengeProgress.doneCount)! 🏆"
+            castleNote = text
+            Narrator.shared.say(text)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { if castleNote == text { castleNote = nil } }
+        }
     }
 
     /// Opens a story chapter. Once the robot is built, the Robot Lab stop opens Code Club.

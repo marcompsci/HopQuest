@@ -1,15 +1,17 @@
-"""Hop Village layout. Writes the ASCII map that VillageMapData.swift ships with.
+"""Hop Village layout (v2: a building for every game). Writes the ASCII map that VillageMapData.swift ships with.
 Row 0 is the NORTH edge. Legend (also documented in VillageMap.swift):
   .  grass            =  stone path        ~  water (blocked)    o  lily pad (walkable, over water)
   #  wooden bridge    r  road              z  crosswalk          s  sand / dirt
   *  flowers (walk)   T  tree (blocked)    t  bush (blocked)     F  fence (blocked)
   B  bench (blocked)  L  lamp (blocked)    c  parked car         n  traffic sign
   k  crane            b  block pile        m  mushroom (walk)    R  rock (blocked)
-  1 2 3  portals to Hop chapters 1, 4, 6
-  building footprints: C castle, M museum, A arena, W workshop, D academy, K kart stadium, Y fort shed, Q fountain
+  building footprints (doors face south, centered):
+    C castle   M sticker museum   A pillow bop arena   W robot lab   D driving school   X city rally garage
+    K kart stadium   Y fort friends shed   U together clubhouse   G meadow street cottage
+    V lily river boathouse   H castle hill tower   Q fountain
 """
 import random
-W, H = 40, 48
+W, H = 44, 54
 g = [['.'] * W for _ in range(H)]
 def put(c, r, ch):
     if 0 <= c < W and 0 <= r < H: g[r][c] = ch
@@ -25,103 +27,98 @@ for c in range(W):
 for r in range(H):
     put(0, r, 'T'); put(1, r, 'T' if r % 4 else 't'); put(W - 1, r, 'T'); put(W - 2, r, 'T' if r % 3 else 't')
 
-# --- main avenues (2 wide)
-vline(19, 9, 36); vline(20, 9, 36)
-hline(12, 6, 33); hline(13, 6, 33)          # north road past castle
-hline(24, 5, 34); hline(25, 5, 34)          # south road
-# village square ring around the fountain
-rect(15, 15, 24, 22, '=')
-rect(18, 17, 21, 20, 'Q')                   # fountain 4x4
-# benches, lamps, flowers around the square
-for (c, r) in [(16, 16), (23, 16), (16, 21), (23, 21)]: put(c, r, '*')
-put(14, 16, 'B'); put(25, 16, 'B'); put(14, 21, 'B'); put(25, 21, 'B')
-put(14, 18, 'L'); put(25, 18, 'L'); put(17, 23, 'L'); put(22, 23, 'L')
+# --- roads: north road, main avenue, south avenue, forest trail
+hline(12, 6, 37); hline(13, 6, 37)
+vline(21, 9, 41); vline(22, 9, 41)
+hline(28, 5, 39); hline(29, 5, 39)
+hline(41, 7, 36); hline(42, 7, 36)
 
-# --- My Castle (north, centered)
-rect(16, 3, 23, 8, 'C')                     # 8 wide, door at cols 19-20 bottom row 8
-vline(19, 9, 11); vline(20, 9, 11)
-for c in range(12, 16): put(c, 9, '*')
-for c in range(24, 28): put(c, 9, '*')
-put(14, 7, 't'); put(25, 7, 't')
+# --- Village Square (Brain Duel plaza) with the fountain
+rect(16, 15, 27, 24, '=')
+rect(20, 18, 23, 21, 'Q')
+for (c, r) in [(17, 16), (26, 16), (17, 23), (26, 23)]: put(c, r, '*')
+put(15, 16, 'B'); put(28, 16, 'B'); put(15, 23, 'B'); put(28, 23, 'B')
+put(15, 19, 'L'); put(28, 19, 'L'); put(19, 25, 'L'); put(24, 25, 'L')
+
+# --- My Castle (north center): opens after every challenge is done
+rect(18, 3, 25, 8, 'C')
+vline(21, 9, 11); vline(22, 9, 11)
+for c in range(13, 18): put(c, 9, '*')
+for c in range(26, 31): put(c, 9, '*')
+put(16, 7, 't'); put(27, 7, 't')
 
 # --- Sticker Book Museum (NW)
 rect(4, 4, 9, 8, 'M'); vline(7, 9, 11)
-put(3, 9, '*'); put(10, 9, '*'); put(11, 5, 'T')
+put(3, 9, '*'); put(10, 9, '*'); put(12, 5, 'T')
 
-# --- Pillow Bop Arena on a little lake island (NE)
-rect(28, 2, 37, 10, '~')
-rect(30, 3, 35, 7, 'A')                     # arena 6x5 on the island
-rect(29, 8, 36, 8, 's')                     # island beach in front
-put(29, 3, 's'); put(36, 3, 's')
-vline(32, 9, 11, '#'); vline(33, 9, 11, '#')   # bridge to the north road
-put(32, 8, '='); put(33, 8, '=')
+# --- Pillow Bop Arena on a lake island (NE)
+rect(31, 2, 41, 10, '~')
+rect(33, 3, 38, 7, 'A')
+rect(32, 8, 39, 8, 's')
+put(32, 3, 's'); put(39, 3, 's')
+vline(35, 9, 11, '#'); vline(36, 9, 11, '#')
+put(35, 8, '='); put(36, 8, '=')
 
-# --- Robot Workshop (W)
-rect(3, 16, 9, 20, 'W'); vline(6, 21, 23); hline(14, 6, 6)
-vline(6, 13, 15); put(10, 17, 'b'); put(10, 19, 'R'); put(2+1, 22, 'R')
+# --- Robot Lab (W)
+rect(3, 16, 9, 20, 'W'); vline(6, 21, 27); vline(6, 14, 15)
+put(11, 17, 'b'); put(11, 19, 'R'); put(3, 23, 'R')
 
-# --- Driving Academy (E) with a practice road
-rect(30, 15, 36, 19, 'D'); vline(33, 20, 23)
-rect(26, 20, 37, 21, 'r')                   # practice road in front of the academy
-put(33, 20, 'z'); put(33, 21, 'z'); put(32, 20, 'z'); put(32, 21, 'z')
-put(28, 20, 'c'); put(36, 21, 'c'); put(29, 19, 'n'); put(37, 19, 'n')
-hline(22, 33, 33); put(26, 19, 'L')
-# connect square to the road
-hline(18, 25, 29)
+# --- Driving School (E) on a practice road, City Rally garage south of it
+rect(33, 14, 39, 18, 'D')
+rect(29, 19, 41, 20, 'r')
+put(35, 19, 'z'); put(36, 19, 'z'); put(35, 20, 'z'); put(36, 20, 'z')
+put(31, 19, 'c'); put(40, 20, 'c'); put(32, 18, 'n'); put(40, 18, 'n')
+hline(18, 28, 31)                                  # square → road
+rect(33, 22, 39, 26, 'X')                          # City Rally garage
+vline(36, 21, 21)                                  # road → around the garage
+vline(32, 21, 27); vline(36, 27, 27)               # path down the west side to the doorstep / avenue
+put(30, 21, 'L')
 
 # --- Fort Friends Construction Yard (SW)
-rect(3, 27, 13, 33, 's')
-rect(4, 28, 8, 30, 'Y'); vline(6, 31, 33, 's')
-put(10, 28, 'k'); put(11, 31, 'b'); put(12, 29, 'b'); put(9, 32, 'b')
-for c in range(3, 14): put(c, 34, 'F')
-put(8, 34, 's'); put(9, 34, 's')            # yard gate
-for r in range(27, 34): put(14, r, 'F')
-put(14, 30, 's'); put(14, 31, 's')          # side gate toward the avenue
-hline(30, 15, 18); hline(31, 15, 18)
-vline(8, 26, 26, 's'); vline(8, 26, 25)
+rect(3, 31, 14, 37, 's')
+rect(4, 32, 8, 34, 'Y'); vline(6, 35, 37, 's')
+put(11, 32, 'k'); put(12, 35, 'b'); put(13, 33, 'b'); put(10, 36, 'b')
+for c in range(3, 15): put(c, 38, 'F')
+for r in range(31, 38): put(15, r, 'F')
+put(15, 34, 's'); put(15, 35, 's')                 # side gate toward the avenue
+hline(34, 16, 20); hline(35, 16, 20)
+vline(8, 30, 30, 's'); vline(8, 29, 29)
+
+# --- Together Clubhouse (center south, east of the avenue)
+rect(25, 31, 30, 34, 'U'); vline(28, 35, 36); hline(36, 23, 28)
+put(24, 32, '*'); put(31, 32, '*')
 
 # --- Bubble Kart Stadium (SE)
-rect(28, 27, 36, 32, 'K'); vline(27, 26, 33); hline(33, 27, 32)
-put(27, 33, '*'); put(37, 33, '*')
+rect(33, 31, 41, 36, 'K'); vline(32, 30, 37); hline(37, 32, 37)
 
-# --- Adventure Forest (south)
+# --- Adventure Forest (south): three hop-adventure buildings and a lily pond
 random.seed(7)
-for r in range(35, H - 2):
+for r in range(39, H - 2):
     for c in range(2, W - 2):
         if g[r][c] == '.' and random.random() < 0.30:
             g[r][c] = 'T' if random.random() < 0.75 else 't'
-# forest trails (clear trees)
-def trail(points):
-    for (a, b) in zip(points, points[1:]):
-        (c0, r0), (c1, r1) = a, b
-        for c in range(min(c0, c1), max(c0, c1) + 1):
-            for rr in (r0,):
-                g[rr][c] = '=' if g[rr][c] in '.Tt*' else g[rr][c]
-                if rr + 1 < H - 2 and g[rr + 1][c] in 'Tt': g[rr + 1][c] = '.'
-        for r in range(min(r0, r1), max(r0, r1) + 1):
-            g[r][c1] = '=' if g[r][c1] in '.Tt*' else g[r][c1]
-            if c1 + 1 < W - 2 and g[r][c1 + 1] in 'Tt': g[r][c1 + 1] = '.'
-trail([(19, 35), (19, 37), (8, 37), (8, 41)])            # west branch → portal 1
-trail([(20, 35), (20, 37), (32, 37), (32, 41)])          # east branch → portal 3
-# pond with lily pads and a bridge
-rect(14, 39, 26, 43, '~')
-rect(15, 38, 25, 38, '~'); rect(15, 44, 25, 44, '~')
-vline(19, 38, 44, '#'); vline(20, 38, 41, '#')
-for c in (21, 23, 25): put(c, 42, 'o')
-put(22, 43, 'o'); put(24, 41, 'o')
-vline(19, 37, 37); vline(20, 37, 37)
-rect(18, 45, 21, 45, '='); 
-# clear around portals
-for (c, r, ch) in [(8, 42, '1'), (20, 45, '2'), (32, 42, '3')]:
-    rect(c - 1, r - 1, c + 1, r + 1, '.')
-    put(c, r, ch)
-put(8, 41, '='); put(32, 41, '='); put(19, 45, '='); put(21, 45, '='); put(20, 44, '#')
-# some mushrooms & flowers in clearings
-for (c, r) in [(7, 43), (9, 43), (31, 43), (33, 43), (18, 46), (22, 46)]:
+hline(41, 7, 36); hline(42, 7, 36)                 # re-carve the trail through the trees
+for c in range(7, 37):
+    if g[40][c] in 'Tt': g[40][c] = '.'
+    if g[43][c] in 'Tt': g[43][c] = '.'
+# Meadow Street cottage (west)
+rect(4, 45, 9, 48, '.'); rect(5, 45, 9, 48, 'G'); vline(7, 43, 44); vline(7, 49, 49)
+# Lily River boathouse (center-west, on the pond shore) and the pond
+rect(18, 44, 31, 50, '~'); rect(19, 51, 30, 51, '~')
+rect(11, 45, 15, 48, 'V'); vline(13, 43, 44); vline(13, 49, 49)
+rect(10, 44, 16, 44, '.'); rect(10, 49, 17, 50, '.')
+hline(49, 14, 17)
+for (c, r) in [(18, 49), (20, 48), (22, 49), (24, 48), (26, 49)]: put(c, r, 'o')
+vline(28, 43, 47, '#'); put(28, 48, 'o')           # a little jetty out over the pond
+# Castle Hill tower (east)
+rect(33, 44, 39, 49, '.'); rect(34, 45, 38, 48, 'H'); vline(36, 43, 44); vline(36, 49, 49)
+# mushrooms in the clearings
+for (c, r) in [(4, 49), (10, 50), (33, 50), (39, 50), (25, 43), (16, 43)]:
     if g[r][c] == '.': g[r][c] = 'm'
+
 # meadow flowers sprinkled in grass (walkable)
 random.seed(3)
-for r in range(2, 34):
+for r in range(2, 38):
     for c in range(2, W - 2):
         if g[r][c] == '.' and random.random() < 0.05: g[r][c] = '*'
 

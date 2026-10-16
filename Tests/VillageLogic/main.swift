@@ -33,9 +33,9 @@ let fromSpawn = reachable(from: map.spawn)
 
 print("Hop Village logic tests")
 
-test("map is 40 x 48 and rectangular") {
-    check(map.width == 40 && map.height == 48, "size \(map.width)x\(map.height)")
-    check(VillageMapData.rows.allSatisfy { $0.count == 40 }, "all rows 40 wide")
+test("map is 44 x 54 and rectangular") {
+    check(map.width == 44 && map.height == 54, "size \(map.width)x\(map.height)")
+    check(VillageMapData.rows.allSatisfy { $0.count == 44 }, "all rows 44 wide")
 }
 
 test("map edges are closed (no walking off the world)") {
@@ -43,18 +43,19 @@ test("map edges are closed (no walking off the world)") {
     for r in 0..<map.height { check(!map.isWalkable(0, r) && !map.isWalkable(map.width - 1, r), "edge row \(r)") }
 }
 
-test("all eight landmarks exist") {
+test("every game has a building") {
     for k in BuildingKind.allCases { check(map.building(k) != nil, "building \(k)") }
-    check(map.portals.map(\.number) == [1, 2, 3], "three portals")
-    check(map.portals.map(\.chapterID) == [1, 4, 6], "portals lead to hop chapters 1, 4, 6")
+    let chapters = map.buildings.compactMap(\.kind.storyChapter).sorted()
+    check(chapters == [1, 2, 3, 4, 5, 6], "a building for each story chapter: \(chapters)")
+    check(Set(VillageChallenge.allCases.map(\.building)).count == 9, "nine challenge buildings")
+    for c in VillageChallenge.allCases { check(map.building(c.building) != nil, "\(c) building on the map") }
 }
 
-test("spawn is walkable and every door, portal, and NPC home is reachable") {
+test("spawn is walkable and every door and NPC home is reachable") {
     check(map.isWalkable(map.spawn), "spawn walkable")
     for b in map.buildings where b.kind.hasDoor {
         check(fromSpawn.contains(b.doorstep), "\(b.kind.title) doorstep \(b.doorstep) reachable")
     }
-    for p in map.portals { check(fromSpawn.contains(p.tile), "portal \(p.number) reachable") }
     for n in VillageNPCDef.all {
         check(fromSpawn.contains(n.home), "\(n.id) home reachable")
         check(fromSpawn.contains(n.activitySpot), "\(n.id) activity spot reachable")
@@ -69,7 +70,7 @@ test("doorsteps sit right below each building's footprint") {
 }
 
 test("A* finds paths that never touch a blocked tile and never cut corners") {
-    var targets: [GridPoint] = map.buildings.filter { $0.kind.hasDoor }.map(\.doorstep) + map.portals.map(\.tile)
+    var targets: [GridPoint] = map.buildings.filter { $0.kind.hasDoor }.map(\.doorstep)
     targets += VillageNPCDef.all.map(\.home)
     for t in targets {
         guard let p = pf.path(from: map.spawn, to: t) else { check(false, "no path to \(t)"); continue }
@@ -95,8 +96,8 @@ test("A* returns nil for blocked or unreachable goals") {
 }
 
 test("A* is deterministic") {
-    let a = pf.path(from: map.spawn, to: map.portals[2].tile)
-    let b = pf.path(from: map.spawn, to: map.portals[2].tile)
+    let a = pf.path(from: map.spawn, to: map.building(.tower)!.doorstep)
+    let b = pf.path(from: map.spawn, to: map.building(.tower)!.doorstep)
     check(a == b, "same path twice")
 }
 
@@ -126,9 +127,8 @@ test("collision slides along walls") {
     check(p.position.x > x0 + 0.5, "slid sideways along the wall")
 }
 
-test("tap-to-move reaches every door and portal") {
-    var targets = map.buildings.filter { $0.kind.hasDoor }.map(\.doorstep)
-    targets += map.portals.map(\.tile)
+test("tap-to-move reaches every door") {
+    let targets = map.buildings.filter { $0.kind.hasDoor }.map(\.doorstep)
     for t in targets {
         var p = VillagePlayerController(map: map, start: map.spawn)
         check(p.walk(to: t), "path to \(t)")
@@ -150,7 +150,7 @@ test("tapping a building or a tree walks to the nearest open tile") {
 
 test("joystick overrides a tap path") {
     var p = VillagePlayerController(map: map, start: map.spawn)
-    p.walk(to: map.portals[0].tile)
+    p.walk(to: map.building(.cottage)!.doorstep)
     p.joystick = VPoint(1, 0)
     p.step(dt: 1.0 / 60)
     check(!p.hasPath, "path cleared by joystick")
@@ -236,7 +236,10 @@ test("interaction finder picks the nearest thing") {
     let nearDoor = castle.doorstep.center + VPoint(-0.8, 0)
     check(InteractionFinder.find(player: nearDoor, npcs: [("x", nearDoor + VPoint(-0.5, 0))], map: map) == .talk(npcID: "x"), "a buddy right beside you beats a door farther away")
     check(InteractionFinder.find(player: map.spawn.center, npcs: [], map: map) == nil, "nothing in the square")
-    check(InteractionFinder.find(player: map.portals[1].tile.center, npcs: [], map: map) == .portal(2), "portal")
+    check(InteractionFinder.find(player: map.building(.boathouse)!.doorstep.center, npcs: [], map: map) == .enter(.boathouse), "hop building")
+    let spot = map.spawn.center
+    check(InteractionFinder.find(player: spot, npcs: [], peers: [("p1", spot + VPoint(1.0, 0))], map: map) == .challenge(peerKey: "p1"), "live player in reach")
+    check(InteractionFinder.find(player: spot, npcs: [], peers: [("p1", spot + VPoint(3, 0))], map: map) == nil, "live player too far")
     check(InteractionFinder.find(player: map.spawn.center, npcs: [("a", map.spawn.center + VPoint(1.2, 0)), ("b", map.spawn.center + VPoint(0.7, 0))], map: map) == .talk(npcID: "b"), "closest buddy")
 }
 
@@ -247,11 +250,14 @@ test("save state: decodes from empty JSON, old versions, and round-trips") {
 
     let v1 = #"{"version":1,"tileX":7,"tileY":9,"facing":"north","solved":["ollie"],"futureField":42}"#
     let s = try JSONDecoder().decode(VillageSaveState.self, from: Data(v1.utf8))
-    check(s.tile == GridPoint(7, 9) && s.facing == .north && s.solved == ["ollie"], "v1 fields kept, unknown ignored")
+    check(s.tile == map.spawn && s.solved == ["ollie"] && s.version == 2, "v1 save: progress kept, old-map spot moved to the square")
+    let v2 = #"{"version":2,"tileX":7,"tileY":9,"facing":"north","playMode":"friends","futureField":42}"#
+    let s2 = try JSONDecoder().decode(VillageSaveState.self, from: Data(v2.utf8))
+    check(s2.tile == GridPoint(7, 9) && s2.facing == .north && s2.playMode == .friends, "v2 fields kept, unknown ignored")
 
     let bad = #"{"tileX":"oops","facing":"upward"}"#
     let b = try JSONDecoder().decode(VillageSaveState.self, from: Data(bad.utf8))
-    check(b.tile == GridPoint(20, 22) && b.facing == .south, "bad values fall back safely")
+    check(b.tile == GridPoint(22, 23) && b.facing == .south, "bad values fall back safely")
 
     var full = VillageSaveState()
     full.tile = GridPoint(33, 20); full.visited = ["castle"]; full.talkedTo = ["pip"]; full.lightEffects = true; full.startInVillage = true
@@ -283,13 +289,152 @@ test("camera clamps to the world and follows smoothly") {
 test("A* performance: 200 cross-map paths") {
     let start = Date()
     for i in 0..<200 {
-        let a = map.portals[i % 3].tile
-        let b = map.buildings[i % 7].doorstep
+        let a = map.buildings[(i + 5) % map.buildings.count].doorstep
+        let b = map.buildings[i % map.buildings.count].doorstep
         _ = pf.path(from: a, to: b)
     }
     let ms = Date().timeIntervalSince(start) * 1000
     print(String(format: "       (%.1f ms total, %.2f ms per path)", ms, ms / 200))
     check(ms / 200 < 5, "under 5 ms per path")
+}
+
+test("challenges: nine of them, read from existing progress") {
+    var p = ChallengeProgress()
+    check(p.doneCount == 0 && !p.allDone, "nothing done")
+    p.completedChapters = [1, 2, 3]
+    check(p.done == [.meadow, .driving, .robot], "story chapters count")
+    p.completedChapters = [1, 2, 3, 4, 5, 6]
+    p.fortDone = true; p.bopDone = true
+    check(p.doneCount == 8 && !p.allDone, "8 of 9")
+    p.kartDone = true
+    check(p.allDone && ChallengeProgress.total == 9, "all done opens the castle")
+    for c in VillageChallenge.allCases { check(c.building.challenge == c, "\(c) maps back from its building") }
+    check(BuildingKind.castle.challenge == nil && BuildingKind.clubhouse.challenge == nil, "castle and clubhouse aren't challenges")
+}
+
+test("pop-quiz buddy walks up after 2 minutes of play, then leaves") {
+    var courier = QuizCourier(seed: 5)
+    let player = map.spawn.center
+    var arrivedAt: Double?
+    var t = 0.0
+    // frozen time (a dialogue open) doesn't count
+    for _ in 0..<(60 * 200) { _ = courier.step(dt: 1.0 / 60, active: false, player: player, collision: col, pathfinder: pf) }
+    check(courier.phase == .waiting, "paused while not exploring")
+    while t < 200 {
+        if courier.step(dt: 1.0 / 60, active: true, player: player, collision: col, pathfinder: pf) == .arrived { arrivedAt = t; break }
+        if courier.isVisible { check(col.fits(courier.position), "courier never in a wall") }
+        t += 1.0 / 60
+    }
+    check(arrivedAt != nil && arrivedAt! >= QuizCourier.interval, "arrived after 2 min (\(arrivedAt ?? -1))")
+    check(courier.position.distance(to: player) <= 1.45, "right next to the player")
+    courier.finish(collision: col, pathfinder: pf)
+    for _ in 0..<(60 * 25) { _ = courier.step(dt: 1.0 / 60, active: true, player: player, collision: col, pathfinder: pf) }
+    check(courier.phase == .waiting && courier.clock < 30, "left and the timer restarted")
+}
+
+test("pop-quiz buddy finds players anywhere on the map") {
+    for b in map.buildings where b.kind.hasDoor {
+        var courier = QuizCourier(seed: 9)
+        courier.forceSoon()
+        var arrived = false
+        for _ in 0..<(60 * 45) {
+            if courier.step(dt: 1.0 / 60, active: true, player: b.doorstep.center, collision: col, pathfinder: pf) == .arrived { arrived = true; break }
+        }
+        check(arrived, "reached a player at \(b.kind.title)")
+    }
+}
+
+test("follow-up questions: every item is well formed") {
+    for c in VillageChallenge.allCases {
+        let items = FollowUpBank.items(for: c)
+        check(items.count >= 2, "\(c) has follow-ups")
+        for q in items + FollowUpBank.general {
+            check((2...4).contains(q.choices.count) && !q.prompt.isEmpty && !q.explain.isEmpty, "well formed: \(q.prompt)")
+            check(["Math", "Road Safety", "Nature", "Science", "Words"].contains(q.subject), "known subject \(q.subject)")
+        }
+    }
+    check(FollowUpBank.pick(done: [], turn: 3) == FollowUpBank.general[0], "general when nothing is done")
+    check(FollowUpBank.items(for: .driving).contains(FollowUpBank.pick(done: [.driving], turn: 7)), "about a finished game")
+}
+
+test("bonus and duel stars are capped per day (no streaks)") {
+    var v = VillageSaveState()
+    check(v.grantBonus(1, day: "2026-10-16") == 1, "first bonus")
+    for _ in 0..<10 { _ = v.grantBonus(1, day: "2026-10-16") }
+    check(v.bonusToday == VillageSaveState.bonusPerDay, "capped at \(VillageSaveState.bonusPerDay)")
+    check(v.grantBonus(1, day: "2026-10-16") == 0, "no more today")
+    check(v.grantBonus(1, day: "2026-10-17") == 1, "fresh tomorrow")
+    check(v.grantDuelStars(2, day: "d") == 2 && v.grantDuelStars(9, day: "d") == 4, "duel cap 6")
+}
+
+func sampleSetup() -> DuelSetup {
+    DuelSetup(duelID: "d1", players: ["a", "b"], questions: (0..<5).map {
+        DuelQuestion(subject: "Math", prompt: "Q\($0)", choices: ["1", "2", "3"], answer: $0 % 3)
+    })
+}
+
+test("brain duel: scoring, speed bonus, winner and stars") {
+    var duel = BrainDuel(setup: sampleSetup())
+    for i in 0..<5 {
+        duel.record(DuelAnswer(duelID: "d1", player: "a", index: i, choice: i % 3, ms: 1500))      // all right, quick
+        duel.record(DuelAnswer(duelID: "d1", player: "b", index: i, choice: i < 3 ? i % 3 : -1, ms: 8000))
+    }
+    check(duel.isFinished, "finished")
+    check(duel.score("a") == 5 * (10 + 4), "a: 5 right with speed bonus (\(duel.score("a")))")
+    check(duel.score("b") == 3 * 10 && duel.correctCount("b") == 3, "b: 3 right, slow")
+    check(duel.winners == ["a"] && duel.stars(for: "a") == 2 && duel.stars(for: "b") == 1, "winner 2 stars, good try 1")
+    check(!duel.record(DuelAnswer(duelID: "d1", player: "a", index: 0, choice: 1, ms: 1)), "no changing answers")
+    check(!duel.record(DuelAnswer(duelID: "d1", player: "z", index: 0, choice: 1, ms: 1)), "strangers ignored")
+    check(!duel.record(DuelAnswer(duelID: "other", player: "a", index: 1, choice: 1, ms: 1)), "other duels ignored")
+}
+
+test("brain duel: tie gives both a star; unfinished gives none") {
+    var duel = BrainDuel(setup: sampleSetup())
+    for i in 0..<5 {
+        duel.record(DuelAnswer(duelID: "d1", player: "a", index: i, choice: i % 3, ms: 9000))
+        if i < 4 { duel.record(DuelAnswer(duelID: "d1", player: "b", index: i, choice: i % 3, ms: 9000)) }
+    }
+    check(!duel.isFinished && duel.stars(for: "a") == 0, "not finished yet")
+    duel.record(DuelAnswer(duelID: "d1", player: "b", index: 4, choice: 4 % 3, ms: 99_999))   // clamped to 20 s
+    check(duel.isFinished && duel.winners.count == 2 && duel.stars(for: "a") == 1 && duel.stars(for: "b") == 1, "tie")
+    var bad = BrainDuel(setup: sampleSetup())
+    bad.record(DuelAnswer(duelID: "d1", player: "a", index: 0, choice: 42, ms: 100))
+    check(bad.correctCount("a") == 0, "nonsense choice counts as no answer")
+}
+
+test("network messages: round trip, and junk from other phones is rejected or cleaned") {
+    let chars: Set<String> = ["ollie", "lavender"]
+    let size = (w: 44, h: 54)
+    let hello = VillageNetMessage.hello(PeerHello(key: "k1", nick: "Ava", characterID: "ollie", version: 1))
+    check(VillageNetMessage.decode(hello.encoded()!, validCharacters: chars, mapSize: size) == hello, "hello round trip")
+    let rude = VillageNetMessage.hello(PeerHello(key: "k1", nick: "<script>Ava!!🙂 the great and powerful", characterID: "ollie", version: 1))
+    if case .hello(let h)? = VillageNetMessage.decode(rude.encoded()!, validCharacters: chars, mapSize: size) {
+        check(h.nick == "scriptAva th", "nick cleaned to 12 safe characters (\(h.nick))")
+    } else { check(false, "nick should be cleaned, not dropped") }
+    let fake = VillageNetMessage.hello(PeerHello(key: "k1", nick: "x", characterID: "mickey", version: 1))
+    check(VillageNetMessage.decode(fake.encoded()!, validCharacters: chars, mapSize: size) == nil, "unknown buddy rejected")
+    let far = VillageNetMessage.move(PeerMove(key: "k1", x: 9999, y: -5, facing: .east, moving: true))
+    if case .move(let m)? = VillageNetMessage.decode(far.encoded()!, validCharacters: chars, mapSize: size) {
+        check(m.x == 44 && m.y == 0, "positions clamped to the map")
+    } else { check(false, "move should decode") }
+    check(VillageNetMessage.decode(Data("not json".utf8), validCharacters: chars, mapSize: size) == nil, "garbage ignored")
+    check(VillageNetMessage.decode(Data(repeating: 65, count: 20_000), validCharacters: chars, mapSize: size) == nil, "huge ignored")
+    let start = VillageNetMessage.start(sampleSetup())
+    check(VillageNetMessage.decode(start.encoded()!, validCharacters: chars, mapSize: size) == start, "duel setup round trip")
+    var badSetup = sampleSetup(); badSetup.questions[0].answer = 7
+    check(VillageNetMessage.decode(VillageNetMessage.start(badSetup).encoded()!, validCharacters: chars, mapSize: size) == nil, "broken question rejected")
+    check(VillageNetMessage.decode(VillageNetMessage.leave("bad key!").encoded()!, validCharacters: chars, mapSize: size) == nil, "bad key rejected")
+}
+
+test("remote players glide smoothly and snap across big jumps") {
+    var peer = RemotePeer(hello: PeerHello(key: "k", nick: "Ava", characterID: "ollie", version: 1), at: VPoint(10, 10))
+    peer.apply(PeerMove(key: "k", x: 11, y: 10, facing: .east, moving: true), now: 1)
+    peer.advance(dt: 1.0 / 60)
+    check(peer.shown.x > 10 && peer.shown.x < 11, "moving toward the new spot")
+    for _ in 0..<60 { peer.advance(dt: 1.0 / 60) }
+    check(abs(peer.shown.x - 11) < 0.01, "arrived")
+    peer.apply(PeerMove(key: "k", x: 30, y: 40, facing: .south, moving: false), now: 2)
+    check(peer.shown == VPoint(30, 40), "big jump snaps")
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

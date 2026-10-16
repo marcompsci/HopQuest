@@ -30,7 +30,8 @@ def h(c, r): return (c * 73856093 ^ r * 19349663) & 0xffff
 
 PATHLIKE = set('=Qz#')
 WATERLIKE = set('~o#')
-BUILD = {'C': 'castle', 'M': 'museum', 'A': 'arena', 'W': 'workshop', 'D': 'academy', 'K': 'stadium', 'Y': 'shed'}
+BUILD = {'C': 'castle', 'M': 'museum', 'A': 'arena', 'W': 'workshop', 'D': 'academy', 'K': 'stadium', 'Y': 'shed',
+         'X': 'garage', 'U': 'clubhouse', 'G': 'cottage', 'V': 'boathouse', 'H': 'tower'}
 
 def mask(c, r, like):
     m = 0
@@ -91,7 +92,7 @@ for r in range(H):
                 add(load(f'village_{nm}'), bx, by)
 
 buddies = sys.argv[4:] if len(sys.argv) > 4 else ['lavender', 'ollie']
-spots = [(20, 22), (17, 23), (12, 13), (25, 13)]
+spots = [(22, 23), (19, 24), (12, 13), (25, 13)]
 for i, b in enumerate(buddies):
     sheet = load(f'px_{b}')
     fr = sheet.crop((0, 36 * (1 if i else 0), 32, 36 * (1 if i else 0) + 36))
@@ -105,7 +106,7 @@ for foot, im, x, y in sorted(sprites, key=lambda s: s[0]):
 world.resize((world.width * 2, world.height * 2), Image.NEAREST).save(sys.argv[2])
 if len(sys.argv) > 3 and sys.argv[3] != '-':
     # a phone-sized closeup around the square at game scale (3x): 393 x 852 pt viewport ~ 131 x 284 art px
-    cx, cy = 20 * T, 19 * T
+    cx, cy = 22 * T, 20 * T
     crop = world.crop((cx - 66, cy - 150, cx + 66, cy + 134))
     crop.resize((crop.width * 3, crop.height * 3), Image.NEAREST).save(sys.argv[3])
 print('preview ok')

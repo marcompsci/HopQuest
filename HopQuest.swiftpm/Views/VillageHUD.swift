@@ -49,7 +49,7 @@ struct VillageJoystick: View {
     }
 }
 
-/// The big round button: talk, go in, hop into a portal — or just hop for fun.
+/// The big round button: talk, go in, challenge a friend — or just hop for fun.
 struct VillageActionButton: View {
     let title: String
     let icon: String
@@ -77,29 +77,19 @@ struct VillageActionButton: View {
     }
 }
 
-/// Top bar: back to the map, your buddy, your stars, and the grown-ups' gear.
+/// Top bar: back to the menu, your buddy, challenges, your stars, and the grown-ups' gear.
 struct VillageTopBar: View {
     let character: GameCharacter
     let stars: Int
+    let challengesDone: Int
     var onMap: () -> Void
     var onBuddy: () -> Void
+    var onChallenges: () -> Void
     var onParent: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Button(action: onMap) {
-                HStack(spacing: 6) {
-                    Image(systemName: "map.fill")
-                    Text("Map")
-                }
-                .font(.kid(16, .black))
-                .foregroundStyle(Palette.ink)
-                .padding(.horizontal, 14)
-                .frame(height: 44)
-                .background(Capsule().fill(.white.opacity(0.92)))
-            }
-            .buttonStyle(BouncyButtonStyle())
-            .accessibilityLabel("Back to the world map")
+        HStack(spacing: 8) {
+            CircleIconButton(systemName: "house.fill", label: "Back to the menu", action: onMap)
 
             Button(action: onBuddy) {
                 CharacterBadge(character: character, size: 44)
@@ -109,6 +99,20 @@ struct VillageTopBar: View {
             .accessibilityLabel("Change your buddy")
 
             Spacer()
+
+            Button(action: onChallenges) {
+                HStack(spacing: 4) {
+                    Text("🏆")
+                    Text("\(challengesDone)/\(ChallengeProgress.total)")
+                }
+                .font(.kid(17, .black))
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, 10)
+                .frame(height: 44)
+                .background(Capsule().fill(Color(hex: 0xFFE9A8)))
+            }
+            .buttonStyle(BouncyButtonStyle())
+            .accessibilityLabel("Challenges: \(challengesDone) of \(ChallengeProgress.total) done")
 
             HStack(spacing: 4) {
                 ArtImage("goal_star").frame(width: 22, height: 22)

@@ -652,6 +652,120 @@ def building_shed():
     rect(im, 0, base + 1, 79, base + 1, INK)
     return im
 
+def building_garage():
+    """City Rally garage: checkered awning, big garage door, trophy on the roof."""
+    W, H = 112, 104; im = img(W, H); base = H - 2
+    # flat roof with a trophy
+    outline_rect(im, 2, 30, 109, 38, P['st1']); rect(im, 3, 31, 108, 32, P['st0'])
+    ellipse(im, [47, 6, 65, 22], INK); ellipse(im, [48, 7, 64, 21], P['gold']); rect(im, 52, 9, 54, 15, P['white'])
+    outline_rect(im, 53, 21, 59, 28, P['gold2']); outline_rect(im, 48, 27, 64, 31, P['gold'])
+    for side in (-1, 1):
+        x = 56 + side * 10
+        ImageDraw.Draw(im).arc([x - 5, 8, x + 5, 18], 90 if side > 0 else 270 - 180, 270 if side > 0 else 90, fill=INK)
+    # checkered awning
+    for i in range(27):
+        for j in range(2):
+            rect(im, 2 + i * 4, 39 + j * 4, 5 + i * 4, 42 + j * 4, INK if (i + j) % 2 else P['white'])
+    rect(im, 2, 47, 109, 47, INK)
+    bricks(im, 5, 48, 106, base, P['red'], P['red2']); rect(im, 4, 48, 4, base, INK); rect(im, 107, 48, 107, base, INK)
+    # garage door
+    outline_rect(im, 34, 58, 77, base, P['st1'])
+    for y in range(60, base, 4): rect(im, 35, y, 76, y, P['st2'])
+    rect(im, 52, 84, 59, 86, P['st2'])
+    window(im, 12, 60, 12, 10); window(im, 88, 60, 12, 10)
+    # racing number 5 badge
+    ellipse(im, [12, 76, 24, 88], INK); ellipse(im, [13, 77, 23, 87], P['white'])
+    for (x, y) in [(16, 79), (17, 79), (18, 79), (19, 79), (16, 80), (16, 81), (17, 81), (18, 81), (19, 82), (19, 83), (16, 84), (17, 84), (18, 84)]: px(im, x, y, INK)
+    rect(im, 0, base + 1, 111, base + 1, INK)
+    return im
+
+def building_clubhouse():
+    """Together clubhouse: a cozy treehouse-style hall with a two-hearts sign."""
+    W, H = 96, 108; im = img(W, H); base = H - 2
+    gable(im, 48, 10, 46, 42, P['teal'], P['teal2'], overhang=3)
+    bricks(im, 6, 47, 89, base, P['k0'], P['k1']); rect(im, 5, 46, 5, base, INK); rect(im, 90, 46, 90, base, INK)
+    for x in range(8, 88, 6): rect(im, x, 47, x, base, P['k1'])
+    # two hearts sign
+    outline_rect(im, 30, 22, 66, 38, P['c0'])
+    for cx, col in ((41, 'pink'), (55, 'red')):
+        ImageDraw.Draw(im).polygon([(cx - 6, 28), (cx, 35), (cx + 6, 28)], fill=P[col])
+        ellipse(im, [cx - 6, 24, cx, 30], P[col]); ellipse(im, [cx, 24, cx + 6, 30], P[col])
+    window(im, 14, 56, 12, 11, lit=True); window(im, 70, 56, 12, 11, lit=True)
+    door(im, 48, base, w=18, h=26, c=P['teal2'])
+    # bunting
+    for i in range(9):
+        x = 10 + i * 9
+        ImageDraw.Draw(im).polygon([(x, 49), (x + 7, 49), (x + 3, 54)], fill=P[['pink', 'gold', 'blue'][i % 3]], outline=INK)
+    rect(im, 0, base + 1, 95, base + 1, INK)
+    return im
+
+def building_cottage():
+    """Meadow Street cottage: flower roof and a glowing adventure door."""
+    W, H = 80, 98; im = img(W, H); base = H - 2
+    gable(im, 40, 12, 50, 34, P['leaf1'], P['leaf2'], overhang=3)
+    for (x, y, c) in [(30, 32, 'pink'), (44, 26, 'gold'), (52, 40, 'white'), (24, 44, 'purp'), (40, 42, 'pink'), (58, 46, 'gold')]:
+        for (dx, dy) in ((1, 0), (-1, 0), (0, 1), (0, -1)): px(im, x + dx, y + dy, P[c])
+        px(im, x, y, P['gold'] if c != 'gold' else P['white'])
+    outline_rect(im, 55, 14, 63, 34, P['st1']); ellipse(im, [56, 6, 64, 13], P['white'])
+    bricks(im, 6, 51, 73, base, P['c0'], P['c1']); rect(im, 5, 50, 5, base, INK); rect(im, 74, 50, 74, base, INK)
+    window(im, 12, 60, 10, 9); window(im, 58, 60, 10, 9)
+    door(im, 40, base, w=16, h=26, c=P['purp'])
+    rect(im, 0, base + 1, 79, base + 1, INK)
+    return im
+
+def building_boathouse():
+    """Lily River boathouse: blue roof, round window, lily pad sign."""
+    W, H = 80, 96; im = img(W, H); base = H - 2
+    gable(im, 40, 10, 46, 34, P['blue'], P['blue2'], overhang=3)
+    for x in range(8, 72, 5):
+        outline_rect(im, x, 47, x + 4, base, P['k0']); rect(im, x + 1, 48, x + 1, base - 1, P['c1'])
+    rect(im, 5, 47, 74, 47, INK)
+    ellipse(im, [32, 22, 48, 38], INK); ellipse(im, [33, 23, 47, 37], P['win']); px(im, 36, 26, P['white'])
+    # lily sign
+    ellipse(im, [8, 54, 26, 66], INK); ellipse(im, [9, 55, 25, 65], P['leaf0'])
+    ImageDraw.Draw(im).polygon([(17, 60), (25, 56), (25, 64)], fill=P['k0'])
+    px(im, 13, 58, P['pink']); px(im, 14, 58, P['pink']); px(im, 13, 59, P['pink'])
+    door(im, 40, base, w=16, h=26, c=P['blue2'])
+    rect(im, 0, base + 1, 79, base + 1, INK)
+    return im
+
+def building_tower():
+    """Castle Hill watchtower: tall stone tower with a pennant."""
+    W, H = 80, 140; im = img(W, H); base = H - 2
+    bricks(im, 18, 40, 61, base, P['st0'], P['st1']); rect(im, 17, 40, 17, base, INK); rect(im, 62, 40, 62, base, INK)
+    for x in range(14, 64, 8): outline_rect(im, x, 32, x + 5, 40, P['st0'])
+    outline_rect(im, 12, 38, 67, 44, P['st1'])
+    gable(im, 40, 2, 32, 24, P['purp'], P['purp2'], overhang=2)
+    flag(im, 40, 0, P['pink'])
+    window(im, 35, 56, 10, 12, lit=True, arched=True); window(im, 35, 82, 10, 12, arched=True)
+    bricks(im, 4, base - 24, 76, base, P['st1'], P['st2']); rect(im, 3, base - 25, 76, base - 25, INK)
+    rect(im, 3, base - 25, 3, base, INK); rect(im, 76, base - 25, 76, base, INK)
+    door(im, 40, base, w=16, h=24, c=P['k1'])
+    rect(im, 0, base + 1, 79, base + 1, INK)
+    return im
+
+def lock_sign():
+    t = img(16, 22)
+    outline_rect(t, 7, 12, 9, 21, P['k1'])
+    outline_rect(t, 0, 0, 15, 13, P['k0']); rect(t, 1, 1, 14, 2, P['c1'])
+    ellipse(t, [4, 3, 11, 10], INK); ellipse(t, [5, 4, 10, 9], P['st2'])
+    outline_rect(t, 4, 6, 11, 11, P['gold']); px(t, 7, 8, INK); px(t, 8, 8, INK); px(t, 7, 9, INK)
+    return t
+
+def star_sign():
+    t = img(16, 22)
+    outline_rect(t, 7, 12, 9, 21, P['k1'])
+    outline_rect(t, 0, 0, 15, 13, P['k0']); rect(t, 1, 1, 14, 2, P['c1'])
+    pts = [(8, 2), (10, 6), (14, 6), (11, 9), (12, 12), (8, 10), (4, 12), (5, 9), (2, 6), (6, 6)]
+    ImageDraw.Draw(t).polygon(pts, fill=P['gold'], outline=INK)
+    return t
+
+def name_flag():
+    """Little pennant shown over other players' buddies."""
+    t = img(10, 8)
+    ImageDraw.Draw(t).polygon([(0, 0), (9, 3), (0, 7)], fill=P['gold'], outline=INK)
+    return t
+
 # ---------------------------------------------------------------- buddies
 
 CELL_W, CELL_H, BASE = 32, 36, 33    # feet rest on y = BASE (from the top) in each cell
@@ -789,7 +903,8 @@ def main():
     props = [('tree0', tree(0)), ('tree1', tree(1)), ('bush', bush()), ('fence_h', fence(False)), ('fence_v', fence(True)),
              ('bench', bench()), ('lamp0', lamp(False)), ('lamp1', lamp(True)), ('car0', car('blue', 'blue2')), ('car1', car('red', 'red2')),
              ('sign', sign()), ('crane', crane()), ('blocks', blocks()), ('rock', rock()), ('mushroom', mushroom()),
-             ('shadow', shadow()), ('cloud', cloud_shadow()), ('firefly', firefly()), ('sparkle', sparkle()), ('portal_sleep', portal(0, True))]
+             ('shadow', shadow()), ('cloud', cloud_shadow()), ('firefly', firefly()), ('sparkle', sparkle()), ('portal_sleep', portal(0, True)),
+             ('lock_sign', lock_sign()), ('star_sign', star_sign()), ('name_flag', name_flag())]
     props += [(f'flowers{v}', flowers(v)) for v in range(4)]
     props += [(f'fountain{f}', fountain(f)) for f in range(3)]
     props += [(f'lily{f}', lily(f)) for f in range(2)]
@@ -803,7 +918,9 @@ def main():
 
     buildings = {'castle_sparkle': building_castle('sparkle'), 'castle_fortress': building_castle('fortress'),
                  'castle_rainbow': building_castle('rainbow'), 'museum': building_museum(), 'arena': building_arena(),
-                 'workshop': building_workshop(), 'academy': building_academy(), 'stadium': building_stadium(), 'shed': building_shed()}
+                 'workshop': building_workshop(), 'academy': building_academy(), 'stadium': building_stadium(), 'shed': building_shed(),
+                 'garage': building_garage(), 'clubhouse': building_clubhouse(), 'cottage': building_cottage(),
+                 'boathouse': building_boathouse(), 'tower': building_tower()}
     for k, im in buildings.items(): save_imageset(assets, f'village_{k}', im)
 
     char_dir = assets
@@ -836,7 +953,7 @@ def main():
     # Swift: the map
     rows = make_map.rows
     m = ['// GENERATED by ArtSource/make_village.py from make_map.py. Do not edit by hand.', '',
-         'enum VillageMapData {', '    /// 40 x 48 tiles. Row 0 is the north edge. Legend: see VillageMap.swift.', '    static let rows: [String] = [']
+         'enum VillageMapData {', '    /// 44 x 54 tiles. Row 0 is the north edge. Legend: see VillageMap.swift.', '    static let rows: [String] = [']
     m += [f'        "{r}",' for r in rows]
     m += ['    ]', '}', '']
     os.makedirs(os.path.join(pkg, 'Models'), exist_ok=True)

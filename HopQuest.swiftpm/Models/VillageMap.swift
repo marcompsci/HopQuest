@@ -54,18 +54,18 @@ enum Facing: String, Codable, CaseIterable {
 ///   r  road         z  crosswalk      s  sand           *  flowers (walkable)       m  mushroom (walkable)
 ///   T  tree         t  bush           F  fence          B  bench    L  lamp         R  rock
 ///   c  parked car   n  traffic sign   k  crane          b  block pile
-///   1 2 3  forest portals (Hop chapters 1, 4, 6)
-///   Building footprints: C castle, M museum, A arena, W workshop, D academy, K kart stadium, Y fort shed, Q fountain
+///   Building footprints (one per game): C castle, M sticker museum, A pillow bop arena, W robot lab,
+///   D driving school, X city rally garage, K kart stadium, Y fort friends shed, U together clubhouse,
+///   G meadow street cottage, V lily river boathouse, H castle hill tower, Q fountain
 struct VillageMap {
     let width: Int
     let height: Int
     private let cells: [[Character]]
     private let walk: [Bool]
     let buildings: [VillageBuilding]
-    let portals: [VillagePortal]
-    let spawn = GridPoint(20, 22)
+    let spawn = GridPoint(22, 23)
 
-    static let walkableChars: Set<Character> = [".", "=", "o", "#", "r", "z", "s", "*", "m", "1", "2", "3"]
+    static let walkableChars: Set<Character> = [".", "=", "o", "#", "r", "z", "s", "*", "m"]
 
     static let shared = VillageMap(rows: VillageMapData.rows)
 
@@ -83,7 +83,6 @@ struct VillageMap {
 
         // building footprints → bounding boxes
         var boxes: [Character: (Int, Int, Int, Int)] = [:]
-        var portals: [VillagePortal] = []
         for r in 0..<height {
             for c in 0..<width where c < cells[r].count {
                 let ch = cells[r][c]
@@ -94,16 +93,12 @@ struct VillageMap {
                         boxes[ch] = (c, r, c, r)
                     }
                 }
-                if let n = Int(String(ch)), (1...3).contains(n) {
-                    portals.append(VillagePortal(number: n, tile: GridPoint(c, r)))
-                }
             }
         }
         buildings = BuildingKind.allCases.compactMap { kind in
             guard let b = boxes[kind.rawValue] else { return nil }
             return VillageBuilding(kind: kind, minC: b.0, minR: b.1, maxC: b.2, maxR: b.3)
         }
-        self.portals = portals.sorted { $0.number < $1.number }
     }
 
     func inBounds(_ p: GridPoint) -> Bool { p.c >= 0 && p.r >= 0 && p.c < width && p.r < height }
@@ -127,8 +122,6 @@ struct VillageMap {
     func building(at p: GridPoint) -> VillageBuilding? {
         buildings.first { $0.contains(p) }
     }
-
-    func portal(at p: GridPoint) -> VillagePortal? { portals.first { $0.tile == p } }
 
     /// Closest walkable tile to `p` (breadth-first). Used when a child taps a tree, a wall, or water.
     func nearestWalkable(to p: GridPoint, maxRadius: Int = 6) -> GridPoint? {
@@ -197,14 +190,14 @@ struct VillageMap {
 
     /// Friendly region names, shown in a banner as the child walks around.
     func regionName(at p: GridPoint) -> String {
-        if p.r >= 35 { return "Adventure Forest" }
-        if p.c <= 12 && p.r <= 11 { return "Sticker Book Museum" }
-        if p.c >= 27 && p.r <= 11 { return "Pillow Bop Arena" }
-        if p.r <= 11 { return "My Castle" }
-        if p.c <= 11 && p.r <= 23 { return "Robot Workshop" }
-        if p.c >= 26 && p.r <= 23 { return "Driving Academy" }
-        if p.c <= 14 && p.r >= 26 { return "Construction Yard" }
-        if p.c >= 26 && p.r >= 26 { return "Bubble Kart Stadium" }
-        return "Village Square"
+        if p.c >= 15 && p.c <= 28 && p.r >= 14 && p.r <= 25 { return "Village Square" }
+        // otherwise, the closest building (by its doorstep) names the area
+        var best: (String, Int)?
+        for b in buildings where b.kind.hasDoor {
+            let d = b.doorstep.manhattan(p)
+            if d <= 7 && (best == nil || d < best!.1) { best = (b.kind.title, d) }
+        }
+        if let best { return best.0 }
+        return p.r >= 39 ? "Adventure Forest" : "Hop Village"
     }
 }

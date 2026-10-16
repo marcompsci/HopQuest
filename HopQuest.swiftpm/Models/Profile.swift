@@ -377,6 +377,40 @@ final class GameStore: ObservableObject {
         return true
     }
 
+    /// The nine village challenges, read from what each game already saves.
+    var challengeProgress: ChallengeProgress {
+        guard let p = profile else { return ChallengeProgress() }
+        return ChallengeProgress(completedChapters: p.completedChapters,
+                                 fortDone: !p.fortBest.isEmpty,
+                                 bopDone: p.bopBest > 0,
+                                 kartDone: !p.kartBest.isEmpty)
+    }
+
+    /// My Castle opens once every challenge is done.
+    var castleOpen: Bool { challengeProgress.allDone }
+
+    /// Bonus stars from the pop-quiz buddy (capped per day). Returns how many were given.
+    @discardableResult
+    func grantVillageBonus(_ n: Int) -> Int {
+        guard var p = profile else { return 0 }
+        let given = p.village.grantBonus(n, day: Self.dayFormat.string(from: Date()))
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return given
+    }
+
+    /// Stars from a Brain Duel (capped per day). Returns how many were given.
+    @discardableResult
+    func grantDuelStars(_ n: Int) -> Int {
+        guard var p = profile else { return 0 }
+        let given = p.village.grantDuelStars(n, day: Self.dayFormat.string(from: Date()))
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return given
+    }
+
     /// Can this story chapter be played now (open or already done)?
     func isPlayable(_ chapterID: Int) -> Bool {
         state(of: Chapters.chapter(chapterID)) != .locked

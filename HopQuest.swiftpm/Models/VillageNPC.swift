@@ -36,7 +36,7 @@ struct VillageNPCDef: Equatable {
                       thanksLine: "Hoo-ray! You're a real star scientist. Here's a star for your collection!",
                       seed: 11),
         VillageNPCDef(id: "pixelpup", characterID: "pixelpup", fallbackID: "pip",
-                      home: GridPoint(30, 23), wanderRadius: 3, activitySpot: GridPoint(33, 22), activity: "crossing-guard practice",
+                      home: GridPoint(30, 23), wanderRadius: 3, activitySpot: GridPoint(35, 21), activity: "crossing-guard practice",
                       greeting: "Woof! I'm the crossing helper at the Driving Academy. Can you answer a road-safety question?",
                       chatter: ["At a crosswalk I stop, look left, look right, and look left again.",
                                 "Grown-ups hold hands with little ones near busy roads. Teamwork!"],
@@ -45,8 +45,8 @@ struct VillageNPCDef: Equatable {
                       thanksLine: "Great job, safe walker! A star for you!",
                       seed: 23),
         VillageNPCDef(id: "acorn", characterID: "acorn", fallbackID: "rocky",
-                      home: GridPoint(11, 22), wanderRadius: 3, activitySpot: GridPoint(11, 18), activity: "stacking blocks",
-                      greeting: "Hi! I'm counting gears for the Robot Workshop. Want to help me with a number puzzle?",
+                      home: GridPoint(11, 22), wanderRadius: 3, activitySpot: GridPoint(12, 18), activity: "stacking blocks",
+                      greeting: "Hi! I'm counting gears for the Robot Lab. Want to help me with a number puzzle?",
                       chatter: ["Robots need batteries, motors, and a brain to follow their code.",
                                 "Engineers try, test, and try again. Mistakes help us learn!"],
                       lesson: .math,
@@ -54,10 +54,10 @@ struct VillageNPCDef: Equatable {
                       thanksLine: "Nutty-good counting! Here's a star!",
                       seed: 37),
         VillageNPCDef(id: "pip", characterID: "pip", fallbackID: "coral",
-                      home: GridPoint(23, 37), wanderRadius: 4, activitySpot: GridPoint(17, 37), activity: "watching the pond",
+                      home: GridPoint(24, 43), wanderRadius: 4, activitySpot: GridPoint(28, 46), activity: "watching the pond",
                       greeting: "Hello! I love watching the frogs by the pond. Want a nature riddle?",
                       chatter: ["The lily pads float because they're full of tiny air pockets. Try hopping on them!",
-                                "The portals in this forest lead to your hop adventures. Some are still asleep."],
+                                "The cottage, the boathouse and the tower in this forest are your hop adventures!"],
                       lesson: .nature,
                       askLine: "Let's see what you know about nature!",
                       thanksLine: "Splash-tastic! A star for you!",
@@ -278,5 +278,146 @@ struct NPCBrain {
             path = []      // blocked: stop rather than jitter
         }
         return path.isEmpty
+    }
+}
+
+// MARK: - Pop-quiz buddy
+
+enum CourierEvent: Equatable {
+    /// Walked up to the player: time to ask a follow-up question.
+    case arrived
+}
+
+/// A CPU buddy who walks up to the player after every two minutes of village play and asks a
+/// follow-up question about a game they've played, for bonus stars. Deterministic for a seed.
+struct QuizCourier {
+    enum Phase: Equatable { case waiting, approaching, asking, leaving }
+
+    static let interval = 120.0
+    static let speed = 2.6
+    static let characterID = "novawing"
+    static let fallbackID = "starspark"
+
+    private(set) var phase: Phase = .waiting
+    private(set) var position = VPoint(0, 0)
+    private(set) var facing: Facing = .south
+    private(set) var isMoving = false
+    private(set) var stride: Double = 0
+    /// Seconds of active village play since the last visit.
+    private(set) var clock: Double = 0
+    private var path: [VPoint] = []
+    private var phaseTime: Double = 0
+    private var aimTimer: Double = 0
+    private var rng: VillageRandom
+
+    init(seed: UInt64 = 99) { rng = VillageRandom(seed: seed) }
+
+    var isVisible: Bool { phase != .waiting }
+
+    /// `active` is false while a dialogue, quiz or game screen is open, so the timer only counts real exploring.
+    mutating func step(dt: Double, active: Bool, player: VPoint, collision: VillageCollision, pathfinder: VillagePathfinder) -> CourierEvent? {
+        isMoving = false
+        phaseTime += dt
+        switch phase {
+        case .waiting:
+            guard active else { return nil }
+            clock += dt
+            if clock >= Self.interval { spawn(near: player, collision: collision, pathfinder: pathfinder) }
+            return nil
+
+        case .approaching:
+            if position.distance(to: player) <= 1.4 {
+                phase = .asking
+                phaseTime = 0
+                path = []
+                facing = Facing.from(player - position, current: facing)
+                return .arrived
+            }
+            // the player walked off: re-aim every couple of seconds; give up after 40 s
+            if phaseTime > 40 { finish(collision: collision, pathfinder: pathfinder); return nil }
+            aimTimer -= dt
+            if path.isEmpty || aimTimer <= 0 {
+                aim(at: player.tile, collision: collision, pathfinder: pathfinder)
+                aimTimer = 1.5
+            }
+            walk(dt: dt, collision: collision)
+            return nil
+
+        case .asking:
+            facing = Facing.from(player - position, current: facing)
+            return nil
+
+        case .leaving:
+            walk(dt: dt, collision: collision)
+            if path.isEmpty || phaseTime > 20 {
+                phase = .waiting
+                clock = 0
+                phaseTime = 0
+            }
+            return nil
+        }
+    }
+
+    /// The question is answered (or skipped): wave goodbye and walk away.
+    mutating func finish(collision: VillageCollision, pathfinder: VillagePathfinder) {
+        phase = .leaving
+        phaseTime = 0
+        let away = ringTile(around: position.tile, radius: 9, collision: collision)
+        if let away, let pts = pathfinder.waypoints(from: position, to: away, collision: collision) {
+            path = pts
+        } else {
+            path = []
+        }
+    }
+
+    /// Skip the wait (used by tests and the "ask me now" debug path).
+    mutating func forceSoon() { clock = Self.interval }
+
+    private mutating func spawn(near player: VPoint, collision: VillageCollision, pathfinder: VillagePathfinder) {
+        for radius in [7, 6, 8, 5, 9, 4] {
+            guard let start = ringTile(around: player.tile, radius: radius, collision: collision) else { continue }
+            if let pts = pathfinder.waypoints(from: start.center, to: player.tile, collision: collision), !pts.isEmpty {
+                position = start.center
+                path = pts
+                phase = .approaching
+                phaseTime = 0
+                return
+            }
+        }
+        clock = Self.interval - 10      // nowhere to come from right now; try again soon
+    }
+
+    private mutating func aim(at tile: GridPoint, collision: VillageCollision, pathfinder: VillagePathfinder) {
+        if let pts = pathfinder.waypoints(from: position, to: tile, collision: collision), !pts.isEmpty { path = pts }
+    }
+
+    private mutating func ringTile(around p: GridPoint, radius: Int, collision: VillageCollision) -> GridPoint? {
+        var options: [GridPoint] = []
+        for dr in -radius...radius {
+            for dc in -radius...radius where max(abs(dc), abs(dr)) == radius {
+                let q = p.offset(dc, dr)
+                if collision.map.isWalkable(q) { options.append(q) }
+            }
+        }
+        guard !options.isEmpty else { return nil }
+        return options[rng.int(0...(options.count - 1))]
+    }
+
+    private mutating func walk(dt: Double, collision: VillageCollision) {
+        guard let next = path.first else { return }
+        let toNext = next - position
+        let stepLen = Self.speed * dt
+        let move = toNext.length <= stepLen ? toNext : toNext.normalized * stepLen
+        if toNext.length <= stepLen { path.removeFirst() }
+        let before = position
+        position = collision.move(position, by: move)
+        let moved = position.distance(to: before)
+        if moved > 1e-4 {
+            isMoving = true
+            stride += moved
+            facing = Facing.from(move, current: facing)
+        } else {
+            path = []
+        }
     }
 }

@@ -1,27 +1,37 @@
 import SwiftUI
 import SpriteKit
 
-/// Hop Village: walk your buddy around a pixel-art village, chat with buddies, and walk through doors
-/// into every HopQuest game. Routing, stars and progress stay in RootView; the village just asks to go places.
+/// Hop Village: walk your buddy around a pixel-art village with a building for every game. Finish all nine
+/// challenges to open your castle. A pop-quiz buddy drops by every couple of minutes, and friends playing
+/// live can challenge each other to Brain Duels. Routing, stars and progress stay in RootView.
 struct HopVillageView: View {
     @EnvironmentObject var store: GameStore
+    @EnvironmentObject var network: VillageNetwork
     /// Open an existing screen (castle, sticker book, a chapter...).
     var onOpen: (VillageDestination) -> Void
-    var onMap: () -> Void
+    /// Back to the main menu.
+    var onMenu: () -> Void
+
+    private enum QuizSource: Equatable { case npc(String), pop }
 
     @State private var scene: HopVillageScene?
     @State private var builtFor = ""
     @State private var interaction: VillageInteraction?
     @State private var dialogue: VillageDialogue?
     @State private var quiz: Question?
-    @State private var quizNPC: String?
-    @State private var academyOpen = false
+    @State private var quizSource: QuizSource?
+    @State private var boardOpen = false
+    @State private var castleParty = false
     @State private var banner: String?
     @State private var note: String?
     @State private var showParent = false
     @State private var showCharacters = false
+    @State private var duelStars: Int?
 
-    private var anyOverlay: Bool { dialogue != nil || quiz != nil || academyOpen || showParent || showCharacters }
+    private var anyOverlay: Bool {
+        dialogue != nil || quiz != nil || boardOpen || castleParty || showParent || showCharacters
+            || network.incoming != nil || network.duel != nil
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -36,9 +46,14 @@ struct HopVillageView: View {
 
                 VStack(spacing: 8) {
                     VillageTopBar(character: store.character, stars: store.profile?.stars ?? 0,
-                                  onMap: leaveToMap,
+                                  challengesDone: store.challengeProgress.doneCount,
+                                  onMap: leaveToMenu,
                                   onBuddy: { showCharacters = true },
+                                  onChallenges: { boardOpen = true },
                                   onParent: { showParent = true })
+                    if network.isOn {
+                        LivePlayPill(status: network.status, count: network.roster.count)
+                    }
                     if let banner {
                         VillageRegionBanner(text: banner)
                     }
@@ -60,47 +75,33 @@ struct HopVillageView: View {
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: banner)
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: note)
 
-                if let dialogue {
-                    VStack {
-                        Spacer()
-                        VillageDialogueView(dialogue: dialogue)
-                            .padding(.bottom, 12)
-                    }
-                    .id(dialogue.id)
-                }
-
-                if academyOpen {
-                    Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { closeAcademy() }
-                    VillageChapterPicker(title: "Driving Academy",
-                                         chapters: [Chapters.chapter(2), Chapters.chapter(5)],
-                                         state: { store.state(of: $0) },
-                                         onPick: { chapter in
-                                             academyOpen = false
-                                             leave(.chapter(chapter.id), via: .enter(.academy))
-                                         },
-                                         onClose: closeAcademy)
-                }
-
-                if let quiz {
-                    Color.black.opacity(0.35).ignoresSafeArea()
-                    QuizCard(question: quiz) { firstTry in
-                        self.quiz = nil
-                        riddleFinished(firstTry: firstTry)
-                    }
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
-                }
+                overlays
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.8), value: dialogue?.id)
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: academyOpen)
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: boardOpen)
             .animation(.spring(response: 0.4, dampingFraction: 0.75), value: quiz?.id)
-            .onAppear { build(size: geo.size) }
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: network.incoming)
+            .onAppear {
+                build(size: geo.size)
+                startNetwork()
+            }
             .onChange(of: geo.size) { _, newSize in build(size: newSize) }
             .onChange(of: store.profile?.characterID) { _, _ in
-                if store.character.id != builtFor { rebuild(size: geo.size) }
+                if store.character.id != builtFor {
+                    rebuild(size: geo.size)
+                    startNetwork()
+                }
             }
             .onChange(of: store.profile?.village.lightEffects) { _, _ in rebuild(size: geo.size) }
             .onChange(of: store.profile?.village.eveningLights) { _, _ in rebuild(size: geo.size) }
+            .onChange(of: store.profile?.village.playMode) { _, _ in startNetwork() }
             .onChange(of: anyOverlay) { _, open in scene?.frozen = open }
+            .onChange(of: network.notice) { _, text in
+                if let text { showNote(text); network.notice = nil }
+            }
+            .onChange(of: network.waitingFor) { _, who in
+                if let who { showNote("Waiting for \(who) to answer… ⏳") }
+            }
             .onDisappear {
                 savePosition()
                 tearDown()
@@ -119,6 +120,66 @@ struct HopVillageView: View {
         }
     }
 
+    // MARK: Overlays
+
+    @ViewBuilder
+    private var overlays: some View {
+        if let dialogue {
+            VStack {
+                Spacer()
+                VillageDialogueView(dialogue: dialogue)
+                    .padding(.bottom, 12)
+            }
+            .id(dialogue.id)
+        }
+
+        if boardOpen {
+            Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { boardOpen = false }
+            VillageChallengeBoard(progress: store.challengeProgress,
+                                  isOpen: { c in c.chapter.map { store.isPlayable($0) } ?? true },
+                                  onGo: { kind in
+                                      boardOpen = false
+                                      DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { scene?.walk(to: kind) }
+                                  },
+                                  onClose: { boardOpen = false })
+        }
+
+        if let quiz {
+            Color.black.opacity(0.35).ignoresSafeArea()
+            QuizCard(question: quiz) { firstTry in
+                self.quiz = nil
+                quizFinished(firstTry: firstTry)
+            }
+            .transition(.scale(scale: 0.6).combined(with: .opacity))
+        }
+
+        if let inc = network.incoming {
+            Color.black.opacity(0.3).ignoresSafeArea()
+            DuelInviteCard(nick: inc.nick) { accept in
+                duelStars = nil
+                network.respond(accept: accept)
+            }
+        }
+
+        if network.duel != nil {
+            BrainDuelView(network: network, starsGiven: duelStars) {
+                network.endDuel()
+                duelStars = nil
+                scene?.celebrate()
+            }
+            .transition(.opacity)
+        }
+
+        if castleParty {
+            CastleOpenView(theme: store.theme, name: store.profile?.name ?? "friend") {
+                castleParty = false
+                store.updateVillage { $0.castleCelebrated = true }
+                leave(.castle, via: .enter(.castle))
+            }
+            .transition(.opacity)
+        }
+    }
+
     // MARK: Action button
 
     @ViewBuilder
@@ -128,11 +189,13 @@ struct HopVillageView: View {
             let name = scene?.npcCharacter(id)?.name.components(separatedBy: " ").first ?? "buddy"
             VillageActionButton(title: "Talk to \(name)", icon: "bubble.left.fill", color: Color(hex: 0x4D96FF)) { handle(.talk(npcID: id)) }
         case .enter(let kind)?:
-            VillageActionButton(title: kind == .castle ? "Go home" : "Go in", icon: "door.left.hand.open", color: Palette.green) { handle(.enter(kind)) }
-        case .portal(let n)?:
-            let awake = portalAwake(n)
-            VillageActionButton(title: awake ? "Hop in!" : "Sleeping", icon: awake ? "sparkles" : "moon.zzz.fill",
-                                color: awake ? Palette.purple : Color.gray) { handle(.portal(n)) }
+            let locked = doorSign(kind) == .locked
+            VillageActionButton(title: kind == .castle ? (locked ? "Locked" : "Go home") : (locked ? "Locked" : "Go in"),
+                                icon: locked ? "lock.fill" : "door.left.hand.open",
+                                color: locked ? Color.gray : Palette.green) { handle(.enter(kind)) }
+        case .challenge(let key)?:
+            let nick = network.peers[key]?.nick ?? "friend"
+            VillageActionButton(title: "Duel \(nick)!", icon: "bolt.fill", color: Color(hex: 0xFF7A59)) { handle(.challenge(peerKey: key)) }
         case nil:
             VillageActionButton(title: "Hop!", icon: "hare.fill", color: Color(hex: 0xFF7A59)) {
                 Haptics.bump(.hop)
@@ -143,12 +206,22 @@ struct HopVillageView: View {
 
     // MARK: Building the scene
 
+    private func doorSign(_ kind: BuildingKind) -> HopVillageScene.DoorSign? {
+        let progress = store.challengeProgress
+        if kind == .castle { return progress.allDone ? .done : .locked }
+        if let c = kind.challenge, c.isDone(progress) { return .done }
+        if let ch = kind.storyChapter, !store.isPlayable(ch) { return .locked }
+        return nil
+    }
+
     private func build(size: CGSize) {
         guard scene == nil, size.width > 0, let profile = store.profile else { return }
+        var signs: [BuildingKind: HopVillageScene.DoorSign] = [:]
+        for kind in BuildingKind.allCases { if let s = doorSign(kind) { signs[kind] = s } }
         let setup = HopVillageScene.Setup(character: store.character, theme: store.theme, save: profile.village,
-                                          awakePortals: Set(VillageMap.shared.portals.filter { store.isPlayable($0.chapterID) }.map(\.number)),
-                                          hour: Calendar.current.component(.hour, from: Date()))
+                                          doorSigns: signs, hour: Calendar.current.component(.hour, from: Date()))
         let s = HopVillageScene(size: size, setup: setup)
+        s.network = network
         s.onInteractionChange = { i in
             if i != nil && i != interaction { Haptics.tap(nil) }
             interaction = i
@@ -159,9 +232,10 @@ struct HopVillageView: View {
             guard let c = s?.npcCharacter(id) else { return }
             showNote("\(c.name): Hi, \(store.profile?.name ?? "friend")! 👋")
         }
+        s.onPopQuiz = { character in popQuiz(from: character) }
         scene = s
         builtFor = store.character.id
-        store.updateVillage { $0.startInVillage = true }
+        configureDuels()
     }
 
     /// New buddy or new effects setting: save where we are and build a fresh scene.
@@ -178,8 +252,62 @@ struct HopVillageView: View {
         scene?.onActivate = nil
         scene?.onRegionChange = nil
         scene?.onGreet = nil
+        scene?.onPopQuiz = nil
+        scene?.network = nil
         scene = nil
         interaction = nil
+    }
+
+    // MARK: Live play
+
+    /// Starts (or restarts) live play the way the grown-ups set it up.
+    private func startNetwork() {
+        let mode = store.profile?.village.playMode ?? .off
+        // Nearby friends are in the same room, so they see the child's first name. Online, only the buddy's name.
+        let nick = mode == .nearby ? (store.profile?.name ?? store.character.name) : store.character.name
+        if mode == .off {
+            network.stop()
+        } else {
+            network.start(mode: mode, nick: nick, characterID: store.character.id)
+        }
+    }
+
+    private func configureDuels() {
+        network.makeQuestions = { [store] in
+            Self.duelQuestions(done: store.challengeProgress.done)
+        }
+        network.onDuelFinished = { [store, network] duel in
+            let earned = duel.stars(for: network.myKey)
+            duelStars = store.grantDuelStars(earned)
+        }
+    }
+
+    /// Five questions from the games the host has played: follow-ups first, then Brain Gate questions.
+    static func duelQuestions(done: [VillageChallenge]) -> [DuelQuestion] {
+        var out: [DuelQuestion] = []
+        var items = (done.isEmpty ? FollowUpBank.general : done.flatMap { FollowUpBank.items(for: $0) }).shuffled()
+        while out.count < 3, let item = items.popLast() {
+            let q = question(from: item)
+            out.append(DuelQuestion(subject: q.subject.rawValue, prompt: q.prompt, choices: q.choices, answer: q.answer))
+        }
+        let subjects: [Subject] = [.math, .road, .nature, .science, .words].shuffled()
+        var i = 0
+        while out.count < BrainDuel.questionCount {
+            let q = QuestionBank.one(subjects[i % subjects.count])
+            i += 1
+            guard (2...4).contains(q.choices.count), !out.contains(where: { $0.prompt == q.prompt }) || i > 20 else { continue }
+            out.append(DuelQuestion(subject: q.subject.rawValue, prompt: q.prompt, choices: q.choices, answer: q.answer))
+        }
+        return out
+    }
+
+    /// Turns a written follow-up (right answer first) into a Brain Gate question with shuffled answers.
+    static func question(from item: QuizItem) -> Question {
+        let shuffled = item.choices.shuffled()
+        return Question(subject: Subject(rawValue: item.subject) ?? .science,
+                        prompt: item.prompt, choices: shuffled,
+                        answer: shuffled.firstIndex(of: item.choices[0]) ?? 0,
+                        explain: item.explain)
     }
 
     // MARK: What the button (or walking into things) does
@@ -189,40 +317,48 @@ struct HopVillageView: View {
         switch i {
         case .talk(let id):
             talk(to: id)
+        case .challenge(let key):
+            guard let peer = network.peers[key] else { return }
+            Haptics.tap()
+            duelStars = nil
+            network.challenge(key)
+            showNote("You challenged \(peer.nick) to a Brain Duel! ⚔️")
         case .enter(let kind):
-            Haptics.tap(.whoosh)
-            switch kind {
-            case .castle: leave(.castle, via: i)
-            case .museum: leave(.stickers, via: i)
-            case .arena: leave(.bop, via: i)
-            case .stadium: leave(.kartSelect, via: i)
-            case .fortYard: leave(.fortSelect, via: i)
-            case .workshop:
-                if store.isPlayable(3) {
-                    leave(.chapter(3), via: i)
-                } else {
-                    showNote("The Robot Workshop opens after Driving School. Keep going! 🛠️")
-                }
-            case .academy:
-                academyOpen = true
-            case .fountain:
-                break
-            }
-        case .portal(let n):
-            guard let portal = VillageMap.shared.portals.first(where: { $0.number == n }) else { return }
-            if portalAwake(n) {
-                Haptics.success(.whoosh)
-                leave(.chapter(portal.chapterID), via: i)
-            } else {
-                let next = Chapters.chapter(store.nextChapterID).title
-                showNote("This portal is still asleep 💤 Finish the adventures before it to wake it up. Next up: \(next)!")
-            }
+            enter(kind)
         }
     }
 
-    private func portalAwake(_ n: Int) -> Bool {
-        guard let p = VillageMap.shared.portals.first(where: { $0.number == n }) else { return false }
-        return store.isPlayable(p.chapterID)
+    private func enter(_ kind: BuildingKind) {
+        let i = VillageInteraction.enter(kind)
+        if kind == .castle {
+            let progress = store.challengeProgress
+            if progress.allDone {
+                Haptics.success(.whoosh)
+                if store.profile?.village.castleCelebrated == true { leave(.castle, via: i) } else { castleParty = true }
+            } else {
+                Haptics.bump(.oops)
+                showNote("Your castle opens when all \(ChallengeProgress.total) challenges are done. You've finished \(progress.doneCount)! 🏆")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { if !anyOverlay { boardOpen = true } }
+            }
+            return
+        }
+        if let chapter = kind.storyChapter, !store.isPlayable(chapter) {
+            let next = Chapters.chapter(store.nextChapterID).title
+            showNote("\(kind.title) opens later in your adventure. Next up: \(next)! 🔒")
+            return
+        }
+        Haptics.tap(.whoosh)
+        switch kind {
+        case .museum: leave(.stickers, via: i)
+        case .arena: leave(.bop, via: i)
+        case .stadium: leave(.kartSelect, via: i)
+        case .fortYard: leave(.fortSelect, via: i)
+        case .clubhouse: leave(.together, via: i)
+        case .cottage, .academy, .workshop, .boathouse, .garage, .tower:
+            if let chapter = kind.storyChapter { leave(.chapter(chapter), via: i) }
+        case .castle, .fountain:
+            break
+        }
     }
 
     /// Save where to stand when we come back, then open the destination.
@@ -232,18 +368,16 @@ struct HopVillageView: View {
         store.updateVillage { v in
             v.tile = tile
             v.facing = .south
-            v.startInVillage = true
             if case .enter(let kind) = i { v.visited.insert(kind.id) }
-            if case .portal(let n) = i { v.visited.insert("portal\(n)") }
         }
         Narrator.shared.stop()
         onOpen(destination)
     }
 
-    private func leaveToMap() {
+    private func leaveToMenu() {
         savePosition()
-        store.updateVillage { $0.startInVillage = false }
-        onMap()
+        network.stop()
+        onMenu()
     }
 
     private func savePosition() {
@@ -266,38 +400,70 @@ struct HopVillageView: View {
 
         if let lesson = def.lesson, !solved {
             say(VillageDialogue(speaker: speaker, text: def.greeting, choices: [
-                .init(title: "Yes, let's try!") { askRiddle(def, lesson: lesson, speaker: speaker) },
+                .init(title: "Yes, let's try!") { askRiddle(def, lesson: lesson) },
                 .init(title: "Maybe later", primary: false) { endTalk(happy: false) }
             ]))
         } else {
             let line = def.chatter.randomElement() ?? def.greeting
             var choices = [close]
             if let lesson = def.lesson {
-                choices.insert(.init(title: "Another riddle?") { askRiddle(def, lesson: lesson, speaker: speaker) }, at: 0)
+                choices.insert(.init(title: "Another riddle?") { askRiddle(def, lesson: lesson) }, at: 0)
             }
             say(VillageDialogue(speaker: speaker, text: line, choices: choices))
         }
     }
 
-    private func askRiddle(_ def: VillageNPCDef, lesson: NPCLesson, speaker: GameCharacter) {
+    private func askRiddle(_ def: VillageNPCDef, lesson: NPCLesson) {
         dialogue = nil
         Narrator.shared.say(def.askLine)
-        quizNPC = def.id
+        quizSource = .npc(def.id)
         // set in the same update as closing the dialogue, so the village never unfreezes in between
         quiz = QuestionBank.one(subject(for: lesson))
     }
 
-    /// QuizCard already narrates and records the answer for the Learning Report; the village only adds
-    /// a one-time star per buddy.
-    private func riddleFinished(firstTry: Bool) {
-        guard let id = quizNPC, let def = VillageNPCDef.def(id), let speaker = scene?.npcCharacter(id) else { return }
-        quizNPC = nil
-        let firstSolve = store.solveVillageRiddle(id)
-        if firstSolve { Haptics.success(.star) }
-        let text = firstSolve ? def.thanksLine : (firstTry ? "Wow, first try! " : "You figured it out! ") + (def.chatter.randomElement() ?? "")
-        say(VillageDialogue(speaker: speaker, text: text, choices: [
-            .init(title: firstSolve ? "Yay! ⭐" : "Thanks!") { endTalk(happy: true) }
+    /// The pop-quiz buddy walked up.
+    private func popQuiz(from speaker: GameCharacter) {
+        guard !anyOverlay else {
+            scene?.finishPopQuiz(happy: false)
+            return
+        }
+        let done = store.challengeProgress.done
+        let about = done.isEmpty ? "the village" : (done.randomElement()?.title ?? "your games")
+        say(VillageDialogue(speaker: speaker, text: "Pop quiz! ✨ Here's a bonus question about \(about). Ready?", choices: [
+            .init(title: "Let's go!") {
+                dialogue = nil
+                let turn = store.profile?.village.popTurn ?? 0
+                store.updateVillage { $0.popTurn += 1 }
+                quizSource = .pop
+                quiz = Self.question(from: FollowUpBank.pick(done: done, turn: turn * 7 + Int.random(in: 0...3)))
+            },
+            .init(title: "Not now", primary: false) {
+                dialogue = nil
+                scene?.finishPopQuiz(happy: false)
+            }
         ]))
+    }
+
+    /// QuizCard already narrates and records the answer for the Learning Report; the village only adds
+    /// a one-time star per buddy, or a capped bonus star for pop quizzes.
+    private func quizFinished(firstTry: Bool) {
+        guard let source = quizSource else { return }
+        quizSource = nil
+        switch source {
+        case .pop:
+            let given = firstTry ? store.grantVillageBonus(1) : 0
+            if given > 0 { Haptics.success(.star) }
+            showNote(given > 0 ? "Bonus star! ⭐ +1" : (firstTry ? "Right on the first try! (You've got all of today's bonus stars.)" : "You figured it out! 🌟"))
+            scene?.finishPopQuiz(happy: true)
+        case .npc(let id):
+            guard let def = VillageNPCDef.def(id), let speaker = scene?.npcCharacter(id) else { return }
+            let firstSolve = store.solveVillageRiddle(id)
+            if firstSolve { Haptics.success(.star) }
+            let text = firstSolve ? def.thanksLine : (firstTry ? "Wow, first try! " : "You figured it out! ") + (def.chatter.randomElement() ?? "")
+            say(VillageDialogue(speaker: speaker, text: text, choices: [
+                .init(title: firstSolve ? "Yay! ⭐" : "Thanks!") { endTalk(happy: true) }
+            ]))
+        }
     }
 
     private func endTalk(happy: Bool) {
@@ -320,8 +486,6 @@ struct HopVillageView: View {
         case .words: return .words
         }
     }
-
-    private func closeAcademy() { academyOpen = false }
 
     // MARK: Little messages
 

@@ -9,19 +9,26 @@ final class HopVillageScene: SKScene {
         var character: GameCharacter
         var theme: CastleTheme
         var save: VillageSaveState
-        /// Which forest portals are awake (story chapter unlocked or done).
-        var awakePortals: Set<Int>
+        /// Lock / star signs by the doors (locked chapters, finished challenges, the castle gate).
+        var doorSigns: [BuildingKind: DoorSign]
         var hour: Int
     }
+
+    enum DoorSign { case locked, done }
 
     // MARK: Callbacks to SwiftUI
     /// What the big action button should offer right now.
     var onInteractionChange: ((VillageInteraction?) -> Void)?
-    /// The child chose to do something: tapped a door/buddy and arrived, walked into a door, or stepped into a portal.
+    /// The child chose to do something: tapped a door, buddy or player and arrived, or walked into a door.
     var onActivate: ((VillageInteraction) -> Void)?
     var onRegionChange: ((String) -> Void)?
     /// A buddy walked over and said hi.
     var onGreet: ((String) -> Void)?
+    /// The pop-quiz buddy walked up: ask a follow-up question.
+    var onPopQuiz: ((GameCharacter) -> Void)?
+
+    /// Live play (other players' buddies and Brain Duels). Optional: the village works the same without it.
+    weak var network: VillageNetwork?
 
     // MARK: State
     let map = VillageMap.shared
@@ -37,6 +44,12 @@ final class HopVillageScene: SKScene {
     private let marker = SKSpriteNode()
     private var built = false
 
+    private var courier = QuizCourier(seed: UInt64(Date().timeIntervalSince1970) & 0xffff)
+    private var courierSprite: BuddySprite?
+    private var courierCharacter: GameCharacter
+    private var courierAsking = false
+    private var peerSprites: [String: (sprite: BuddySprite, tag: SKNode)] = [:]
+
     private var accumulator = 0.0
     private var lastTime: TimeInterval = 0
     private var frameCount = 0
@@ -45,7 +58,6 @@ final class HopVillageScene: SKScene {
     private var interaction: VillageInteraction?
     private var pendingActivate: VillageInteraction?
     private var doorPush = 0.0
-    private var portalLatch: Int?
     private var region = ""
     private var talkingTo: String?
     /// While a dialogue, quiz or picker is open, the buddy stands still.
@@ -62,6 +74,7 @@ final class HopVillageScene: SKScene {
         self.setup = setup
         player = VillagePlayerController(map: VillageMap.shared, start: setup.save.safeSpawn(in: VillageMap.shared), facing: setup.save.facing)
         playerSprite = BuddySprite(character: setup.character)
+        courierCharacter = Roster.character(id: setup.character.id == QuizCourier.characterID ? QuizCourier.fallbackID : QuizCourier.characterID)
         super.init(size: size)
         scaleMode = .resizeFill
         backgroundColor = UIColor(hex: 0x3F7F36)
@@ -85,9 +98,6 @@ final class HopVillageScene: SKScene {
     /// Where to stand when coming back out of a building (its doorstep), else the current tile.
     func returnTile(for interaction: VillageInteraction?) -> GridPoint {
         if case .enter(let kind)? = interaction, let b = map.building(kind) { return b.doorstep }
-        if case .portal(let n)? = interaction, let p = map.portals.first(where: { $0.number == n }) {
-            return map.nearestWalkable(to: p.tile.offset(0, -1)) ?? p.tile
-        }
         return player.tile
     }
 
@@ -119,6 +129,22 @@ final class HopVillageScene: SKScene {
 
     func npcCharacter(_ npcID: String) -> GameCharacter? { npcs.first { $0.id == npcID }?.character }
 
+    /// Walk to a building's door (from the challenge board). Doesn't go inside by itself.
+    func walk(to kind: BuildingKind) {
+        guard !frozen, let b = map.building(kind) else { return }
+        pendingActivate = nil
+        if player.walk(to: b.doorstep) { environment?.tapMarker(at: scenePoint(b.doorstep.center)) }
+    }
+
+    /// The pop-quiz question is done: the quiz buddy waves and walks off.
+    func finishPopQuiz(happy: Bool) {
+        guard courierAsking else { return }
+        courierAsking = false
+        if happy { playerSprite.playOnce("celebrate", fps: 8, repeats: 2) }
+        courierSprite?.playOnce("interact", fps: 5, repeats: 2)
+        courier.finish(collision: player.collision, pathfinder: player.pathfinder)
+    }
+
     // MARK: Build
 
     override func didMove(to view: SKView) {
@@ -146,6 +172,11 @@ final class HopVillageScene: SKScene {
 
         world.addChild(playerSprite)
         playerSprite.onLand = { [weak self] in self?.playerLanded() }
+
+        let cs = BuddySprite(character: courierCharacter)
+        cs.isHidden = true
+        world.addChild(cs)
+        courierSprite = cs
 
         marker.texture = VillageArt.prop("marker0")
         marker.size = CGSize(width: 9 * VillageArt.scale, height: 11 * VillageArt.scale)
@@ -232,22 +263,6 @@ final class HopVillageScene: SKScene {
                     let lily = addProp("lily0", c: c, r: r, lift: 2, flat: true)
                     lily.run(.repeatForever(.animate(with: VillageArt.frames("lily", count: 2), timePerFrame: 0.9)))
                     lilies[GridPoint(c, r)] = lily
-                case "1", "2", "3":
-                    let n = Int(String(k)) ?? 1
-                    let awake = setup.awakePortals.contains(n)
-                    let portal = addProp(awake ? "portal0" : "portal_sleep", c: c, r: r)
-                    if awake {
-                        portal.run(.repeatForever(.animate(with: VillageArt.frames("portal", count: 4), timePerFrame: 0.14)))
-                        let glow = VillageArt.propNode("firefly")
-                        glow.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-                        glow.setScale(9)
-                        glow.alpha = 0.55
-                        glow.blendMode = .add
-                        glow.position = CGPoint(x: 0, y: 22 * VillageArt.scale)
-                        glow.zPosition = -0.2
-                        glow.run(.repeatForever(.sequence([.fadeAlpha(to: 0.25, duration: 0.9), .fadeAlpha(to: 0.6, duration: 0.9)])))
-                        portal.addChild(glow)
-                    }
                 default: break
                 }
             }
@@ -276,6 +291,16 @@ final class HopVillageScene: SKScene {
             node.name = b.kind.id
             world.addChild(node)
             cullables.append(node)
+
+            // a little sign beside the door: padlock (not yet) or gold star (challenge done)
+            if let sign = setup.doorSigns[b.kind] {
+                let d = b.doorstep
+                let signNode = addProp(sign == .locked ? "lock_sign" : "star_sign", c: d.c + 1, r: d.r - 1, lift: -1)
+                signNode.zPosition = depth(foot.y) + 0.5
+                if sign == .done {
+                    signNode.run(.repeatForever(.sequence([.scale(to: 1.06, duration: 0.6), .scale(to: 1.0, duration: 0.6)])))
+                }
+            }
         }
     }
 
@@ -323,6 +348,7 @@ final class HopVillageScene: SKScene {
         }
         if steps == 6 { accumulator = 0 }
 
+        network?.advancePeers(dt: dt)
         renderActors()
         let lead = player.isMoving ? CGVector(dx: player.joystick.x * 30, dy: -player.joystick.y * 30) : .zero
         cam.lead = lead
@@ -342,9 +368,21 @@ final class HopVillageScene: SKScene {
             }
         }
 
+        // The pop-quiz buddy: counts only real exploring time.
+        if courier.step(dt: dt, active: !frozen, player: player.position, collision: player.collision, pathfinder: player.pathfinder) == .arrived {
+            courierAsking = true
+            player.stop()
+            player.face(Facing.from(courier.position - player.position, current: player.facing))
+            onPopQuiz?(courierCharacter)
+        }
+
+        network?.publish(position: player.position, facing: player.facing, moving: player.isMoving)
+
         // What can the child do here?
+        let peers = (network?.peers.values).map { Array($0) } ?? []
         let found = frozen ? nil : InteractionFinder.find(player: player.position,
                                                           npcs: npcs.filter { $0.id != talkingTo }.map { (id: $0.id, position: $0.position) },
+                                                          peers: peers.map { (key: $0.key, position: $0.shown) },
                                                           map: map)
         if found != interaction {
             interaction = found
@@ -353,7 +391,7 @@ final class HopVillageScene: SKScene {
 
         guard !frozen else { return }
 
-        // Arrived after tapping a door, buddy or portal: do it.
+        // Arrived after tapping a door, buddy or player: do it.
         if let pending = pendingActivate, !player.hasPath {
             pendingActivate = nil
             if pending == interaction { activate(pending) }
@@ -366,17 +404,6 @@ final class HopVillageScene: SKScene {
             if doorPush > 0.3 { doorPush = 0; activate(.enter(kind)) }
         } else {
             doorPush = 0
-        }
-
-        // Stepping onto a portal hops you in (once, until you step away).
-        if let p = map.portals.first(where: { player.position.distance(to: $0.tile.center) < 0.45 }) {
-            if portalLatch != p.number && player.joystick.length > 0.15 {
-                portalLatch = p.number
-                activate(.portal(p.number))
-            }
-        } else if let latch = portalLatch, let p = map.portals.first(where: { $0.number == latch }),
-                  player.position.distance(to: p.tile.center) > 1.2 {
-            portalLatch = nil
         }
 
         let name = map.regionName(at: player.tile)
@@ -402,6 +429,30 @@ final class HopVillageScene: SKScene {
             npc.render(at: p, z: depth(p.y))
         }
 
+        // pop-quiz buddy
+        if let cs = courierSprite {
+            if courier.isVisible {
+                if cs.isHidden {
+                    cs.isHidden = false
+                    cs.alpha = 0
+                    cs.run(.fadeAlpha(to: 1, duration: 0.4))
+                }
+                let p = scenePoint(courier.position)
+                cs.position = p
+                cs.zPosition = depth(p.y)
+                if courierAsking {
+                    cs.update(stride: courier.stride, facing: courier.facing, moving: false)
+                    cs.setActivity("talk")
+                } else {
+                    cs.update(stride: courier.stride, facing: courier.facing, moving: courier.isMoving)
+                }
+            } else if !cs.isHidden {
+                cs.isHidden = true
+            }
+        }
+
+        syncPeers()
+
         // bobbing arrow over whatever the button will do
         switch interaction {
         case .talk(let id)?:
@@ -415,10 +466,10 @@ final class HopVillageScene: SKScene {
                 let door = scenePoint(b.doorstep.center)
                 marker.position = CGPoint(x: door.x, y: door.y + t * 1.6)
             }
-        case .portal(let n)?:
-            if let p = map.portals.first(where: { $0.number == n }) {
+        case .challenge(let key)?:
+            if let peer = network?.peers[key] {
                 marker.isHidden = false
-                let pt = scenePoint(p.tile.center)
+                let pt = scenePoint(peer.shown)
                 marker.position = CGPoint(x: pt.x, y: pt.y + 130)
             }
         case nil:
@@ -485,11 +536,11 @@ final class HopVillageScene: SKScene {
             }
             return
         }
-        if let portal = map.portal(at: tile) {
-            if player.walk(to: portal.tile) {
-                pendingActivate = .portal(portal.number)
-                portalLatch = portal.number
-                environment?.tapMarker(at: scenePoint(portal.tile.center))
+        // another live player?
+        if let peer = network?.peers.values.first(where: { abs($0.shown.x - v.x) < 0.7 && v.y < $0.shown.y + 0.3 && v.y > $0.shown.y - 1.9 }) {
+            if player.walk(to: peer.shown.tile) {
+                pendingActivate = .challenge(peerKey: peer.key)
+                environment?.tapMarker(at: scenePoint(peer.shown))
             }
             return
         }
@@ -504,5 +555,59 @@ final class HopVillageScene: SKScene {
     private func buildingHit(_ b: VillageBuilding, _ v: VPoint) -> Bool {
         let roof = Double(b.heightTiles) * 0.9
         return v.x >= Double(b.minC) && v.x <= Double(b.maxC + 1) && v.y <= Double(b.maxR + 1) && v.y >= Double(b.minR) - roof
+    }
+}
+
+// MARK: - Other live players
+
+extension HopVillageScene {
+    /// Adds, moves and removes other players' buddies to match the network's list.
+    fileprivate func syncPeers() {
+        let peers = network?.peers ?? [:]
+        for key in peerSprites.keys where peers[key] == nil {
+            peerSprites[key]?.sprite.removeFromParent()
+            peerSprites[key] = nil
+        }
+        for (key, peer) in peers {
+            if peerSprites[key]?.sprite.character.id != peer.characterID {
+                peerSprites[key]?.sprite.removeFromParent()
+                let sprite = BuddySprite(character: Roster.character(id: peer.characterID))
+                let tag = Self.nameTag(peer.nick)
+                tag.position = CGPoint(x: 0, y: 112)
+                sprite.addChild(tag)
+                world.addChild(sprite)
+                peerSprites[key] = (sprite, tag)
+            }
+            guard let entry = peerSprites[key] else { continue }
+            let p = scenePoint(peer.shown)
+            entry.sprite.position = p
+            entry.sprite.zPosition = depth(p.y)
+            entry.sprite.update(stride: peer.stride, facing: peer.facing, moving: peer.moving)
+        }
+    }
+
+    /// A small name tag with a pennant, so kids can tell real friends from village buddies.
+    fileprivate static func nameTag(_ nick: String) -> SKNode {
+        let root = SKNode()
+        let label = SKLabelNode(text: nick)
+        label.fontName = "AvenirNext-Heavy"
+        label.fontSize = 15
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        label.horizontalAlignmentMode = .center
+        let width = max(44, label.frame.width + 26)
+        let bg = SKShapeNode(rectOf: CGSize(width: width, height: 24), cornerRadius: 12)
+        bg.fillColor = UIColor(hex: 0x7C4DFF)
+        bg.strokeColor = .white
+        bg.lineWidth = 2
+        root.addChild(bg)
+        root.addChild(label)
+        let flag = VillageArt.propNode("name_flag")
+        flag.anchorPoint = CGPoint(x: 0, y: 0.5)
+        flag.position = CGPoint(x: -width / 2 + 4, y: 0)
+        flag.setScale(0.7)
+        root.addChild(flag)
+        root.zPosition = 5
+        return root
     }
 }

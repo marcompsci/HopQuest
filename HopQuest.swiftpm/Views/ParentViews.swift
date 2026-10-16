@@ -135,12 +135,17 @@ struct ParentSettingsView: View {
             }
 
             Section {
+                Picker("Play with others", selection: Binding(
+                    get: { store.profile?.village.playMode ?? .off },
+                    set: { mode in store.updateVillage { $0.playMode = mode } })) {
+                    ForEach(VillagePlayMode.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
                 Toggle("Lighter effects (older phones)", isOn: villageBinding(\.lightEffects))
                 Toggle("Evening lights follow the clock", isOn: villageBinding(\.eveningLights))
             } header: {
                 Text("Hop Village")
             } footer: {
-                Text("HopQuest reopens wherever your child left off: the village or the map. Lighter effects shows fewer butterflies, leaves, and fireflies. Village buddies only say pre-written, kid-safe lines; there's no chat and nothing goes online.")
+                Text("Play with others lets kids see friends' buddies in the village and play Brain Duels: five quiz questions, no chat, no free text. Nearby only uses Wi-Fi or Bluetooth in the same room (no internet) and shows your child's first name to those nearby. Game Center modes go online through Apple's Game Center and only show buddy names; Game Center follows Screen Time's multiplayer limits. Village buddies only say pre-written, kid-safe lines. Lighter effects shows fewer butterflies, leaves, and fireflies.")
             }
 
             Section("Play time") {
@@ -168,9 +173,18 @@ struct ParentSettingsView: View {
             Section("Privacy & safety") {
                 Label("No ads", systemImage: "nosign")
                 Label("No in-app purchases", systemImage: "cart.badge.minus")
-                Label("No chat or strangers", systemImage: "person.2.slash")
-                Label("Nothing leaves this device", systemImage: "iphone")
-                Text("HopQuest saves only a first name, the choices above, and stars — on this device. No accounts, no tracking, no analytics.")
+                Label("No chat or free text, ever", systemImage: "hand.raised.fill")
+                switch store.profile?.village.playMode ?? .off {
+                case .off:
+                    Label("Nothing leaves this device", systemImage: "iphone")
+                case .nearby:
+                    Label("Live play: same room only, no internet", systemImage: "wifi")
+                case .friends:
+                    Label("Live play: Game Center friends", systemImage: "person.2")
+                case .anyone:
+                    Label("Live play: anyone on Game Center", systemImage: "globe")
+                }
+                Text("HopQuest saves only a first name, the choices above, and stars, on this device. No accounts of its own, no tracking, no analytics. During live play, phones share only buddy positions, buddy choices, a short nickname and duel answers.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

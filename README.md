@@ -6,7 +6,7 @@
 
 There's no blood, no bad words, no ads, no chat and no accounts. Every crash is soft and bouncy, and a wrong answer just gets a hint and another try.
 
-> **HopQuest 2.0 (in progress, branch `feature/hop-village`): Hop Village.** Walk your buddy around a pixel-art village, talk to buddies, and walk through doors into every game. See [docs/VILLAGE_ARCHITECTURE.md](docs/VILLAGE_ARCHITECTURE.md).
+> **HopQuest 2.1 (in progress, branch `feature/hop-village`): Hop Village.** Press **PLAY** on the new main menu to walk your buddy around a pixel-art village with a building for every game. Finish all 9 challenges to open your castle, answer pop-quiz questions for bonus stars, and challenge friends to Brain Duels. See [docs/VILLAGE_ARCHITECTURE.md](docs/VILLAGE_ARCHITECTURE.md).
 >
 > Version **1.4**: My Castle (decorate your home and care for your buddies), learning levels that adapt to each child, and a gentle daily play limit. Built with SwiftUI, SpriteKit and AVFoundation, with no third-party dependencies.
 
@@ -62,7 +62,8 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 
 | Mode | What kids do | What they learn |
 |---|---|---|
-| **Hop Village** | Walk anywhere with the joystick or by tapping. Chat with Ollie, Pixel Pup, Iron Acorn, Pip and Stella. Walk through doors into every game, or hop into a forest portal to start a Hop level | Road safety, math, science, nature and words riddles; exploring and wayfinding |
+| **Hop Village** | Walk anywhere with the joystick or by tapping. Every game has a building. Finish all 9 challenges to open your castle. Chat with Ollie, Pixel Pup, Iron Acorn, Pip and Stella. A pop-quiz buddy drops by every 2 minutes with a follow-up question | Road safety, math, science, nature and words riddles; recall of what each game taught; exploring and wayfinding |
+| **Brain Duels** (live play) | Friends in the same room (or Game Center friends, if a grown-up allows) see each other's buddies and can duel: 5 questions, fastest right answers win. No chat, ever | Quick recall, sportsmanship |
 | **Hop levels** (Meadow Street, Lily River, Castle Hill) | Hop across roads, rivers and lily pads to reach the castle | Looking both ways, timing, patience |
 | **Brain Gates** | Ollie Owl asks a question, answered with lettered, color-coded buttons | Math, road safety, nature, science, words |
 | **Driving School and City Rally** | Steer with a wheel, use the **brake** and **gas** pedals (gas on the far right, like a real car), use blinkers and stop at lights | Real road rules, in a kid-friendly way |

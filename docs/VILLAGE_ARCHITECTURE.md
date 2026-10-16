@@ -121,3 +121,55 @@ Building and running the full app happens in Xcode.
 ## 9. Child safety
 
 There is no network, no chat, no free text, no accounts, no ads and no streaks. All dialogue is fixed and age-appropriate. Wrong answers just get a hint, as before. The daily limit, break reminders and parent gate cover the village too.
+
+
+---
+
+## v2.1 additions
+
+### Main menu and routing
+- New `Route.menu` is now the start screen (`MainMenuView`). PLAY opens the village; every game has a tile.
+- `RootView` tracks a `Hub` (menu, map or village). Back buttons and balloon landings return to it.
+- `openCastle()` keeps My Castle locked until all challenges are done.
+
+### Map v2 (44×54)
+- Every game has a building, and every building opens its existing screen:
+  - `G` Meadow Street cottage, `D` Driving School, `W` Robot Lab, `V` Lily River boathouse, `X` City Rally garage, `H` Castle Hill tower (story chapters 1–6)
+  - `Y` Fort Friends, `A` Pillow Bop, `K` Bubble Kart, `M` Sticker Book, `U` Together clubhouse, `C` castle
+- The forest portals are gone. Saves from the first village (version 1) start again in the square.
+
+### Challenges (`Models/VillageChallenges.swift`)
+- `VillageChallenge` has nine cases: chapters 1–6 plus Fort, Bop and Kart.
+- "Done" is read from the existing save: `completedChapters`, `fortBest`, `bopBest`, `kartBest`.
+- `GameStore.castleOpen` is true when all nine are done.
+
+### Pop-quiz buddy (`QuizCourier` in `Models/VillageNPC.swift`)
+- A deterministic state machine: waiting → approaching → asking → leaving.
+- Its clock only advances while the village is not frozen. It spawns 4–9 tiles away and walks to the player with A*.
+- Questions come from `FollowUpBank`. Bonus stars are capped through `VillageSaveState.grantBonus`.
+
+### Live play (`Network/`)
+- **Transports:** `VillageTransport` is a protocol with two implementations:
+  - `NearbyTransport` (MultipeerConnectivity): encrypted, peer names are random codes, at most 7 peers.
+  - `GameCenterTransport` (GameKit): friends picker or automatch; respects `isMultiplayerGamingRestricted`.
+- **Messages:** `VillageNetMessage` (`Models/BrainDuel.swift`) is the only thing phones send. `decode` validates every message:
+  - size limit
+  - known buddies only
+  - positions clamped to the map
+  - nicknames cleaned to 12 letters, numbers and spaces
+  - duel questions checked
+- **Duels:** `BrainDuel` scores 10 per correct answer plus up to 5 for speed. Stars are winner 2, tie or good try 1, capped per day.
+- **Remote players:** `RemotePeer` smooths their positions and snaps on big jumps. Peers that go silent for 12 s are dropped.
+- **Setup:** `Package.swift` declares the Local Network capability with the Bonjour types `_hopq-village._tcp/_udp`.
+- **Game Center:** it needs the Game Center entitlement, which Swift Playgrounds app packages can't add. Until the project moves to an Xcode project, the Game Center modes show a "not set up yet" message.
+
+### Tests
+- `Tests/VillageLogic/run.sh` now also covers:
+  - challenges
+  - the courier: timing, pausing, reaching players anywhere
+  - the follow-up bank
+  - daily caps
+  - duel scoring, ties and anti-cheat
+  - message validation
+  - remote smoothing
+- Total: 149,703 checks.

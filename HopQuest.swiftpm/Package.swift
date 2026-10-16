@@ -26,6 +26,10 @@ let package = Package(
             ],
             supportedInterfaceOrientations: [
                 .portrait
+            ],
+            capabilities: [
+                .localNetwork(purposeString: "HopQuest uses your local network so kids in the same room can see each other's buddies in Hop Village and play Brain Duels.",
+                              bonjourServiceTypes: ["_hopq-village._tcp", "_hopq-village._udp"])
             ]
         )
     ],

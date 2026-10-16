@@ -1,14 +1,19 @@
 import Foundation
 
-/// Every building in Hop Village. The raw value is its footprint letter in the ASCII map.
+/// Every building in Hop Village: one for each HopQuest game. The raw value is its footprint letter in the ASCII map.
 enum BuildingKind: Character, CaseIterable, Codable {
     case castle = "C"
     case museum = "M"
     case arena = "A"
     case workshop = "W"
     case academy = "D"
+    case garage = "X"
     case stadium = "K"
     case fortYard = "Y"
+    case clubhouse = "U"
+    case cottage = "G"
+    case boathouse = "V"
+    case tower = "H"
     case fountain = "Q"
 
     /// Stable id for saves (visited places).
@@ -19,21 +24,32 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .arena: return "arena"
         case .workshop: return "workshop"
         case .academy: return "academy"
+        case .garage: return "garage"
         case .stadium: return "stadium"
         case .fortYard: return "fortyard"
+        case .clubhouse: return "clubhouse"
+        case .cottage: return "cottage"
+        case .boathouse: return "boathouse"
+        case .tower: return "tower"
         case .fountain: return "fountain"
         }
     }
 
+    /// The game inside, as kids know it from the menu.
     var title: String {
         switch self {
         case .castle: return "My Castle"
-        case .museum: return "Sticker Book Museum"
-        case .arena: return "Pillow Bop Arena"
-        case .workshop: return "Robot Workshop"
-        case .academy: return "Driving Academy"
-        case .stadium: return "Bubble Kart Stadium"
-        case .fortYard: return "Fort Friends Yard"
+        case .museum: return "Sticker Book"
+        case .arena: return "Pillow Bop"
+        case .workshop: return "Robot Lab"
+        case .academy: return "Driving School"
+        case .garage: return "City Rally"
+        case .stadium: return "Bubble Kart"
+        case .fortYard: return "Fort Friends"
+        case .clubhouse: return "Together Club"
+        case .cottage: return "Meadow Street"
+        case .boathouse: return "Lily River"
+        case .tower: return "Castle Hill"
         case .fountain: return "Wishing Fountain"
         }
     }
@@ -46,13 +62,34 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .arena: return "village_arena"
         case .workshop: return "village_workshop"
         case .academy: return "village_academy"
+        case .garage: return "village_garage"
         case .stadium: return "village_stadium"
         case .fortYard: return "village_shed"
+        case .clubhouse: return "village_clubhouse"
+        case .cottage: return "village_cottage"
+        case .boathouse: return "village_boathouse"
+        case .tower: return "village_tower"
         case .fountain: return ""
         }
     }
 
     var hasDoor: Bool { self != .fountain }
+
+    /// The story chapter this building opens (hop levels, driving, Robot Lab).
+    var storyChapter: Int? {
+        switch self {
+        case .cottage: return 1
+        case .academy: return 2
+        case .workshop: return 3
+        case .boathouse: return 4
+        case .garage: return 5
+        case .tower: return 6
+        default: return nil
+        }
+    }
+
+    /// The challenge this building counts toward (nil for the museum, clubhouse, castle and fountain).
+    var challenge: VillageChallenge? { VillageChallenge.allCases.first { $0.building == self } }
 }
 
 struct VillageBuilding: Equatable {
@@ -73,24 +110,9 @@ struct VillageBuilding: Equatable {
     var foot: VPoint { VPoint(Double(minC + maxC + 1) / 2, Double(maxR + 1)) }
 }
 
-/// A forest portal into one of the existing Hop levels.
-struct VillagePortal: Equatable {
-    let number: Int
-    let tile: GridPoint
-
-    /// Portals 1, 2, 3 lead to Meadow Street, Lily River and Castle Hill.
-    var chapterID: Int {
-        switch number {
-        case 1: return 1
-        case 2: return 4
-        default: return 6
-        }
-    }
-}
-
 /// What the village asks the app to open. `RootView` turns these into routes, so rewards and
-/// progress keep running through the same code as the world map.
+/// progress keep running through the same code as the menu and the world map.
 enum VillageDestination: Equatable {
-    case castle, stickers, bop, fortSelect, kartSelect
+    case castle, stickers, bop, fortSelect, kartSelect, together
     case chapter(Int)          // a story chapter (hop levels, Robot Lab, driving)
 }
