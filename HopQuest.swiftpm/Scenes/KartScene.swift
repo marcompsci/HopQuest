@@ -52,6 +52,11 @@ final class KartHUD: ObservableObject {
     @Published var finished = false
     @Published var finalPlace = 0
     @Published var podium: [GameCharacter] = []
+    // two players on one phone
+    @Published var twoPlayer = false
+    @Published var place2 = 1
+    @Published var item2: KartItem?
+    @Published var finalPlace2 = 0
 }
 
 /// Bubble Kart: a kid-safe kart race. No attack items — only a shield, a boost, and jelly pads.
@@ -69,7 +74,10 @@ final class KartScene: SKScene {
     final class Racer {
         let node = SKNode()
         let character: GameCharacter
+        /// A person driving (not a computer racer).
         let isPlayer: Bool
+        /// Which person: 0 (⭐, left controls) or 1 (💜, right controls).
+        var seat = 0
         var lane: Int
         var d: CGFloat = 0
         var vel: CGFloat = 0
@@ -138,6 +146,9 @@ final class KartScene: SKScene {
 
     private let chapter: Chapter
     private let playerCharacter: GameCharacter
+    /// The second player's buddy (two players on one phone), or nil.
+    private let partnerCharacter: GameCharacter?
+    private var twoPlayer: Bool { partnerCharacter != nil }
     private let theme: CastleTheme
     private let lanes = 4
     private let laps = 3
@@ -150,7 +161,9 @@ final class KartScene: SKScene {
     private var trackLength: CGFloat { chapter.trackLength }
 
     private var racers: [Racer] = []
-    private var player: Racer!
+    /// The people racing (one, or two on the same phone). The first one is the kid.
+    private var humans: [Racer] = []
+    private var player: Racer { humans[0] }
     private var boxes: [ItemBox] = []
     private var puddles: [Spot] = []
     private var pads: [Spot] = []
@@ -161,14 +174,16 @@ final class KartScene: SKScene {
     private var raceStart: TimeInterval = 0
     private var countdownBegan = false
     private var finishCount = 0
-    private var playerDone = false
+    /// Every person has crossed the line.
+    private var humansDone: Bool { humans.allSatisfy { $0.finishOrder != nil } }
     private var lastTime: TimeInterval = 0
     private var now: TimeInterval = 0
     private var lastBumpTip: TimeInterval = 0
 
-    init(size: CGSize, chapter: Chapter, character: GameCharacter, theme: CastleTheme, hud: KartHUD) {
+    init(size: CGSize, chapter: Chapter, character: GameCharacter, partner: GameCharacter? = nil, theme: CastleTheme, hud: KartHUD) {
         self.chapter = chapter
         self.playerCharacter = character
+        self.partnerCharacter = partner
         self.theme = theme
         self.hud = hud
         super.init(size: size)
@@ -189,8 +204,9 @@ final class KartScene: SKScene {
         roadLeft = (size.width - roadW) / 2
         laneW = roadW / CGFloat(lanes)
         carLen = laneW * 0.95
-        playerY = size.height * 0.28
+        playerY = size.height * (twoPlayer ? 0.24 : 0.28)
         hud.laps = laps
+        hud.twoPlayer = twoPlayer
 
         let road = SKSpriteNode(color: UIColor(hex: 0x4E5566), size: CGSize(width: roadW, height: size.height))
         road.position = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -438,20 +454,39 @@ final class KartScene: SKScene {
     }
 
     private func buildRacers() {
-        let others = Roster.all.filter { $0.id != playerCharacter.id }.shuffled().prefix(3)
+        let taken = Set([playerCharacter.id, partnerCharacter?.id].compactMap { $0 })
         let base: CGFloat = 330
-        // player starts in lane 1, slightly behind, so there's someone to chase
-        player = Racer(character: playerCharacter, isPlayer: true, lane: 1, topSpeed: base)
-        player.d = -carLen * 1.3
         var all: [Racer] = []
-        let aiLanes = [0, 2, 3]
-        for (i, c) in others.enumerated() {
-            let skill = 0.86 + chapter.difficulty * 0.12 + CGFloat(i) * 0.03
-            let r = Racer(character: c, isPlayer: false, lane: aiLanes[i], topSpeed: base * skill)
-            r.d = CGFloat(i % 2) * -carLen * 1.3
-            all.append(r)
+        if let partner = partnerCharacter {
+            // two people in the middle lanes, two computer racers on the outside
+            let kid = Racer(character: playerCharacter, isPlayer: true, lane: 1, topSpeed: base)
+            let grown = Racer(character: partner, isPlayer: true, lane: 2, topSpeed: base)
+            grown.seat = 1
+            kid.d = -carLen * 1.3
+            grown.d = -carLen * 1.3
+            humans = [kid, grown]
+            let others = Roster.all.filter { !taken.contains($0.id) }.shuffled().prefix(2)
+            for (i, c) in others.enumerated() {
+                let skill = 0.86 + chapter.difficulty * 0.12 + CGFloat(i) * 0.03
+                let r = Racer(character: c, isPlayer: false, lane: i == 0 ? 0 : 3, topSpeed: base * skill)
+                r.d = CGFloat(i % 2) * -carLen * 1.3
+                all.append(r)
+            }
+        } else {
+            // player starts in lane 1, slightly behind, so there's someone to chase
+            let kid = Racer(character: playerCharacter, isPlayer: true, lane: 1, topSpeed: base)
+            kid.d = -carLen * 1.3
+            humans = [kid]
+            let others = Roster.all.filter { !taken.contains($0.id) }.shuffled().prefix(3)
+            let aiLanes = [0, 2, 3]
+            for (i, c) in others.enumerated() {
+                let skill = 0.86 + chapter.difficulty * 0.12 + CGFloat(i) * 0.03
+                let r = Racer(character: c, isPlayer: false, lane: aiLanes[i], topSpeed: base * skill)
+                r.d = CGFloat(i % 2) * -carLen * 1.3
+                all.append(r)
+            }
         }
-        all.append(player)
+        all += humans
         racers = all
         for r in racers {
             let body = SpriteFactory.topCar(color: UIColor(hex: r.character.colorHex), width: laneW * 0.5, height: carLen * 0.8)
@@ -460,7 +495,7 @@ final class KartScene: SKScene {
             driver.position = CGPoint(x: 0, y: -carLen * 0.06)
             r.node.addChild(driver)
             if r.isPlayer {
-                let marker = SpriteFactory.emoji("⭐", size: laneW * 0.2, at: CGPoint(x: 0, y: carLen * 0.55))
+                let marker = SpriteFactory.emoji(r.seat == 0 ? "⭐" : "💜", size: laneW * 0.2, at: CGPoint(x: 0, y: carLen * 0.55))
                 marker.run(.repeatForever(.sequence([.moveBy(x: 0, y: 4, duration: 0.4), .moveBy(x: 0, y: -4, duration: 0.4)])))
                 r.node.addChild(marker)
             }
@@ -472,16 +507,27 @@ final class KartScene: SKScene {
 
     // MARK: Controls
 
-    func steer(_ dir: Int) {
-        guard started, !playerDone else { return }
-        changeLane(player, dir)
+    /// Lane change for player `seat` (0 = ⭐, 1 = 💜).
+    func steer(_ dir: Int, seat: Int = 0) {
+        guard started, humans.indices.contains(seat), humans[seat].finishOrder == nil else { return }
+        changeLane(humans[seat], dir)
     }
 
-    func useItem() {
-        guard started, !playerDone, let item = player.item else { return }
-        use(item, by: player)
-        player.item = nil
-        hud.item = nil
+    func useItem(seat: Int = 0) {
+        guard started, humans.indices.contains(seat), humans[seat].finishOrder == nil, let item = humans[seat].item else { return }
+        let r = humans[seat]
+        use(item, by: r)
+        r.item = nil
+        setHUDItem(nil, seat: seat)
+    }
+
+    private func setHUDItem(_ item: KartItem?, seat: Int) {
+        if seat == 0 { hud.item = item } else { hud.item2 = item }
+    }
+
+    /// "⭐ " or "💜 " in front of a message when two people are playing, so each knows it's for them.
+    private func who(_ r: Racer) -> String {
+        twoPlayer ? (r.seat == 0 ? "⭐ " : "💜 ") : ""
     }
 
     private func changeLane(_ r: Racer, _ dir: Int) {
@@ -513,7 +559,7 @@ final class KartScene: SKScene {
             ring.run(.repeatForever(.sequence([.scale(to: 1.08, duration: 0.4), .scale(to: 1.0, duration: 0.4)])))
             r.node.addChild(ring)
             r.shieldRing = ring
-            if r.isPlayer { say("Bubble Shield on! You're protected from one bump.") }
+            if r.isPlayer { say(who(r) + "Bubble Shield on! You're protected from one bump.") }
         case .carrot:
             r.boostUntil = now + 1.8
             let trail: SKNode = SpriteFactory.artTexture("item_carrot").map {
@@ -526,7 +572,7 @@ final class KartScene: SKScene {
                                  .removeFromParent()]))
             if r.isPlayer {
                 Haptics.success(.whoosh)
-                say("Carrot Boost! Zoom!")
+                say(who(r) + "Carrot Boost! Zoom!")
             }
         case .jelly:
             let node: SKNode = SpriteFactory.artTexture("item_jelly").map {
@@ -539,7 +585,7 @@ final class KartScene: SKScene {
             node.run(.scale(to: 1, duration: 0.2))
             world.addChild(node)
             jellies.append(Jelly(node: node, lane: r.lane, d: d, owner: r, armedAt: now + 0.6))
-            if r.isPlayer { say("Jelly Pad dropped! Wobble wobble!") }
+            if r.isPlayer { say(who(r) + "Jelly Pad dropped! Wobble wobble!") }
         }
     }
 
@@ -567,8 +613,23 @@ final class KartScene: SKScene {
         for r in racers {
             r.node.position.y = r.d
         }
-        SoundFX.shared.setEngine(Float(player.vel / max(player.topSpeed * 1.5, 1)))
-        world.position.y = playerY - player.d
+        let fastest = humans.max { $0.vel < $1.vel } ?? player
+        SoundFX.shared.setEngine(Float(fastest.vel / max(fastest.topSpeed * 1.5, 1)))
+        // solo: locked to the player, exactly as before; two players: glide, so nothing jumps when one finishes
+        let target = cameraD()
+        camD = twoPlayer && camD != nil ? camD! + (target - camD!) * min(1, dt * 5) : target
+        world.position.y = playerY - (camD ?? target)
+    }
+
+    private var camD: CGFloat?
+
+    /// Where the view looks: the player, or both players (the one behind always stays on screen).
+    private func cameraD() -> CGFloat {
+        let racing = humans.filter { $0.finishOrder == nil }
+        let watched = racing.isEmpty ? humans : racing
+        guard watched.count > 1, let lo = watched.map(\.d).min(), let hi = watched.map(\.d).max() else { return watched.first?.d ?? player.d }
+        let middle = (lo + hi) / 2
+        return min(middle, lo + playerY - carLen * 0.8)
     }
 
     private func runCountdown() {
@@ -599,18 +660,23 @@ final class KartScene: SKScene {
         var top = r.topSpeed
         if !r.isPlayer && r.finishOrder == nil {
             // friendly rubber-banding keeps races close for little kids
-            let gap = r.d - player.d
+            let ref = humans.map(\.d).reduce(0, +) / CGFloat(max(humans.count, 1))
+            let gap = r.d - ref
             if gap > 450 { top *= 0.86 } else if gap < -350 { top *= 1.14 }
+        }
+        if r.isPlayer && twoPlayer && r.finishOrder == nil, let other = humans.first(where: { $0 !== r }), other.d - r.d > 260 {
+            // two players: whoever is behind gets a catch-up boost, so nobody falls off the screen
+            top *= 1.22
         }
         if boosting { top *= 1.5 }
         if inBubble { top *= 0.25 }
 
         if r.isPlayer {
-            if playerDone {
+            if r.finishOrder != nil {
                 r.vel = max(0, r.vel - 250 * dt)
-            } else if brake {
+            } else if brake && !twoPlayer {
                 r.vel = max(0, r.vel - 520 * dt)
-            } else if gas || autoGas {
+            } else if gas || autoGas || twoPlayer {
                 r.vel = r.vel < top ? min(top, r.vel + 210 * dt) : max(top, r.vel - 300 * dt)
             } else {
                 r.vel = max(0, r.vel - 90 * dt)
@@ -624,19 +690,19 @@ final class KartScene: SKScene {
         // track pieces
         if !inBubble {
             if puddles.contains(where: { $0.lane == r.lane && abs($0.d - r.d) < carLen * 0.45 }) {
-                pop(r, reason: r.isPlayer ? "Squish! Mud makes you bounce in a bubble. Steer around the brown puddles!" : nil)
+                pop(r, reason: r.isPlayer ? who(r) + "Squish! Mud makes you bounce in a bubble. Steer around the brown puddles!" : nil)
             }
             if let j = jellies.firstIndex(where: { $0.lane == r.lane && abs($0.d - r.d) < carLen * 0.45 && ($0.owner !== r || now > $0.armedAt + 1.5) && now > $0.armedAt }) {
                 let jelly = jellies.remove(at: j)
                 jelly.node.run(.sequence([.group([.scale(to: 1.8, duration: 0.2), .fadeOut(withDuration: 0.2)]), .removeFromParent()]))
-                pop(r, reason: r.isPlayer ? "Wobble! You bounced on a Jelly Pad!" : nil)
+                pop(r, reason: r.isPlayer ? who(r) + "Wobble! You bounced on a Jelly Pad!" : nil)
             }
         }
         if pads.contains(where: { $0.lane == r.lane && abs($0.d - r.d) < carLen * 0.45 }) && now > r.boostUntil - 0.5 {
             r.boostUntil = now + 1.0
             if r.isPlayer {
                 Haptics.tap(.whoosh)
-                say("Rainbow pad! Speed up!", seconds: 1.4)
+                say(who(r) + "Rainbow pad! Speed up!", seconds: 1.4)
             }
         }
         for box in boxes where box.lane == r.lane && now >= box.readyAt && abs(box.d - r.d) < carLen * 0.5 {
@@ -648,9 +714,9 @@ final class KartScene: SKScene {
                 let item = KartItem.allCases.randomElement()!
                 r.item = item
                 if r.isPlayer {
-                    hud.item = item
+                    setHUDItem(item, seat: r.seat)
                     Haptics.success(.item)
-                    say(item.tip)
+                    say(who(r) + item.tip)
                 } else {
                     r.useItemAt = now + Double.random(in: 1.0...4.0)
                 }
@@ -661,7 +727,7 @@ final class KartScene: SKScene {
         if r.finishOrder == nil && r.d >= trackLength {
             finishCount += 1
             r.finishOrder = finishCount
-            if r.isPlayer { playerFinished() }
+            if r.isPlayer { humanFinished(r) }
         }
     }
 
@@ -704,7 +770,7 @@ final class KartScene: SKScene {
             r.shielded = false
             r.shieldRing?.run(.sequence([.group([.scale(to: 1.6, duration: 0.2), .fadeOut(withDuration: 0.2)]), .removeFromParent()]))
             r.shieldRing = nil
-            if r.isPlayer { say("Your Bubble Shield saved you!") }
+            if r.isPlayer { say(who(r) + "Your Bubble Shield saved you!") }
             return
         }
         r.bubbleUntil = now + 1.1
@@ -743,36 +809,41 @@ final class KartScene: SKScene {
                     if a.isPlayer && now - lastBumpTip > 4 {
                         lastBumpTip = now
                         Haptics.bump()
-                        say("Boop! Change lanes to pass. ⬅️ ➡️", seconds: 1.8)
+                        say(who(a) + "Boop! Change lanes to pass. ⬅️ ➡️", seconds: 1.8)
                     }
                 }
             }
         }
     }
 
+    /// Each person drives through the gate in their own lane. The gate is done when everyone has passed it.
+    private var gatePassed: [ObjectIdentifier: Set<Int>] = [:]
+
     private func checkGates() {
         for gate in gates where !gate.resolved {
-            let ahead = gate.d - player.d
-            if !gate.announced && ahead < 900 {
+            let lead = humans.map(\.d).max() ?? player.d
+            if !gate.announced && gate.d - lead < 900 {
                 gate.announced = true
                 let q = gate.question
                 hud.message = "Math Gate! " + q.prompt + " Drive through the right answer!"
                 Narrator.shared.say("Math Gate! \(q.prompt) Drive through the right answer!")
             }
-            if ahead <= 0 {
-                gate.resolved = true
+            let key = ObjectIdentifier(gate)
+            for r in humans where r.d >= gate.d && !(gatePassed[key]?.contains(r.seat) ?? false) {
+                gatePassed[key, default: []].insert(r.seat)
                 let q = gate.question
                 let correct = q.choices.indices.contains(q.answer) ? q.choices[q.answer] : ""
-                if player.lane == q.answer {
+                if r.lane == q.answer {
                     hud.mathRight += 1
-                    player.boostUntil = now + 2.0
+                    r.boostUntil = now + 2.0
                     Haptics.success(.correct)
-                    SpriteFactory.sparkleBurst(in: world, at: CGPoint(x: laneX(player.lane), y: player.d), size: laneW)
-                    say("Yes! The answer is \(correct)! Super boost!")
+                    SpriteFactory.sparkleBurst(in: world, at: CGPoint(x: laneX(r.lane), y: r.d), size: laneW)
+                    say(who(r) + "Yes! The answer is \(correct)! Super boost!")
                 } else {
-                    say("The answer was \(correct). You'll get the next one!")
+                    say(who(r) + "The answer was \(correct). You'll get the next one!")
                 }
             }
+            if gatePassed[key]?.count == humans.count { gate.resolved = true }
         }
     }
 
@@ -785,26 +856,31 @@ final class KartScene: SKScene {
             default: return lhs.d > rhs.d
             }
         }
-        let place = (ordered.firstIndex { $0 === player } ?? 0) + 1
-        if place != hud.place && !playerDone { hud.place = place }
+        for r in humans where r.finishOrder == nil {
+            let place = (ordered.firstIndex { $0 === r } ?? 0) + 1
+            if r.seat == 0, place != hud.place { hud.place = place }
+            if r.seat == 1, place != hud.place2 { hud.place2 = place }
+        }
 
-        let lap = min(laps, Int(max(0, player.d) / (trackLength / CGFloat(laps))) + 1)
-        if lap != hud.lap && !playerDone {
+        // laps and progress follow whoever is ahead
+        let lead = humans.filter { $0.finishOrder == nil }.max { $0.d < $1.d } ?? player
+        let lap = min(laps, Int(max(0, lead.d) / (trackLength / CGFloat(laps))) + 1)
+        if lap != hud.lap && !humansDone {
             hud.lap = lap
             say(lap == laps ? "Final lap! You can do it!" : "Lap \(lap)!", seconds: 1.8)
         }
-        let p = Double(min(max(player.d, 0) / trackLength, 1))
+        let p = Double(min(max(lead.d, 0) / trackLength, 1))
         if abs(p - hud.progress) > 0.005 { hud.progress = p }
     }
 
-    private func playerFinished() {
-        playerDone = true
-        let place = player.finishOrder ?? 4
-        hud.finalPlace = place
+    private func humanFinished(_ r: Racer) {
+        let place = r.finishOrder ?? 4
+        if r.seat == 0 { hud.finalPlace = place } else { hud.finalPlace2 = place }
         Haptics.success(.fanfare)
-        SpriteFactory.confetti(in: self, at: CGPoint(x: size.width / 2, y: playerY), spread: laneW * 2.5)
+        SpriteFactory.confetti(in: self, at: CGPoint(x: laneX(r.lane), y: playerY), spread: laneW * 2.5)
         let words = ["1st place! Amazing!", "2nd place! Great racing!", "3rd place! Nice job!", "You finished! Awesome effort!"]
-        say(words[min(place, 4) - 1], seconds: 2.5)
+        say(who(r) + words[min(place, 4) - 1], seconds: 2.5)
+        guard humansDone else { return }
         // finish the others quickly so the podium is ready
         run(.wait(forDuration: 2.2)) { [weak self] in
             guard let self else { return }

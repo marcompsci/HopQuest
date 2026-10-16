@@ -195,3 +195,23 @@ There is no network, no chat, no free text, no accounts, no ads and no streaks. 
 ### Tests
 - `Tests/VillageLogic/run.sh`: 322,866 checks (adds mission reachability, lily-pad hops, new NPCs).
 - `Tests/CodeLab/run.sh`: 214 checks (interpreter, curriculum, every project at every lesson, HTML balance, highlighting, saves).
+
+## v2.6 additions: a living village
+
+### Seasons, weather and festivals (`Models/VillageLife.swift`)
+- `Season.of(month:)` uses the device date (northern-hemisphere months). `Weather.on(year:month:day:)` is worked out from the date with `VillageRandom`, so the same day always has the same weather, with nothing downloaded. Snow only falls in winter.
+- `Festival`: seven festivals, two per season, alternating by week of the year. The child can pick any festival on the notice board (`VillageSaveState.festivalPick`), so nothing is ever missed.
+- `FestivalMissions`: one mission per festival, all hosted by Gemma Giraffe (`gemma`, a new villager). `MissionCatalog.offer(from:save:festival:)` gives the host's festival in progress first, then the one being celebrated. `MissionCatalog.visible` keeps the mission log tidy.
+- `VillageStories`: a season line for every villager, plus weather lines, taking turns in chatter.
+
+### Your house (`BuildingKind.home`, footprint `J` at cols 26–30, rows 4–7)
+- `HomeStyle` (inside `VillageSaveState.home`): wall, roof and door colors and a set of `HomeExtra` decorations. Four decorations are open from the start; each festival unlocks one more, once.
+- Art is drawn in layers by `make_village.py` (`home_wall_*`, `home_roof_*`, `home_door_*`, `home_extra_*`). The scene stacks them as one sprite (`HopVillageScene.updateHome`) and the house redraws live as the child decorates.
+
+### Effects (`VillageEnvironmentSystem`)
+- Color washes per season and weather; spring petals, orange autumn leaves, faster leaves when windy; rain and snow pooled in the visible area.
+- Falling effects turn off with Reduce Motion, and "Lighter effects" uses fewer of each.
+- Grown-ups can switch seasons off (`VillageSaveState.seasons`): the village is then always a sunny spring day.
+
+### Tests
+- `Tests/VillageLogic/run.sh` adds: months → seasons, stable daily weather (snow only in winter), weekly festival rotation, festival missions reachable and hosted, the house on the map and reachable, `HomeStyle` decoding (bad values clamped, unknown decorations skipped), older saves loading, and villager lines rotating. 352,193 checks.

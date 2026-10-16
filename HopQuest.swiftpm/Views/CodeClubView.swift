@@ -41,6 +41,8 @@ private enum ClubColors {
 
 struct CodeClubView: View {
     @EnvironmentObject var store: GameStore
+    /// Team Robot Code: a kid and a grown-up take turns adding blocks (pair programming).
+    var team: Bool = false
     var onBack: () -> Void
     var onEarn: (Int) -> Void
 
@@ -65,7 +67,7 @@ struct CodeClubView: View {
                 .ignoresSafeArea()
             switch open {
             case .code(let c):
-                CodeChallengeView(challenge: c,
+                CodeChallengeView(challenge: c, team: team,
                                   onBack: { open = nil },
                                   onSolved: { stars in award(c.id, stars) },
                                   onNext: { next in open = .code(next) })
@@ -104,9 +106,14 @@ struct CodeClubView: View {
                 }
                 HStack(spacing: 8) {
                     ArtImage("icon_code").frame(width: 66, height: 66)
-                    Text("Code Club")
-                        .font(.kid(36, .black))
+                    Text(team ? "Team Robot Code" : "Code Club")
+                        .font(.kid(team ? 30 : 36, .black))
                         .foregroundStyle(Palette.purple)
+                }
+                if team {
+                    Text("⭐ and 💜 take turns adding one block each. Real coders do this too: it's called pair programming!")
+                        .font(.kid(15, .bold)).foregroundStyle(Palette.ink)
+                        .multilineTextAlignment(.center)
                 }
                 HStack(spacing: 12) {
                     ArtImage("robot_full").frame(width: 56, height: 62)
@@ -200,6 +207,8 @@ struct CodeClubView: View {
 
 struct CodeChallengeView: View {
     let challenge: CodeChallenge
+    /// Pair programming: players take turns adding blocks.
+    var team = false
     var onBack: () -> Void
     var onSolved: (Int) -> Void
     var onNext: (CodeChallenge) -> Void
@@ -223,11 +232,15 @@ struct CodeChallengeView: View {
     @State private var solvedStars: Int?
     @State private var starBounce = false
     @State private var gearSpin = false
+    /// Team mode: whose turn it is (0 ⭐, 1 💜), and who added each block.
+    @State private var turn = 0
+    @State private var owners: [UUID: Int] = [:]
 
     private let maxPieces = 14
 
-    init(challenge: CodeChallenge, onBack: @escaping () -> Void, onSolved: @escaping (Int) -> Void, onNext: @escaping (CodeChallenge) -> Void) {
+    init(challenge: CodeChallenge, team: Bool = false, onBack: @escaping () -> Void, onSolved: @escaping (Int) -> Void, onNext: @escaping (CodeChallenge) -> Void) {
         self.challenge = challenge
+        self.team = team
         self.onBack = onBack
         self.onSolved = onSolved
         self.onNext = onNext
@@ -260,7 +273,7 @@ struct CodeChallengeView: View {
                     HStack(spacing: 12) {
                         BigButton(title: "Clear", color: Color(hex: 0x9AA0AE)) {
                             guard !running else { return }
-                            withAnimation { program.removeAll(); cursor = []; inElse = false }
+                            withAnimation { program.removeAll(); cursor = []; inElse = false; owners = [:]; turn = 0 }
                             reset(map: 0)
                             mapResults = Array(repeating: nil, count: challenge.maps.count)
                         }
@@ -281,7 +294,7 @@ struct CodeChallengeView: View {
         .animation(.spring(response: 0.45, dampingFraction: 0.75), value: solvedStars)
         .onAppear {
             trail = [world.start]
-            Narrator.shared.say(challenge.lesson)
+            Narrator.shared.say(challenge.lesson + (team ? " Team tip: take turns adding blocks, and talk it over before you press Run!" : ""))
         }
     }
 
@@ -289,7 +302,18 @@ struct CodeChallengeView: View {
         HStack {
             CircleIconButton(systemName: "chevron.left", label: "Back to puzzles", action: onBack)
             Spacer()
-            Text(challenge.title).font(.kid(24, .black)).foregroundStyle(Palette.ink)
+            VStack(spacing: 2) {
+                Text(challenge.title).font(.kid(24, .black)).foregroundStyle(Palette.ink)
+                if team {
+                    Text(turn == 0 ? "⭐'s turn to add a block" : "💜's turn to add a block")
+                        .font(.kid(13, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 10).padding(.vertical, 3)
+                        .background(Capsule().fill(turn == 0 ? Color(hex: 0xE0A800) : Palette.purple))
+                        .contentTransition(.opacity)
+                        .accessibilityLabel(turn == 0 ? "Star player's turn" : "Heart player's turn")
+                }
+            }
+            .animation(.easeInOut, value: turn)
             Spacer()
             VStack(spacing: 0) {
                 Text("\(pieces)/\(challenge.blockLimit)")
@@ -428,7 +452,7 @@ struct CodeChallengeView: View {
                             .padding(.horizontal, 12)
                     }
                     ForEach(program) { block in
-                        RobotBlockChip(block: block, active: active, cursor: cursor, inElse: inElse, actions: chipActions)
+                        RobotBlockChip(block: block, active: active, cursor: cursor, inElse: inElse, actions: chipActions, owners: owners)
                     }
                     Color.clear.frame(width: 1).id("end")
                 }
@@ -582,6 +606,10 @@ struct CodeChallengeView: View {
             return
         }
         Haptics.tap(.pop)
+        if team {
+            owners[block.id] = turn
+            turn = 1 - turn
+        }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             if let open = cursor.last {
                 _ = program.update(open) { c in
@@ -777,6 +805,8 @@ struct RobotBlockChip: View {
     let cursor: [UUID]
     let inElse: Bool
     let actions: Actions
+    /// Team mode: who added each block (0 ⭐, 1 💜).
+    var owners: [UUID: Int] = [:]
     var small = false
 
     private var isActive: Bool { active.contains(block.id) }
@@ -794,9 +824,10 @@ struct RobotBlockChip: View {
                     .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .stroke(ClubColors.active, lineWidth: isActive ? 4 : 0))
                     .scaleEffect(isActive ? 1.12 : 1)
+                    .overlay(alignment: .topTrailing) { ownerBadge }
             }
             .transition(.scale.combined(with: .opacity))
-            .accessibilityLabel("\(cmd.label). Tap to remove.")
+            .accessibilityLabel("\(cmd.label)\(ownerSpoken). Tap to remove.")
         case .repeatTimes, .repeatUntilGoal:
             container(fill: ClubColors.loop, edge: ClubColors.loopEdge) {
                 loopHeader
@@ -844,10 +875,22 @@ struct RobotBlockChip: View {
         }
     }
 
+    @ViewBuilder
+    private var ownerBadge: some View {
+        if let who = owners[block.id] {
+            Text(who == 0 ? "⭐" : "💜").font(.system(size: 11)).offset(x: 4, y: -4)
+        }
+    }
+
+    private var ownerSpoken: String {
+        guard let who = owners[block.id] else { return "" }
+        return who == 0 ? ", added by the star player" : ", added by the heart player"
+    }
+
     private func children(_ blocks: [RobotBlock], openHere: Bool) -> some View {
         HStack(spacing: 5) {
             ForEach(blocks) { b in
-                AnyView(RobotBlockChip(block: b, active: active, cursor: cursor, inElse: inElse, actions: actions, small: true))
+                AnyView(RobotBlockChip(block: b, active: active, cursor: cursor, inElse: inElse, actions: actions, owners: owners, small: true))
             }
             if openHere {
                 RoundedRectangle(cornerRadius: 9)
@@ -869,6 +912,7 @@ struct RobotBlockChip: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
+        .overlay(alignment: .topLeading) { ownerBadge.offset(x: -4, y: -4) }
         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(fill))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
             .stroke(isActive ? ClubColors.active : edge, lineWidth: isActive || isOpen ? 4 : 2))

@@ -12,6 +12,8 @@ final class BopHUD: ObservableObject {
         var giggles: Double
         var floating: Bool
         let isPlayer: Bool
+        /// 0 (⭐) or 1 (💜) when two people play; nil for computer buddies.
+        var seat: Int? = nil
 
         static func == (a: Entry, b: Entry) -> Bool {
             a.id == b.id && a.bops == b.bops && abs(a.giggles - b.giggles) < 0.01 && a.floating == b.floating
@@ -24,6 +26,8 @@ final class BopHUD: ObservableObject {
     @Published var message: String?
     @Published var question: Question?
     @Published var giant = false
+    @Published var giant2 = false
+    @Published var twoPlayer = false
     @Published var brainRight = 0
     @Published var finished = false
     /// Final ranking, best first.
@@ -37,6 +41,8 @@ final class BopScene: SKScene {
 
     // Controls (set from SwiftUI)
     var moveInput: CGFloat = 0
+    /// The second player's walk input (two players on one phone).
+    var moveInput2: CGFloat = 0
 
     let hud: BopHUD
     let matchLength: TimeInterval = 60
@@ -46,7 +52,9 @@ final class BopScene: SKScene {
         let body = SKNode()
         let pillow: SKSpriteNode
         let character: GameCharacter
+        /// A person playing (not a computer buddy).
         let isPlayer: Bool
+        var seat = 0
         var pos: CGPoint = .zero          // feet
         var vel: CGVector = .zero
         var facing: CGFloat = 1
@@ -81,9 +89,15 @@ final class BopScene: SKScene {
     }
 
     private let playerCharacter: GameCharacter
+    /// The second player's buddy (two players on one phone), or nil.
+    private let partnerCharacter: GameCharacter?
+    private var twoPlayer: Bool { partnerCharacter != nil }
     private let theme: CastleTheme
     private var fighters: [Fighter] = []
     private var player: Fighter { fighters[0] }
+    private var humans: [Fighter] { fighters.filter(\.isPlayer) }
+    /// Who popped the Brain Bubble (they get the giant pillow).
+    private var bubblePopper: Fighter?
     private var platforms: [Platform] = []
     private var bubble: SKNode?
     private var bubbleUntil: TimeInterval = 0
@@ -105,10 +119,12 @@ final class BopScene: SKScene {
     private var now: TimeInterval = 0
     private var lastHudPush: TimeInterval = 0
 
-    init(size: CGSize, character: GameCharacter, theme: CastleTheme, hud: BopHUD) {
+    init(size: CGSize, character: GameCharacter, partner: GameCharacter? = nil, theme: CastleTheme, hud: BopHUD) {
         self.playerCharacter = character
+        self.partnerCharacter = partner
         self.theme = theme
         self.hud = hud
+        hud.twoPlayer = partner != nil
         self.questions = QuestionBank.deck(for: Chapters.teamHop)
         super.init(size: size)
         scaleMode = .aspectFill
@@ -172,21 +188,24 @@ final class BopScene: SKScene {
     }
 
     private func buildFighters() {
-        var others = Roster.all.filter { $0.id != playerCharacter.id }.shuffled()
+        let people = [playerCharacter] + (partnerCharacter.map { [$0] } ?? [])
+        var others = Roster.all.filter { c in !people.contains { $0.id == c.id } }.shuffled()
+        let botCount = 4 - people.count
         // one friend from each family when possible, so the arena looks varied
         var picks: [GameCharacter] = []
-        for family in CharacterFamily.allCases.shuffled() where picks.count < 3 {
+        for family in CharacterFamily.allCases.shuffled() where picks.count < botCount {
             if let c = others.first(where: { $0.family == family && $0.family != playerCharacter.family }) {
                 picks.append(c)
                 others.removeAll { $0.id == c.id }
             }
         }
-        while picks.count < 3, let c = others.popLast() { picks.append(c) }
+        while picks.count < botCount, let c = others.popLast() { picks.append(c) }
 
-        let all = [playerCharacter] + picks
+        let all = people + picks
         let starts: [CGFloat] = [-0.55, 0.55, -0.15, 0.15]
         for (i, c) in all.enumerated() {
-            let f = makeFighter(c, isPlayer: i == 0)
+            let f = makeFighter(c, isPlayer: i < people.count)
+            f.seat = i < people.count ? i : 0
             f.pos = CGPoint(x: size.width / 2 + islandHalf * starts[i], y: groundY)
             f.facing = starts[i] < 0 ? 1 : -1
             f.onGround = true
@@ -194,15 +213,17 @@ final class BopScene: SKScene {
             addChild(f.node)
             place(f)
         }
-        // a little arrow so kids can find themselves
-        let arrow = SKLabelNode(text: "▼")
-        arrow.fontName = "AvenirNext-Heavy"
-        arrow.fontSize = 20
-        arrow.fontColor = UIColor(hex: theme.accentHex)
-        arrow.position = CGPoint(x: 0, y: charSize * 1.25)
-        arrow.name = "me"
-        arrow.run(.repeatForever(.sequence([.moveBy(x: 0, y: 5, duration: 0.4), .moveBy(x: 0, y: -5, duration: 0.4)])))
-        player.node.addChild(arrow)
+        // a little arrow so kids can find themselves (⭐ and 💜 when two people play)
+        for f in humans {
+            let arrow = SKLabelNode(text: twoPlayer ? (f.seat == 0 ? "⭐" : "💜") : "▼")
+            arrow.fontName = "AvenirNext-Heavy"
+            arrow.fontSize = 20
+            arrow.fontColor = UIColor(hex: theme.accentHex)
+            arrow.position = CGPoint(x: 0, y: charSize * 1.25)
+            arrow.name = "me"
+            arrow.run(.repeatForever(.sequence([.moveBy(x: 0, y: 5, duration: 0.4), .moveBy(x: 0, y: -5, duration: 0.4)])))
+            f.node.addChild(arrow)
+        }
     }
 
     private func makeFighter(_ c: GameCharacter, isPlayer: Bool) -> Fighter {
@@ -298,8 +319,15 @@ final class BopScene: SKScene {
     // MARK: Movement
 
     private func steerPlayer(_ f: Fighter) {
-        f.wantDir = moveInput
+        f.wantDir = f.seat == 1 ? moveInput2 : moveInput
     }
+
+    /// "⭐ " or "💜 " in front of a message when two people are playing.
+    private func who(_ f: Fighter) -> String {
+        twoPlayer ? (f.seat == 0 ? "⭐ " : "💜 ") : ""
+    }
+
+    private func human(_ seat: Int) -> Fighter? { humans.first { $0.seat == seat } }
 
     private func physics(_ f: Fighter, _ dt: CGFloat) {
         guard dt > 0 else { return }
@@ -365,9 +393,9 @@ final class BopScene: SKScene {
         }
     }
 
-    func jump() {
-        guard started, !ended else { return }
-        jump(player)
+    func jump(seat: Int = 0) {
+        guard started, !ended, let f = human(seat) else { return }
+        jump(f)
     }
 
     private func jump(_ f: Fighter) {
@@ -395,9 +423,9 @@ final class BopScene: SKScene {
 
     // MARK: Bops
 
-    func bop() {
-        guard started, !ended else { return }
-        bop(player)
+    func bop(seat: Int = 0) {
+        guard started, !ended, let f = human(seat) else { return }
+        bop(f)
     }
 
     private func bop(_ f: Fighter) {
@@ -508,7 +536,7 @@ final class BopScene: SKScene {
         addChild(splash)
         if f.isPlayer {
             Haptics.bump(.whoosh)
-            say("Wheee! A balloon will float you back!")
+            say(who(f) + "Wheee! A balloon will float you back!")
         }
     }
 
@@ -633,11 +661,13 @@ final class BopScene: SKScene {
             bubble = nil
             return
         }
-        // only the player can pop it (bots float right past)
-        let p = player
-        guard p.floatingSince == nil else { return }
-        let center = CGPoint(x: p.pos.x, y: p.pos.y + charSize * 0.5)
-        if hypot(center.x - b.position.x, center.y - b.position.y) < 48 * unit {
+        // only people can pop it (bots float right past)
+        guard let p = humans.first(where: { h in
+            h.floatingSince == nil && hypot(h.pos.x - b.position.x, h.pos.y + charSize * 0.5 - b.position.y) < 48 * unit
+        }) else { return }
+        do {
+            bubblePopper = p
+            if twoPlayer { say(who(p) + "popped the Brain Bubble! Answer together!") }
             bubble = nil
             SpriteFactory.sparkleBurst(in: self, at: b.position, size: 50)
             b.removeFromParent()
@@ -680,14 +710,15 @@ final class BopScene: SKScene {
         if firstTry { hud.brainRight += 1 }
         isPaused = false
         lastTime = 0
-        player.giantUntil = now + (firstTry ? 10 : 7)
-        restPillow(player)
-        SpriteFactory.sparkleBurst(in: self, at: CGPoint(x: player.pos.x, y: player.pos.y + charSize * 0.6), size: 60)
+        let p = bubblePopper ?? player
+        bubblePopper = nil
+        p.giantUntil = now + (firstTry ? 10 : 7)
+        restPillow(p)
+        SpriteFactory.sparkleBurst(in: self, at: CGPoint(x: p.pos.x, y: p.pos.y + charSize * 0.6), size: 60)
         Haptics.success(.star)
-        say(firstTry ? "Super brain! GIANT pillow time!" : "You got it! GIANT pillow time!")
+        say(who(p) + (firstTry ? "Super brain! GIANT pillow time!" : "You got it! GIANT pillow time!"))
         let shrink = SKAction.sequence([.wait(forDuration: firstTry ? 10 : 7), .run { [weak self] in
-            guard let self else { return }
-            self.restPillow(self.player)
+            self?.restPillow(p)
         }])
         run(shrink, withKey: "giant")
     }
@@ -697,6 +728,7 @@ final class BopScene: SKScene {
     private func endMatch() {
         ended = true
         moveInput = 0
+        moveInput2 = 0
         for f in fighters { f.wantDir = 0 }
         let ranking = fighters
             .sorted { a, b in a.bops != b.bops ? a.bops > b.bops : a.isPlayer }
@@ -714,7 +746,8 @@ final class BopScene: SKScene {
 
     private func entry(_ f: Fighter) -> BopHUD.Entry {
         BopHUD.Entry(id: f.character.id, character: f.character, bops: f.bops,
-                     giggles: Double(f.giggles / 100), floating: f.floatingSince != nil, isPlayer: f.isPlayer)
+                     giggles: Double(f.giggles / 100), floating: f.floatingSince != nil, isPlayer: f.isPlayer,
+                     seat: f.isPlayer && twoPlayer ? f.seat : nil)
     }
 
     private func pushHud(force: Bool) {
@@ -730,6 +763,8 @@ final class BopScene: SKScene {
         }
         let giant = now < player.giantUntil
         if giant != hud.giant { hud.giant = giant }
+        let giant2 = human(1).map { now < $0.giantUntil } ?? false
+        if giant2 != hud.giant2 { hud.giant2 = giant2 }
     }
 
     private func say(_ text: String) {

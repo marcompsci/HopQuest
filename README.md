@@ -12,7 +12,7 @@ There's no blood, no bad words, no ads, no chat and no accounts. Every crash is 
 
 ---
 
-## Hop Village (2.3)
+## Hop Village (2.7)
 
 | On the phone (3× pixel scale) | The whole village |
 |:---:|:---:|
@@ -62,8 +62,8 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 
 | Mode | What kids do | What they learn |
 |---|---|---|
-| **Hop Village** | Walk anywhere with the joystick or by tapping. Every game has a building. Finish all 10 challenges to open your castle. Chat with 11 villagers, take on 7 missions (fix the clock, water the garden, deliver mail, hop the lily pads and more). Hop forward a few feet with the Hop button, even across water. A pop-quiz buddy drops by every 2 minutes with a follow-up question | Road safety, math, science, nature and words riddles; recall of what each game taught; exploring and wayfinding |
-| **Coding Lab** 💻 | A building in the village (and a menu tile). Ocho the octopus teaches 15 beginner lessons in 3 tracks, and every lesson adds to a real project the child keeps and can remix: **Web Designer** (HTML & CSS, a live web page), **Python Coder** (variables, loops, if, functions, run in a safe built-in Python), **Game Maker** (a tap-to-jump star game written in Python that actually plays) | HTML tags, CSS colors and sizes, print, variables, loops, if/else, functions, events, game logic |
+| **Hop Village** | Walk anywhere with the joystick or by tapping. Every game has a building. Finish all 10 challenges to open your castle. Chat with 12 villagers, take on 7 missions (fix the clock, water the garden, deliver mail, hop the lily pads and more). Hop forward a few feet with the Hop button, even across water. **Seasons** follow the calendar, the **weather** changes daily (sun, clouds, wind, rain, snow), and Gemma Giraffe hosts a **festival** each week (7 in all, any of them playable any time from the notice board). **Your own house** on the hill can be painted and decorated, with a new decoration from every festival. A pop-quiz buddy drops by every 2 minutes with a follow-up question | Road safety, math, science, nature and words riddles; seasons and weather science; recall of what each game taught; exploring and wayfinding |
+| **Coding Lab** 💻 | A building in the village (and a menu tile). Ocho the octopus teaches 24 beginner lessons in 3 tracks, and every lesson adds to a real project the child keeps and can remix: **Web Designer** (HTML & CSS: a live web page with fonts, flexbox and a CSS animation), **Python Coder** (print, variables, math, loops, if/else, functions with parameters and return, and the Hop-Skip counting game, run in a safe built-in Python), **Game Maker** (a Python star-catching game with speed, bubbles to dodge and a level-up). **Free Build** in each track: make your own project from the blocks you've learned | HTML tags, CSS colors, fonts, layout and animation; print, variables, loops, if/else, functions, return, remainders; events and game design |
 | **Brain Duels** (live play) | Friends in the same room (or Game Center friends, if a grown-up allows) see each other's buddies and can duel: 5 questions, fastest right answers win. No chat, ever | Quick recall, sportsmanship |
 | **Hop levels** (Meadow Street, Lily River, Castle Hill) | Hop across roads, rivers and lily pads to reach the castle | Looking both ways, timing, patience |
 | **Brain Gates** | Ollie Owl asks a question, answered with lettered, color-coded buttons | Math, road safety, nature, science, words |
@@ -71,11 +71,11 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 | **Robot Lab** | Build a robot part by part, then "code" it with arrow commands to reach the star | Engineering basics: chassis, battery, motors, wheels, sensors, microcontroller, sequencing |
 | **Bubble Kart** | Kart racing with bubble shields, carrot boosts and jelly pads (three cups) | Steering, items, fair play |
 | **My Castle** | Tap the castle on the map to decorate your own room with furniture bought with stars, change the walls, invite Sticker Book buddies, and share treats with them (no hunger or guilt mechanics) | Creativity, planning, caring for others |
-| **Code Club** | 5 coding puzzles after the robot is built: program the robot with Forward, Turn and **Repeat** blocks, steer around rocks, collect gears, and try to use as few blocks as possible | Coding: sequences, loops, patterns, planning (algorithms), shapes |
+| **Code Club** | 9 coding puzzles after the robot is built: program the robot with Forward, Turn and **Repeat** blocks, then sensor blocks (**Repeat until ⭐**, **If blocked … else**) where one program must solve several maps. Plus the **Machine Workshop**: 6 puzzles with gears, levers and pulleys | Coding: sequences, loops, patterns, algorithms, conditionals, sensors; simple machines and the math behind them |
 | **Fort Friends** | A building game with no fighting. Build ramps, blocks and bridges with bricks to reach balloons and a tree-house fort, while a sleepy rain cloud drifts along behind you | Engineering: inclined planes, support, planning a budget of bricks, recycling |
 | **Pillow Bop Arena** | A gentle party-brawler: walk, jump and swing a pillow to push three buddy bots toward the edge of a floating island. Falling off just means a balloon floats you back. Pop the Brain Bubble and answer it for a GIANT pillow | Sportsmanship, timing, quick thinking |
 | **Sticker Book** | Every 6 stars earns a sticker pack with a new buddy and a fun fact read aloud. Collect all 29 | Animal and nature facts, goal-setting |
-| **Together mode** | A grown-up and a kid play side by side (Team Hop and Team Drive) | Co-op play and talking it through |
+| **Together mode** | A grown-up and a kid play on one device: Team Hop, Team Drive, **two-player Bubble Kart**, **two-player Pillow Bop**, and **Team Robot Code** (take turns adding blocks, like pair programmers) | Co-op play, fair play, and talking it through |
 | **Hot air balloon finish** | Your buddy rides a balloon from big to little and lands on the next level | |
 
 **Kid- and parent-friendly by design:**
@@ -104,7 +104,8 @@ The village's logic (map, A* pathfinding, collision, movement, NPC behavior, sav
 
 ```bash
 Tests/VillageLogic/run.sh      # needs swiftc (Xcode command-line tools on a Mac, or any Swift toolchain)
-Tests/CodeLab/run.sh           # the mini Python, all 15 lessons and every project
+Tests/CodeLab/run.sh           # the mini Python, all 24 lessons, every project, and Free Build
+Tests/RobotLab/run.sh          # Code Club's robot language, every puzzle's solvability, and the Machine Workshop
 ```
 
 ## Project layout

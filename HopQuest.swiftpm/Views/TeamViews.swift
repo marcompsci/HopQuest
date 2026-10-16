@@ -1,10 +1,15 @@
 import SwiftUI
 
+/// Two-player modes that aren't story chapters.
+enum TeamMode: Equatable { case kart, bop, code }
+
 /// Grown-up & Me: pick the grown-up's buddy and a team game. Everyone plays on one device.
 struct TeamSetupView: View {
     @EnvironmentObject var store: GameStore
     var onBack: () -> Void
     var onStart: (Chapter) -> Void
+    /// Team Kart, Team Bop and Team Robot Code.
+    var onMode: (TeamMode) -> Void = { _ in }
 
     @State private var pickingBuddy = false
 
@@ -44,6 +49,18 @@ struct TeamSetupView: View {
                              text: "The grown-up turns the steering wheel. \(kidName) works the gas and brake pedals — and stops for every red light and stop sign!",
                              color: Color(hex: 0x4D96FF))
 
+                    modeCard(emoji: "🏎️🏎️", title: "Two-Player Kart",
+                             text: "Race each other in Bubble Kart! ⭐ steers with the left buttons, 💜 with the right. The gas is automatic, and whoever falls behind gets a catch-up boost.",
+                             color: Color(hex: 0xFF7A59)) { onMode(.kart) }
+
+                    modeCard(emoji: "🪶🪶", title: "Two-Player Pillow Bop",
+                             text: "Bop it out on the floating island against two buddy bots. ⭐ uses the left buttons, 💜 the right. Either of you can pop the Brain Bubble!",
+                             color: Color(hex: 0xFF7FC4)) { onMode(.bop) }
+
+                    modeCard(emoji: "🤖💻", title: "Team Robot Code",
+                             text: "Code the robot together like real pair programmers: take turns adding one block each. Talk it over before you press Run!",
+                             color: Color(hex: 0xB983FF)) { onMode(.code) }
+
                     grownUpTips
                 }
                 .padding(.horizontal, 18)
@@ -61,7 +78,7 @@ struct TeamSetupView: View {
     }
 
     private var intro: String {
-        "Grown-up and me! Play together on one device. Pick Team Hop or Team Drive."
+        "Grown-up and me! Play together on one device. Pick Team Hop, Team Drive, two-player kart, two-player pillow bop, or team robot code."
     }
 
     private var team: some View {
@@ -95,9 +112,13 @@ struct TeamSetupView: View {
     }
 
     private func modeCard(chapter: Chapter, emoji: String, title: String, text: String, color: Color) -> some View {
+        modeCard(emoji: emoji, title: title, text: text, color: color) { onStart(chapter) }
+    }
+
+    private func modeCard(emoji: String, title: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
         Button {
             Haptics.tap()
-            onStart(chapter)
+            action()
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
@@ -126,6 +147,7 @@ struct TeamSetupView: View {
             tipRow("🧠", "At Brain Gates, let your child answer first. Help with a hint, not the answer.")
             tipRow("🚦", "In Team Drive, ask \"what does this sign mean?\" before you reach it.")
             tipRow("🎉", "Cheer for the bumps too — they're part of the fun, never a fail.")
+            tipRow("💻", "In Team Robot Code, ask \"what do you think the robot will do?\" before pressing Run.")
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

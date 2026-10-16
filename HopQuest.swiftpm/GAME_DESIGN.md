@@ -169,6 +169,41 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
   - a soft contact shadow
 - **Hop button.** It now hops the buddy about 2 tiles forward in an arc, with stretch on takeoff and squash on landing. Walls, trees and water stop the hop early, and the joystick waits until landing. Tested.
 
+### v2.3: Coding Lab, new friends and missions
+- **Coding Lab building.** Ocho the octopus teaches 15 beginner lessons in three tracks. The child builds what they learn, and every lesson adds to one real project they keep:
+  - **Web Designer** (HTML & CSS): headings, paragraphs, colors, pictures and a styled button. The page shows live beside the code.
+  - **Python Coder**: print, variables, math, `for` loops and `if/else`, run in HopQuest's own safe mini Python. (Functions arrived in v2.4; see below.)
+  - **Game Maker** (Python): a background, a hero, stars, `on_tap()` to jump and `on_star()` to score. The game actually plays.
+- **Lesson flow.** Learn (short cards read aloud, with example code) → Build (tap colored blanks to choose values, then ▶ Run) → Quick check → Done (+2 stars the first time, plus a fun fact). "My creations" opens each project to run and remix.
+- **Safety.** No typing of free text in code, no network, no JavaScript in web previews, and step and output limits in the interpreter.
+- **Six new buddies (29 total), the Wild Pals:** Kip the kangaroo (kindness), Fizz the frog, Ocho the octopus (coding), Flora the bee-gardener, Polly the parrot (shapes) and Buzzy the mail bee.
+- **Seven missions** with a 📜 log: fix the clock tower gears, water Flora's garden, deliver Buzzy's mail, find Polly's shape signs, hop Fizz's lily pads (the Hop button now crosses water), Kip's kindness round, and Ocho's "finish 3 lessons". Each pays stars once.
+- **New Brain Gate subjects:** Coding and Kindness. **Challenges:** 10 (the tenth is a Coding Lab lesson). The Learning Report shows coding lessons and missions.
+- **Tests.** Village logic: 322,866 checks. Coding Lab: 214 checks, including every project at every lesson.
+
+### v2.4: Coding Lab 2
+- **24 lessons** (8 per track). New lessons:
+  - Web Designer: fonts and text, flexbox layout, and a CSS bounce animation.
+  - Python Coder: make your own function (parameters), functions that `return` answers, and the Hop-Skip counting game (loops + `if` + `%`, a kid-sized FizzBuzz).
+  - Game Maker: `set_speed()` (tuning), bubbles to dodge with an `on_bump()` event, and levelling up with `on_score()`.
+- **Free Build** in every track: a blank project where kids add the code blocks they've learned, fill the blanks, move lines, push Python lines in and out, and run whatever they make. Getting the indent wrong gives a kind error that points at the line. No typing, so no free text.
+- Engine: `GameProgram` gained speed, bubbles, live effects (a level-up can change the world mid-game) and the new events. CodeLab tests: 350 checks.
+
+### v2.5: Robot Lab 2
+- Code Club's robot language moved into a tested engine (`Models/RobotCode.swift`).
+- **Sensor blocks:** *Repeat until ⭐* and *If blocked … else*. Four sensor puzzles show several maps that **one program must solve**, and the robot must stop *on* the star, so counting steps can't work. A test searches every program within each block limit to prove each puzzle is solvable and that the sensor puzzles really need sensors.
+- **Machine Workshop:** six puzzles with gears (direction and speed), levers (fulcrum and balance, with the math shown) and pulleys (force vs rope pulled). RobotLab tests: 125 checks.
+
+### v2.6: A living village
+- Seasons from the calendar, daily weather from the date, seven weekly festivals hosted by Gemma Giraffe (any festival can be celebrated any time), your own decorated house, and seasonal lines for every villager. See docs/VILLAGE_ARCHITECTURE.md.
+- Kept to the design rules: nothing to miss, no streaks, festival rewards are given once ever. Reduce Motion and Lighter effects are respected, and grown-ups can turn seasons off.
+
+### v2.7: Two players on one device
+- **Two-player Bubble Kart:** both racers on one road, each with their own lane and item buttons (⭐ left, 💜 right). Gas is automatic, the camera keeps both on screen, and whoever falls behind gets a catch-up boost.
+- **Two-player Pillow Bop:** two people plus two buddy bots. Either player can pop the Brain Bubble, and the giant pillow goes to whoever popped it.
+- **Team Robot Code:** Code Club with turn-taking, like pair programmers. Each block shows who added it.
+- Two-player games earn stars together, but cup trophies and best scores stay solo records.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

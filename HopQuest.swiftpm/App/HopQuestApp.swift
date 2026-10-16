@@ -29,6 +29,11 @@ enum Route: Equatable {
     case codeClub
     case village
     case codingLab
+    // two players on one phone
+    case teamKartSelect
+    case teamKart(Int)
+    case teamBop
+    case teamCode
     case balloon(next: Int?)
 }
 
@@ -198,7 +203,45 @@ struct RootView: View {
 
         case .teamSetup:
             TeamSetupView(onBack: goHome,
-                          onStart: { chapter in route = .playing(chapter.id) })
+                          onStart: { chapter in route = .playing(chapter.id) },
+                          onMode: { mode in
+                              switch mode {
+                              case .kart: route = .teamKartSelect
+                              case .bop: route = .teamBop
+                              case .code: route = .teamCode
+                              }
+                          })
+
+        case .teamKartSelect:
+            KartSelectView(onBack: { route = .teamSetup },
+                           onStart: { cup in route = .teamKart(cup.id) })
+
+        case .teamKart(let id):
+            // two players earn stars together, but cup trophies stay a solo record
+            KartGameView(chapter: Chapters.chapter(id), partner: store.coopCharacter, onExit: { route = .teamSetup }) { stars, _, again in
+                store.addStars(stars)
+                if again {
+                    raceNonce += 1
+                } else {
+                    route = .balloon(next: nil)
+                }
+            }
+            .id("teamkart-\(id)-\(raceNonce)")
+
+        case .teamBop:
+            BopGameView(partner: store.coopCharacter, onExit: { route = .teamSetup }) { stars, again in
+                store.addStars(stars)
+                if again {
+                    raceNonce += 1
+                } else {
+                    route = .balloon(next: nil)
+                }
+            }
+            .id("teambop-\(raceNonce)")
+
+        case .teamCode:
+            CodeClubView(team: true, onBack: { route = .teamSetup },
+                         onEarn: { stars in store.addStars(stars) })
 
         case .playing(let id):
             let chapter = Chapters.chapter(id)
@@ -253,7 +296,7 @@ struct RootView: View {
     /// Racing music for driving and karts; the adventure theme everywhere else.
     private func updateMusic() {
         switch route {
-        case .kartSelect, .bop:
+        case .kartSelect, .bop, .teamKartSelect, .teamKart, .teamBop:
             SoundFX.shared.playMusic(.race)
         case .playing(let id):
             let kind = Chapters.chapter(id).kind

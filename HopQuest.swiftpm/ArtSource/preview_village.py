@@ -31,7 +31,7 @@ def h(c, r): return (c * 73856093 ^ r * 19349663) & 0xffff
 PATHLIKE = set('=Qz#')
 WATERLIKE = set('~o#')
 BUILD = {'C': 'castle', 'M': 'museum', 'A': 'arena', 'W': 'workshop', 'D': 'academy', 'K': 'stadium', 'Y': 'shed',
-         'X': 'garage', 'U': 'clubhouse', 'G': 'cottage', 'V': 'boathouse', 'H': 'tower', 'P': 'codinglab'}
+         'X': 'garage', 'U': 'clubhouse', 'G': 'cottage', 'V': 'boathouse', 'H': 'tower', 'P': 'codinglab', 'J': 'home'}
 
 def mask(c, r, like):
     m = 0
@@ -89,7 +89,14 @@ for r in range(H):
             if name: add(prop(name), bx, by)
             else:
                 nm = 'castle_rainbow' if k == 'C' else BUILD[k]
-                add(load(f'village_{nm}'), bx, by)
+                if nm == 'home':
+                    # your house is drawn from layers in the game; show one decorated example
+                    house = load('home_wall_1')
+                    for layer in ['home_roof_2', 'home_door_2', 'home_extra_flowerBox', 'home_extra_mailbox', 'home_extra_flag', 'home_extra_pumpkin']:
+                        house.alpha_composite(load(layer))
+                    add(house, bx, by)
+                else:
+                    add(load(f'village_{nm}'), bx, by)
 
 buddies = sys.argv[4:] if len(sys.argv) > 4 else ['lavender', 'ollie']
 spots = [(22, 23), (19, 24), (12, 13), (25, 13)]

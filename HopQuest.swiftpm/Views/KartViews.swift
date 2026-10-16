@@ -133,6 +133,8 @@ struct KartSelectView: View {
 /// The race itself plus the podium at the end.
 struct KartGameView: View {
     let chapter: Chapter
+    /// Two players on one phone: the second racer's buddy.
+    var partner: GameCharacter? = nil
     var onExit: () -> Void
     /// (stars, place, raceAgain)
     var onFinish: (Int, Int, Bool) -> Void
@@ -182,7 +184,7 @@ struct KartGameView: View {
             .animation(.spring(response: 0.45, dampingFraction: 0.75), value: hud.finished)
             .onAppear {
                 guard scene == nil, geo.size.width > 0 else { return }
-                let s = KartScene(size: geo.size, chapter: chapter, character: store.character, theme: store.theme, hud: hud)
+                let s = KartScene(size: geo.size, chapter: chapter, character: store.character, partner: partner, theme: store.theme, hud: hud)
                 s.autoGas = autoGas
                 scene = s
             }
@@ -190,15 +192,26 @@ struct KartGameView: View {
         }
     }
 
+    /// The team's best finish (two players), or the player's.
+    private var bestPlace: Int {
+        partner == nil ? hud.finalPlace : min(max(hud.finalPlace, 1), max(hud.finalPlace2, 1))
+    }
+
     private var stars: Int {
-        let placeStars = [3, 2, 1, 1][max(1, min(hud.finalPlace, 4)) - 1]
-        return placeStars + hud.mathRight
+        let placeStars = [3, 2, 1, 1][max(1, min(bestPlace, 4)) - 1]
+        // two players share the math gates, so the bonus is capped to keep stars fair
+        return placeStars + (partner == nil ? hud.mathRight : min(hud.mathRight, 4))
     }
 
     private var topBar: some View {
         HStack(spacing: 8) {
             CircleIconButton(systemName: "house.fill", label: "Leave race", action: onExit)
-            pill(placeText(hud.place), big: true)
+            if partner != nil {
+                pill("⭐ " + placeText(hud.place))
+                pill("💜 " + placeText(hud.place2))
+            } else {
+                pill(placeText(hud.place), big: true)
+            }
             pill("Lap \(hud.lap)/\(hud.laps)")
             pill("🧠 \(hud.mathRight)")
             Spacer()
@@ -220,7 +233,54 @@ struct KartGameView: View {
             .contentTransition(.numericText())
     }
 
+    @ViewBuilder
     private var controls: some View {
+        if partner != nil { twoPlayerControls } else { soloControls }
+    }
+
+    /// One cluster per player: ⭐ on the left, 💜 on the right. Gas is automatic.
+    private var twoPlayerControls: some View {
+        HStack(alignment: .bottom) {
+            seatCluster(0)
+            Spacer(minLength: 8)
+            seatCluster(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 12)
+        .padding(.bottom, 6)
+        .background(
+            LinearGradient(colors: [.black.opacity(0), .black.opacity(0.4)], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+
+    private func seatCluster(_ seat: Int) -> some View {
+        let item = seat == 0 ? hud.item : hud.item2
+        return VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Text(seat == 0 ? "⭐" : "💜").font(.system(size: 22))
+                Button { scene?.useItem(seat: seat) } label: {
+                    ArtImage(item?.art ?? "item_box")
+                        .frame(width: 34, height: 34)
+                        .opacity(item == nil ? 0.55 : 1)
+                        .frame(width: 58, height: 58)
+                        .background(Circle().fill(item == nil ? Color.gray.opacity(0.6) : Color(hex: 0xFFB020)))
+                        .overlay(Circle().stroke(.white, lineWidth: 3))
+                }
+                .buttonStyle(BouncyButtonStyle())
+                .disabled(item == nil)
+                .accessibilityLabel((seat == 0 ? "Star player: " : "Heart player: ") + (item.map { "use \($0.title)" } ?? "no item yet"))
+            }
+            HStack(spacing: 8) {
+                laneButton("arrowtriangle.left.fill", dir: -1, seat: seat, size: 58)
+                laneButton("arrowtriangle.right.fill", dir: 1, seat: seat, size: 58)
+            }
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 22).fill(Color(hex: seat == 0 ? 0xFFD93D : 0xB983FF).opacity(0.35)))
+    }
+
+    private var soloControls: some View {
         HStack(alignment: .bottom, spacing: 10) {
             VStack(alignment: .leading, spacing: 10) {
                 itemButton
@@ -247,16 +307,16 @@ struct KartGameView: View {
         )
     }
 
-    private func laneButton(_ icon: String, dir: Int) -> some View {
-        Button { scene?.steer(dir) } label: {
+    private func laneButton(_ icon: String, dir: Int, seat: Int = 0, size: CGFloat = 68) -> some View {
+        Button { scene?.steer(dir, seat: seat) } label: {
             Image(systemName: icon)
-                .font(.system(size: 30, weight: .black))
+                .font(.system(size: size * 0.44, weight: .black))
                 .foregroundStyle(Palette.ink)
-                .frame(width: 68, height: 68)
+                .frame(width: size, height: size)
                 .background(RoundedRectangle(cornerRadius: 20).fill(.white.opacity(0.92)))
         }
         .buttonStyle(BouncyButtonStyle())
-        .accessibilityLabel(dir < 0 ? "Move left" : "Move right")
+        .accessibilityLabel((partner == nil ? "" : seat == 0 ? "Star player: " : "Heart player: ") + (dir < 0 ? "move left" : "move right"))
     }
 
     private var itemButton: some View {
@@ -278,7 +338,7 @@ struct KartGameView: View {
 
     private var podium: some View {
         VStack(spacing: 14) {
-            Text(hud.finalPlace == 1 ? "🏆 You won!" : "🏁 Race complete!")
+            Text(partner != nil ? (bestPlace == 1 ? "🏆 Team win!" : "🏁 Race complete!") : (hud.finalPlace == 1 ? "🏆 You won!" : "🏁 Race complete!"))
                 .font(.kid(32, .black))
                 .foregroundStyle(Palette.purple)
             HStack(alignment: .bottom, spacing: 10) {
@@ -296,10 +356,10 @@ struct KartGameView: View {
             .foregroundStyle(Palette.ink)
             HStack(spacing: 12) {
                 BigButton(title: "Race again 🔁", color: Palette.purple) {
-                    onFinish(stars, hud.finalPlace, true)
+                    onFinish(stars, bestPlace, true)
                 }
                 BigButton(title: "Done 🎈", color: Palette.green) {
-                    onFinish(stars, hud.finalPlace, false)
+                    onFinish(stars, bestPlace, false)
                 }
             }
         }
@@ -307,23 +367,28 @@ struct KartGameView: View {
         .background(RoundedRectangle(cornerRadius: 30).fill(.white))
         .padding(20)
         .onAppear {
-            let place = placeText(hud.finalPlace)
-            Narrator.shared.say("You finished \(place)! You got \(hud.mathRight) math gates right and earned \(stars) stars!")
+            if partner != nil {
+                Narrator.shared.say("Star player finished \(placeText(hud.finalPlace)), heart player finished \(placeText(hud.finalPlace2))! Together you got \(hud.mathRight) math gates right and earned \(stars) stars!")
+            } else {
+                let place = placeText(hud.finalPlace)
+                Narrator.shared.say("You finished \(place)! You got \(hud.mathRight) math gates right and earned \(stars) stars!")
+            }
         }
     }
 
     private func step(_ c: GameCharacter, place: Int) -> some View {
         let heights: [CGFloat] = [96, 68, 48]
         let isMe = c.id == store.character.id
+        let isPartner = c.id == partner?.id
         return VStack(spacing: 6) {
             CharacterBadge(character: c, size: place == 1 ? 70 : 56)
                 .overlay(alignment: .top) {
-                    if isMe { Text("⭐").offset(y: -14) }
+                    if isMe { Text("⭐").offset(y: -14) } else if isPartner { Text("💜").offset(y: -14) }
                 }
             Text(["🥇", "🥈", "🥉"][place - 1])
                 .font(.system(size: 26))
                 .frame(width: 84, height: heights[place - 1])
-                .background(RoundedRectangle(cornerRadius: 12).fill(isMe ? Color(hex: 0xFFD93D) : Color(hex: 0xE9D5FF)))
+                .background(RoundedRectangle(cornerRadius: 12).fill(isMe ? Color(hex: 0xFFD93D) : isPartner ? Color(hex: 0xD9C2FF) : Color(hex: 0xE9D5FF)))
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(placeText(place)): \(c.name)")

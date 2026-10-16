@@ -3,6 +3,8 @@ import SpriteKit
 
 /// Pillow Bop Arena: how-to card, the match, and the results.
 struct BopGameView: View {
+    /// Two players on one phone: the second player's buddy.
+    var partner: GameCharacter? = nil
     var onExit: () -> Void
     /// (stars, playAgain)
     var onFinish: (Int, Bool) -> Void
@@ -13,6 +15,8 @@ struct BopGameView: View {
     @State private var showIntro = true
     @State private var left = false
     @State private var right = false
+    @State private var left2 = false
+    @State private var right2 = false
 
     var body: some View {
         GeometryReader { geo in
@@ -75,7 +79,7 @@ struct BopGameView: View {
                 Narrator.shared.say(introText)
                 // the arena is visible (paused) behind the how-to card
                 guard scene == nil, geo.size.width > 0 else { return }
-                let s = BopScene(size: geo.size, character: store.character, theme: store.theme, hud: hud)
+                let s = BopScene(size: geo.size, character: store.character, partner: partner, theme: store.theme, hud: hud)
                 scene = s
             }
             .onDisappear { Narrator.shared.stop() }
@@ -100,6 +104,9 @@ struct BopGameView: View {
                 .font(.kid(36, .black))
                 .foregroundStyle(Palette.purple)
             VStack(alignment: .leading, spacing: 10) {
+                if partner != nil {
+                    row(icon: "person.2.fill", "**Two players:** ⭐ uses the buttons on the left, 💜 uses the buttons on the right.")
+                }
                 row(art: "pillow", "Tap **BOP** to swing your pillow. Each bop is a point!")
                 row(icon: "arrow.up.circle.fill", "Tap **JUMP** to reach the clouds. Tap again in the air for a double jump.")
                 row(art: "balloon_\(store.theme.rawValue)", "Fall off? No problem! A balloon floats you back.")
@@ -149,8 +156,8 @@ struct BopGameView: View {
             .background(Capsule().fill(.white.opacity(0.92)))
             .accessibilityLabel("\(hud.timeLeft) seconds left")
             Spacer()
-            if hud.giant {
-                Text("GIANT!")
+            if hud.giant || hud.giant2 {
+                Text(partner == nil ? "GIANT!" : "\(hud.giant ? "⭐" : "")\(hud.giant2 ? "💜" : "") GIANT!")
                     .font(.kid(16, .black))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12).frame(height: 36)
@@ -193,16 +200,70 @@ struct BopGameView: View {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(.white.opacity(e.isPlayer ? 0.95 : 0.75))
                 )
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(e.isPlayer ? store.theme.accent : .clear, lineWidth: 3))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(e.isPlayer ? (e.seat == 1 ? Palette.purple : store.theme.accent) : .clear, lineWidth: 3))
+                .overlay(alignment: .top) {
+                    if let seat = e.seat { Text(seat == 0 ? "⭐" : "💜").font(.system(size: 14)).offset(y: -9) }
+                }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(e.isPlayer ? "You" : e.character.name): \(e.bops) bops")
+                .accessibilityLabel("\(name(e)): \(e.bops) bops")
             }
         }
         .padding(.horizontal, 14)
         .animation(.spring(response: 0.3), value: hud.entries)
     }
 
+    private func name(_ e: BopHUD.Entry) -> String {
+        switch e.seat {
+        case 0?: return "⭐ \(e.character.name)"
+        case 1?: return "💜 \(e.character.name)"
+        default: return e.isPlayer ? "You" : e.character.name
+        }
+    }
+
+    @ViewBuilder
     private var controls: some View {
+        if partner != nil { twoPlayerControls } else { soloControls }
+    }
+
+    /// One cluster per player: ⭐ on the left, 💜 on the right.
+    private var twoPlayerControls: some View {
+        HStack(alignment: .bottom) {
+            seatCluster(0, left: $left, right: $right)
+            Spacer(minLength: 6)
+            seatCluster(1, left: $left2, right: $right2)
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(
+            LinearGradient(colors: [.black.opacity(0), .black.opacity(0.3)], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .bottom)
+        )
+        .onChange(of: left) { _, _ in updateMove() }
+        .onChange(of: right) { _, _ in updateMove() }
+        .onChange(of: left2) { _, _ in updateMove() }
+        .onChange(of: right2) { _, _ in updateMove() }
+    }
+
+    private func seatCluster(_ seat: Int, left: Binding<Bool>, right: Binding<Bool>) -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                actionButton(title: "JUMP", color: Color(hex: 0x4D96FF), size: 64) { scene?.jump(seat: seat) }
+                actionButton(title: "BOP!", color: Color(hex: 0xFF7FC4), size: 70) { scene?.bop(seat: seat) }
+            }
+            HStack(spacing: 8) {
+                WalkButton(icon: "arrowtriangle.left.fill", label: (seat == 0 ? "Star player " : "Heart player ") + "move left", pressed: left)
+                WalkButton(icon: "arrowtriangle.right.fill", label: (seat == 0 ? "Star player " : "Heart player ") + "move right", pressed: right)
+            }
+        }
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 22).fill(Color(hex: seat == 0 ? 0xFFD93D : 0xB983FF).opacity(0.35)))
+        .overlay(alignment: .topLeading) {
+            Text(seat == 0 ? "⭐" : "💜").font(.system(size: 20)).offset(x: -4, y: -12)
+        }
+    }
+
+    private var soloControls: some View {
         HStack(alignment: .bottom, spacing: 12) {
             WalkButton(icon: "arrowtriangle.left.fill", label: "Move left", pressed: $left)
             WalkButton(icon: "arrowtriangle.right.fill", label: "Move right", pressed: $right)
@@ -223,6 +284,7 @@ struct BopGameView: View {
 
     private func updateMove() {
         scene?.moveInput = (right ? 1 : 0) - (left ? 1 : 0)
+        scene?.moveInput2 = (right2 ? 1 : 0) - (left2 ? 1 : 0)
     }
 
     private func actionButton(title: String, color: Color, size: CGFloat, action: @escaping () -> Void) -> some View {
@@ -231,15 +293,17 @@ struct BopGameView: View {
 
     // MARK: Results
 
+    /// The best place a person got (with two players, the team's best).
+    private var bestPlace: Int { (hud.ranking.firstIndex { $0.isPlayer } ?? 3) + 1 }
+
     private var stars: Int {
-        let place = (hud.ranking.firstIndex { $0.isPlayer } ?? 3) + 1
-        return [3, 2, 1, 1][min(place, 4) - 1] + hud.brainRight
+        [3, 2, 1, 1][min(bestPlace, 4) - 1] + hud.brainRight
     }
 
     private var results: some View {
-        let place = (hud.ranking.firstIndex { $0.isPlayer } ?? 3) + 1
+        let place = bestPlace
         return VStack(spacing: 14) {
-            Text(place == 1 ? "🏆 Pillow Champ!" : "🪶 What a bop-fest!")
+            Text(place == 1 ? (partner == nil ? "🏆 Pillow Champ!" : "🏆 \(hud.ranking.first.map(name) ?? "") wins!") : "🪶 What a bop-fest!")
                 .font(.kid(30, .black))
                 .foregroundStyle(Palette.purple)
             VStack(spacing: 8) {
@@ -247,7 +311,7 @@ struct BopGameView: View {
                     HStack(spacing: 10) {
                         Text(["🥇", "🥈", "🥉", "🎀"][min(i, 3)]).font(.system(size: 26))
                         CharacterBadge(character: e.character, size: 40)
-                        Text(e.isPlayer ? "You" : e.character.name)
+                        Text(name(e))
                             .font(.kid(18, .bold))
                             .foregroundStyle(Palette.ink)
                         Spacer()
@@ -275,9 +339,15 @@ struct BopGameView: View {
         .background(RoundedRectangle(cornerRadius: 30).fill(.white))
         .padding(18)
         .onAppear {
-            store.recordBop(hud.ranking.first { $0.isPlayer }?.bops ?? 0)
-            let words = ["first", "second", "third", "fourth"][min(place, 4) - 1]
-            Narrator.shared.say("You came in \(words) with \(hud.ranking.first { $0.isPlayer }?.bops ?? 0) bops, and earned \(stars) stars! Great sportsmanship!")
+            if partner == nil {
+                // best scores are a solo record, so a grown-up can't set one for the kid
+                store.recordBop(hud.ranking.first { $0.isPlayer }?.bops ?? 0)
+                let words = ["first", "second", "third", "fourth"][min(place, 4) - 1]
+                Narrator.shared.say("You came in \(words) with \(hud.ranking.first { $0.isPlayer }?.bops ?? 0) bops, and earned \(stars) stars! Great sportsmanship!")
+            } else {
+                let a = hud.ranking.first { $0.seat == 0 }?.bops ?? 0, b = hud.ranking.first { $0.seat == 1 }?.bops ?? 0
+                Narrator.shared.say("Star player bopped \(a) times and heart player bopped \(b) times! You earned \(stars) stars together. Great sportsmanship!")
+            }
         }
     }
 }
