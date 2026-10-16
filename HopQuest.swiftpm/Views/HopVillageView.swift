@@ -28,11 +28,24 @@ struct HopVillageView: View {
     @State private var showParent = false
     @State private var showCharacters = false
     @State private var duelStars: Int?
+    @State private var homeOpen = false
+    @State private var festivalOpen = false
+    @State private var storyTurn = 0
 
     private var anyOverlay: Bool {
         dialogue != nil || quiz != nil || boardOpen || missionsOpen || castleParty || showParent || showCharacters
-            || network.incoming != nil || network.duel != nil
+            || homeOpen || festivalOpen || network.incoming != nil || network.duel != nil
     }
+
+    private var seasonsOn: Bool { store.profile?.village.seasons ?? true }
+
+    /// Today in the village. With seasons off it's always a sunny spring day (festivals still rotate).
+    private var today: VillageDay {
+        let real = VillageDay(date: Date())
+        return seasonsOn ? real : VillageDay(season: .spring, weather: .sunny, weekFestival: real.weekFestival)
+    }
+
+    private var festival: Festival { today.festival(picked: store.profile?.village.festivalPick) }
 
     var body: some View {
         GeometryReader { geo in
@@ -54,6 +67,9 @@ struct HopVillageView: View {
                                   onParent: { showParent = true })
                     if network.isOn {
                         LivePlayPill(status: network.status, count: network.roster.count)
+                    }
+                    if !anyOverlay {
+                        VillageTodayPill(day: today, festival: festival, seasonsOn: seasonsOn) { festivalOpen = true }
                     }
                     if let banner {
                         VillageRegionBanner(text: banner)
@@ -98,6 +114,7 @@ struct HopVillageView: View {
             }
             .onChange(of: store.profile?.village.lightEffects) { _, _ in rebuild(size: geo.size) }
             .onChange(of: store.profile?.village.eveningLights) { _, _ in rebuild(size: geo.size) }
+            .onChange(of: store.profile?.village.seasons) { _, _ in rebuild(size: geo.size) }
             .onChange(of: store.profile?.village.playMode) { _, _ in startNetwork() }
             .onChange(of: anyOverlay) { _, open in scene?.frozen = open }
             .onChange(of: network.notice) { _, text in
@@ -137,9 +154,42 @@ struct HopVillageView: View {
             .id(dialogue.id)
         }
 
+        if homeOpen {
+            Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { homeOpen = false }
+            HomeDecorView(style: store.profile?.village.home ?? HomeStyle(),
+                          unlocked: HomeStyle.unlocked(missionsDone: store.profile?.missions.done ?? []),
+                          ownerName: store.profile?.name ?? "My",
+                          onChange: { style in
+                              store.updateVillage { $0.home = style }
+                              scene?.updateHome(style)
+                          },
+                          onClose: {
+                              homeOpen = false
+                              scene?.celebrate()
+                          })
+        }
+
+        if festivalOpen {
+            Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { festivalOpen = false }
+            FestivalBoardView(day: today, current: festival, missions: store.profile?.missions ?? MissionSave(), seasonsOn: seasonsOn,
+                              onPick: { f in
+                                  store.updateVillage { $0.festivalPick = f == today.weekFestival ? nil : f.rawValue }
+                                  scene?.setFestival(f)
+                                  showNote("\(f.icon) The square is ready for the \(f.title)! Talk to Gemma to join in.")
+                              },
+                              onGoToHost: {
+                                  festivalOpen = false
+                                  DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                      if let t = scene?.npcTile(FestivalMissions.hostID) { scene?.walk(toTile: t) }
+                                  }
+                              },
+                              onClose: { festivalOpen = false })
+        }
+
         if missionsOpen {
             Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { missionsOpen = false }
             MissionLogView(save: store.profile?.missions ?? MissionSave(),
+                           missions: MissionCatalog.visible(save: store.profile?.missions ?? MissionSave(), festival: festival),
                            giverName: { id in scene?.npcCharacter(id)?.name ?? id.capitalized },
                            onGo: { m in
                                missionsOpen = false
@@ -198,7 +248,9 @@ struct HopVillageView: View {
     // MARK: Action button
 
     private var missionsButton: some View {
-        let active = (store.profile?.missions).map { m in MissionCatalog.all.filter { m.status($0) != .new && m.status($0) != .done }.count } ?? 0
+        let active = (store.profile?.missions).map { m in
+            MissionCatalog.visible(save: m, festival: festival).filter { m.status($0) != .new && m.status($0) != .done }.count
+        } ?? 0
         return Button {
             Haptics.tap()
             missionsOpen = true
@@ -257,7 +309,8 @@ struct HopVillageView: View {
         var signs: [BuildingKind: HopVillageScene.DoorSign] = [:]
         for kind in BuildingKind.allCases { if let s = doorSign(kind) { signs[kind] = s } }
         let setup = HopVillageScene.Setup(character: store.character, theme: store.theme, save: profile.village,
-                                          doorSigns: signs, hour: Calendar.current.component(.hour, from: Date()))
+                                          doorSigns: signs, hour: Calendar.current.component(.hour, from: Date()),
+                                          day: today, festival: festival)
         let s = HopVillageScene(size: size, setup: setup)
         s.network = network
         s.onInteractionChange = { i in
@@ -383,6 +436,13 @@ struct HopVillageView: View {
             }
             return
         }
+        if kind == .home {
+            Haptics.tap(.whoosh)
+            store.updateVillage { $0.visited.insert(kind.id) }
+            homeOpen = true
+            Narrator.shared.say("Welcome home! Pick colors and decorations for your house.")
+            return
+        }
         if let chapter = kind.storyChapter, !store.isPlayable(chapter) {
             let next = Chapters.chapter(store.nextChapterID).title
             showNote("\(kind.title) opens later in your adventure. Next up: \(next)! 🔒")
@@ -398,7 +458,7 @@ struct HopVillageView: View {
         case .codingLab: leave(.codingLab, via: i)
         case .cottage, .academy, .workshop, .boathouse, .garage, .tower:
             if let chapter = kind.storyChapter { leave(.chapter(chapter), via: i) }
-        case .castle, .fountain:
+        case .castle, .fountain, .home:
             break
         }
     }
@@ -461,8 +521,8 @@ struct HopVillageView: View {
             return
         }
 
-        // 2) this buddy's own mission
-        if let m = MissionCatalog.mission(givenBy: id), let missions = store.profile?.missions {
+        // 2) this buddy's own mission (Gemma hosts the festival)
+        if let missions = store.profile?.missions, let m = MissionCatalog.offer(from: id, save: missions, festival: festival) {
             switch missions.status(m) {
             case .new:
                 say(VillageDialogue(speaker: speaker, text: "\(m.icon) \(m.intro)", choices: [
@@ -497,7 +557,10 @@ struct HopVillageView: View {
                 .init(title: "Maybe later", primary: false) { endTalk(happy: false) }
             ]))
         } else {
-            let line = def.chatter.randomElement() ?? def.greeting
+            // villagers talk about their lives, the season and the weather
+            storyTurn += 1
+            let line = storyTurn % 3 == 0 ? (def.chatter.randomElement() ?? def.greeting)
+                : (seasonsOn ? VillageStories.line(npc: id, day: today, turn: storyTurn) : (def.chatter.randomElement() ?? def.greeting))
             var choices = [close]
             if let lesson = def.lesson {
                 choices.insert(.init(title: "Another riddle?") { askRiddle(def, lesson: lesson) }, at: 0)

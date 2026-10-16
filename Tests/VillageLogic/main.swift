@@ -534,5 +534,99 @@ test("Hop crosses water onto lily pads, but never over trees") {
     check(col.fits(t.position) && map.isWalkable(t.tile), "trees stop the hop")
 }
 
+
+test("seasons, weather and festivals follow the calendar") {
+    check(Season.of(month: 4) == .spring && Season.of(month: 7) == .summer && Season.of(month: 10) == .autumn && Season.of(month: 1) == .winter && Season.of(month: 12) == .winter, "months → seasons")
+    // the same date always gives the same weather, and snow only falls in winter
+    var counts: [Weather: Int] = [:]
+    for m in 1...12 {
+        for d in 1...28 {
+            let w = Weather.on(year: 2026, month: m, day: d)
+            check(w == Weather.on(year: 2026, month: m, day: d), "weather is stable for a date")
+            if w == .snowy { check(Season.of(month: m) == .winter, "snow only in winter (\(m)/\(d))") }
+            counts[w, default: 0] += 1
+        }
+    }
+    check(counts.count == Weather.allCases.count, "every kind of weather happens in a year: \(counts)")
+    check((counts[.sunny] ?? 0) > (counts[.rainy] ?? 0), "more sunny days than rainy ones")
+    for s in Season.allCases {
+        check(s.festivals.count == 2, "\(s) has two festivals")
+        let weeks = Set((1...8).map { Festival.ofWeek($0, season: s) })
+        check(weeks == Set(s.festivals), "\(s) festivals take turns week by week")
+    }
+    check(Set(Season.allCases.flatMap(\.festivals)) == Set(Festival.allCases), "every festival happens some time in the year")
+    var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "UTC")!
+    let oct = cal.date(from: DateComponents(year: 2026, month: 10, day: 16))!
+    let day = VillageDay(date: oct, calendar: cal)
+    check(day.season == .autumn && Season.autumn.festivals.contains(day.weekFestival), "a date in October: \(day)")
+    check(day.festival(picked: nil) == day.weekFestival && day.festival(picked: "kite") == .kite && day.festival(picked: "nonsense") == day.weekFestival, "the notice-board pick wins")
+}
+
+test("festival missions: hosted by Gemma, reachable, one house decoration each") {
+    let host = VillageNPCDef.def(FestivalMissions.hostID)
+    check(host != nil, "Gemma lives in the village")
+    check(FestivalMissions.all.count == Festival.allCases.count, "one mission per festival")
+    check(Set(Festival.allCases.map(\.houseReward)).count == Festival.allCases.count, "every festival gives a different decoration")
+    for f in Festival.allCases {
+        let m = FestivalMissions.mission(for: f)
+        check(m != nil && m?.giver == FestivalMissions.hostID && m!.reward > 0, "\(f) mission")
+        check(MissionCatalog.all.contains { $0.id == f.missionID }, "\(f) is in the mission catalog (so items show up)")
+    }
+    // the host offers this week's festival, but always finishes one in progress first
+    var save = MissionSave()
+    check(MissionCatalog.offer(from: FestivalMissions.hostID, save: save, festival: .kite)?.id == "fest_kite", "host offers the current festival")
+    save.start(FestivalMissions.mission(for: .harvest)!)
+    check(MissionCatalog.offer(from: FestivalMissions.hostID, save: save, festival: .kite)?.id == "fest_harvest", "a festival in progress comes first")
+    check(MissionCatalog.offer(from: "acorn", save: save, festival: .kite)?.id == "gears", "other villagers keep their own missions")
+    check(MissionCatalog.mission(givenBy: FestivalMissions.hostID) == nil, "festivals aren't a plain villager mission")
+    let visible = MissionCatalog.visible(save: save, festival: .kite).map(\.id)
+    check(visible.contains("fest_kite") && visible.contains("fest_harvest") && !visible.contains("fest_snow"), "log shows current + started festivals: \(visible)")
+    // snow day: snowballs, then build the snowman with Gemma
+    var snow = MissionSave()
+    let sm = FestivalMissions.mission(for: .snow)!
+    snow.start(sm)
+    for p in snow.pickups() { snow.collect(p.key) }
+    check(snow.status(sm) == .active(step: 1), "snowballs found → build with Gemma")
+    check(snow.talked(to: FestivalMissions.hostID)?.0 == sm && snow.status(sm) == .readyToTurnIn, "snowman built")
+    check(snow.turnIn(sm) && !snow.turnIn(sm), "festival reward once, ever")
+}
+
+test("your house: styles, decorations, saves") {
+    check(map.building(.home) != nil, "the house is on the map")
+    if let home = map.building(.home) {
+        check(home.widthTiles == 5 && home.heightTiles == 4, "house footprint 5x4")
+        check(map.isWalkable(home.doorstep), "house doorstep walkable")
+        check(reachable(from: map.spawn).contains(home.doorstep), "house reachable from the square")
+    }
+    var style = HomeStyle()
+    check(style.layers == ["home_wall_0", "home_roof_0", "home_door_0", "home_extra_flowerBox"], "default house: \(style.layers)")
+    style.extras = [.snowman, .kite, .mailbox]
+    check(style.layers.suffix(3) == ["home_extra_mailbox", "home_extra_kite", "home_extra_snowman"], "decorations in a fixed order")
+    let back = try JSONDecoder().decode(HomeStyle.self, from: JSONEncoder().encode(style))
+    check(back == style, "house round trip")
+    let odd = try JSONDecoder().decode(HomeStyle.self, from: Data(#"{"wall":9,"roof":-2,"extras":["kite","jetpack"]}"#.utf8))
+    check(odd.wall == 3 && odd.roof == 0 && odd.extras == [.kite], "bad values clamped, unknown decorations skipped")
+    let starters = HomeStyle.unlocked(missionsDone: [])
+    check(starters == [.flowerBox, .mailbox, .flag, .lamp], "4 decorations from the start")
+    check(HomeStyle.unlocked(missionsDone: ["fest_kite", "fest_snow"]).contains(.kite) && HomeStyle.unlocked(missionsDone: ["fest_kite"]).count == 5, "festivals unlock decorations")
+    // older saves load with a default house and seasons on
+    let v = try JSONDecoder().decode(VillageSaveState.self, from: Data(#"{"version":2,"tileX":5,"tileY":5}"#.utf8))
+    check(v.home == HomeStyle() && v.seasons && v.festivalPick == nil, "v2.5 saves get the new village fields")
+    var v2 = v; v2.festivalPick = "music"; v2.home.roof = 2
+    check(try JSONDecoder().decode(VillageSaveState.self, from: JSONEncoder().encode(v2)) == v2, "village save round trip")
+}
+
+test("villager stories change with the season and weather") {
+    for id in VillageNPCDef.everyone.map(\.id) {
+        check(VillageStories.npcIDs.contains(id), "\(id) has seasonal lines")
+    }
+    let day = VillageDay(season: .winter, weather: .snowy, weekFestival: .snow)
+    let a = VillageStories.line(npc: "pip", day: day, turn: 0), b = VillageStories.line(npc: "pip", day: day, turn: 1)
+    check(a != b && (a.contains("penguin") || b.contains("penguin")) && (a.contains("snowflake") || b.contains("snowflake")), "season and weather lines alternate: \(a) / \(b)")
+    check(!VillageStories.line(npc: "nobody", day: day, turn: 0).isEmpty, "unknown villagers still get a weather line")
+    let heard = Set((0..<8).map { VillageStories.line(npc: "pip", day: day, turn: $0) })
+    check(heard.count == 3, "over a few chats you hear the season line and both weather lines: \(heard.count)")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

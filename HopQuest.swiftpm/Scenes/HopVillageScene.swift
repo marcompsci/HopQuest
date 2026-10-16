@@ -12,6 +12,10 @@ final class HopVillageScene: SKScene {
         /// Lock / star signs by the doors (locked chapters, finished challenges, the castle gate).
         var doorSigns: [BuildingKind: DoorSign]
         var hour: Int
+        /// Season and weather (already "a sunny spring day" when grown-ups turned seasons off).
+        var day: VillageDay
+        /// The festival decorating the square.
+        var festival: Festival
     }
 
     enum DoorSign { case locked, done }
@@ -53,6 +57,10 @@ final class HopVillageScene: SKScene {
     private var peerSprites: [String: (sprite: BuddySprite, tag: SKNode)] = [:]
     private var pickupNodes: [String: (node: SKSpriteNode, tile: GridPoint)] = [:]
     private var pendingPickups: [(key: String, item: String, tile: GridPoint)]?
+    /// Your house: the wall layer, with the roof, door and decorations as children.
+    private var homeNode: SKSpriteNode?
+    private var decorNodes: [SKNode] = []
+    private var festival: Festival
 
     private var accumulator = 0.0
     private var lastTime: TimeInterval = 0
@@ -79,6 +87,7 @@ final class HopVillageScene: SKScene {
         player = VillagePlayerController(map: VillageMap.shared, start: setup.save.safeSpawn(in: VillageMap.shared), facing: setup.save.facing)
         playerSprite = BuddySprite(character: setup.character)
         courierCharacter = Roster.character(id: setup.character.id == QuizCourier.characterID ? QuizCourier.fallbackID : QuizCourier.characterID)
+        festival = setup.festival
         super.init(size: size)
         scaleMode = .resizeFill
         backgroundColor = UIColor(hex: 0x3F7F36)
@@ -153,10 +162,8 @@ final class HopVillageScene: SKScene {
         for p in items where pickupNodes[p.key] == nil {
             let name: String
             switch p.item {
-            case "gear": name = "item_gear"
-            case "drop": name = "item_drop"
-            case "lily": name = "item_lily"
-            default: name = "item_shape\((Int(p.key.split(separator: ".").last ?? "0") ?? 0) % 3)"
+            case "shape": name = "item_shape\((Int(p.key.split(separator: ".").last ?? "0") ?? 0) % 3)"
+            default: name = "item_\(p.item)"   // gear, drop, lily, kite, lantern, pumpkin, snowball, shell
             }
             let node = VillageArt.propNode(name)
             let foot = scenePoint(p.tile.center)
@@ -174,6 +181,29 @@ final class HopVillageScene: SKScene {
             world.addChild(node)
             pickupNodes[p.key] = (node, p.tile)
         }
+    }
+
+    /// Redraws your house with new colors and decorations.
+    func updateHome(_ style: HomeStyle) {
+        guard let home = homeNode else { return }
+        home.removeAllChildren()
+        let layers = style.layers
+        if let wall = layers.first.flatMap(VillageArt.sheet) { home.texture = wall }
+        for (i, name) in layers.dropFirst().enumerated() {
+            guard let tex = VillageArt.sheet(name) else { continue }
+            let layer = SKSpriteNode(texture: tex)
+            layer.size = home.size
+            layer.anchorPoint = CGPoint(x: 0.5, y: 0)
+            layer.zPosition = 0.01 * CGFloat(i + 1)
+            home.addChild(layer)
+        }
+    }
+
+    /// Switches the festival decorating the square (from the notice board).
+    func setFestival(_ f: Festival) {
+        festival = f
+        guard built else { return }
+        buildDecorations()
     }
 
     /// Where a village buddy is right now (for "Go!" buttons).
@@ -208,10 +238,13 @@ final class HopVillageScene: SKScene {
         buildGround()
         buildProps()
         buildBuildings()
+        buildDecorations()
 
         let quality: VillageEnvironmentSystem.Quality = setup.save.lightEffects ? .light : .full
         environment = VillageEnvironmentSystem(world: world, camera: cam.node, map: map, worldSize: worldSize,
-                                               quality: quality, eveningLights: setup.save.eveningLights, hour: setup.hour)
+                                               quality: quality, eveningLights: setup.save.eveningLights, hour: setup.hour,
+                                               season: setup.day.season, weather: setup.day.weather,
+                                               reduceMotion: UIAccessibility.isReduceMotionEnabled)
         if environment?.isEvening == true { lightLamps() }
 
         for def in VillageNPCDef.everyone {
@@ -335,6 +368,20 @@ final class HopVillageScene: SKScene {
                 cullables.append(fountain)
                 continue
             }
+            if b.kind == .home {
+                guard let wall = VillageArt.sheet(setup.save.home.layers[0]) else { continue }
+                let node = SKSpriteNode(texture: wall)
+                node.size = CGSize(width: wall.size().width * VillageArt.scale, height: wall.size().height * VillageArt.scale)
+                node.anchorPoint = CGPoint(x: 0.5, y: 0)
+                node.position = foot
+                node.zPosition = depth(foot.y)
+                node.name = b.kind.id
+                world.addChild(node)
+                cullables.append(node)
+                homeNode = node
+                updateHome(setup.save.home)
+                continue
+            }
             let name = b.kind == .castle ? "village_castle_\(setup.theme.rawValue)" : b.kind.art
             guard let tex = VillageArt.sheet(name) else { continue }
             let node = SKSpriteNode(texture: tex)
@@ -355,6 +402,61 @@ final class HopVillageScene: SKScene {
                     signNode.run(.repeatForever(.sequence([.scale(to: 1.06, duration: 0.6), .scale(to: 1.0, duration: 0.6)])))
                 }
             }
+        }
+    }
+
+    // MARK: Seasons and festivals
+
+    /// Season touches around the village, and the festival's decorations in the square.
+    private func buildDecorations() {
+        for n in decorNodes { n.removeFromParent() }
+        cullables.removeAll { node in decorNodes.contains { $0 === node } }
+        decorNodes = []
+
+        func deco(_ name: String, _ c: Int, _ r: Int, lift: CGFloat = 0, bob: Bool = false) {
+            let node = addProp(name, c: c, r: r, lift: lift)
+            if bob { node.run(.repeatForever(.sequence([.moveBy(x: 0, y: 8, duration: 1.1), .moveBy(x: 0, y: -8, duration: 1.1)]))) }
+            decorNodes.append(node)
+        }
+
+        // the season (spots are grass beside paths, away from doors)
+        switch setup.day.season {
+        case .autumn:
+            for (c, r) in [(14, 20), (29, 25), (5, 13), (38, 27), (10, 39)] { deco("item_pumpkin", c, r, lift: 1) }
+        case .winter:
+            for (c, r) in [(14, 22), (29, 17), (40, 24)] { deco("snowman", c, r, lift: 1) }
+        case .spring, .summer:
+            break
+        }
+
+        // bunting over the square for every festival
+        for c in [18, 25] {
+            deco("bunting", c, 15, lift: 22)
+            deco("bunting", c, 24, lift: 22)
+        }
+        switch festival {
+        case .kite:
+            for (i, (c, r)) in [(17, 17), (21, 16), (26, 18)].enumerated() {
+                deco("kite_fly", c, r, lift: CGFloat(28 + i * 6), bob: true)
+            }
+        case .science:
+            deco("stall_blue", 18, 22, lift: 0)
+            deco("stall_blue", 25, 22, lift: 0)
+        case .splash:
+            for (c, r) in [(19, 22), (24, 22), (19, 17), (24, 17)] { deco("item_shell", c, r, lift: 2) }
+        case .music:
+            for (i, (c, r)) in [(20, 17), (22, 16), (23, 17)].enumerated() {
+                deco("note", c, r, lift: CGFloat(20 + i * 8), bob: true)
+            }
+        case .harvest:
+            deco("stall_red", 18, 22, lift: 0)
+            deco("stall_red", 25, 22, lift: 0)
+            for (c, r) in [(17, 17), (26, 17)] { deco("item_pumpkin", c, r, lift: 1) }
+        case .lantern:
+            for (c, r) in [(17, 16), (26, 16), (17, 23), (26, 23), (21, 24)] { deco("lantern_lit", c, r, lift: 24, bob: true) }
+        case .snow:
+            deco("snowman", 18, 22, lift: 1)
+            deco("snowman", 25, 22, lift: 1)
         }
     }
 

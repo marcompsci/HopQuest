@@ -8,7 +8,7 @@ OUT="${TMPDIR:-/tmp}/hopquest-village-tests"
 swiftc -O \
   "$PKG/Models/VillageMap.swift" "$PKG/Models/VillageMapData.swift" "$PKG/Models/VillageBuilding.swift" \
   "$PKG/Models/VillageNPC.swift" "$PKG/Models/VillageInteraction.swift" "$PKG/Models/VillageSaveState.swift" \
-  "$PKG/Models/VillageChallenges.swift" "$PKG/Models/Missions.swift" "$PKG/Models/BrainDuel.swift" "$PKG/Models/FollowUpQuestions.swift" \
+  "$PKG/Models/VillageChallenges.swift" "$PKG/Models/Missions.swift" "$PKG/Models/VillageLife.swift" "$PKG/Models/BrainDuel.swift" "$PKG/Models/FollowUpQuestions.swift" \
   "$PKG/Scenes/VillageCollisionSystem.swift" "$PKG/Scenes/VillagePlayerController.swift" \
   "$HERE/main.swift" -o "$OUT"
 "$OUT"

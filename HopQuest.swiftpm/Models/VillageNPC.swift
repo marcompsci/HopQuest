@@ -110,6 +110,12 @@ struct VillageNPCDef: Equatable {
                       chatter: ["Bees dance to tell their friends where the best flowers are!",
                                 "Every letter needs an address so it gets to the right home."],
                       lesson: .words, askLine: "Bzz, word puzzle!", thanksLine: "Bee-autiful! Here's a star!", seed: 83),
+        VillageNPCDef(id: "gemma", characterID: "gemma", fallbackID: "mochi",
+                      home: GridPoint(18, 26), wanderRadius: 2, activitySpot: GridPoint(23, 22), activity: "decorating the square",
+                      greeting: "Hello! I'm Gemma, the festival planner. Every week the square gets a new celebration! Want a word riddle while you're here?",
+                      chatter: ["You can pick any festival on the notice board. Every festival gives your house a new decoration!",
+                                "Giraffes are the tallest animals, so I hang all the decorations up high!"],
+                      lesson: .words, askLine: "Here's a word riddle!", thanksLine: "Wonderful! Here's a star for the celebration!", seed: 89),
     ]
 
     static func def(_ id: String) -> VillageNPCDef? { (all + newFriends).first { $0.id == id } }

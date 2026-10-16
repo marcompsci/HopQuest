@@ -142,10 +142,11 @@ struct ParentSettingsView: View {
                 }
                 Toggle("Lighter effects (older phones)", isOn: villageBinding(\.lightEffects))
                 Toggle("Evening lights follow the clock", isOn: villageBinding(\.eveningLights))
+                Toggle("Seasons and weather follow the calendar", isOn: villageBinding(\.seasons))
             } header: {
                 Text("Hop Village")
             } footer: {
-                Text("Play with others lets kids see friends' buddies in the village and play Brain Duels: five quiz questions, no chat, no free text. Nearby only uses Wi-Fi or Bluetooth in the same room (no internet) and shows your child's first name to those nearby. Game Center modes go online through Apple's Game Center and only show buddy names; Game Center follows Screen Time's multiplayer limits. Village buddies only say pre-written, kid-safe lines. Lighter effects shows fewer butterflies, leaves, and fireflies.")
+                Text("Play with others lets kids see friends' buddies in the village and play Brain Duels: five quiz questions, no chat, no free text. Nearby only uses Wi-Fi or Bluetooth in the same room (no internet) and shows your child's first name to those nearby. Game Center modes go online through Apple's Game Center and only show buddy names; Game Center follows Screen Time's multiplayer limits. Village buddies only say pre-written, kid-safe lines. Lighter effects shows fewer butterflies, leaves, raindrops and snowflakes. With seasons off, the village is always a sunny spring day. Seasons and weather come from the device date: nothing is downloaded.")
             }
 
             Section("Play time") {
@@ -243,7 +244,8 @@ struct LearningReportSection: View {
             LabeledContent("Coding (Code Club)", value: "\(CodeChallenge.all.filter { p?.codeBest[$0.id] != nil }.count) of \(CodeChallenge.all.count) puzzles")
             LabeledContent("Machine Workshop", value: "\(MachinePuzzle.all.filter { p?.codeBest[$0.id] != nil }.count) of \(MachinePuzzle.all.count) machines")
             LabeledContent("Coding Lab lessons", value: "\(p?.codeLab.completed.count ?? 0) of \(CodeCurriculum.lessons.count)")
-            LabeledContent("Village missions", value: "\(p?.missions.done.count ?? 0) of \(MissionCatalog.all.count)")
+            LabeledContent("Village missions", value: "\(MissionCatalog.base.filter { p?.missions.done.contains($0.id) == true }.count) of \(MissionCatalog.base.count)")
+            LabeledContent("Festivals celebrated", value: "\(FestivalMissions.all.filter { p?.missions.done.contains($0.id) == true }.count) of \(FestivalMissions.all.count)")
             LabeledContent("Engineering (Fort Friends)", value: "\(p?.fortBest.count ?? 0) of \(FortLevel.all.count) forts")
             LabeledContent("Bubble Kart cups", value: "\(p?.kartBest.count ?? 0) of \(Chapters.kartCups.count)")
             LabeledContent("Pillow Bop best", value: "\(p?.bopBest ?? 0) bops")

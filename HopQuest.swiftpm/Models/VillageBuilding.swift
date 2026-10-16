@@ -15,6 +15,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
     case boathouse = "V"
     case tower = "H"
     case codingLab = "P"
+    case home = "J"
     case fountain = "Q"
 
     /// Stable id for saves (visited places).
@@ -33,6 +34,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .boathouse: return "boathouse"
         case .tower: return "tower"
         case .codingLab: return "codinglab"
+        case .home: return "home"
         case .fountain: return "fountain"
         }
     }
@@ -53,6 +55,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .boathouse: return "Lily River"
         case .tower: return "Castle Hill"
         case .codingLab: return "Coding Lab"
+        case .home: return "My House"
         case .fountain: return "Wishing Fountain"
         }
     }
@@ -73,6 +76,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .boathouse: return "village_boathouse"
         case .tower: return "village_tower"
         case .codingLab: return "village_codinglab"
+        case .home: return ""          // drawn from layers (see HomeStyle)
         case .fountain: return ""
         }
     }

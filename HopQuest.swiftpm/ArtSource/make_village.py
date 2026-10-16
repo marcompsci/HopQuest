@@ -826,6 +826,195 @@ def item_lily():
     ImageDraw.Draw(t).polygon(pts, fill=P['gold'], outline=INK)
     return t
 
+
+# ---------------------------------------------------------------- v2.6: your house, festivals, weather
+
+HOME_W, HOME_H = 80, 98
+HOME_WALLS = [('FFF3DC', 'EBD6B0'), ('FFD6E8', 'F5B5CF'), ('C8F2DD', 'A6E2C4'), ('CDE8FF', 'A9D2F5')]
+HOME_ROOFS = [('red', 'red2'), ('blue', 'blue2'), ('purp', 'purp2'), ('leaf1', 'leaf2')]
+HOME_DOORS = ['k1', 'red2', 'gold2', 'blue2']
+
+def home_wall(i):
+    im = img(HOME_W, HOME_H); base = HOME_H - 2
+    c, c2 = HOME_WALLS[i]
+    bricks(im, 6, 51, 73, base, hexc(c), hexc(c2)); rect(im, 5, 50, 5, base, INK); rect(im, 74, 50, 74, base, INK)
+    rect(im, 5, 50, 74, 50, INK)
+    window(im, 12, 60, 10, 9); window(im, 58, 60, 10, 9)
+    rect(im, 0, base + 1, 79, base + 1, INK)
+    return im
+
+def home_roof(i):
+    im = img(HOME_W, HOME_H)
+    c, c2 = HOME_ROOFS[i]
+    outline_rect(im, 55, 14, 63, 34, P['st1']); rect(im, 56, 15, 62, 16, P['st0'])
+    gable(im, 40, 12, 50, 34, P[c], P[c2], overhang=3)
+    # a round attic window
+    ellipse(im, [35, 30, 45, 40], INK); ellipse(im, [36, 31, 44, 39], P['win']); px(im, 38, 33, P['white'])
+    return im
+
+def home_door(i):
+    im = img(HOME_W, HOME_H); base = HOME_H - 2
+    door(im, 40, base, w=16, h=26, c=P[HOME_DOORS[i]])
+    return im
+
+def home_extra(kind):
+    im = img(HOME_W, HOME_H); base = HOME_H - 2; d = ImageDraw.Draw(im)
+    if kind == 'flowerBox':
+        for x0 in (10, 56):
+            outline_rect(im, x0, 70, x0 + 13, 74, P['k1'])
+            for j, c in enumerate(['pink', 'gold', 'red', 'purp']):
+                x = x0 + 2 + j * 3
+                px(im, x, 68, P[c]); px(im, x - 1, 69, P[c]); px(im, x + 1, 69, P[c]); px(im, x, 69, P['gold'] if c != 'gold' else P['white'])
+    elif kind == 'mailbox':
+        rect(im, 25, base - 14, 26, base, INK)
+        outline_rect(im, 20, base - 21, 31, base - 14, P['red']); rect(im, 21, base - 20, 30, base - 20, P['red2'])
+        rect(im, 31, base - 25, 32, base - 18, INK); rect(im, 32, base - 25, 34, base - 23, P['gold'])
+    elif kind == 'flag':
+        rect(im, 40, 0, 40, 12, INK)
+        flag(im, 41, 0, P['pink'])
+    elif kind == 'lamp':
+        rect(im, 62, base - 22, 63, base, INK)
+        outline_rect(im, 59, base - 29, 66, base - 22, P['gold'])
+        rect(im, 60, base - 28, 65, base - 23, P['glow'])
+    elif kind == 'kite':
+        pts = [(71, 0), (78, 7), (71, 16), (64, 7)]
+        d.polygon(pts, fill=P['red'], outline=INK)
+        d.line([(71, 1), (71, 15)], fill=P['gold']); d.line([(65, 7), (77, 7)], fill=P['gold'])
+        for k in range(6):
+            px(im, 69 - k * 2, 18 + k * 2, INK); px(im, 68 - k * 2, 19 + k * 2, P['blue'] if k % 2 else P['pink'])
+    elif kind == 'telescope':
+        d.polygon([(12, 30), (26, 22), (28, 26), (14, 34)], fill=P['blue2'], outline=INK)
+        outline_rect(im, 25, 20, 29, 27, P['gold'])
+        rect(im, 17, 33, 18, 40, INK); rect(im, 13, 40, 22, 41, INK)
+    elif kind == 'shells':
+        rect(im, 8, 50, 8, 64, INK)
+        for k, c in enumerate(['pink', 'white', 'blos0', 'gold']):
+            y = 53 + k * 4
+            ellipse(im, [5, y, 11, y + 4], INK); ellipse(im, [6, y + 1, 10, y + 3], P[c])
+    elif kind == 'chimes':
+        rect(im, 24, 51, 34, 52, INK)
+        for k, h in enumerate([10, 14, 8, 12]):
+            x = 25 + k * 3
+            rect(im, x, 52, x, 52 + h, P['st2']); px(im, x, 53 + h, P['gold'])
+    elif kind == 'pumpkin':
+        for (x0, w, h) in [(18, 12, 9), (29, 9, 7)]:
+            ellipse(im, [x0, base - h, x0 + w, base], INK); ellipse(im, [x0 + 1, base - h + 1, x0 + w - 1, base - 1], P['orng'])
+            rect(im, x0 + w // 2, base - h - 2, x0 + w // 2, base - h, P['leaf2'])
+            rect(im, x0 + w // 2, base - h + 2, x0 + w // 2, base - 2, P['orng2'])
+    elif kind == 'lanterns':
+        d.line([(6, 47), (40, 51), (74, 47)], fill=INK)
+        for k, x in enumerate([16, 44, 56]):
+            y = 49 + (2 if k == 1 else 1)
+            rect(im, x, y, x, y + 2, INK)
+            outline_rect(im, x - 3, y + 3, x + 3, y + 10, P['red'] if k % 2 == 0 else P['orng'])
+            rect(im, x - 2, y + 5, x + 2, y + 6, P['glow'])
+    elif kind == 'snowman':
+        for (cx, cy, r) in [(70, base - 7, 7), (70, base - 18, 5), (70, base - 26, 4)]:
+            ellipse(im, [cx - r, cy - r, cx + r, cy + r], INK); ellipse(im, [cx - r + 1, cy - r + 1, cx + r - 1, cy + r - 1], P['white'])
+        px(im, 69, base - 27, INK); px(im, 71, base - 27, INK); px(im, 72, base - 26, P['orng'])
+        rect(im, 65, base - 31, 75, base - 31, INK); outline_rect(im, 67, base - 36, 73, base - 31, P['r1'])
+    return im
+
+HOME_EXTRAS = ['flowerBox', 'mailbox', 'flag', 'lamp', 'kite', 'telescope', 'shells', 'chimes', 'pumpkin', 'lanterns', 'snowman']
+
+def item_kite():
+    t = img(14, 18); d = ImageDraw.Draw(t)
+    d.polygon([(7, 0), (13, 6), (7, 13), (1, 6)], fill=P['red'], outline=INK)
+    d.line([(7, 1), (7, 12)], fill=P['gold']); d.line([(2, 6), (12, 6)], fill=P['gold'])
+    for k in range(3): px(t, 6 - k, 14 + k, P['blue'] if k % 2 else P['pink'])
+    return t
+
+def item_lantern():
+    t = img(12, 16)
+    rect(t, 5, 0, 6, 2, INK)
+    outline_rect(t, 1, 3, 10, 13, P['red']); rect(t, 2, 6, 9, 7, P['red2']); rect(t, 2, 10, 9, 10, P['red2'])
+    rect(t, 3, 14, 8, 15, P['gold2'])
+    return t
+
+def lantern_lit():
+    t = item_lantern()
+    rect(t, 3, 5, 8, 11, P['glow']); rect(t, 2, 6, 9, 7, P['orng'])
+    return t
+
+def item_pumpkin():
+    t = img(14, 13)
+    rect(t, 7, 0, 8, 2, P['leaf2'])
+    ellipse(t, [0, 2, 13, 12], INK); ellipse(t, [1, 3, 12, 11], P['orng'])
+    rect(t, 4, 4, 4, 10, P['orng2']); rect(t, 9, 4, 9, 10, P['orng2']); px(t, 3, 5, P['gold'])
+    return t
+
+def item_snowball():
+    t = img(12, 12)
+    ellipse(t, [0, 0, 11, 11], INK); ellipse(t, [1, 1, 10, 10], P['white']); ellipse(t, [5, 6, 9, 9], P['w3'])
+    px(t, 3, 3, P['w2'])
+    return t
+
+def item_shell():
+    t = img(12, 11); d = ImageDraw.Draw(t)
+    d.pieslice([0, 0, 11, 16], 180, 360, fill=P['blos0'], outline=INK)
+    for x in (3, 6, 9): d.line([(6, 9), (x, 1)], fill=P['blos2'])
+    rect(t, 4, 9, 8, 10, INK)
+    return t
+
+def snowman():
+    t = img(16, 26)
+    for (cx, cy, r) in [(8, 20, 6), (8, 11, 4), (8, 5, 3)]:
+        ellipse(t, [cx - r, cy - r, cx + r, cy + r], INK); ellipse(t, [cx - r + 1, cy - r + 1, cx + r - 1, cy + r - 1], P['white'])
+    px(t, 7, 4, INK); px(t, 9, 4, INK); px(t, 10, 5, P['orng'])
+    rect(t, 6, 10, 10, 10, P['red']); px(t, 8, 13, INK); px(t, 8, 16, INK)
+    return t
+
+def bunting():
+    t = img(48, 10); d = ImageDraw.Draw(t)
+    d.line([(0, 1), (24, 3), (47, 1)], fill=INK)
+    for k, c in enumerate(['red', 'gold', 'blue', 'leaf0', 'pink', 'purp']):
+        x = 3 + k * 7; y = 2 if k in (0, 5) else 3
+        d.polygon([(x, y), (x + 5, y), (x + 2, y + 6)], fill=P[c], outline=INK)
+    return t
+
+def stall(c, c2):
+    t = img(32, 30)
+    outline_rect(t, 2, 14, 29, 29, P['k0']); rect(t, 3, 15, 28, 16, P['k1'])
+    rect(t, 3, 4, 3, 14, INK); rect(t, 28, 4, 28, 14, INK)
+    for k in range(6):
+        x = k * 5 + 1
+        outline_rect(t, x, 0, x + 5, 6, P[c] if k % 2 == 0 else P['white'])
+    for k in range(6):
+        x = k * 5 + 3
+        ellipse(t, [x - 2, 5, x + 2, 9], P[c2] if k % 2 == 0 else P['white'])
+    return t
+
+def kite_flying():
+    t = img(20, 34); d = ImageDraw.Draw(t)
+    d.polygon([(10, 0), (18, 8), (10, 17), (2, 8)], fill=P['purp'], outline=INK)
+    d.polygon([(10, 1), (17, 8), (10, 8)], fill=P['pink'])
+    for k in range(8):
+        x = 10 + (1 if k % 2 else -1); y = 18 + k * 2
+        px(t, x, y, P['gold'] if k % 3 else P['red'])
+    return t
+
+def music_note():
+    t = img(9, 12)
+    ellipse(t, [0, 7, 5, 11], INK); ellipse(t, [1, 8, 4, 10], P['purp'])
+    rect(t, 4, 0, 4, 9, INK); rect(t, 5, 0, 8, 1, INK); rect(t, 7, 2, 8, 3, INK)
+    return t
+
+def snowflake():
+    t = img(7, 7)
+    for (x, y) in [(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (0, 3), (1, 3), (2, 3), (4, 3), (5, 3), (6, 3), (1, 1), (5, 5), (1, 5), (5, 1)]:
+        px(t, x, y, P['white'])
+    return t
+
+def raindrop():
+    t = img(2, 8)
+    rect(t, 0, 0, 0, 7, hexc('BFE9FF', 200)); rect(t, 1, 2, 1, 7, hexc('86C9F0', 220))
+    return t
+
+def petal():
+    t = img(5, 4)
+    rect(t, 1, 0, 3, 3, P['blos0']); px(t, 0, 1, P['blos0']); px(t, 4, 2, P['blos1']); px(t, 2, 1, P['white'])
+    return t
+
 # ---------------------------------------------------------------- buddies
 
 CELL_W, CELL_H, BASE = 32, 36, 33    # feet rest on y = BASE (from the top) in each cell
@@ -967,6 +1156,10 @@ def main():
              ('lock_sign', lock_sign()), ('star_sign', star_sign()), ('name_flag', name_flag()),
              ('item_gear', item_gear()), ('item_drop', item_drop()), ('item_lily', item_lily())]
     props += [(f'item_shape{k}', item_shape(k)) for k in range(3)]
+    props += [('item_kite', item_kite()), ('item_lantern', item_lantern()), ('lantern_lit', lantern_lit()),
+              ('item_pumpkin', item_pumpkin()), ('item_snowball', item_snowball()), ('item_shell', item_shell()),
+              ('snowman', snowman()), ('bunting', bunting()), ('stall_red', stall('red', 'red2')), ('stall_blue', stall('blue', 'blue2')),
+              ('kite_fly', kite_flying()), ('note', music_note()), ('snowflake', snowflake()), ('raindrop', raindrop()), ('petal', petal())]
     props += [(f'flowers{v}', flowers(v)) for v in range(4)]
     props += [(f'fountain{f}', fountain(f)) for f in range(3)]
     props += [(f'lily{f}', lily(f)) for f in range(2)]
@@ -984,6 +1177,14 @@ def main():
                  'garage': building_garage(), 'clubhouse': building_clubhouse(), 'cottage': building_cottage(),
                  'boathouse': building_boathouse(), 'tower': building_tower(), 'codinglab': building_codinglab()}
     for k, im in buildings.items(): save_imageset(assets, f'village_{k}', im)
+
+    # your house: layers drawn on top of each other in the game
+    for i in range(4):
+        save_imageset(assets, f'home_wall_{i}', home_wall(i))
+        save_imageset(assets, f'home_roof_{i}', home_roof(i))
+        save_imageset(assets, f'home_door_{i}', home_door(i))
+    for k in HOME_EXTRAS:
+        save_imageset(assets, f'home_extra_{k}', home_extra(k))
 
     char_dir = assets
     for cid in [d[5:-9] for d in sorted(os.listdir(char_dir)) if d.startswith('char_') and d.endswith('.imageset')]:

@@ -125,10 +125,33 @@ struct MissionSave: Codable, Equatable {
 }
 
 enum MissionCatalog {
-    static func mission(givenBy npc: String) -> MissionDef? { all.first { $0.giver == npc } }
+    static func mission(givenBy npc: String) -> MissionDef? { base.first { $0.giver == npc } }
     static func mission(_ id: String) -> MissionDef? { all.first { $0.id == id } }
 
-    static let all: [MissionDef] = [
+    /// Every mission: the villagers' own, plus the festival missions.
+    static let all: [MissionDef] = base + FestivalMissions.all
+
+    /// The mission a villager offers right now. The festival host offers a festival already in progress first
+    /// (so nothing is ever left half-done), otherwise the festival being celebrated.
+    static func offer(from npc: String, save: MissionSave, festival: Festival) -> MissionDef? {
+        guard npc == FestivalMissions.hostID else { return mission(givenBy: npc) }
+        if let going = FestivalMissions.all.first(where: { m in
+            switch save.status(m) {
+            case .active, .readyToTurnIn: return true
+            default: return false
+            }
+        }) { return going }
+        return FestivalMissions.mission(for: festival)
+    }
+
+    /// Missions to list in the mission log: every villager mission, plus festivals that are started, done,
+    /// or being celebrated now.
+    static func visible(save: MissionSave, festival: Festival) -> [MissionDef] {
+        base + FestivalMissions.all.filter { m in m.id == festival.missionID || save.status(m) != .new }
+    }
+
+    /// The villagers' own missions.
+    static let base: [MissionDef] = [
         MissionDef(id: "gears", giver: "acorn", title: "Lost Gears", icon: "⚙️",
                    intro: "Oh no! Five gears fell out of my robot and rolled all over the village. Can you find them?",
                    lesson: "Gears are wheels with teeth. When one gear turns, its teeth push the next gear around. Clocks, bikes and robots all use gears!",

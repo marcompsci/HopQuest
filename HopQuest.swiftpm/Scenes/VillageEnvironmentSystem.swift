@@ -1,7 +1,9 @@
 import SpriteKit
 
 /// Little bits of life: butterflies, falling leaves, cloud shadows, fireflies and a soft evening tint,
-/// plus footstep dust. Everything is pooled and capped; "light" mode uses far fewer of each.
+/// plus footstep dust, and the season and weather: spring petals, autumn leaves, rain and snow.
+/// Everything is pooled and capped; "light" mode uses far fewer of each, and Reduce Motion turns off
+/// anything that falls across the screen.
 final class VillageEnvironmentSystem {
     enum Quality { case full, light }
 
@@ -21,20 +23,31 @@ final class VillageEnvironmentSystem {
     private var dustPool: [SKSpriteNode] = []
     private var dustNext = 0
     private var tint: SKSpriteNode?
+    let season: Season
+    let weather: Weather
+    private let reduceMotion: Bool
+    /// Rain or snow, falling through whatever part of the village is on screen.
+    private struct Drop { let node: SKSpriteNode; var speed: CGFloat; var drift: CGFloat; var phase: Double }
+    private var drops: [Drop] = []
 
     /// Points per tile.
     private let t = VillageArt.tilePt
 
-    init(world: SKNode, camera: SKCameraNode, map: VillageMap, worldSize: CGSize, quality: Quality, eveningLights: Bool, hour: Int) {
+    init(world: SKNode, camera: SKCameraNode, map: VillageMap, worldSize: CGSize, quality: Quality, eveningLights: Bool, hour: Int,
+         season: Season = .spring, weather: Weather = .sunny, reduceMotion: Bool = false) {
         self.world = world
         self.camera = camera
         self.worldSize = worldSize
         self.quality = quality
+        self.season = season
+        self.weather = weather
+        self.reduceMotion = reduceMotion
         isEvening = eveningLights && (hour >= 19 || hour < 6)
         let full = quality == .full
+        let wet = weather == .rainy || weather == .snowy
 
-        // butterflies over flower patches (daytime)
-        if !isEvening {
+        // butterflies over flower patches (warm, dry daytime)
+        if !isEvening && !wet && season != .winter {
             let flowerTiles = (0..<map.height).flatMap { r in (0..<map.width).compactMap { c in map.char(c, r) == "*" ? GridPoint(c, r) : nil } }
             let colors = ["pink", "gold", "blue"]
             let count = full ? 8 : 3
@@ -51,13 +64,15 @@ final class VillageEnvironmentSystem {
             }
         }
 
-        // drifting cloud shadows (daytime)
+        // drifting cloud shadows (daytime; more of them when it's cloudy or wet)
         if !isEvening {
-            for i in 0..<(full ? 3 : 1) {
+            let cloudCount = weather == .sunny ? (full ? 3 : 1) : (full ? 6 : 2)
+            for i in 0..<cloudCount {
                 let cloud = VillageArt.propNode("cloud")
                 cloud.anchorPoint = CGPoint(x: 0.5, y: 0.5)
                 cloud.setScale(2.2)
-                cloud.position = CGPoint(x: CGFloat(i) * worldSize.width / 3, y: CGFloat(i * 2 + 1) * worldSize.height / 6)
+                cloud.position = CGPoint(x: CGFloat(i) * worldSize.width / CGFloat(cloudCount),
+                                         y: CGFloat((i * 2 + 1) % 6) * worldSize.height / 6 + 40)
                 cloud.zPosition = 940
                 world.addChild(cloud)
                 clouds.append(cloud)
@@ -83,6 +98,31 @@ final class VillageEnvironmentSystem {
             tint.zPosition = 930
             camera.addChild(tint)
             self.tint = tint
+        }
+
+        // the sky's color for the season and the weather (a soft wash over everything)
+        if let (hex, alpha) = Self.wash(season: season, weather: weather) {
+            let wash = SKSpriteNode(color: UIColor(hex: hex), size: CGSize(width: 4000, height: 4000))
+            wash.alpha = isEvening ? alpha * 0.5 : alpha
+            wash.zPosition = 925
+            camera.addChild(wash)
+        }
+
+        // rain or snow
+        if !reduceMotion && wet {
+            let snow = weather == .snowy
+            let count = snow ? (full ? 46 : 16) : (full ? 60 : 20)
+            for i in 0..<count {
+                let node = VillageArt.propNode(snow ? "snowflake" : "raindrop")
+                node.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                node.zPosition = 975
+                node.alpha = snow ? 0.95 : 0.7
+                if snow { node.setScale(0.6 + CGFloat(i % 3) * 0.2) }
+                node.isHidden = true
+                world.addChild(node)
+                drops.append(Drop(node: node, speed: snow ? CGFloat(70 + (i % 5) * 12) : CGFloat(620 + (i % 4) * 60),
+                                  drift: snow ? 0 : -90, phase: Double(i) * 0.7))
+            }
         }
 
         // dust puffs for footsteps
@@ -118,19 +158,59 @@ final class VillageEnvironmentSystem {
             if cloud.position.x > worldSize.width + 200 { cloud.position.x = -200 }
         }
         updateLeaves(dt: dt, visible: visible)
+        updateDrops(dt: dt, visible: visible)
+    }
+
+    /// Soft color washes: cool and gray when wet, golden in autumn, frosty in winter.
+    static func wash(season: Season, weather: Weather) -> (UInt32, CGFloat)? {
+        switch weather {
+        case .rainy: return (0x4A5A7A, 0.18)
+        case .snowy: return (0xE8F4FF, 0.16)
+        case .cloudy: return (0x8A93A6, 0.10)
+        case .sunny, .windy:
+            switch season {
+            case .autumn: return (0xFF9F45, 0.06)
+            case .winter: return (0xCFE6FF, 0.10)
+            case .summer: return (0xFFD27A, 0.05)
+            case .spring: return nil
+            }
+        }
+    }
+
+    private func updateDrops(dt: Double, visible: CGRect) {
+        guard !drops.isEmpty else { return }
+        for i in drops.indices {
+            var d = drops[i]
+            if d.node.isHidden || !visible.insetBy(dx: -40, dy: -40).contains(d.node.position) {
+                // start again somewhere above the visible part of the village
+                d.node.position = CGPoint(x: visible.minX + CGFloat(rng.unit()) * visible.width,
+                                          y: visible.maxY + CGFloat(rng.unit()) * visible.height * (d.node.isHidden ? 1 : 0.2))
+                d.node.isHidden = false
+            }
+            d.phase += dt
+            let sway = d.drift == 0 ? CGFloat(sin(d.phase * 1.7)) * 30 : d.drift
+            d.node.position.x += sway * CGFloat(dt)
+            d.node.position.y -= d.speed * CGFloat(dt)
+            drops[i] = d
+        }
     }
 
     private func updateLeaves(dt: Double, visible: CGRect) {
-        guard !isEvening else { return }
+        guard !isEvening, !reduceMotion, weather != .rainy, weather != .snowy, season != .winter else { return }
+        let windy = weather == .windy
         leafTimer -= dt
-        let maxLeaves = quality == .full ? 10 : 3
+        let maxLeaves = (quality == .full ? 10 : 3) * (windy || season == .autumn ? 2 : 1)
         if leafTimer <= 0 {
-            leafTimer = quality == .full ? 0.7 : 2.2
+            leafTimer = (quality == .full ? 0.7 : 2.2) / (windy || season == .autumn ? 2 : 1)
             let leaf: SKSpriteNode
             if leaves.count < maxLeaves {
-                leaf = VillageArt.propNode("leaf\(leaves.count % 2)")
+                leaf = VillageArt.propNode(season == .spring ? "petal" : "leaf\(leaves.count % 2)")
                 leaf.anchorPoint = CGPoint(x: 0.5, y: 0.5)
                 leaf.zPosition = 945
+                if season == .autumn {
+                    leaf.color = UIColor(hex: leaves.count % 3 == 0 ? 0xD9731C : 0xFF9F45)
+                    leaf.colorBlendFactor = 0.75
+                }
                 world.addChild(leaf)
                 leaves.append(leaf)
             } else if let free = leaves.first(where: { !$0.hasActions() }) {
@@ -144,7 +224,8 @@ final class VillageEnvironmentSystem {
             leaf.position = CGPoint(x: visible.minX + CGFloat(rng.unit()) * visible.width,
                                     y: visible.maxY - CGFloat(rng.unit()) * visible.height * 0.3)
             let fall = visible.height * 0.6
-            let sway = SKAction.sequence([.moveBy(x: 26, y: 0, duration: 0.9), .moveBy(x: -26, y: 0, duration: 0.9)])
+            let push: CGFloat = windy ? 60 : 26
+            let sway = SKAction.sequence([.moveBy(x: push, y: 0, duration: 0.9), .moveBy(x: windy ? -push * 0.3 : -push, y: 0, duration: 0.9)])
             sway.timingMode = .easeInEaseOut
             leaf.run(.sequence([
                 .group([.moveBy(x: 0, y: -fall, duration: 5),

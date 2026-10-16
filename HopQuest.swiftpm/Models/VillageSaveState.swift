@@ -46,6 +46,12 @@ struct VillageSaveState: Codable, Equatable {
     /// Rotates the pop-quiz questions.
     var popTurn: Int = 0
     var playMode: VillagePlayMode = .nearby
+    /// The festival the child picked on the notice board (nil = this week's festival).
+    var festivalPick: String?
+    /// The child's house on the hill.
+    var home = HomeStyle()
+    /// Grown-ups' setting: seasons and weather follow the calendar (off = always a sunny spring day).
+    var seasons: Bool = true
 
     static let bonusPerDay = 5
     static let duelStarsPerDay = 6
@@ -60,6 +66,7 @@ struct VillageSaveState: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case version, tileX, tileY, facing, visited, talkedTo, solved, lightEffects, eveningLights, startInVillage
         case castleCelebrated, bonusDay, bonusToday, duelDay, duelStarsToday, popTurn, playMode
+        case festivalPick, home, seasons
     }
 
     init(from decoder: Decoder) throws {
@@ -81,6 +88,9 @@ struct VillageSaveState: Codable, Equatable {
         duelStarsToday = (try? c.decodeIfPresent(Int.self, forKey: .duelStarsToday)) ?? 0
         popTurn = (try? c.decodeIfPresent(Int.self, forKey: .popTurn)) ?? 0
         playMode = (try? c.decodeIfPresent(VillagePlayMode.self, forKey: .playMode)) ?? .nearby
+        festivalPick = try? c.decodeIfPresent(String.self, forKey: .festivalPick)
+        home = (try? c.decodeIfPresent(HomeStyle.self, forKey: .home)) ?? HomeStyle()
+        seasons = (try? c.decodeIfPresent(Bool.self, forKey: .seasons)) ?? true
         // Saves from the first, smaller village: the old spot means something else on the new map.
         if version < 2 {
             tileX = 22

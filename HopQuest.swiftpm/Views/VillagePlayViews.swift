@@ -302,6 +302,8 @@ struct BrainDuelView: View {
 
 struct MissionLogView: View {
     let save: MissionSave
+    /// Villager missions plus the festivals that are on, started or done.
+    let missions: [MissionDef]
     let giverName: (String) -> String
     var onGo: (MissionDef) -> Void
     var onClose: () -> Void
@@ -311,14 +313,14 @@ struct MissionLogView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Missions 📜").font(.kid(24, .black)).foregroundStyle(Palette.ink)
-                    Text("\(save.done.count) of \(MissionCatalog.all.count) done").font(.kid(14, .bold)).foregroundStyle(Palette.purple)
+                    Text("\(missions.filter { save.status($0) == .done }.count) of \(missions.count) done").font(.kid(14, .bold)).foregroundStyle(Palette.purple)
                 }
                 Spacer()
                 CircleIconButton(systemName: "xmark", label: "Close", action: onClose)
             }
             ScrollView {
                 VStack(spacing: 8) {
-                    ForEach(MissionCatalog.all) { m in row(m) }
+                    ForEach(missions) { m in row(m) }
                 }
             }
             .frame(maxHeight: 460)
