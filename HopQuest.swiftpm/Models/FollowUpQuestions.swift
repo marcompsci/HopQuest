@@ -2,7 +2,7 @@ import Foundation
 
 /// A question written as plain data (turned into a Brain Gate `Question` by the app).
 struct QuizItem: Equatable {
-    let subject: String          // matches Subject raw values: Math, Road Safety, Nature, Science, Words
+    let subject: String          // matches Subject raw values: Math, Road Safety, Nature, Science, Words, Coding, Kindness
     let prompt: String
     let choices: [String]        // the first one is the right answer; the app shuffles them
     let explain: String
@@ -71,6 +71,15 @@ enum FollowUpBank {
                          choices: ["Good game!", "You're bad!", "Nothing"], explain: "Saying 'Good game' shows kindness, win or lose."),
                 QuizItem(subject: "Math", prompt: "You bopped 3 bots, then 4 more. How many bops?",
                          choices: ["7", "6", "8"], explain: "3 + 4 = 7 bops!"),
+            ]
+        case .coding:
+            return [
+                QuizItem(subject: "Coding", prompt: "In the Coding Lab, what does a for loop do?",
+                         choices: ["Repeats code", "Makes a picture", "Ends the game"], explain: "for loops repeat the lines inside them."),
+                QuizItem(subject: "Coding", prompt: "Which tag did you use for a big title on your web page?",
+                         choices: ["<h1>", "<p>", "<ul>"], explain: "<h1> makes the biggest heading."),
+                QuizItem(subject: "Coding", prompt: "What do we call a mistake in code?",
+                         choices: ["A bug", "A bump", "A badge"], explain: "Finding and fixing bugs is called debugging."),
             ]
         case .kart:
             return [

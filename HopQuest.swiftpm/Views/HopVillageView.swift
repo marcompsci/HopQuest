@@ -1,7 +1,7 @@
 import SwiftUI
 import SpriteKit
 
-/// Hop Village: walk your buddy around a pixel-art village with a building for every game. Finish all nine
+/// Hop Village: walk your buddy around a pixel-art village with a building for every game. Finish all ten
 /// challenges to open your castle. A pop-quiz buddy drops by every couple of minutes, and friends playing
 /// live can challenge each other to Brain Duels. Routing, stars and progress stay in RootView.
 struct HopVillageView: View {
@@ -21,6 +21,7 @@ struct HopVillageView: View {
     @State private var quiz: Question?
     @State private var quizSource: QuizSource?
     @State private var boardOpen = false
+    @State private var missionsOpen = false
     @State private var castleParty = false
     @State private var banner: String?
     @State private var note: String?
@@ -29,7 +30,7 @@ struct HopVillageView: View {
     @State private var duelStars: Int?
 
     private var anyOverlay: Bool {
-        dialogue != nil || quiz != nil || boardOpen || castleParty || showParent || showCharacters
+        dialogue != nil || quiz != nil || boardOpen || missionsOpen || castleParty || showParent || showCharacters
             || network.incoming != nil || network.duel != nil
     }
 
@@ -65,7 +66,10 @@ struct HopVillageView: View {
                         HStack(alignment: .bottom) {
                             VillageJoystick { v in scene?.setJoystick(v) }
                             Spacer()
-                            actionButton
+                            VStack(spacing: 10) {
+                                missionsButton
+                                actionButton
+                            }
                         }
                         .padding(.horizontal, 12)
                         .padding(.bottom, 6)
@@ -133,6 +137,17 @@ struct HopVillageView: View {
             .id(dialogue.id)
         }
 
+        if missionsOpen {
+            Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { missionsOpen = false }
+            MissionLogView(save: store.profile?.missions ?? MissionSave(),
+                           giverName: { id in scene?.npcCharacter(id)?.name ?? id.capitalized },
+                           onGo: { m in
+                               missionsOpen = false
+                               DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { goTo(m) }
+                           },
+                           onClose: { missionsOpen = false })
+        }
+
         if boardOpen {
             Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { boardOpen = false }
             VillageChallengeBoard(progress: store.challengeProgress,
@@ -181,6 +196,29 @@ struct HopVillageView: View {
     }
 
     // MARK: Action button
+
+    private var missionsButton: some View {
+        let active = (store.profile?.missions).map { m in MissionCatalog.all.filter { m.status($0) != .new && m.status($0) != .done }.count } ?? 0
+        return Button {
+            Haptics.tap()
+            missionsOpen = true
+        } label: {
+            VStack(spacing: 0) {
+                Text("📜").font(.system(size: 24))
+                Text("Missions").font(.kid(11, .black)).foregroundStyle(Palette.ink)
+            }
+            .frame(width: 70, height: 62)
+            .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.95)).shadow(color: .black.opacity(0.2), radius: 0, x: 0, y: 4))
+            .overlay(alignment: .topTrailing) {
+                if active > 0 {
+                    Text("\(active)").font(.kid(13, .black)).foregroundStyle(.white)
+                        .frame(width: 22, height: 22).background(Circle().fill(Palette.red)).offset(x: 6, y: -6)
+                }
+            }
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("Missions, \(active) in progress")
+    }
 
     @ViewBuilder
     private var actionButton: some View {
@@ -233,6 +271,8 @@ struct HopVillageView: View {
             showNote("\(c.name): Hi, \(store.profile?.name ?? "friend")! 👋")
         }
         s.onPopQuiz = { character in popQuiz(from: character) }
+        s.onPickup = { key in pickedUp(key) }
+        s.setPickups(profile.missions.pickups())
         scene = s
         builtFor = store.character.id
         configureDuels()
@@ -253,6 +293,7 @@ struct HopVillageView: View {
         scene?.onRegionChange = nil
         scene?.onGreet = nil
         scene?.onPopQuiz = nil
+        scene?.onPickup = nil
         scene?.network = nil
         scene = nil
         interaction = nil
@@ -354,6 +395,7 @@ struct HopVillageView: View {
         case .stadium: leave(.kartSelect, via: i)
         case .fortYard: leave(.fortSelect, via: i)
         case .clubhouse: leave(.together, via: i)
+        case .codingLab: leave(.codingLab, via: i)
         case .cottage, .academy, .workshop, .boathouse, .garage, .tower:
             if let chapter = kind.storyChapter { leave(.chapter(chapter), via: i) }
         case .castle, .fountain:
@@ -398,6 +440,57 @@ struct HopVillageView: View {
         let solved = store.profile?.village.solved.contains(id) ?? false
         let close = VillageDialogue.Choice(title: "Bye!", primary: false) { endTalk(happy: false) }
 
+        // 1) a delivery or a kind visit for someone else's mission
+        var delivered: (MissionDef, String)?
+        store.updateMissions { delivered = $0.talked(to: id) }
+        if let d = delivered {
+            let (m, line) = d
+            Haptics.success(.chime)
+            let status = store.profile?.missions.status(m)
+            let next: String
+            if status == .readyToTurnIn {
+                next = "Mission step done! Go back to \(scene.npcCharacter(m.giver)?.name ?? "your friend") for your stars."
+            } else if case .active(let step)? = status {
+                next = "Next: \(m.steps[step].hint)."
+            } else {
+                next = ""
+            }
+            say(VillageDialogue(speaker: speaker, text: line + (next.isEmpty ? "" : " " + next), choices: [
+                .init(title: "Great! \(m.icon)") { endTalk(happy: true) }
+            ]))
+            return
+        }
+
+        // 2) this buddy's own mission
+        if let m = MissionCatalog.mission(givenBy: id), let missions = store.profile?.missions {
+            switch missions.status(m) {
+            case .new:
+                say(VillageDialogue(speaker: speaker, text: "\(m.icon) \(m.intro)", choices: [
+                    .init(title: "I'll help!") { startMission(m, speaker: speaker) },
+                    .init(title: "Maybe later", primary: false) { endTalk(happy: false) }
+                ]))
+                return
+            case .readyToTurnIn:
+                let stars = store.turnInMission(m)
+                Haptics.success(.fanfare)
+                say(VillageDialogue(speaker: speaker, text: m.thanks + (stars > 0 ? " Here are \(stars) stars! ⭐" : ""), choices: [
+                    .init(title: "Yay! 🎉") { endTalk(happy: true) }
+                ]))
+                return
+            case .active(let step):
+                let progress = missions.collectedCount(m).map { " (\($0.have) of \($0.need) so far)" } ?? ""
+                var choices: [VillageDialogue.Choice] = [.init(title: "On it! \(m.icon)") { endTalk(happy: false) }]
+                if let lesson = def.lesson, !solved {
+                    choices.append(.init(title: "Riddle?", primary: false) { askRiddle(def, lesson: lesson) })
+                }
+                say(VillageDialogue(speaker: speaker, text: "\(m.title): \(m.steps[step].hint)\(progress). You can do it!", choices: choices))
+                return
+            case .done:
+                break
+            }
+        }
+
+        // 3) riddles and chatter
         if let lesson = def.lesson, !solved {
             say(VillageDialogue(speaker: speaker, text: def.greeting, choices: [
                 .init(title: "Yes, let's try!") { askRiddle(def, lesson: lesson) },
@@ -410,6 +503,53 @@ struct HopVillageView: View {
                 choices.insert(.init(title: "Another riddle?") { askRiddle(def, lesson: lesson) }, at: 0)
             }
             say(VillageDialogue(speaker: speaker, text: line, choices: choices))
+        }
+    }
+
+    private func startMission(_ m: MissionDef, speaker: GameCharacter) {
+        store.updateMissions { $0.start(m) }
+        store.updateMissions { $0.codeLessonsDone(store.profile?.codeLab.completed.count ?? 0) }
+        scene?.setPickups(store.profile?.missions.pickups() ?? [])
+        Haptics.success(.chime)
+        say(VillageDialogue(speaker: speaker, text: "Did you know? \(m.lesson)", choices: [
+            .init(title: "Let's go! \(m.icon)") { endTalk(happy: true) }
+        ]))
+    }
+
+    /// Walked over a mission item.
+    private func pickedUp(_ key: String) {
+        var mission: MissionDef?
+        store.updateMissions { mission = $0.collect(key) }
+        guard let m = mission, let missions = store.profile?.missions else { return }
+        if missions.status(m) == .readyToTurnIn {
+            Haptics.success(.star)
+            let giver = scene?.npcCharacter(m.giver)?.name ?? "your friend"
+            showNote("\(m.icon) All found! Go back to \(giver) for your stars.")
+        } else if let c = missions.collectedCount(m) {
+            Haptics.tap(nil)
+            showNote("\(m.icon) \(c.have) of \(c.need)!")
+        }
+    }
+
+    /// "Go!" from the mission log: walk toward whatever comes next.
+    private func goTo(_ m: MissionDef) {
+        guard let scene, let missions = store.profile?.missions else { return }
+        switch missions.status(m) {
+        case .new, .readyToTurnIn, .done:
+            if let t = scene.npcTile(m.giver) { scene.walk(toTile: t) }
+        case .active(let step):
+            switch m.steps[step] {
+            case .collect:
+                let here = scene.playerTile
+                if let near = missions.pickups().filter({ $0.key.hasPrefix(m.id + ".") })
+                    .min(by: { $0.tile.manhattan(here) < $1.tile.manhattan(here) }) {
+                    scene.walk(toTile: near.tile)
+                }
+            case .talk(let npc, _, _):
+                if let t = scene.npcTile(npc) { scene.walk(toTile: t) }
+            case .codeLessons:
+                scene.walk(to: .codingLab)
+            }
         }
     }
 
@@ -484,6 +624,8 @@ struct HopVillageView: View {
         case .nature: return .nature
         case .science: return .science
         case .words: return .words
+        case .coding: return .coding
+        case .kindness: return .kindness
         }
     }
 

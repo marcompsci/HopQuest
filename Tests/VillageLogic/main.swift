@@ -47,7 +47,7 @@ test("every game has a building") {
     for k in BuildingKind.allCases { check(map.building(k) != nil, "building \(k)") }
     let chapters = map.buildings.compactMap(\.kind.storyChapter).sorted()
     check(chapters == [1, 2, 3, 4, 5, 6], "a building for each story chapter: \(chapters)")
-    check(Set(VillageChallenge.allCases.map(\.building)).count == 9, "nine challenge buildings")
+    check(Set(VillageChallenge.allCases.map(\.building)).count == 10, "ten challenge buildings")
     for c in VillageChallenge.allCases { check(map.building(c.building) != nil, "\(c) building on the map") }
 }
 
@@ -56,7 +56,7 @@ test("spawn is walkable and every door and NPC home is reachable") {
     for b in map.buildings where b.kind.hasDoor {
         check(fromSpawn.contains(b.doorstep), "\(b.kind.title) doorstep \(b.doorstep) reachable")
     }
-    for n in VillageNPCDef.all {
+    for n in VillageNPCDef.everyone {
         check(fromSpawn.contains(n.home), "\(n.id) home reachable")
         check(fromSpawn.contains(n.activitySpot), "\(n.id) activity spot reachable")
     }
@@ -71,7 +71,7 @@ test("doorsteps sit right below each building's footprint") {
 
 test("A* finds paths that never touch a blocked tile and never cut corners") {
     var targets: [GridPoint] = map.buildings.filter { $0.kind.hasDoor }.map(\.doorstep)
-    targets += VillageNPCDef.all.map(\.home)
+    targets += VillageNPCDef.everyone.map(\.home)
     for t in targets {
         guard let p = pf.path(from: map.spawn, to: t) else { check(false, "no path to \(t)"); continue }
         check(p.first == map.spawn && p.last == t, "endpoints \(t)")
@@ -198,7 +198,7 @@ test("player movement is deterministic") {
 }
 
 test("NPC brains stay near home, return home, and are deterministic") {
-    for def in VillageNPCDef.all {
+    for def in VillageNPCDef.everyone {
         func simulate() -> [VPoint] {
             var b = NPCBrain(def: def, map: map)
             var trace: [VPoint] = []
@@ -335,9 +335,11 @@ test("challenges: nine of them, read from existing progress") {
     check(p.done == [.meadow, .driving, .robot], "story chapters count")
     p.completedChapters = [1, 2, 3, 4, 5, 6]
     p.fortDone = true; p.bopDone = true
-    check(p.doneCount == 8 && !p.allDone, "8 of 9")
+    check(p.doneCount == 8 && !p.allDone, "8 of 10")
     p.kartDone = true
-    check(p.allDone && ChallengeProgress.total == 9, "all done opens the castle")
+    check(!p.allDone, "coding still to do")
+    p.codingDone = true
+    check(p.allDone && ChallengeProgress.total == 10, "all done opens the castle")
     for c in VillageChallenge.allCases { check(c.building.challenge == c, "\(c) maps back from its building") }
     check(BuildingKind.castle.challenge == nil && BuildingKind.clubhouse.challenge == nil, "castle and clubhouse aren't challenges")
 }
@@ -380,7 +382,7 @@ test("follow-up questions: every item is well formed") {
         check(items.count >= 2, "\(c) has follow-ups")
         for q in items + FollowUpBank.general {
             check((2...4).contains(q.choices.count) && !q.prompt.isEmpty && !q.explain.isEmpty, "well formed: \(q.prompt)")
-            check(["Math", "Road Safety", "Nature", "Science", "Words"].contains(q.subject), "known subject \(q.subject)")
+            check(["Math", "Road Safety", "Nature", "Science", "Words", "Coding", "Kindness"].contains(q.subject), "known subject \(q.subject)")
         }
     }
     check(FollowUpBank.pick(done: [], turn: 3) == FollowUpBank.general[0], "general when nothing is done")
@@ -465,6 +467,71 @@ test("remote players glide smoothly and snap across big jumps") {
     check(abs(peer.shown.x - 11) < 0.01, "arrived")
     peer.apply(PeerMove(key: "k", x: 30, y: 40, facing: .south, moving: false), now: 2)
     check(peer.shown == VPoint(30, 40), "big jump snaps")
+}
+
+test("missions: every item spot is reachable (hops count) and missions advance") {
+    // reachable by walking, or by hopping over water from a reachable tile
+    var reach = reachable(from: map.spawn)
+    var grew = true
+    while grew {
+        grew = false
+        for t in reach {
+            for (dc, dr) in [(2, 0), (-2, 0), (0, 2), (0, -2)] {
+                let q = t.offset(dc, dr)
+                guard !reach.contains(q), map.isWalkable(q), map.char(t.offset(dc / 2, dr / 2)) == "~" else { continue }
+                for r in reachable(from: q) where !reach.contains(r) { reach.insert(r); grew = true }
+                reach.insert(q); grew = true
+            }
+        }
+    }
+    for m in MissionCatalog.all {
+        check(VillageNPCDef.def(m.giver) != nil, "\(m.id) giver exists")
+        for step in m.steps {
+            switch step {
+            case .collect(_, let spots, _): for p in spots { check(reach.contains(p), "\(m.id) item at \(p) reachable") }
+            case .talk(let npc, _, _): check(VillageNPCDef.def(npc) != nil, "\(m.id) talks to a real buddy")
+            case .codeLessons(let n, _): check(n > 0, "code mission")
+            }
+        }
+    }
+    var save = MissionSave()
+    let gears = MissionCatalog.mission("gears")!
+    check(save.status(gears) == .new && save.pickups().isEmpty, "no items before starting")
+    save.start(gears)
+    check(save.status(gears) == .active(step: 0) && save.pickups().count == 5, "5 gears appear")
+    for p in save.pickups() { save.collect(p.key) }
+    check(save.status(gears) == .readyToTurnIn && save.pickups().isEmpty, "all found → go back")
+    check(save.turnIn(gears) && !save.turnIn(gears), "reward once")
+    let mail = MissionCatalog.mission("mail")!
+    save.start(mail)
+    check(save.talked(to: "stella") == nil, "wrong order doesn't count")
+    check(save.talked(to: "pip")?.0 == mail && save.talked(to: "stella")?.0 == mail, "deliveries in order")
+    check(save.status(mail) == .readyToTurnIn, "mail ready")
+    let code = MissionCatalog.mission("code")!
+    save.start(code); save.codeLessonsDone(2)
+    check(save.status(code) == .active(step: 0), "2 lessons isn't enough")
+    save.codeLessonsDone(3)
+    check(save.status(code) == .readyToTurnIn, "3 lessons done")
+    check(save.collect("nonsense.0.0") == nil, "unknown items ignored")
+    let back = try JSONDecoder().decode(MissionSave.self, from: JSONEncoder().encode(save))
+    check(back == save, "mission save round trip")
+}
+
+test("Hop crosses water onto lily pads, but never over trees") {
+    var p = VillagePlayerController(map: map, start: GridPoint(17, 49), facing: .east)
+    p.step(dt: 1.0 / 60)
+    // walk onto the first pad, then hop pad to pad
+    p.place(at: GridPoint(18, 49), facing: .east)
+    for expected in [20, 22, 24, 26, 28] {
+        check(p.hopForward(), "hop")
+        while p.isHopping { p.step(dt: 1.0 / 60) }
+        check(p.tile == GridPoint(expected, 49), "landed on lily pad \(expected) (at \(p.tile))")
+    }
+    // trees block: hop north from the forest trail into the tree line stops early
+    var t = VillagePlayerController(map: map, start: GridPoint(4, 40), facing: .north)
+    t.hopForward()
+    while t.isHopping { t.step(dt: 1.0 / 60) }
+    check(col.fits(t.position) && map.isWalkable(t.tile), "trees stop the hop")
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

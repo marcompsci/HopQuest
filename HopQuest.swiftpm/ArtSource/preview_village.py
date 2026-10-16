@@ -31,7 +31,7 @@ def h(c, r): return (c * 73856093 ^ r * 19349663) & 0xffff
 PATHLIKE = set('=Qz#')
 WATERLIKE = set('~o#')
 BUILD = {'C': 'castle', 'M': 'museum', 'A': 'arena', 'W': 'workshop', 'D': 'academy', 'K': 'stadium', 'Y': 'shed',
-         'X': 'garage', 'U': 'clubhouse', 'G': 'cottage', 'V': 'boathouse', 'H': 'tower'}
+         'X': 'garage', 'U': 'clubhouse', 'G': 'cottage', 'V': 'boathouse', 'H': 'tower', 'P': 'codinglab'}
 
 def mask(c, r, like):
     m = 0

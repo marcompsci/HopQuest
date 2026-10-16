@@ -5,6 +5,7 @@ enum CharacterFamily: String, CaseIterable, Identifiable {
     case heroes = "Hero Squad"
     case garden = "Garden Gang"
     case zoo = "Zoo Crew"
+    case wild = "Wild Pals"
     var id: String { rawValue }
 }
 
@@ -85,6 +86,20 @@ enum Roster {
                       fact: "Elephants use their trunks to drink, smell, and give hugs.", featured: [.sparkle, .rainbow]),
         GameCharacter(id: "rocky", name: "Rocky Rhino", family: .zoo, emoji: "🦏", colorHex: 0xA7B4C2, accessory: .helmet,
                       fact: "A rhino's horn is made of keratin — the same stuff as your fingernails.", featured: [.fortress]),
+
+        // Wild Pals (v2.3): the village's newest neighbors
+        GameCharacter(id: "kip", name: "Kip Koala", family: .wild, emoji: "🐨", colorHex: 0x9AA7B6, accessory: .none,
+                      fact: "Koalas sleep up to 20 hours a day and eat eucalyptus leaves.", featured: [.rainbow, .fortress]),
+        GameCharacter(id: "fizz", name: "Fizz Frog", family: .wild, emoji: "🐸", colorHex: 0x5FC86A, accessory: .none,
+                      fact: "Frogs start life as tadpoles that swim with tails!", featured: [.rainbow]),
+        GameCharacter(id: "ocho", name: "Ocho Octopus", family: .wild, emoji: "🐙", colorHex: 0xC77DDB, accessory: .none,
+                      fact: "An octopus has three hearts and eight arms.", featured: [.sparkle, .fortress]),
+        GameCharacter(id: "flora", name: "Flora Flamingo", family: .wild, emoji: "🦩", colorHex: 0xFF96C2, accessory: .none,
+                      fact: "Flamingos are pink because of the tiny shrimp they eat.", featured: [.sparkle]),
+        GameCharacter(id: "polly", name: "Polly Panda", family: .wild, emoji: "🐼", colorHex: 0xF1F1F4, accessory: .none,
+                      fact: "Pandas spend about 12 hours a day eating bamboo.", featured: [.fortress, .rainbow]),
+        GameCharacter(id: "buzzy", name: "Buzzy Bee", family: .wild, emoji: "🐝", colorHex: 0xFFD24D, accessory: .none,
+                      fact: "Bees do a waggle dance to tell friends where the flowers are.", featured: [.sparkle, .rainbow]),
     ]
 
     static func character(id: String) -> GameCharacter {

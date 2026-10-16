@@ -28,6 +28,7 @@ enum Route: Equatable {
     case castle
     case codeClub
     case village
+    case codingLab
     case balloon(next: Int?)
 }
 
@@ -113,6 +114,7 @@ struct RootView: View {
                          onKart: { route = .kartSelect },
                          onTeam: { route = .teamSetup },
                          onCastle: { openCastle() },
+                         onCodingLab: { route = .codingLab },
                          onMap: { hub = .map; route = .map(landing: nil) })
                 .onAppear { hub = .menu }
 
@@ -140,6 +142,7 @@ struct RootView: View {
                                case .fortSelect: route = .fortSelect
                                case .kartSelect: route = .kartSelect
                                case .together: route = .teamSetup
+                               case .codingLab: route = .codingLab
                                case .chapter(let id): play(Chapters.chapter(id))
                                }
                            },
@@ -179,6 +182,9 @@ struct RootView: View {
         case .codeClub:
             CodeClubView(onBack: goHome,
                          onEarn: { stars in store.addStars(stars) })
+
+        case .codingLab:
+            CodingLabView(onBack: goHome)
 
         case .castle:
             MyCastleView(onBack: goHome)

@@ -241,6 +241,8 @@ struct LearningReportSection: View {
             LabeledContent("Question level", value: store.tierNote)
             LabeledContent("Story levels", value: "\(p?.completedChapters.count ?? 0) of \(Chapters.all.count)")
             LabeledContent("Coding (Code Club)", value: "\(p?.codeBest.count ?? 0) of \(CodeChallenge.all.count) puzzles")
+            LabeledContent("Coding Lab lessons", value: "\(p?.codeLab.completed.count ?? 0) of \(CodeCurriculum.lessons.count)")
+            LabeledContent("Village missions", value: "\(p?.missions.done.count ?? 0) of \(MissionCatalog.all.count)")
             LabeledContent("Engineering (Fort Friends)", value: "\(p?.fortBest.count ?? 0) of \(FortLevel.all.count) forts")
             LabeledContent("Bubble Kart cups", value: "\(p?.kartBest.count ?? 0) of \(Chapters.kartCups.count)")
             LabeledContent("Pillow Bop best", value: "\(p?.bopBest ?? 0) bops")
@@ -258,7 +260,9 @@ struct LearningReportSection: View {
          (Subject.road.rawValue, "car.fill"),
          (Subject.nature.rawValue, "leaf.fill"),
          (Subject.science.rawValue, "atom"),
-         (Subject.words.rawValue, "textformat.abc")]
+         (Subject.words.rawValue, "textformat.abc"),
+         (Subject.coding.rawValue, "chevron.left.forwardslash.chevron.right"),
+         (Subject.kindness.rawValue, "heart.fill")]
     }
 }
 

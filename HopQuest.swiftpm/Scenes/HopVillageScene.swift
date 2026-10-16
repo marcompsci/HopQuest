@@ -26,6 +26,8 @@ final class HopVillageScene: SKScene {
     var onGreet: ((String) -> Void)?
     /// The pop-quiz buddy walked up: ask a follow-up question.
     var onPopQuiz: ((GameCharacter) -> Void)?
+    /// The buddy walked over a mission item (gear, water drop, shape sign, lily pad star).
+    var onPickup: ((String) -> Void)?
 
     /// Live play (other players' buddies and Brain Duels). Optional: the village works the same without it.
     weak var network: VillageNetwork?
@@ -49,6 +51,8 @@ final class HopVillageScene: SKScene {
     private var courierCharacter: GameCharacter
     private var courierAsking = false
     private var peerSprites: [String: (sprite: BuddySprite, tag: SKNode)] = [:]
+    private var pickupNodes: [String: (node: SKSpriteNode, tile: GridPoint)] = [:]
+    private var pendingPickups: [(key: String, item: String, tile: GridPoint)]?
 
     private var accumulator = 0.0
     private var lastTime: TimeInterval = 0
@@ -138,6 +142,50 @@ final class HopVillageScene: SKScene {
         if player.walk(to: b.doorstep) { environment?.tapMarker(at: scenePoint(b.doorstep.center)) }
     }
 
+    /// Shows exactly these mission items in the village (adds new ones, removes collected ones).
+    func setPickups(_ items: [(key: String, item: String, tile: GridPoint)]) {
+        guard built else { pendingPickups = items; return }
+        let keys = Set(items.map(\.key))
+        for (key, entry) in pickupNodes where !keys.contains(key) {
+            entry.node.removeFromParent()
+            pickupNodes[key] = nil
+        }
+        for p in items where pickupNodes[p.key] == nil {
+            let name: String
+            switch p.item {
+            case "gear": name = "item_gear"
+            case "drop": name = "item_drop"
+            case "lily": name = "item_lily"
+            default: name = "item_shape\((Int(p.key.split(separator: ".").last ?? "0") ?? 0) % 3)"
+            }
+            let node = VillageArt.propNode(name)
+            let foot = scenePoint(p.tile.center)
+            node.position = CGPoint(x: foot.x, y: foot.y - t * 0.3)
+            node.zPosition = depth(node.position.y) + 0.3
+            node.run(.repeatForever(.sequence([.moveBy(x: 0, y: 6, duration: 0.6), .moveBy(x: 0, y: -6, duration: 0.6)])))
+            let glow = VillageArt.propNode("firefly")
+            glow.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            glow.setScale(5)
+            glow.alpha = 0.45
+            glow.blendMode = .add
+            glow.position = CGPoint(x: 0, y: node.size.height / 2)
+            glow.zPosition = -0.1
+            node.addChild(glow)
+            world.addChild(node)
+            pickupNodes[p.key] = (node, p.tile)
+        }
+    }
+
+    /// Where a village buddy is right now (for "Go!" buttons).
+    func npcTile(_ id: String) -> GridPoint? { npcs.first { $0.id == id }?.position.tile }
+
+    /// Walk somewhere (from the mission log). Doesn't trigger anything on arrival.
+    func walk(toTile tile: GridPoint) {
+        guard !frozen else { return }
+        pendingActivate = nil
+        if player.walk(to: tile) { environment?.tapMarker(at: scenePoint((map.nearestWalkable(to: tile) ?? tile).center)) }
+    }
+
     /// The pop-quiz question is done: the quiz buddy waves and walks off.
     func finishPopQuiz(happy: Bool) {
         guard courierAsking else { return }
@@ -166,7 +214,7 @@ final class HopVillageScene: SKScene {
                                                quality: quality, eveningLights: setup.save.eveningLights, hour: setup.hour)
         if environment?.isEvening == true { lightLamps() }
 
-        for def in VillageNPCDef.all {
+        for def in VillageNPCDef.everyone {
             let npc = VillageNPCController(def: def, map: map, playerCharacterID: setup.character.id)
             world.addChild(npc.sprite)
             npcs.append(npc)
@@ -174,6 +222,10 @@ final class HopVillageScene: SKScene {
 
         world.addChild(playerSprite)
         playerSprite.onLand = { [weak self] in self?.playerLanded() }
+        if let pending = pendingPickups {
+            pendingPickups = nil
+            DispatchQueue.main.async { [weak self] in self?.setPickups(pending) }
+        }
 
         let cs = BuddySprite(character: courierCharacter)
         cs.isHidden = true
@@ -379,6 +431,19 @@ final class HopVillageScene: SKScene {
         }
 
         network?.publish(position: player.position, facing: player.facing, moving: player.isMoving)
+
+        // walk (or hop) over mission items to pick them up
+        if !frozen && !player.isHopping {
+            for (key, entry) in pickupNodes where player.position.distance(to: entry.tile.center) < 0.65 {
+                let node = entry.node
+                pickupNodes[key] = nil
+                node.removeAllActions()
+                node.run(.sequence([.group([.moveBy(x: 0, y: 40, duration: 0.3), .fadeOut(withDuration: 0.3), .scale(to: 1.6, duration: 0.3)]),
+                                    .removeFromParent()]))
+                SoundFX.shared.play(.coin)
+                onPickup?(key)
+            }
+        }
 
         // What can the child do here?
         let peers = (network?.peers.values).map { Array($0) } ?? []

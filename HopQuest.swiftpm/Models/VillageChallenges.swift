@@ -1,9 +1,9 @@
 import Foundation
 
-/// The nine Hop Village challenges. Finish them all and the castle gate opens.
+/// The ten Hop Village challenges. Finish them all and the castle gate opens.
 /// "Done" is read from the progress each game already saves; nothing is stored twice.
 enum VillageChallenge: String, CaseIterable, Codable {
-    case meadow, driving, robot, lily, rally, castleHill, fort, bop, kart
+    case meadow, driving, robot, lily, rally, castleHill, fort, bop, kart, coding
 
     var building: BuildingKind {
         switch self {
@@ -16,6 +16,7 @@ enum VillageChallenge: String, CaseIterable, Codable {
         case .fort: return .fortYard
         case .bop: return .arena
         case .kart: return .stadium
+        case .coding: return .codingLab
         }
     }
 
@@ -32,6 +33,7 @@ enum VillageChallenge: String, CaseIterable, Codable {
         case .fort: return "🧱"
         case .bop: return "🪶"
         case .kart: return "🏎️"
+        case .coding: return "💻"
         }
     }
 
@@ -44,6 +46,7 @@ enum VillageChallenge: String, CaseIterable, Codable {
         case .fort: return "Reach the fort in any level"
         case .bop: return "Play a whole Pillow Bop match"
         case .kart: return "Finish any Bubble Kart cup"
+        case .coding: return "Finish a Coding Lab lesson"
         }
     }
 
@@ -55,6 +58,7 @@ enum VillageChallenge: String, CaseIterable, Codable {
         case .fort: return p.fortDone
         case .bop: return p.bopDone
         case .kart: return p.kartDone
+        case .coding: return p.codingDone
         default: return chapter.map { p.completedChapters.contains($0) } ?? false
         }
     }
@@ -66,6 +70,7 @@ struct ChallengeProgress: Equatable {
     var fortDone = false
     var bopDone = false
     var kartDone = false
+    var codingDone = false
 
     var done: [VillageChallenge] { VillageChallenge.allCases.filter { $0.isDone(self) } }
     var doneCount: Int { done.count }

@@ -7,6 +7,8 @@ enum Subject: String {
     case nature = "Nature"
     case science = "Science"
     case words = "Words"
+    case coding = "Coding"
+    case kindness = "Kindness"
 }
 
 struct Question: Identifiable {
@@ -63,6 +65,8 @@ enum QuestionBank {
         case (.words, 1): pool = littleWords
         case (.words, 3): pool = words + bigWords
         case (.words, _): pool = words
+        case (.coding, _): pool = coding
+        case (.kindness, _): pool = kindness
         }
         return pool.randomElement() ?? math(level: 0.3)
     }
@@ -236,6 +240,26 @@ enum QuestionBank {
           "Jump is something you do, so it's a verb."),
         q(.words, "What is the plural of MOUSE?", ["Mice", "Mouses", "Meese"],
           "One mouse, two mice. Some plurals are irregular!"),
+    ] }
+
+    static var coding: [Question] { [
+        q(.coding, "What does print(\"Hi\") do in Python?", ["Shows Hi on the screen", "Prints on paper", "Deletes Hi"], "print() shows its message."),
+        q(.coding, "Which tag makes a big heading on a web page?", ["<h1>", "<p>", "<li>"], "<h1> is the biggest heading."),
+        q(.coding, "What is a loop for?", ["Repeating code", "Drawing a circle", "Ending a program"], "Loops repeat code so you don't have to write it again."),
+        q(.coding, "What is a variable?", ["A labeled box that stores a value", "A kind of bug", "A web page"], "Variables store values, like score = 0."),
+        q(.coding, "Which language styles colors on a web page?", ["CSS", "HTML", "Python"], "CSS decides how things look."),
+        q(.coding, "A mistake in code is called a…", ["Bug", "Bee", "Button"], "Fixing bugs is called debugging!"),
+        q(.coding, "What does if do?", ["Makes a decision", "Repeats forever", "Draws a picture"], "if checks if something is true, then decides what to do."),
+        q(.coding, "An event like on_tap runs…", ["When something happens", "Only at the very start", "Never"], "Events wait for something to happen, like a tap."),
+    ] }
+
+    static var kindness: [Question] { [
+        q(.kindness, "A friend drops their blocks. What's a kind thing to do?", ["Help pick them up", "Laugh", "Walk away"], "Helping shows you care."),
+        q(.kindness, "Someone looks sad and alone. You could…", ["Ask them to play", "Ignore them", "Point at them"], "Inviting someone in can make their whole day."),
+        q(.kindness, "You lose a game. A good sport says…", ["Good game!", "That's not fair!", "I quit!"], "Good sports are kind, win or lose."),
+        q(.kindness, "If you bump into someone by accident, you say…", ["I'm sorry, are you okay?", "Move!", "Nothing"], "Saying sorry helps fix little accidents."),
+        q(.kindness, "How can you show you're listening?", ["Look at them and wait your turn", "Talk over them", "Play with a toy"], "Good listeners look and wait their turn to talk."),
+        q(.kindness, "Your buddy feels nervous. You could say…", ["You can do it! I'll help.", "That's silly.", "Hurry up."], "Encouraging words help friends feel brave."),
     ] }
 
     static var bigNature: [Question] { [

@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Challenge board
 
-/// The nine challenges, with "Take me there" so kids can walk straight to each building.
+/// The challenges, with "Take me there" so kids can walk straight to each building.
 struct VillageChallengeBoard: View {
     let progress: ChallengeProgress
     let isOpen: (VillageChallenge) -> Bool
@@ -295,5 +295,79 @@ struct BrainDuelView: View {
             BigButton(title: "Back to the village", color: Palette.green, action: onClose)
         }
         .onAppear { Narrator.shared.say(title) }
+    }
+}
+
+// MARK: - Missions
+
+struct MissionLogView: View {
+    let save: MissionSave
+    let giverName: (String) -> String
+    var onGo: (MissionDef) -> Void
+    var onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Missions 📜").font(.kid(24, .black)).foregroundStyle(Palette.ink)
+                    Text("\(save.done.count) of \(MissionCatalog.all.count) done").font(.kid(14, .bold)).foregroundStyle(Palette.purple)
+                }
+                Spacer()
+                CircleIconButton(systemName: "xmark", label: "Close", action: onClose)
+            }
+            ScrollView {
+                VStack(spacing: 8) {
+                    ForEach(MissionCatalog.all) { m in row(m) }
+                }
+            }
+            .frame(maxHeight: 460)
+        }
+        .padding(20)
+        .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
+        .padding(.horizontal, 16)
+        .transition(.scale(scale: 0.85).combined(with: .opacity))
+    }
+
+    private func row(_ m: MissionDef) -> some View {
+        let status = save.status(m)
+        let giver = giverName(m.giver)
+        let text: String
+        switch status {
+        case .new: text = "Talk to \(giver) to start"
+        case .active(let step):
+            let progress = save.collectedCount(m).map { " (\($0.have)/\($0.need))" } ?? ""
+            text = m.steps[step].hint + progress
+        case .readyToTurnIn: text = "Done! Go back to \(giver) for \(m.reward) stars"
+        case .done: text = "Finished ⭐"
+        }
+        return HStack(spacing: 12) {
+            Text(m.icon).font(.system(size: 28))
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(status == .done ? Color(hex: 0xFFE9A8) : Color(hex: 0xF1F2F5)))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(m.title).font(.kid(17, .black)).foregroundStyle(Palette.ink)
+                Text(text).font(.kid(13, .bold)).foregroundStyle(status == .done ? Palette.green : .secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            if status == .done {
+                Image(systemName: "checkmark.circle.fill").font(.title2).foregroundStyle(Palette.green)
+            } else {
+                Button {
+                    Haptics.tap()
+                    onGo(m)
+                } label: {
+                    Text("Go!").font(.kid(15, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 14).frame(height: 36)
+                        .background(Capsule().fill(Palette.purple))
+                }
+                .buttonStyle(BouncyButtonStyle())
+                .accessibilityLabel("Walk toward \(m.title)")
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 18).fill(Color(hex: 0xFAFAFC)))
+        .accessibilityElement(children: .combine)
     }
 }

@@ -12,6 +12,7 @@ struct MainMenuView: View {
     var onKart: () -> Void
     var onTeam: () -> Void
     var onCastle: () -> Void
+    var onCodingLab: () -> Void
     var onMap: () -> Void
 
     @State private var showParent = false
@@ -48,6 +49,7 @@ struct MainMenuView: View {
                         gameTile(art: "icon_kart", title: "Bubble Kart", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
                                  badge: 0, label: "Bubble Kart racing", action: onKart)
                     }
+                    codingLabCard
                     castleCard
                     HStack(spacing: 12) {
                         smallButton(icon: "map.fill", title: "Adventure Map", action: onMap)
@@ -243,6 +245,32 @@ struct MainMenuView: View {
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel(label)
+    }
+
+    private var codingLabCard: some View {
+        let done = store.profile?.codeLab.completed.count ?? 0
+        return Button {
+            Haptics.tap()
+            onCodingLab()
+        } label: {
+            HStack(spacing: 14) {
+                Text("💻").font(.system(size: 44))
+                    .frame(width: 70, height: 70)
+                    .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.2)))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Coding Lab").font(.kid(22, .black))
+                    Text("Build web pages, Python programs and games · \(done)/\(CodeCurriculum.lessons.count) lessons")
+                        .font(.kid(14, .bold)).opacity(0.9)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 24).fill(Color(hex: 0x3A2E6E))
+                .shadow(color: Color(hex: 0x1E1B2E), radius: 0, x: 0, y: 5))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("Coding Lab: \(done) of \(CodeCurriculum.lessons.count) lessons done")
     }
 
     private var castleCard: some View {

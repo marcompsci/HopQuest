@@ -1,4 +1,4 @@
-"""Generates HopQuest's 23 original character illustrations as SVG.
+"""Generates HopQuest's 29 original character illustrations as SVG.
 
 Style: chibi "vinyl toy" — big head, small body, stubby limbs, thick ink outline,
 soft highlight blobs, glossy eyes. Every character is original to HopQuest.
@@ -647,11 +647,138 @@ def rocky():
     return s
 
 
+# ---------------------------------------------------------------- new friends (v2.3)
+
+def kip():
+    c, belly, inner, nose = "#9AA7B6", "#E9EEF4", "#FFC6D9", "#3A3446"
+    s = shadow()
+    s += legs(c, shoe=light(c, 0.5))
+    s += body(c, belly)
+    s += arms(c, wave=True)
+    for x in (88, 312):                           # big fluffy ears
+        s += C(x, 120, 62, c) + C(x, 124, 36, inner, False)
+        s += shine(x - 18, 96, 12, 8)
+    s += head(c, rx=108, ry=98)
+    s += E(200, 236, 50, 30, belly, False)
+    s += E(200, 210, 26, 34, nose)                # big koala nose
+    s += shine(192, 196, 7, 10, rot=0, op=0.5)
+    s += eyes(200, 182, 56, 0.9)
+    s += cheeks(200, 226, 84)
+    s += smile(200, 256, 14, 8)
+    return s
+
+
+def fizz():
+    c, belly, spot = "#5FC86A", "#E3F7B5", "#3E9E4C"
+    s = shadow()
+    s += legs(c, shoe=dark(c, 0.1), spread=44)
+    s += body(c, belly)
+    s += arms(c, wave=True)
+    s += head(c, rx=118, ry=88, cy=196)
+    for x in (140, 260):                          # eyes on top of the head
+        s += C(x, 116, 46, c)
+        s += C(x, 116, 33, "#FFFFFF", False)
+        s += E(x, 120, 15, 19, OUT, False) + C(x - 5, 112, 6, "#FFFFFF", False)
+    s += C(118, 210, 9, spot, False) + C(286, 222, 11, spot, False) + C(160, 168, 6, spot, False)
+    s += P("M140 222 Q200 268 260 222", "none", 6)      # wide frog smile
+    s += cheeks(200, 226, 84, "#FF8FA8")
+    s += shine(150, 160, 18, 10)
+    return s
+
+
+def ocho():
+    c, belly = "#C77DDB", "#F3D9FA"
+    s = shadow(110)
+    # chunky curly tentacles: ink stroke first, then color on top, then suction cups
+    curls = ["M128 300 Q96 352 112 392 Q124 412 142 398",
+             "M168 316 Q156 368 170 402 Q182 418 196 404",
+             "M232 316 Q244 368 230 402 Q218 418 204 404",
+             "M272 300 Q304 352 288 392 Q276 412 258 398"]
+    for d in curls:
+        s += f'<path d="{d}" fill="none" stroke="{OUT}" stroke-width="40" stroke-linecap="round"/>'
+    for d in curls:
+        s += f'<path d="{d}" fill="none" stroke="{c}" stroke-width="28" stroke-linecap="round"/>'
+    for (x, y) in ((108, 360), (118, 384), (166, 370), (176, 394), (234, 370), (224, 394), (292, 360), (282, 384)):
+        s += C(x, y, 5, belly, False)
+    s += P("M200 64 Q322 64 320 210 Q318 330 200 334 Q82 330 80 210 Q78 64 200 64 Z", c)   # head dome
+    s += shine(140, 110, 26, 16)
+    s += eyes(200, 200, 42)
+    for x in (158, 242):                          # coder glasses
+        s += f'<circle cx="{x}" cy="200" r="30" fill="none" stroke="{OUT}" stroke-width="6"/>'
+    s += P("M188 198 L212 198", "none", 6)
+    s += cheeks(200, 244, 76)
+    s += smile(200, 262, 16, 10)
+    return s
+
+
+def flora():
+    c, beak, wing = "#FF96C2", "#2B1B3D", "#FF6FA8"
+    s = shadow(90)
+    for x in (184, 216):                          # skinny legs
+        s += P(f"M{x} 352 L{x} 404", "none", 8)
+        s += E(x + 4, 406, 18, 8, "#FF6FA8")
+    s += E(200, 316, 78, 56, c)                   # round body
+    s += P("M140 300 Q110 330 132 362 Q170 350 176 318 Z", wing)
+    s += P("M262 300 Q296 280 302 248 Q270 248 248 286 Z", wing)
+    s += shine(162, 294, 18, 10)
+    s += P("M220 270 Q236 220 210 196", "none", 30)      # curvy neck (ink)
+    s += P("M220 270 Q236 220 210 196", "none", 0)
+    s += f'<path d="M220 270 Q236 220 210 196" fill="none" stroke="{c}" stroke-width="18" stroke-linecap="round"/>'
+    s += head(c, cx=200, cy=150, rx=84, ry=76)
+    s += P("M236 150 Q300 150 304 178 Q290 196 262 182 Q244 172 236 168 Z", "#FFF2E0")   # beak
+    s += P("M288 160 Q304 166 304 178 Q296 190 282 186 Z", beak, 4)
+    s += eyes(178, 140, 30, 0.85)
+    s += cheeks(178, 176, 52)
+    s += P("M150 80 Q160 52 182 60 Q170 72 172 86", "#FF6FA8", 5)   # little head tuft
+    return s
+
+
+def polly():
+    white, black = "#FFFFFF", "#2E2A36"
+    s = shadow()
+    s += legs(black, shoe=dark(black, 0.1))
+    s += body(white, "#F1F1F4")
+    s += arms(black, wave=True)
+    for x in (112, 288):                          # round black ears
+        s += C(x, 98, 40, black) + shine(x - 10, 86, 10, 6)
+    s += head(white, rx=110, ry=98)
+    for x, r in ((158, -20), (242, 20)):          # eye patches
+        s += E(x, 192, 32, 42, black, False, rot=r)
+    for x in (158, 242):
+        s += C(x, 190, 15, "#FFFFFF", False) + C(x + 2, 192, 9, OUT, False) + C(x - 2, 186, 4, "#FFFFFF", False)
+    s += E(200, 232, 16, 11, black, False)        # nose
+    s += cheeks(200, 236, 86)
+    s += smile(200, 256, 16, 8)
+    s += P("M276 300 L296 248 L306 252 L288 304 Z", "#7CCB55", 4)   # bamboo snack
+    return s
+
+
+def buzzy():
+    c, stripe, wing = "#FFD24D", "#2E2A36", "#CFEFFF"
+    s = shadow()
+    for x, r in ((122, -30), (278, 30)):          # see-through wings
+        s += E(x, 258, 44, 66, "#BDE6FF", rot=r) + shine(x - 6, 236, 12, 20, rot=r, op=0.7)
+    s += hose_legs(352, shoe=stripe)
+    s += E(200, 318, 74, 64, c)                   # striped body
+    for y in (300, 330):
+        s += P(f"M{136 + (y - 300) * 0.2} {y} Q200 {y + 16} {264 - (y - 300) * 0.2} {y}", "none", 12)
+    s += P("M150 268 L232 360", "#8C5A2B", 0)
+    s += f'<path d="M156 270 L238 358" stroke="#8C5A2B" stroke-width="10" stroke-linecap="round"/>'   # mail bag strap
+    s += R(214, 330, 52, 38, 8, "#C98A4B") + R(214, 330, 52, 14, 6, "#A86E36")                        # mail bag
+    s += hose_arms(300, 146, 254)
+    for x, ex in ((168, 140), (232, 260)):        # antennae
+        s += P(f"M{x} 104 Q{x - 4} 66 {ex} 52", "none", 6) + C(ex, 50, 12, stripe)
+    s += head(c, rx=100, ry=92, cy=184)
+    s += face(200, 182, 40, mouth="open", cheek_dy=30, mouth_dy=40)
+    return s
+
+
 CHARACTERS = {
     "lavender": lavender, "pixelpup": pixelpup, "mochi": mochi, "ollie": ollie, "coral": coral, "sunny": sunny,
     "comet": comet, "midnight": midnight, "starspark": starspark, "acorn": acorn, "novawing": novawing,
     "benny": benny, "stella": stella, "broccoli": broccoli, "carlos": carlos, "gigi": gigi, "avi": avi,
     "leo": leo, "zara": zara, "gemma": gemma, "pip": pip, "ellie": ellie, "rocky": rocky,
+    "kip": kip, "fizz": fizz, "ocho": ocho, "flora": flora, "polly": polly, "buzzy": buzzy,
 }
 
 

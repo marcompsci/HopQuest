@@ -2,7 +2,7 @@ import Foundation
 
 /// What a buddy can teach. Mapped to the Brain Gate subjects in the SwiftUI layer.
 enum NPCLesson: String, Codable {
-    case math, road, nature, science, words
+    case math, road, nature, science, words, coding, kindness
 }
 
 /// A buddy who lives in Hop Village. All dialogue is written here: no AI chat, no network, no free text.
@@ -45,7 +45,7 @@ struct VillageNPCDef: Equatable {
                       thanksLine: "Great job, safe walker! A star for you!",
                       seed: 23),
         VillageNPCDef(id: "acorn", characterID: "acorn", fallbackID: "rocky",
-                      home: GridPoint(11, 22), wanderRadius: 3, activitySpot: GridPoint(12, 18), activity: "stacking blocks",
+                      home: GridPoint(11, 21), wanderRadius: 2, activitySpot: GridPoint(12, 18), activity: "stacking blocks",
                       greeting: "Hi! I'm counting gears for the Robot Lab. Want to help me with a number puzzle?",
                       chatter: ["Robots need batteries, motors, and a brain to follow their code.",
                                 "Engineers try, test, and try again. Mistakes help us learn!"],
@@ -65,7 +65,7 @@ struct VillageNPCDef: Equatable {
         VillageNPCDef(id: "stella", characterID: "stella", fallbackID: "gigi",
                       home: GridPoint(10, 11), wanderRadius: 3, activitySpot: GridPoint(4, 10), activity: "reading",
                       greeting: "Hi there! I look after the Sticker Book Museum. Do you like word games?",
-                      chatter: ["Every buddy you collect gets a spot in the Sticker Book. Can you find all 23?",
+                      chatter: ["Every buddy you collect gets a spot in the Sticker Book. Can you find all 29?",
                                 "Reading a little every day makes your brain extra strong!"],
                       lesson: .words,
                       askLine: "Here's a word puzzle!",
@@ -73,7 +73,49 @@ struct VillageNPCDef: Equatable {
                       seed: 53),
     ]
 
-    static func def(_ id: String) -> VillageNPCDef? { all.first { $0.id == id } }
+    static let newFriends: [VillageNPCDef] = [
+        VillageNPCDef(id: "ocho", characterID: "ocho", fallbackID: "comet",
+                      home: GridPoint(14, 27), wanderRadius: 2, activitySpot: GridPoint(16, 24), activity: "debugging",
+                      greeting: "Hi! I'm Ocho, the Coding Lab teacher. Eight arms, eight keyboards! Want a coding riddle?",
+                      chatter: ["In the Coding Lab you can build a web page, write Python, and make your own game!",
+                                "A bug is a mistake in code. Finding bugs is like being a detective!"],
+                      lesson: .coding, askLine: "Here's a coding riddle!", thanksLine: "You think like a programmer! Here's a star!", seed: 61),
+        VillageNPCDef(id: "kip", characterID: "kip", fallbackID: "ellie",
+                      home: GridPoint(30, 10), wanderRadius: 3, activitySpot: GridPoint(28, 11), activity: "hugging trees",
+                      greeting: "G'day! I'm Kip. I love helping friends feel good. Want a kindness question?",
+                      chatter: ["Koalas sleep up to 20 hours a day. I'm only awake to be kind!",
+                                "When a friend is sad, sometimes just sitting with them helps a lot."],
+                      lesson: .kindness, askLine: "Here's a kindness question!", thanksLine: "That's the kind answer! Here's a star!", seed: 67),
+        VillageNPCDef(id: "fizz", characterID: "fizz", fallbackID: "coral",
+                      home: GridPoint(17, 43), wanderRadius: 3, activitySpot: GridPoint(21, 43), activity: "catching bugs",
+                      greeting: "Ribbit! I'm Fizz. Want a nature riddle from the pond?",
+                      chatter: ["Frogs drink water through their skin! No cups needed.",
+                                "Try hopping across the lily pads with the Hop button!"],
+                      lesson: .nature, askLine: "Ribbit, riddle time!", thanksLine: "Ribbit-rific! Here's a star!", seed: 71),
+        VillageNPCDef(id: "flora", characterID: "flora", fallbackID: "starspark",
+                      home: GridPoint(13, 10), wanderRadius: 3, activitySpot: GridPoint(16, 9), activity: "smelling flowers",
+                      greeting: "Hello, darling! I'm Flora. Do you like science questions?",
+                      chatter: ["Flamingos are pink because of the tiny shrimp they eat!",
+                                "Sunflowers turn to face the sun when they're young."],
+                      lesson: .science, askLine: "Here's a science question!", thanksLine: "Brilliant! Here's a star!", seed: 73),
+        VillageNPCDef(id: "polly", characterID: "polly", fallbackID: "zara",
+                      home: GridPoint(27, 14), wanderRadius: 3, activitySpot: GridPoint(29, 15), activity: "counting bamboo",
+                      greeting: "Hi! I'm Polly. I love numbers and shapes. Want a math puzzle?",
+                      chatter: ["A square has 4 sides that are all the same length.",
+                                "Pandas eat bamboo for about 12 hours a day. That's a lot of counting!"],
+                      lesson: .math, askLine: "Math puzzle time!", thanksLine: "You're a math whiz! Here's a star!", seed: 79),
+        VillageNPCDef(id: "buzzy", characterID: "buzzy", fallbackID: "sunny",
+                      home: GridPoint(17, 11), wanderRadius: 3, activitySpot: GridPoint(20, 10), activity: "buzzing around",
+                      greeting: "Bzz! I'm Buzzy, the village mail carrier. Want a word puzzle?",
+                      chatter: ["Bees dance to tell their friends where the best flowers are!",
+                                "Every letter needs an address so it gets to the right home."],
+                      lesson: .words, askLine: "Bzz, word puzzle!", thanksLine: "Bee-autiful! Here's a star!", seed: 83),
+    ]
+
+    static func def(_ id: String) -> VillageNPCDef? { (all + newFriends).first { $0.id == id } }
+
+    /// Everyone who lives in the village.
+    static var everyone: [VillageNPCDef] { all + newFriends }
 
     /// The buddy who actually appears (never the same buddy the child is playing).
     func characterID(avoiding player: String) -> String {

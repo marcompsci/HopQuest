@@ -766,6 +766,66 @@ def name_flag():
     ImageDraw.Draw(t).polygon([(0, 0), (9, 3), (0, 7)], fill=P['gold'], outline=INK)
     return t
 
+def building_codinglab():
+    """Coding Lab: a bright tech hall with a giant </> screen and a satellite dish."""
+    W, H = 96, 112; im = img(W, H); base = H - 2
+    # roof with satellite dish
+    outline_rect(im, 2, 34, 93, 42, P['st1']); rect(im, 3, 35, 92, 36, P['st0'])
+    ellipse(im, [62, 8, 86, 28], INK); ellipse(im, [63, 9, 85, 27], P['st0']); ellipse(im, [68, 13, 80, 23], P['win'])
+    rect(im, 73, 26, 75, 34, INK); px(im, 74, 10, P['red'])
+    # walls
+    bricks(im, 5, 43, 90, base, P['teal'], P['teal2']); rect(im, 4, 42, 4, base, INK); rect(im, 91, 42, 91, base, INK)
+    # giant screen with </>
+    outline_rect(im, 18, 46, 77, 74, P['st2']); rect(im, 21, 49, 74, 71, hexc('1E1B2E'))
+    code = [(26, 54, 'purp'), (26, 58, 'leaf3'), (30, 62, 'gold'), (26, 66, 'blue')]
+    for (x, y, c) in code: rect(im, x, y, x + 14 + (y % 9), y + 1, P[c])
+    # the </> symbol
+    for i in range(6):
+        px(im, 52 + i, 60 - i // 2, P['white']); px(im, 52 + i, 60 + i // 2, P['white'])
+        px(im, 72 - i, 60 - i // 2, P['white']); px(im, 72 - i, 60 + i // 2, P['white'])
+    for i in range(10): px(im, 64 - i // 3, 55 + i, P['pink'])
+    rect(im, 44, 75, 51, 78, P['st2'])
+    window(im, 9, 82, 9, 9, lit=True); window(im, 78, 82, 9, 9, lit=True)
+    door(im, 48, base, w=16, h=22, c=P['blue2'])
+    rect(im, 0, base + 1, 95, base + 1, INK)
+    return im
+
+def item_gear():
+    t = img(14, 14)
+    for k in range(8):
+        a = k * math.pi / 4
+        x, y = 7 + int(round(math.cos(a) * 6)), 7 + int(round(math.sin(a) * 6))
+        rect(t, x - 1, y - 1, x + 1, y + 1, INK)
+    ellipse(t, [1, 1, 12, 12], INK); ellipse(t, [2, 2, 11, 11], P['gold']); ellipse(t, [5, 5, 8, 8], INK)
+    px(t, 4, 3, P['white'])
+    return t
+
+def item_drop():
+    t = img(12, 16)
+    ImageDraw.Draw(t).polygon([(6, 0), (11, 9), (6, 15), (1, 9)], fill=INK)
+    ImageDraw.Draw(t).polygon([(6, 2), (10, 9), (6, 13), (2, 9)], fill=P['w1'])
+    ellipse(t, [2, 7, 10, 14], P['w1']); px(t, 4, 8, P['white']); px(t, 4, 9, P['white'])
+    return t
+
+def item_shape(kind):
+    t = img(16, 22)
+    outline_rect(t, 7, 12, 9, 21, P['k1'])
+    outline_rect(t, 0, 0, 15, 13, P['c0'])
+    if kind == 0:
+        ellipse(t, [3, 2, 12, 11], INK); ellipse(t, [4, 3, 11, 10], P['red'])
+    elif kind == 1:
+        ImageDraw.Draw(t).polygon([(8, 2), (13, 11), (2, 11)], fill=P['blue'], outline=INK)
+    else:
+        outline_rect(t, 3, 3, 12, 11, P['leaf0'])
+    return t
+
+def item_lily():
+    t = img(16, 16)
+    ellipse(t, [0, 0, 15, 15], hexc('FFF3A0', 150)); ellipse(t, [3, 3, 12, 12], hexc('FFE066', 220))
+    pts = [(8, 2), (10, 6), (14, 7), (11, 10), (12, 14), (8, 12), (4, 14), (5, 10), (2, 7), (6, 6)]
+    ImageDraw.Draw(t).polygon(pts, fill=P['gold'], outline=INK)
+    return t
+
 # ---------------------------------------------------------------- buddies
 
 CELL_W, CELL_H, BASE = 32, 36, 33    # feet rest on y = BASE (from the top) in each cell
@@ -904,7 +964,9 @@ def main():
              ('bench', bench()), ('lamp0', lamp(False)), ('lamp1', lamp(True)), ('car0', car('blue', 'blue2')), ('car1', car('red', 'red2')),
              ('sign', sign()), ('crane', crane()), ('blocks', blocks()), ('rock', rock()), ('mushroom', mushroom()),
              ('shadow', shadow()), ('cloud', cloud_shadow()), ('firefly', firefly()), ('sparkle', sparkle()), ('portal_sleep', portal(0, True)),
-             ('lock_sign', lock_sign()), ('star_sign', star_sign()), ('name_flag', name_flag())]
+             ('lock_sign', lock_sign()), ('star_sign', star_sign()), ('name_flag', name_flag()),
+             ('item_gear', item_gear()), ('item_drop', item_drop()), ('item_lily', item_lily())]
+    props += [(f'item_shape{k}', item_shape(k)) for k in range(3)]
     props += [(f'flowers{v}', flowers(v)) for v in range(4)]
     props += [(f'fountain{f}', fountain(f)) for f in range(3)]
     props += [(f'lily{f}', lily(f)) for f in range(2)]
@@ -920,7 +982,7 @@ def main():
                  'castle_rainbow': building_castle('rainbow'), 'museum': building_museum(), 'arena': building_arena(),
                  'workshop': building_workshop(), 'academy': building_academy(), 'stadium': building_stadium(), 'shed': building_shed(),
                  'garage': building_garage(), 'clubhouse': building_clubhouse(), 'cottage': building_cottage(),
-                 'boathouse': building_boathouse(), 'tower': building_tower()}
+                 'boathouse': building_boathouse(), 'tower': building_tower(), 'codinglab': building_codinglab()}
     for k, im in buildings.items(): save_imageset(assets, f'village_{k}', im)
 
     char_dir = assets

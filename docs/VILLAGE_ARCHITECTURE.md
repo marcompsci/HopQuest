@@ -173,3 +173,25 @@ There is no network, no chat, no free text, no accounts, no ads and no streaks. 
   - message validation
   - remote smoothing
 - Total: 149,703 checks.
+
+## v2.3 additions
+
+### Coding Lab (`Models/CodeLab/`, `Views/CodeLab/`)
+- `CodeCurriculum` holds 15 lessons in three tracks (web, python, games), five each. A lesson has learn cards (read aloud), code lines with blanks (`[[slot]]`), a quick check question and a fun fact.
+- Each track builds one growing `CodeProject`. Choices go in `CodeLabSave.values`, so the project keeps what the child built and can be remixed later.
+- `MiniPython` is a small, safe Python-subset interpreter: print, numbers, strings, comparisons, `for … in range`, `if/elif/else`, `def`/`return`. It has step, output and size limits and kid-friendly errors with line numbers. There is no file, network or `import` access.
+- `GameProgram` runs the Game Maker code with host functions (`set_background`, `add_player`, `add_star`, `jump`, `say`) and the events `on_tap()` and `on_star()`. `CodeGameScene` plays the result.
+- Web pages render in a `WKWebView` with JavaScript off and all navigation blocked.
+- Lessons: learn → build (fill the blanks, ▶ Run) → check → done (+2 stars the first time).
+
+### Missions (`Models/Missions.swift`)
+- Steps: collect items placed in the world, talk to villagers, or finish Coding Lab lessons. `MissionSave` tracks the stage; turn-in pays stars once.
+- Seven missions from six new villagers (Kip, Fizz, Ocho, Flora, Polly, Buzzy) and Iron Acorn. A 📜 button shows the mission log.
+
+### World
+- Coding Lab building `P` (doorstep (11,27)). Lily pads on row 49 for Fizz's mission. The Hop button can cross water when it lands on a walkable tile.
+- Ten challenges now; the tenth is finishing any Coding Lab lesson.
+
+### Tests
+- `Tests/VillageLogic/run.sh`: 322,866 checks (adds mission reachability, lily-pad hops, new NPCs).
+- `Tests/CodeLab/run.sh`: 214 checks (interpreter, curriculum, every project at every lesson, HTML balance, highlighting, saves).

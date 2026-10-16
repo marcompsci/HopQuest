@@ -59,6 +59,9 @@ put(32, 3, 's'); put(39, 3, 's')
 vline(35, 9, 11, '#'); vline(36, 9, 11, '#')
 put(35, 8, '='); put(36, 8, '=')
 
+# --- Coding Lab (W side, south of the Robot Lab)
+rect(8, 23, 13, 26, 'P'); hline(27, 6, 11)
+
 # --- Robot Lab (W)
 rect(3, 16, 9, 20, 'W'); vline(6, 21, 27); vline(6, 14, 15)
 put(11, 17, 'b'); put(11, 19, 'R'); put(3, 23, 'R')
@@ -108,7 +111,7 @@ rect(18, 44, 31, 50, '~'); rect(19, 51, 30, 51, '~')
 rect(11, 45, 15, 48, 'V'); vline(13, 43, 44); vline(13, 49, 49)
 rect(10, 44, 16, 44, '.'); rect(10, 49, 17, 50, '.')
 hline(49, 14, 17)
-for (c, r) in [(18, 49), (20, 48), (22, 49), (24, 48), (26, 49)]: put(c, r, 'o')
+for c in (18, 20, 22, 24, 26, 28): put(c, 49, 'o')   # lily pads one hop apart (the Hop button jumps the gaps)
 vline(28, 43, 47, '#'); put(28, 48, 'o')           # a little jetty out over the pond
 # Castle Hill tower (east)
 rect(33, 44, 39, 49, '.'); rect(34, 45, 38, 48, 'H'); vline(36, 43, 44); vline(36, 49, 49)

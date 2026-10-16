@@ -46,7 +46,13 @@ struct VillagePlayerController {
         }
         waypoints = []
         hopFrom = position
-        hopTo = collision.move(position, by: dir * Self.hopDistance)
+        // A hop can sail over water to land on a lily pad or the far bank; walls and trees still stop it.
+        let target = position + dir * Self.hopDistance
+        if collision.fits(target) && Self.onlyWaterBetween(position, target, map: collision.map) {
+            hopTo = target
+        } else {
+            hopTo = collision.move(position, by: dir * Self.hopDistance)
+        }
         hopProgress = 0
         return true
     }
@@ -92,6 +98,17 @@ struct VillagePlayerController {
     }
 
     mutating func face(_ f: Facing) { facing = f }
+
+    /// True if every tile under a straight hop is open ground or water (nothing tall in the way).
+    static func onlyWaterBetween(_ a: VPoint, _ b: VPoint, map: VillageMap) -> Bool {
+        let d = b - a
+        let n = max(1, Int(ceil(d.length / 0.25)))
+        for i in 0...n {
+            let p = a + d * (Double(i) / Double(n))
+            guard let ch = map.char(p.tile), map.isWalkable(p.tile) || ch == "~" else { return false }
+        }
+        return true
+    }
 
     /// One fixed step. Returns the distance actually moved.
     @discardableResult

@@ -165,6 +165,10 @@ struct PlayerProfile: Codable, Equatable {
     var playedSeconds: Int = 0
     /// Hop Village: where the buddy is standing, who they've met, and village settings.
     var village = VillageSaveState()
+    /// Coding Lab: finished lessons and the code the child built.
+    var codeLab = CodeLabSave()
+    /// Village missions: which step each mission is on, and items already picked up.
+    var missions = MissionSave()
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -172,7 +176,7 @@ struct PlayerProfile: Codable, Equatable {
         case codeBest, brainAnswered, brainFirstTry
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
-        case village
+        case village, codeLab, missions
     }
 }
 
@@ -209,6 +213,8 @@ extension PlayerProfile {
         playedSeconds = try c.decodeIfPresent(Int.self, forKey: .playedSeconds) ?? 0
         // Saves from before Hop Village have no village block; a damaged one never blocks the rest of the save.
         village = (try? c.decodeIfPresent(VillageSaveState.self, forKey: .village)) ?? VillageSaveState()
+        codeLab = (try? c.decodeIfPresent(CodeLabSave.self, forKey: .codeLab)) ?? CodeLabSave()
+        missions = (try? c.decodeIfPresent(MissionSave.self, forKey: .missions)) ?? MissionSave()
     }
 }
 
@@ -383,7 +389,49 @@ final class GameStore: ObservableObject {
         return ChallengeProgress(completedChapters: p.completedChapters,
                                  fortDone: !p.fortBest.isEmpty,
                                  bopDone: p.bopBest > 0,
-                                 kartDone: !p.kartBest.isEmpty)
+                                 kartDone: !p.kartBest.isEmpty,
+                                 codingDone: !p.codeLab.completed.isEmpty)
+    }
+
+    // MARK: Coding Lab
+
+    func setCodeValue(_ key: String, _ value: String) {
+        guard var p = profile, p.codeLab.values[key] != value else { return }
+        p.codeLab.values[key] = value
+        profile = p
+    }
+
+    /// Marks a lesson finished. The first time gives 2 stars. Returns true the first time.
+    @discardableResult
+    func completeCodeLesson(_ id: String) -> Bool {
+        guard var p = profile, !p.codeLab.completed.contains(id) else { return false }
+        p.codeLab.completed.insert(id)
+        p.missions.codeLessonsDone(p.codeLab.completed.count)
+        p.stars += 2
+        p.lifetimeStars += 2
+        profile = p
+        return true
+    }
+
+    // MARK: Missions
+
+    func updateMissions(_ change: (inout MissionSave) -> Void) {
+        guard var p = profile else { return }
+        var m = p.missions
+        change(&m)
+        guard m != p.missions else { return }
+        p.missions = m
+        profile = p
+    }
+
+    /// Turns in a finished mission: one-time stars. Returns the stars given (0 if not ready).
+    @discardableResult
+    func turnInMission(_ def: MissionDef) -> Int {
+        guard var p = profile, p.missions.turnIn(def) else { return 0 }
+        p.stars += def.reward
+        p.lifetimeStars += def.reward
+        profile = p
+        return def.reward
     }
 
     /// My Castle opens once every challenge is done.
