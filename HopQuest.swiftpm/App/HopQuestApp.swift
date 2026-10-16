@@ -34,6 +34,8 @@ enum Route: Equatable {
     case teamKart(Int)
     case teamBop
     case teamCode
+    case teamFortSelect
+    case teamFort(Int)
     case balloon(next: Int?)
 }
 
@@ -209,6 +211,7 @@ struct RootView: View {
                               case .kart: route = .teamKartSelect
                               case .bop: route = .teamBop
                               case .code: route = .teamCode
+                              case .fort: route = .teamFortSelect
                               }
                           })
 
@@ -238,6 +241,22 @@ struct RootView: View {
                 }
             }
             .id("teambop-\(raceNonce)")
+
+        case .teamFortSelect:
+            FortSelectView(onBack: { route = .teamSetup },
+                           onStart: { level in route = .teamFort(level.id) })
+
+        case .teamFort(let id):
+            // building together earns stars, but the balloon record stays the kid's own
+            FortGameView(level: FortLevel.level(id), team: true, onExit: { route = .teamFortSelect }) { stars, _, again in
+                store.addStars(stars)
+                if again {
+                    raceNonce += 1
+                } else {
+                    route = .balloon(next: nil)
+                }
+            }
+            .id("teamfort-\(id)-\(raceNonce)")
 
         case .teamCode:
             CodeClubView(team: true, onBack: { route = .teamSetup },

@@ -38,6 +38,7 @@ struct FortSelectView: View {
                     ForEach(Array(FortLevel.all.enumerated()), id: \.element.id) { i, level in
                         levelCard(level, index: i)
                     }
+                    sandboxCard
 
                     howTo
                 }
@@ -46,6 +47,31 @@ struct FortSelectView: View {
             }
         }
         .onAppear { Narrator.shared.say(intro) }
+    }
+
+    /// Builder's Island: free build, always open.
+    private var sandboxCard: some View {
+        let pieces = store.profile?.fortSandbox.count ?? 0
+        return Button {
+            Haptics.tap()
+            onStart(FortLevel.sandbox)
+        } label: {
+            HStack(spacing: 14) {
+                Text("🏗️").font(.system(size: 40)).frame(width: 52, height: 52)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Builder's Island").font(.kid(22, .black)).foregroundStyle(.white)
+                    Text(pieces == 0 ? "Free build: endless bricks, no rain" : "Your island: \(pieces) pieces")
+                        .font(.kid(14, .bold)).foregroundStyle(.white.opacity(0.9))
+                }
+                Spacer()
+                Image(systemName: "chevron.right.circle.fill").font(.system(size: 30)).foregroundStyle(.white)
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 24).fill(Color(hex: 0xFF9F45))
+                .shadow(color: Color(hex: 0xD9731C), radius: 0, x: 0, y: 5))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("Builder's Island, free build")
     }
 
     private func levelCard(_ level: FortLevel, index: Int) -> some View {
@@ -108,6 +134,8 @@ struct FortSelectView: View {
 /// A Fort Friends level plus the results at the end.
 struct FortGameView: View {
     let level: FortLevel
+    /// Grown-up & Me: the kid walks, the grown-up builds.
+    var team = false
     var onExit: () -> Void
     /// (stars, balloons, playAgain)
     var onFinish: (Int, Int, Bool) -> Void
@@ -118,6 +146,8 @@ struct FortGameView: View {
     @State private var tool: FortTool?
     @State private var left = false
     @State private var right = false
+    /// Builder's Island: the first tap on "Start over" asks to tap again.
+    @State private var confirmClear = false
 
     var body: some View {
         GeometryReader { geo in
@@ -158,7 +188,10 @@ struct FortGameView: View {
             .animation(.spring(response: 0.45, dampingFraction: 0.75), value: hud.finished)
             .onAppear {
                 guard scene == nil, geo.size.width > 0 else { return }
-                scene = FortScene(size: geo.size, level: level, character: store.character, theme: store.theme, hud: hud)
+                let s = FortScene(size: geo.size, level: level, character: store.character, theme: store.theme, hud: hud,
+                                  team: team, saved: level.sandbox ? (store.profile?.fortSandbox ?? []) : [])
+                s.onSandboxChange = { [store] pieces in store.setFortSandbox(pieces) }
+                scene = s
             }
             .onDisappear { Narrator.shared.stop() }
         }
@@ -169,11 +202,40 @@ struct FortGameView: View {
     private var topBar: some View {
         HStack(spacing: 8) {
             CircleIconButton(systemName: "house.fill", label: "Leave the level", action: onExit)
-            pill(art: "icon_bricks", "\(hud.bricks)")
-                .accessibilityLabel("\(hud.bricks) bricks")
-            pill(art: "party_balloon", "\(hud.balloons)/\(hud.totalBalloons)")
-                .accessibilityLabel("\(hud.balloons) of \(hud.totalBalloons) balloons")
+            pill(art: "icon_bricks", hud.endless ? "∞" : "\(hud.bricks)")
+                .accessibilityLabel(hud.endless ? "Endless bricks" : "\(hud.bricks) bricks")
+            if hud.totalBalloons > 0 {
+                pill(art: "party_balloon", "\(hud.balloons)/\(hud.totalBalloons)")
+                    .accessibilityLabel("\(hud.balloons) of \(hud.totalBalloons) balloons")
+            }
+            if team {
+                Text("⭐ walks · 💜 builds")
+                    .font(.kid(13, .black)).foregroundStyle(Palette.ink)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .padding(.horizontal, 10).frame(height: 36)
+                    .background(Capsule().fill(.white.opacity(0.92)))
+            }
             Spacer()
+            if level.sandbox {
+                Button {
+                    Haptics.tap()
+                    if confirmClear {
+                        scene?.clearIsland()
+                        confirmClear = false
+                    } else {
+                        confirmClear = true
+                        Narrator.shared.say("Tap again to clear your island.")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { confirmClear = false }
+                    }
+                } label: {
+                    Text(confirmClear ? "Tap again" : "Start over")
+                        .font(.kid(14, .black)).foregroundStyle(confirmClear ? .white : Palette.ink)
+                        .padding(.horizontal, 12).frame(minHeight: 44)
+                        .background(Capsule().fill(confirmClear ? Palette.red : .white.opacity(0.92)))
+                }
+                .buttonStyle(BouncyButtonStyle())
+                .accessibilityLabel(confirmClear ? "Tap again to clear your island" : "Start over with an empty island")
+            }
             if hud.rainNear {
                 HStack(spacing: 4) {
                     ArtImage("rain_cloud").frame(width: 34, height: 20)
@@ -255,7 +317,7 @@ struct FortGameView: View {
                 }
                 .frame(width: 34, height: 34)
                 Text(t.title).font(.kid(12, .black)).lineLimit(1).minimumScaleFactor(0.7)
-                if t.cost > 0 {
+                if t.cost > 0 && !hud.endless {
                     Text("\(t.cost) 🧱").font(.kid(11, .bold)).opacity(0.75)
                 }
             }
@@ -269,7 +331,7 @@ struct FortGameView: View {
             )
             .overlay(RoundedRectangle(cornerRadius: 18).stroke(selected ? Color(hex: 0xFFB020) : .clear, lineWidth: 4))
             .offset(y: selected ? 3 : 0)
-            .opacity(t.cost > hud.bricks && t != .recycle ? 0.6 : 1)
+            .opacity(!hud.endless && t.cost > hud.bricks && t != .recycle ? 0.6 : 1)
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel(t.cost > 0 ? "\(t.title), \(t.cost) bricks" : t.title)

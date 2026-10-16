@@ -15,6 +15,8 @@ struct FortLevel: Identifiable {
     /// How fast the rain cloud drifts after you, in cells per second.
     let rainSpeed: CGFloat
     let rows: [String]
+    /// Free build: endless bricks, no rain and no finish. What the child builds is saved.
+    var sandbox = false
 
     static let all: [FortLevel] = [
         FortLevel(id: 301, title: "Sunny Cliffs", blurb: "Learn ramps and bridges", startBricks: 8, rainSpeed: 0.20, rows: [
@@ -46,10 +48,53 @@ struct FortLevel: Identifiable {
             "S..C..G..####.....###.....###.",
             "################~~###~~~######",
             "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        ]),
+        // Fort Friends 2
+        FortLevel(id: 304, title: "Lily Lagoon", blurb: "Take bridges back to build again", startBricks: 3, rainSpeed: 0.22, rows: [
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "S......B..C...B...G....B.....F..",
+            "######~~#####~~~#####~~~~#######",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        ]),
+        FortLevel(id: 305, title: "Treetop Towers", blurb: "Stack stairs up the tall trees", startBricks: 6, rainSpeed: 0.18, rows: [
+            "..............................",
+            ".....................B........",
+            "..............B......#........",
+            ".......B......#......#........",
+            ".......#......#......#........",
+            "S.C....#..C...#.C....#....G.F.",
+            "##############################",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        ]),
+        FortLevel(id: 306, title: "Moat Castle", blurb: "Cross the moat, climb the wall", startBricks: 8, rainSpeed: 0.24, rows: [
+            "..............................",
+            "..............................",
+            ".........................B.F..",
+            ".........B............########",
+            ".........#............########",
+            "S..C.....#....B..G....########",
+            "############~~~~~#############",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         ])
     ]
 
-    static func level(_ id: Int) -> FortLevel { all.first { $0.id == id } ?? all[0] }
+    /// Builder's Island: a big open island with a pond and a hill, to build anything at all.
+    static let sandbox = FortLevel(id: 399, title: "Builder's Island", blurb: "Build anything you like!", startBricks: 0, rainSpeed: 0, rows: [
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "..........................###...........",
+        "S........................#####..........",
+        "##########~~~~~~~######################~",
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    ], sandbox: true)
+
+    static func level(_ id: Int) -> FortLevel { id == sandbox.id ? sandbox : (all.first { $0.id == id } ?? all[0]) }
 }
 
 enum FortTool: String, CaseIterable, Identifiable {
@@ -103,6 +148,8 @@ final class FortHUD: ObservableObject {
     @Published var rainNear = false
     @Published var finished = false
     @Published var brainRight = 0
+    /// Free build: bricks never run out.
+    @Published var endless = false
 }
 
 // MARK: - Scene
@@ -139,6 +186,13 @@ final class FortScene: SKScene {
 
     let hud: FortHUD
     let level: FortLevel
+    /// Grown-up & Me: the grown-up builds (from farther away) while the kid walks.
+    let team: Bool
+    /// Free build: called with every change, so the island can be saved.
+    var onSandboxChange: (([String]) -> Void)?
+    private let savedBuild: [String]
+    /// How far from the buddy pieces can go (farther when a grown-up is building).
+    private var reach: Int { team ? 6 : 3 }
     private let character: GameCharacter
     private let theme: CastleTheme
 
@@ -178,8 +232,11 @@ final class FortScene: SKScene {
     private let questions: [Question]
     private var questionIndex = 0
 
-    init(size: CGSize, level: FortLevel, character: GameCharacter, theme: CastleTheme, hud: FortHUD) {
+    init(size: CGSize, level: FortLevel, character: GameCharacter, theme: CastleTheme, hud: FortHUD,
+         team: Bool = false, saved: [String] = []) {
         self.level = level
+        self.team = team
+        self.savedBuild = saved
         self.character = character
         self.theme = theme
         self.hud = hud
@@ -227,9 +284,12 @@ final class FortScene: SKScene {
         rainLayer.zPosition = 60
 
         parseLevel()
+        if level.sandbox { restore(savedBuild) }
         buildRain()
+        rainLayer.isHidden = level.sandbox
         buildPlayer()
         hud.bricks = level.startBricks
+        hud.endless = level.sandbox
         hud.totalBalloons = items.values.filter { if case .balloon = $0 { return true } else { return false } }.count
         camX = targetCamX()
         world.position.x = -camX
@@ -394,7 +454,9 @@ final class FortScene: SKScene {
                 guard let self else { return }
                 self.busy = false
                 self.started = true
-                self.say("Tap a piece below, then tap a glowing square to build it!")
+                self.say(self.team ? "Team build! ⭐ walks with the arrows. 💜 picks a piece and taps a glowing square to build it!"
+                         : self.level.sandbox ? "Builder's Island! Bricks never run out here. Build anything you like!"
+                         : "Tap a piece below, then tap a glowing square to build it!")
                 self.refreshGhosts()
             },
             .group([.moveBy(x: 0, y: size.height, duration: 1.6), .fadeOut(withDuration: 1.6)]),
@@ -413,8 +475,8 @@ final class FortScene: SKScene {
             step(moveInput > 0 ? 1 : -1)
         }
 
-        // rain cloud drifts along behind (waits a little at the start)
-        if started && !ended && now > 10 {
+        // rain cloud drifts along behind (waits a little at the start); none on Builder's Island
+        if started && !ended && now > 10 && !level.sandbox {
             rainX += level.rainSpeed * CGFloat(dt)
             if rainX > CGFloat(player.x) + 0.3 && !busy { caughtByRain() }
             let near = CGFloat(player.x) - rainX < 4
@@ -664,7 +726,7 @@ final class FortScene: SKScene {
     /// Cells near you where the selected piece can go (or, for Take back, pieces you can pick up).
     private func canPlace(_ t: FortTool, at c: Cell) -> Bool {
         guard c.x >= 0, c.x < cols, c.y >= 1, c.y < rows else { return false }
-        guard abs(c.x - player.x) <= 3, abs(c.y - player.y) <= 3 else { return false }
+        guard abs(c.x - player.x) <= reach, abs(c.y - player.y) <= reach else { return false }
         let here = tile(c.x, c.y)
         if t == .recycle {
             // don't pull the floor out from under your buddy
@@ -678,8 +740,8 @@ final class FortScene: SKScene {
     private func refreshGhosts() {
         ghostLayer.removeAllChildren()
         guard let tool, started, !ended else { return }
-        for x in (player.x - 3)...(player.x + 3) {
-            for y in max(1, player.y - 3)...min(rows - 1, player.y + 3) {
+        for x in (player.x - reach)...(player.x + reach) {
+            for y in max(1, player.y - reach)...min(rows - 1, player.y + reach) {
                 let c = Cell(x: x, y: y)
                 guard canPlace(tool, at: c) else { continue }
                 let r = SKShapeNode(rectOf: CGSize(width: cellSize * 0.86, height: cellSize * 0.86), cornerRadius: cellSize * 0.18)
@@ -716,7 +778,7 @@ final class FortScene: SKScene {
         }
         guard canPlace(tool, at: c) else {
             Haptics.bump(.oops)
-            if abs(c.x - player.x) > 3 || abs(c.y - player.y) > 3 {
+            if abs(c.x - player.x) > reach || abs(c.y - player.y) > reach {
                 say("That's too far away. Build close to your buddy!")
             } else if tool != .recycle {
                 say("Pieces need something to hold on to: the ground or another piece.")
@@ -731,7 +793,7 @@ final class FortScene: SKScene {
     }
 
     private func place(_ t: FortTool, at c: Cell) {
-        guard hud.bricks >= t.cost else {
+        guard level.sandbox || hud.bricks >= t.cost else {
             if crates > 0 {
                 say("You need \(t.cost) bricks. Find a crate for more!")
                 Haptics.bump(.oops)
@@ -743,7 +805,7 @@ final class FortScene: SKScene {
             }
             return
         }
-        hud.bricks -= t.cost
+        if !level.sandbox { hud.bricks -= t.cost }
         switch t {
         case .ramp: tiles[c.x][c.y] = .ramp(facing)
         case .block: tiles[c.x][c.y] = .block
@@ -764,6 +826,7 @@ final class FortScene: SKScene {
             say(t.lesson)
         }
         refreshGhosts()
+        if level.sandbox { onSandboxChange?(builtPieces()) }
     }
 
     private func remove(at c: Cell) {
@@ -781,14 +844,68 @@ final class FortScene: SKScene {
         }
         drawTile(c)
         if c.y > 0, tiles[c.x][c.y - 1] == .ground { drawTile(Cell(x: c.x, y: c.y - 1)) }
-        hud.bricks += refund
-        popAt(c, "+\(refund)")
+        if level.sandbox {
+            onSandboxChange?(builtPieces())
+        } else {
+            hud.bricks += refund
+            popAt(c, "+\(refund)")
+        }
         SoundFX.shared.play(.coin, volume: 0.6)
         if !usedTools.contains(.recycle) {
             usedTools.insert(.recycle)
             say(FortTool.recycle.lesson)
         }
         refreshGhosts()
+    }
+
+    // MARK: Free build (saving the island)
+
+    /// Every built piece as "x,y,kind": b block, g bridge, r1 / r-1 ramp facing right / left.
+    func builtPieces() -> [String] {
+        var out: [String] = []
+        for x in 0..<cols {
+            for y in 0..<rows {
+                switch tiles[x][y] {
+                case .block: out.append("\(x),\(y),b")
+                case .bridge: out.append("\(x),\(y),g")
+                case .ramp(let d): out.append("\(x),\(y),r\(d > 0 ? 1 : -1)")
+                default: break
+                }
+            }
+        }
+        return out
+    }
+
+    private func restore(_ pieces: [String]) {
+        for p in pieces {
+            let f = p.split(separator: ",").map(String.init)
+            guard f.count == 3, let x = Int(f[0]), let y = Int(f[1]), (0..<cols).contains(x), (1..<rows).contains(y) else { continue }
+            guard tiles[x][y] == .empty || tiles[x][y] == .water else { continue }
+            switch f[2] {
+            case "b": tiles[x][y] = .block
+            case "g": tiles[x][y] = .bridge
+            case "r1": tiles[x][y] = .ramp(1)
+            case "r-1": tiles[x][y] = .ramp(-1)
+            default: continue
+            }
+            drawTile(Cell(x: x, y: y))
+            if tiles[x][y - 1] == .ground { drawTile(Cell(x: x, y: y - 1)) }
+        }
+    }
+
+    /// Free build: take every piece away and start a fresh island.
+    func clearIsland() {
+        guard level.sandbox else { return }
+        for x in 0..<cols {
+            for y in 1..<rows where tiles[x][y].built && !(x == player.x && y == player.y - 1) {
+                tiles[x][y] = y == 1 && level.rows[rows - 1 - y].dropFirst(x).first == "~" ? .water : .empty
+                drawTile(Cell(x: x, y: y))
+                if tiles[x][y - 1] == .ground { drawTile(Cell(x: x, y: y - 1)) }
+            }
+        }
+        refreshGhosts()
+        onSandboxChange?(builtPieces())
+        say("A fresh island! What will you build?")
     }
 
     // MARK: Messages

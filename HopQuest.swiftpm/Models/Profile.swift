@@ -145,6 +145,8 @@ struct PlayerProfile: Codable, Equatable {
     var bopBest: Int = 0
     /// Most balloons found per Fort Friends level.
     var fortBest: [Int: Int] = [:]
+    /// Builder's Island (Fort Friends free build): the pieces the child built, as "x,y,kind".
+    var fortSandbox: [String] = []
     /// Best stars per Code Club puzzle.
     var codeBest: [Int: Int] = [:]
     /// Brain Gate questions answered, and answered on the first try, by subject.
@@ -172,7 +174,7 @@ struct PlayerProfile: Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
-        case stickers, packsOpened, lifetimeStars, bopBest, fortBest
+        case stickers, packsOpened, lifetimeStars, bopBest, fortBest, fortSandbox
         case codeBest, brainAnswered, brainFirstTry
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
@@ -199,6 +201,7 @@ extension PlayerProfile {
         lifetimeStars = try c.decodeIfPresent(Int.self, forKey: .lifetimeStars) ?? stars
         bopBest = try c.decodeIfPresent(Int.self, forKey: .bopBest) ?? 0
         fortBest = try c.decodeIfPresent([Int: Int].self, forKey: .fortBest) ?? [:]
+        fortSandbox = (try? c.decodeIfPresent([String].self, forKey: .fortSandbox)) ?? []
         codeBest = try c.decodeIfPresent([Int: Int].self, forKey: .codeBest) ?? [:]
         brainAnswered = try c.decodeIfPresent([String: Int].self, forKey: .brainAnswered) ?? [:]
         brainFirstTry = try c.decodeIfPresent([String: Int].self, forKey: .brainFirstTry) ?? [:]
@@ -472,6 +475,15 @@ final class GameStore: ObservableObject {
     /// Can this story chapter be played now (open or already done)?
     func isPlayable(_ chapterID: Int) -> Bool {
         state(of: Chapters.chapter(chapterID)) != .locked
+    }
+
+    /// Saves Builder's Island (capped so a save can never grow without limit).
+    func setFortSandbox(_ pieces: [String]) {
+        guard var p = profile else { return }
+        let capped = Array(pieces.prefix(400))
+        guard capped != p.fortSandbox else { return }
+        p.fortSandbox = capped
+        profile = p
     }
 
     func recordFort(level: Int, balloons: Int) {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Two-player modes that aren't story chapters.
-enum TeamMode: Equatable { case kart, bop, code }
+enum TeamMode: Equatable { case kart, bop, code, fort }
 
 /// Grown-up & Me: pick the grown-up's buddy and a team game. Everyone plays on one device.
 struct TeamSetupView: View {
@@ -56,6 +56,10 @@ struct TeamSetupView: View {
                     modeCard(emoji: "🪶🪶", title: "Two-Player Pillow Bop",
                              text: "Bop it out on the floating island against two buddy bots. ⭐ uses the left buttons, 💜 the right. Either of you can pop the Brain Bubble!",
                              color: Color(hex: 0xFF7FC4)) { onMode(.bop) }
+
+                    modeCard(emoji: "🏰🧱", title: "Team Fort",
+                             text: "\(kidName) walks with the arrows while the grown-up builds ramps, blocks and bridges from farther away. Plan the path together!",
+                             color: Color(hex: 0xFF9F45)) { onMode(.fort) }
 
                     modeCard(emoji: "🤖💻", title: "Team Robot Code",
                              text: "Code the robot together like real pair programmers: take turns adding one block each. Talk it over before you press Run!",
