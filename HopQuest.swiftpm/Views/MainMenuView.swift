@@ -14,6 +14,8 @@ struct MainMenuView: View {
     var onCastle: () -> Void
     var onCodingLab: () -> Void
     var onMap: () -> Void
+    /// Opens a story world from data (Snowy Peaks).
+    var onWorld: (String) -> Void = { _ in }
 
     @State private var showParent = false
     @State private var showCharacters = false
@@ -50,6 +52,7 @@ struct MainMenuView: View {
                                  badge: 0, label: "Bubble Kart racing", action: onKart)
                     }
                     codingLabCard
+                    ForEach(Worlds.all) { w in worldCard(w) }
                     castleCard
                     HStack(spacing: 12) {
                         smallButton(icon: "map.fill", title: "Adventure Map", action: onMap)
@@ -271,6 +274,44 @@ struct MainMenuView: View {
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel("Coding Lab: \(done) of \(CodeCurriculum.lessons.count) lessons done")
+    }
+
+    /// A story world from data, like Snowy Peaks. Opens after its unlock chapter.
+    private func worldCard(_ w: WorldDef) -> some View {
+        let open = store.isUnlocked(w)
+        let done = w.chapters.filter { store.profile?.completedChapters.contains($0.id) == true }.count
+        let unlockTitle = Chapters.chapter(w.unlockAfter).title
+        let tint = Color(hex: UInt32(w.color, radix: 16) ?? 0x4D96FF)
+        return Button {
+            if open {
+                Haptics.tap()
+                onWorld(w.id)
+            } else {
+                Haptics.bump(.oops)
+                showNote("\(w.title) opens after you finish \(unlockTitle). 🔒")
+            }
+        } label: {
+            HStack(spacing: 14) {
+                Text(w.icon).font(.system(size: 50))
+                    .frame(width: 90, height: 70)
+                    .saturation(open ? 1 : 0.2)
+                    .overlay(alignment: .bottomTrailing) {
+                        if !open { ArtImage("level_lock").frame(width: 32, height: 32) }
+                    }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(w.title).font(.kid(22, .black))
+                    Text(open ? "\(done) of \(w.chapters.count) levels done" : "Opens after \(unlockTitle)")
+                        .font(.kid(14, .bold)).opacity(0.9)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 24).fill(open ? tint : Color(hex: 0x9AA6B8))
+                .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 5))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel(open ? "\(w.title), \(done) of \(w.chapters.count) levels done" : "\(w.title), locked until you finish \(unlockTitle)")
     }
 
     private var castleCard: some View {

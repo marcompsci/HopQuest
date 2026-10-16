@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "worlds": [
+    {
+      "id": "snowy-peaks",
+      "title": "Snowy Peaks",
+      "icon": "🏔️",
+      "blurb": "Hop through snowy paths, cross a frozen lake on ice floes, and climb to the Peak Castle.",
+      "unlockAfter": 6,
+      "color": "4D96FF",
+      "chapters": [
+        {
+          "id": 7,
+          "title": "Frosty Path",
+          "kind": "hop",
+          "icon": "❄️",
+          "rows": 28,
+          "gateEvery": 7,
+          "difficulty": 0.3,
+          "intro": "Welcome to Snowy Peaks! Snowplows are clearing the roads. Wait for a big gap, then hop!",
+          "style": {
+            "ground": "snow",
+            "floaters": "ice",
+            "decorations": ["❄️", "⛄", "🌲"],
+            "vehicleColors": ["FF9F45", "FFD24D", "4D96FF"],
+            "riverChance": 0.15,
+            "questions": [
+              { "subject": "Science", "prompt": "What is snow made of?", "choices": ["Tiny ice crystals", "Cotton", "Sugar"], "explain": "Snow is frozen water: tiny ice crystals that stick together into snowflakes." },
+              { "subject": "Science", "prompt": "When water gets very cold, it turns into…", "choices": ["Ice", "Steam", "Juice"], "explain": "Water freezes into ice at 0 degrees Celsius, which is 32 degrees Fahrenheit." },
+              { "subject": "Road Safety", "prompt": "On snowy days, cars need…", "choices": ["More space to stop", "Less space to stop", "No lights"], "explain": "Snow and ice are slippery, so cars take longer to stop. Always wait for cars to stop before you cross." },
+              { "subject": "Nature", "prompt": "What helps you stay warm outside in winter?", "choices": ["A hat, gloves and a coat", "Sandals", "An ice pop"], "explain": "Warm clothes trap your body heat. A hat helps a lot!" }
+            ]
+          }
+        },
+        {
+          "id": 8,
+          "title": "Icy Lake",
+          "kind": "hop",
+          "icon": "🧊",
+          "rows": 32,
+          "gateEvery": 8,
+          "difficulty": 0.55,
+          "intro": "The lake is frozen in big pieces. Hop onto the ice floes to cross the water!",
+          "style": {
+            "ground": "snow",
+            "floaters": "ice",
+            "decorations": ["❄️", "🐧", "🌲"],
+            "vehicleColors": ["FF9F45", "FFFFFF", "B983FF"],
+            "riverChance": 0.42,
+            "questions": [
+              { "subject": "Science", "prompt": "When a lake freezes, where does the ice form first?", "choices": ["On the top", "At the bottom", "In the middle"], "explain": "Ice is lighter than water, so it floats. Lakes freeze from the top down, and fish stay safe in the water underneath." },
+              { "subject": "Nature", "prompt": "Where do wild penguins live?", "choices": ["Antarctica and the southern seas", "The North Pole", "The desert"], "explain": "Wild penguins live in the southern half of the world. No penguins live at the North Pole!" },
+              { "subject": "Science", "prompt": "How many points does a snowflake have?", "choices": ["6", "4", "8"], "explain": "Snowflakes almost always have six points, because of the way water freezes." },
+              { "subject": "Road Safety", "prompt": "Why do people put salt or sand on icy sidewalks?", "choices": ["So shoes and tires don't slip", "To make it snow more", "To feed the birds"], "explain": "Salt helps melt the ice and sand adds grip, so people and cars slip less." }
+            ]
+          }
+        },
+        {
+          "id": 9,
+          "title": "Peak Castle",
+          "kind": "hop",
+          "icon": "🏔️",
+          "rows": 40,
+          "gateEvery": 10,
+          "difficulty": 0.8,
+          "intro": "The last climb! Busy roads, icy water and a castle at the very top of the mountain. You can do it!",
+          "style": {
+            "ground": "snow",
+            "floaters": "ice",
+            "decorations": ["❄️", "⛄", "🌲", "⛷️"],
+            "vehicleColors": ["FF9F45", "FF6B6B", "4D96FF", "FFFFFF"],
+            "questions": [
+              { "subject": "Nature", "prompt": "Which animal has thick white fur to stay warm in the snow?", "choices": ["Polar bear", "Camel", "Lizard"], "explain": "Polar bears have thick fur and a layer of fat to keep warm in the Arctic." },
+              { "subject": "Science", "prompt": "Why is it colder at the top of a tall mountain?", "choices": ["The air up high is thinner and holds less heat", "The Sun is farther away", "The wind is made of ice"], "explain": "High up, the air is thinner and can't hold as much heat. That's why mountain tops can have snow even in summer." },
+              { "subject": "Nature", "prompt": "What do bears do in winter?", "choices": ["Many sleep for a long time in a den", "They go to the beach", "They build snowmen"], "explain": "Many bears rest in a den for the winter and live off their fat. It's called hibernation." }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

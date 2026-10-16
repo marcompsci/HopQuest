@@ -46,6 +46,14 @@ enum QuestionBank {
             deck = road + nature + science + words
             for _ in 0..<8 { deck.append(math(level: chapter.difficulty)) }
         }
+        // worlds from data bring their own questions (Snowy Peaks: snow, ice, winter animals)
+        for q in chapter.style?.questions ?? [] where (2...4).contains(q.choices.count) {
+            let shuffled = q.choices.shuffled()
+            let world = Question(subject: Subject(rawValue: q.subject) ?? .science, prompt: q.prompt, choices: shuffled,
+                                 answer: shuffled.firstIndex(of: q.choices[0]) ?? 0, explain: q.explain)
+            deck.append(world)
+            deck.append(world)   // twice, so the world's own questions come up often
+        }
         return deck.shuffled()
     }
 

@@ -138,7 +138,9 @@ struct HopGameView: View {
         s.onProgress = { value in progress = value }
         s.onFinish = { onComplete(stars + 1) }
         scene = s
-        if team {
+        if let intro = Worlds.intro(chapter.id) {
+            showTip(intro)
+        } else if team {
             showTip("Team Hop! Left side moves \(store.profile?.name ?? "the kid"), right side moves the grown-up. Get to the castle together! 🤝")
         } else {
             showTip("Hop to the castle! Answer the Brain Gates on the way. 🏰")

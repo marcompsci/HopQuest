@@ -36,6 +36,8 @@ enum Route: Equatable {
     case teamCode
     case teamFortSelect
     case teamFort(Int)
+    /// A story world from data (Snowy Peaks).
+    case world(String)
     case balloon(next: Int?)
 }
 
@@ -122,7 +124,8 @@ struct RootView: View {
                          onTeam: { route = .teamSetup },
                          onCastle: { openCastle() },
                          onCodingLab: { route = .codingLab },
-                         onMap: { hub = .map; route = .map(landing: nil) })
+                         onMap: { hub = .map; route = .map(landing: nil) },
+                         onWorld: { id in route = .world(id) })
                 .onAppear { hub = .menu }
 
         case .map(let landing):
@@ -258,6 +261,13 @@ struct RootView: View {
             }
             .id("teamfort-\(id)-\(raceNonce)")
 
+        case .world(let id):
+            if let w = Worlds.all.first(where: { $0.id == id }) {
+                WorldView(world: w, onBack: goHome, onPlay: { chapter in route = .playing(chapter.id) })
+            } else {
+                Color.clear.onAppear { goHome() }
+            }
+
         case .teamCode:
             CodeClubView(team: true, onBack: { route = .teamSetup },
                          onEarn: { stars in store.addStars(stars) })
@@ -268,6 +278,7 @@ struct RootView: View {
             let exit: () -> Void = {
                 if team { route = .teamSetup }
                 else if chapter.kind == .kart { route = .kartSelect }
+                else if let w = Worlds.world(containing: chapter.id) { route = .world(w.id) }
                 else { goHome() }
             }
             switch chapter.kind {
@@ -356,7 +367,11 @@ struct RootView: View {
     }
 
     private func finish(_ chapter: Chapter, stars: Int) {
-        if !Chapters.isStory(chapter.id) {
+        if Chapters.isWorldChapter(chapter.id) {
+            // Snowy Peaks and later worlds: saved as finished, then back to the world screen
+            store.complete(chapter: chapter.id, stars: stars)
+            if let w = Worlds.world(containing: chapter.id) { route = .world(w.id) } else { route = .balloon(next: nil) }
+        } else if !Chapters.isStory(chapter.id) {
             // Team play earns stars but doesn't move the story along.
             store.addStars(stars)
             route = .balloon(next: nil)

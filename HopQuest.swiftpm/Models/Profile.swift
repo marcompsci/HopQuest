@@ -533,6 +533,21 @@ final class GameStore: ObservableObject {
         return pick
     }
 
+    // MARK: Worlds from data (Snowy Peaks)
+
+    /// A world opens once the chapter before it is finished (Snowy Peaks: after Castle Hill).
+    func isUnlocked(_ world: WorldDef) -> Bool {
+        profile?.completedChapters.contains(world.unlockAfter) == true
+    }
+
+    /// Chapters inside a world open one after another.
+    func state(of chapter: WorldChapter, in world: WorldDef) -> ChapterState {
+        let done = profile?.completedChapters ?? []
+        if done.contains(chapter.id) { return .done }
+        guard isUnlocked(world), let i = world.chapters.firstIndex(where: { $0.id == chapter.id }) else { return .locked }
+        return i == 0 || done.contains(world.chapters[i - 1].id) ? .open : .locked
+    }
+
     var nextChapterID: Int {
         let done = profile?.completedChapters ?? []
         return Chapters.all.first { !done.contains($0.id) }?.id ?? Chapters.all.last!.id

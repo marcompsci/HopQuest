@@ -107,7 +107,7 @@ final class HopScene: SKScene {
     override func didMove(to view: SKView) {
         view.isMultipleTouchEnabled = true
         guard rows.isEmpty else { return }
-        backgroundColor = UIColor(hex: 0x8FD86E)
+        backgroundColor = UIColor(hex: snowy ? 0xEAF6FF : 0x8FD86E)
         cell = size.width / CGFloat(columns)
         loopLength = size.width + cell * 4
         buildRows()
@@ -149,6 +149,10 @@ final class HopScene: SKScene {
 
     // MARK: Level building
 
+    /// Worlds from data (Snowy Peaks) restyle the classic level.
+    private var style: HopStyle? { chapter.style }
+    private var snowy: Bool { style?.isSnow == true }
+
     private func buildRows() {
         let finish = chapter.rows
         var previous: RowKind = .grass
@@ -165,7 +169,7 @@ final class HopScene: SKScene {
                 kind = .gate
             } else {
                 let roll = Double.random(in: 0...1)
-                let riverChance = 0.1 + Double(chapter.difficulty) * 0.22
+                let riverChance = style?.riverChance ?? (0.1 + Double(chapter.difficulty) * 0.22)
                 if roll < riverChance {
                     kind = .river
                 } else if roll < riverChance + 0.5 {
@@ -220,6 +224,20 @@ final class HopScene: SKScene {
         }
         stripe.anchorPoint = .zero
         stripe.position = CGPoint(x: -cell * 3, y: 0)
+        if snowy {
+            // snow on the ground, icy water
+            switch kind {
+            case .grass, .castle, .gate:
+                stripe.color = .white
+                stripe.colorBlendFactor = kind == .gate ? 0.3 : 0.62
+            case .river:
+                stripe.color = UIColor(hex: 0xD8F1FF)
+                stripe.colorBlendFactor = 0.35
+            case .road:
+                stripe.color = UIColor(hex: 0xDDE6F2)
+                stripe.colorBlendFactor = 0.18
+            }
+        }
         node.addChild(stripe)
 
         let mid = cell / 2
@@ -228,7 +246,7 @@ final class HopScene: SKScene {
             if decorate {
                 for _ in 0..<Int.random(in: 0...2) {
                     let x = (CGFloat(Int.random(in: 0..<columns)) + 0.5) * cell
-                    let f = SpriteFactory.emoji(["🌼", "🌷", "🌸"].randomElement()!, size: cell * 0.3,
+                    let f = SpriteFactory.emoji((style?.decorations.randomElement()) ?? ["🌼", "🌷", "🌸"].randomElement()!, size: cell * 0.3,
                                                 at: CGPoint(x: x + CGFloat.random(in: -8...8), y: mid - cell * 0.18))
                     f.alpha = 0.95
                     node.addChild(f)
@@ -238,6 +256,7 @@ final class HopScene: SKScene {
                     let tree = SKSpriteNode(texture: DriveArt.tree, size: CGSize(width: cell * 1.1, height: cell * 1.1))
                     tree.position = CGPoint(x: CGFloat.random(in: 0...size.width), y: mid)
                     tree.zPosition = 5
+                    if snowy { tree.color = .white; tree.colorBlendFactor = 0.35 }
                     node.addChild(tree)
                 }
             }
@@ -260,7 +279,8 @@ final class HopScene: SKScene {
                 let kind: HopArt.SideKind = roll == 0 ? .bus : (roll == 1 ? .truck : .car)
                 let w = cell * (kind == .car ? CGFloat.random(in: 1.35...1.6) : 2.2)
                 let h = cell * (kind == .car ? 0.74 : 0.82)
-                let color = kind == .bus ? UIColor(hex: 0xFFC21A) : SpriteFactory.carColors.randomElement()!
+                let styled = style?.vehicleColors?.randomElement().flatMap { UInt32($0, radix: 16) }.map { UIColor(hex: $0) }
+                let color = styled ?? (kind == .bus ? UIColor(hex: 0xFFC21A) : SpriteFactory.carColors.randomElement()!)
                 let tex = HopArt.sideVehicle(kind, color: color, size: CGSize(width: w, height: h))
                 let car = SKSpriteNode(texture: tex, size: CGSize(width: w + 8, height: h + 8))
                 car.xScale = dir > 0 ? 1 : -1
@@ -275,9 +295,27 @@ final class HopScene: SKScene {
             let count = 3
             let spacing = loopLength / CGFloat(count)
             let offset = CGFloat.random(in: 0..<spacing)
-            let lilies = chapter.id == 4 && Bool.random()
+            let lilies = (chapter.id == 4 || style?.floaters == "lily") && Bool.random()
+            let ice = style?.floaters == "ice"
             for k in 0..<count {
-                if lilies {
+                if ice {
+                    // a flat ice floe (works just like a log)
+                    let w = cell * CGFloat.random(in: 2.3...3.0) * (1 - chapter.difficulty * 0.2)
+                    let floe = SKShapeNode(rectOf: CGSize(width: w, height: cell * 0.62), cornerRadius: cell * 0.22)
+                    floe.fillColor = UIColor(hex: 0xF4FBFF)
+                    floe.strokeColor = UIColor(hex: 0x9FD2F2)
+                    floe.lineWidth = 3
+                    let shine = SKShapeNode(rectOf: CGSize(width: w * 0.4, height: cell * 0.08), cornerRadius: cell * 0.04)
+                    shine.fillColor = .white
+                    shine.strokeColor = .clear
+                    shine.position = CGPoint(x: -w * 0.15, y: cell * 0.14)
+                    floe.addChild(shine)
+                    floe.position = CGPoint(x: -cell * 2 + offset + CGFloat(k) * spacing, y: mid)
+                    floe.zPosition = 5
+                    floe.run(.repeatForever(.sequence([.moveBy(x: 0, y: 2, duration: 0.8), .moveBy(x: 0, y: -2, duration: 0.8)])))
+                    node.addChild(floe)
+                    row.movers.append(Mover(node: floe, width: w))
+                } else if lilies {
                     // a little raft of 2-3 lily pads
                     let pads = Int.random(in: 2...3)
                     let raft = SKNode()
@@ -572,7 +610,7 @@ final class HopScene: SKScene {
         guard !h.busy else { return }
         h.busy = true
         Haptics.bump(.splash)
-        tip(Self.riverTips.randomElement()!, force: true)
+        tip(style?.floaters == "ice" ? "Splash! Hop onto the ice floes to cross the cold water." : Self.riverTips.randomElement()!, force: true)
 
         let pop = SpriteFactory.popWord("SPLISH!", size: cell * 0.45, color: UIColor(hex: 0xD6F1FF))
         pop.position = CGPoint(x: h.node.position.x, y: h.node.position.y + cell * 0.6)

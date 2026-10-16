@@ -19,6 +19,8 @@ struct Chapter: Identifiable, Equatable {
     /// Position on the world map, 0...1 of the screen.
     let mapX: CGFloat
     let mapY: CGFloat
+    /// How a hop level looks (worlds from data, like Snowy Peaks). nil = the classic meadow look.
+    var style: HopStyle? = nil
 }
 
 enum Chapters {
@@ -44,7 +46,12 @@ enum Chapters {
     ]
 
     static func chapter(_ id: Int) -> Chapter {
-        (all + team + kartCups).first { $0.id == id } ?? all[0]
+        (all + team + kartCups + Worlds.chapters).first { $0.id == id } ?? all[0]
+    }
+
+    /// A chapter from a data world (Snowy Peaks and later).
+    static func isWorldChapter(_ id: Int) -> Bool {
+        Worlds.world(containing: id) != nil
     }
 
     static func isStory(_ id: Int) -> Bool {
