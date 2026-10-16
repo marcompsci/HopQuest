@@ -169,18 +169,6 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
   - a soft contact shadow
 - **Hop button.** It now hops the buddy about 2 tiles forward in an arc, with stretch on takeoff and squash on landing. Walls, trees and water stop the hop early, and the joystick waits until landing. Tested.
 
-### v2.3: Coding Lab, new friends and missions
-- **Coding Lab building.** Ocho the octopus teaches 15 beginner lessons in three tracks. The child builds what they learn, and every lesson adds to one real project they keep:
-  - **Web Designer** (HTML & CSS): headings, paragraphs, colors, pictures and a styled button. The page shows live beside the code.
-  - **Python Coder**: print, variables, math, `for` loops, `if/else` and functions, run in HopQuest's own safe mini Python.
-  - **Game Maker** (Python): a background, a hero, stars, `on_tap()` to jump and `on_star()` to score. The game actually plays.
-- **Lesson flow.** Learn (short cards read aloud, with example code) → Build (tap colored blanks to choose values, then ▶ Run) → Quick check → Done (+2 stars the first time, plus a fun fact). "My creations" opens each project to run and remix.
-- **Safety.** No typing of free text in code, no network, no JavaScript in web previews, and step and output limits in the interpreter.
-- **Six new buddies (29 total), the Wild Pals:** Kip the kangaroo (kindness), Fizz the frog, Ocho the octopus (coding), Flora the bee-gardener, Polly the parrot (shapes) and Buzzy the mail bee.
-- **Seven missions** with a 📜 log: fix the clock tower gears, water Flora's garden, deliver Buzzy's mail, find Polly's shape signs, hop Fizz's lily pads (the Hop button now crosses water), Kip's kindness round, and Ocho's "finish 3 lessons". Each pays stars once.
-- **New Brain Gate subjects:** Coding and Kindness. **Challenges:** 10 (the tenth is a Coding Lab lesson). The Learning Report shows coding lessons and missions.
-- **Tests.** Village logic: 322,866 checks. Coding Lab: 214 checks, including every project at every lesson.
-
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

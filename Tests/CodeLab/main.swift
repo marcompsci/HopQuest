@@ -137,11 +137,11 @@ func project(_ track: CodeTrack, pick: (CodeSlot) -> String) -> CodeProject {
 }
 let heroes: Set<String> = ["lavender", "rocky", "pip", "ollie"]
 
-test("curriculum: 3 tracks x 5 lessons, every blank has choices, ids unique") {
-    check(CodeCurriculum.lessons.count == 15, "15 lessons")
+test("curriculum: 3 tracks x 8 lessons, every blank has choices, ids unique") {
+    check(CodeCurriculum.lessons.count == 24, "24 lessons")
     for t in CodeTrack.allCases {
         let ls = CodeCurriculum.lessons(for: t)
-        check(ls.map(\.number) == [1, 2, 3, 4, 5], "\(t) numbered 1-5")
+        check(ls.map(\.number) == Array(1...8), "\(t) numbered 1-8")
         for l in ls {
             check(!l.cards.isEmpty && !l.funFact.isEmpty && !l.goal.isEmpty, "\(l.id) teaches something")
             check((2...4).contains(l.quiz.choices.count), "\(l.id) quiz")
@@ -167,6 +167,23 @@ test("Python Coder: the finished program runs for every choice") {
     let py = MiniPython(); try py.run(p.source)
     check(py.output.first == "Hello, Hop Village!", "lesson 1 output")
     check(py.output.contains("My buddy is Lavender Lop"), "{buddy} filled in")
+    // lessons 6-8: functions, return, and the Hop-Skip counting game
+    check(py.output.contains("Go, Lavender Lop!") && py.output.contains("Go, Stella!"), "cheer() function called twice: \(py.output)")
+    check(py.output.contains("The answer is 8"), "times(4) returns 8")
+    let hopSkip = Array(py.output.suffix(6))
+    check(hopSkip == ["1", "2 Hop! 🐰", "3", "4 Hop! 🐰", "5", "6 Hop! 🐰"], "loop + if + %: \(hopSkip)")
+}
+
+test("Python Coder: every lesson's program runs on its own track so far") {
+    let all = CodeCurriculum.lessons(for: .python)
+    for n in 1...all.count {
+        var values: [String: String] = [:]
+        for l in all.prefix(n) { for t in l.lines { for s in t.slots { values["\(l.id).\(s.id)"] = s.choices.last! } } }
+        var p = CodeProject(track: .python, lessons: Array(all.prefix(n)), values: values)
+        p.kid = "Ava"; p.buddy = "Pip"
+        let py = MiniPython()
+        do { try py.run(p.source) } catch { check(false, "after python\(n): \(error)\n\(p.source)") }
+    }
 }
 
 test("Game Maker: the finished game sets up, jumps, scores and wins") {
@@ -181,12 +198,40 @@ test("Game Maker: the finished game sets up, jumps, scores and wins") {
         var won = false
         for _ in 0..<30 { try g.starCollected(); if g.drainEffects().contains(where: { if case .say = $0 { return true }; return false }) { won = true; break } }
         check(won, "reaching the goal says the win message (score \(g.score ?? -1))")
+        check(g.setup.bubbles >= 1 && g.hasBumpEvent && g.hasScoreEvent, "bubbles and new events: \(g.setup)")
+        try g.bumped()
+        check(g.drainEffects().contains { if case .say = $0 { return true }; return false }, "on_bump says something")
     }
+}
+
+test("Game Maker: speed and levelling up while playing") {
+    let p = project(.games) { $0.choices[0] }   // meadow, speed 2, level 2 at 3 points: night, speed 5
+    let g = GameProgram(validHeroes: heroes)
+    try g.load(p.source)
+    check(g.setup.speed == 2 && g.setup.background == "meadow", "setup speed and world: \(g.setup)")
+    check(!g.drainEffects().contains { if case .background = $0 { return true }; return false }, "no world change during setup")
+    var levelled = false
+    for _ in 0..<10 {
+        try g.starCollected()
+        let fx = g.drainEffects()
+        if fx.contains(.background("night")) && fx.contains(.speed(5)) { levelled = true; break }
+    }
+    check(levelled, "on_score changes the world and speed (score \(g.score ?? -1))")
+    try g.starCollected()
+    check(!g.drainEffects().contains { if case .background = $0 { return true }; return false }, "no repeat world change once there")
+    check(GameProgram.pointsPerSecond(3) == 150, "speed 3 keeps the classic pace")
+    let bad = GameProgram(validHeroes: heroes)
+    check((try? bad.load("set_speed(0)")) == nil && (try? bad.load("set_speed(11)")) == nil, "speed outside 1-10 refused")
+    let late = GameProgram(validHeroes: heroes)
+    try late.load("def on_tap():\n    add_star()")
+    check((try? late.tap()) == nil, "can't add stars inside an event")
+    let many = GameProgram(validHeroes: heroes)
+    check((try? many.load("for i in range(9):\n    add_bubble()")) == nil, "too many bubbles refused")
 }
 
 test("Game Maker: half-built games still run (lesson by lesson)") {
     let all = CodeCurriculum.lessons(for: .games)
-    for n in 1...5 {
+    for n in 1...all.count {
         var values: [String: String] = [:]
         for l in all.prefix(n) { for t in l.lines { for s in t.slots { values["\(l.id).\(s.id)"] = s.choices[0] } } }
         var p = CodeProject(track: .games, lessons: Array(all.prefix(n)), values: values)
@@ -204,7 +249,7 @@ test("Game Maker: half-built games still run (lesson by lesson)") {
 test("Web Designer: the page is real, balanced HTML with CSS") {
     let p = project(.web) { $0.choices[1] }
     let html = p.source
-    for tag in ["html", "head", "style", "body", "ul", "h1", "p", "div", "button"] {
+    for tag in ["html", "head", "style", "body", "ul", "h1", "h2", "p", "div", "span", "button"] {
         let opens = html.components(separatedBy: "<\(tag)").count - 1
         let closes = html.components(separatedBy: "</\(tag)>").count - 1
         check(opens == closes && opens > 0, "<\(tag)> opened \(opens) and closed \(closes)")
@@ -215,6 +260,11 @@ test("Web Designer: the page is real, balanced HTML with CSS") {
     check(html[styleRange].contains(".card {") && !html[styleRange].contains("<h1>"), "style and body kept apart")
     check(html.contains("<h1>Welcome to my page!</h1>"), "heading")
     check(!html.contains("[[") && !html.contains("{kid}"), "no placeholders left")
+    check(html[styleRange].contains("@keyframes bounce { 50% { transform: translateY(-25px); } }"), "keyframes in the style")
+    check(html[styleRange].contains(".row { display: flex; gap: 12px;"), "flexbox rule")
+    check(html.contains("<div class=\"bounce\">⭐</div>"), "the bouncing part")
+    // braces in CSS stay balanced
+    check(html[styleRange].filter { $0 == "{" }.count == html[styleRange].filter { $0 == "}" }.count, "CSS braces balanced")
 }
 
 test("editor lines: colors, blanks and names") {
@@ -234,6 +284,106 @@ test("editor lines: colors, blanks and names") {
     check(web.contains { $0.segments.contains(.slot(key: "web3.bg", value: "pink", kind: .color)) }, "CSS value slot")
     check(web.first?.lessonID == nil && web.first?.segments.first == .code("<!DOCTYPE", .tag), "scaffolding lines")
     check(web.contains { $0.segments.first == .code("body", .tag) }, "CSS selector colored")
+    let kf = CodeProject(track: .web, lessons: [CodeCurriculum.lesson("web8")!], values: ["web8.up": "25"]).render()
+    check(kf.contains { $0.segments.contains(.code("transform", .property)) }, "property inside @keyframes colored")
+}
+
+// MARK: - Free Build
+
+func done(_ ids: [String]) -> CodeLabSave { var s = CodeLabSave(); s.completed = Set(ids); return s }
+
+test("Free Build: blocks unlock with lessons") {
+    let blocks = Sandbox.blocks(for: .python)
+    check(blocks.count == CodeCurriculum.lessons(for: .python).reduce(0) { $0 + $1.lines.count }, "one block per lesson line")
+    check(Set(blocks.map(\.id)).count == blocks.count, "block ids unique")
+    check(Sandbox.block("python4.1")?.template.text == "print(\"[[cheer]]\")", "find a block by id")
+    check(!Sandbox.isOpen(.python, save: CodeLabSave()), "closed before lesson 1")
+    check(Sandbox.isOpen(.python, save: done(["python1"])), "open after lesson 1")
+    check(Sandbox.unlockedBlocks(for: .python, save: done(["python1", "python4"])).map(\.lessonID) == ["python1", "python4", "python4"], "only finished lessons' blocks")
+}
+
+test("Free Build: adding, moving, indenting and removing lines") {
+    var save = SandboxSave()
+    var lines: [SandboxLine] = []
+    lines = Sandbox.adding(Sandbox.block("python4.0")!, to: lines, after: nil, save: &save)   // for i in range(..):
+    lines = Sandbox.adding(Sandbox.block("python1.0")!, to: lines, after: 0, save: &save)     // print(..) under it
+    check(lines.map(\.indent) == [0, 1], "a line added under a ':' line is pushed in: \(lines.map(\.indent))")
+    check(lines.map(\.id) == ["L1", "L2"] && save.nextID == 3, "ids count up")
+    lines = Sandbox.adding(Sandbox.block("python1.0")!, to: lines, after: 1, save: &save)
+    check(lines[2].indent == 1, "a line added under an indented line keeps its indent")
+    lines = Sandbox.indenting(lines, at: 2, by: -1)
+    check(lines[2].indent == 0, "push left")
+    lines = Sandbox.indenting(lines, at: 2, by: -5)
+    check(lines[2].indent == 0, "can't go past the left edge")
+    lines = Sandbox.indenting(Sandbox.indenting(Sandbox.indenting(Sandbox.indenting(lines, at: 2, by: 1), at: 2, by: 1), at: 2, by: 1), at: 2, by: 1)
+    check(lines[2].indent == Sandbox.maxIndent, "indent capped")
+    lines = Sandbox.moving(lines, from: 2, by: -1)
+    check(lines.map(\.id) == ["L1", "L3", "L2"], "move up")
+    check(Sandbox.moving(lines, from: 0, by: -1) == lines, "top line can't go higher")
+    lines = Sandbox.removing(lines, at: 1)
+    check(lines.map(\.id) == ["L1", "L2"], "remove")
+    var full: [SandboxLine] = []
+    for _ in 0..<50 { full = Sandbox.adding(Sandbox.block("python1.0")!, to: full, after: nil, save: &save) }
+    check(full.count == Sandbox.maxLines, "line limit")
+}
+
+test("Free Build: web lines move within their own section") {
+    var save = SandboxSave()
+    var lines: [SandboxLine] = []
+    for id in ["web3.0", "web1.0", "web3.1", "web2.0"] { lines = Sandbox.adding(Sandbox.block(id)!, to: lines, after: nil, save: &save) }
+    // order: style(L1) body(L2) style(L3) body(L4); moving L3 up skips the body line and swaps with L1
+    let moved = Sandbox.moving(lines, from: 2, by: -1)
+    check(moved.map(\.id) == ["L3", "L2", "L1", "L4"], "style swaps with style: \(moved.map(\.id))")
+    check(Sandbox.adding(Sandbox.block("web1.0")!, to: [], after: nil, save: &save).first?.indent == 0, "web blocks keep their own indent")
+}
+
+test("Free Build: a hand-built program renders and runs") {
+    var save = SandboxSave()
+    var lines: [SandboxLine] = []
+    lines = Sandbox.adding(Sandbox.block("python4.0")!, to: lines, after: nil, save: &save)
+    lines = Sandbox.adding(Sandbox.block("python1.0")!, to: lines, after: 0, save: &save)
+    var p = SandboxProgram(track: .python, lines: lines)
+    p.kid = "Ava"
+    check(p.missingSlots == ["sb.L1.times", "sb.L2.hello"], "blanks listed: \(p.missingSlots)")
+    lines[0].values["times"] = "3"
+    lines[1].values["hello"] = "Hi, I'm {kid}!"
+    p = SandboxProgram(track: .python, lines: lines)
+    p.kid = "Ava"
+    check(p.missingSlots.isEmpty, "all filled")
+    check(p.source == "for i in range(3):\n    print(\"Hi, I'm Ava!\")", "source: \(p.source)")
+    let py = MiniPython(); try py.run(p.source)
+    check(py.output == ["Hi, I'm Ava!", "Hi, I'm Ava!", "Hi, I'm Ava!"], "runs: \(py.output)")
+    // a line pushed in the wrong amount gives a kind Python error with a line number
+    var wrong = lines
+    wrong[1].indent = 0
+    let bad = MiniPython()
+    do { try bad.run(SandboxProgram(track: .python, lines: wrong).source); check(false, "bad indent should fail") }
+    catch let e as PyError { check(e.line >= 1, "error points at a line: \(e)") }
+    let rows = p.rows()
+    check(rows.map(\.lineID) == ["L1", "L2"] && rows[1].line.indent == 1, "rows map to lines")
+    check(Sandbox.parse(key: "sb.L2.hello")! == ("L2", "hello"), "slot keys parse")
+    check(Sandbox.parse(key: "python1.hello") == nil, "lesson keys aren't sandbox keys")
+}
+
+test("Free Build: web project and game project") {
+    var save = SandboxSave()
+    var web: [SandboxLine] = []
+    for id in ["web1.0", "web3.0"] { web = Sandbox.adding(Sandbox.block(id)!, to: web, after: nil, save: &save) }
+    for i in web.indices { for s in SandboxProgram(track: .web, lines: web).slots(for: web[i]) { web[i].values[s.id] = s.choices[0] } }
+    let html = SandboxProgram(track: .web, lines: web).source
+    check(html.hasPrefix("<!DOCTYPE html>") && html.contains("<style>") && html.contains("</html>"), "page scaffolding added")
+    let styleRange = html.range(of: "<style>")!.upperBound..<html.range(of: "</style>")!.lowerBound
+    check(html[styleRange].contains("background") && !html[styleRange].contains("<h1>"), "style line in <style>, page line in <body>")
+
+    var game: [SandboxLine] = []
+    for id in ["games1.0", "games2.0", "games2.1", "games3.0", "games3.1"] { game = Sandbox.adding(Sandbox.block(id)!, to: game, after: nil, save: &save) }
+    game[4].indent = 1
+    for i in game.indices { for s in SandboxProgram(track: .games, lines: game).slots(for: game[i]) { game[i].values[s.id] = s.choices[1] } }
+    var gp = SandboxProgram(track: .games, lines: game)
+    gp.buddyID = "lavender"
+    let g = GameProgram(validHeroes: heroes)
+    try g.load(gp.source)
+    check(g.setup.background == "night" && g.setup.hero == "lavender" && g.hasTapEvent, "hand-built game works: \(g.setup)")
 }
 
 test("progress: lessons unlock in order") {
@@ -245,6 +395,13 @@ test("progress: lessons unlock in order") {
     let back = try JSONDecoder().decode(CodeLabSave.self, from: JSONEncoder().encode(save))
     check(back == save, "save round trip")
     check(try JSONDecoder().decode(CodeLabSave.self, from: Data("{}".utf8)) == CodeLabSave(), "empty save")
+    var withSandbox = save
+    withSandbox.sandbox = SandboxSave()
+    withSandbox.sandbox.lines["python"] = [SandboxLine(id: "L1", blockID: "python1.0", indent: 0, values: ["hello": "Hi"])]
+    withSandbox.sandbox.nextID = 2
+    check(try JSONDecoder().decode(CodeLabSave.self, from: JSONEncoder().encode(withSandbox)) == withSandbox, "Free Build saved")
+    let old = try JSONDecoder().decode(CodeLabSave.self, from: Data("{\"completed\":[\"web1\"],\"values\":{}}".utf8))
+    check(old.completed == ["web1"] && old.sandbox == SandboxSave(), "v2.3 saves load with an empty Free Build")
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

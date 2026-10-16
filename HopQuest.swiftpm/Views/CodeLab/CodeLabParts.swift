@@ -65,6 +65,22 @@ struct CodeEditorView: View {
     }
 
     private func row(_ line: CodeProject.Line) -> some View {
+        CodeLineView(line: line, selectedSlot: selectedSlot, onTapSlot: onTapSlot)
+            .background(
+                RoundedRectangle(cornerRadius: 6).fill(
+                    errorLine == line.number ? CodeTheme.errorLine
+                    : (line.lessonID != nil && line.lessonID == currentLesson ? CodeTheme.currentLine : .clear))
+            )
+    }
+}
+
+/// One line of code: line number, indent, colored code and tappable blanks.
+struct CodeLineView: View {
+    let line: CodeProject.Line
+    let selectedSlot: String?
+    var onTapSlot: (String) -> Void
+
+    var body: some View {
         HStack(spacing: 0) {
             Text("\(line.number)")
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
@@ -79,11 +95,6 @@ struct CodeEditorView: View {
         }
         .frame(minHeight: 30)
         .padding(.horizontal, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6).fill(
-                errorLine == line.number ? CodeTheme.errorLine
-                : (line.lessonID != nil && line.lessonID == currentLesson ? CodeTheme.currentLine : .clear))
-        )
     }
 
     @ViewBuilder

@@ -11,6 +11,13 @@ final class CodeGameScene: SKScene {
 
     private var hero: BuddySprite?
     private var stars: [SKSpriteNode] = []
+    private var bubbles: [SKNode] = []
+    private var ground: SKSpriteNode?
+    private var decorations: [SKShapeNode] = []
+    private var world: String?
+    private var pace: CGFloat = 150
+    /// Bubbles can't bump again for a moment after a bump.
+    private var bumpCooldown = 0.0
     private var groundY: CGFloat = 0
     private var heroY: CGFloat = 0
     private var velocity: CGFloat = 0
@@ -44,23 +51,24 @@ final class CodeGameScene: SKScene {
         guard !built else { return }
         built = true
         let setup = program.setup
-        let c = Self.colors(setup.background)
-        backgroundColor = UIColor(hex: c.sky)
         groundY = size.height * 0.22
+        pace = CGFloat(GameProgram.pointsPerSecond(setup.speed))
 
-        let ground = SKSpriteNode(color: UIColor(hex: c.ground), size: CGSize(width: size.width * 2, height: groundY))
-        ground.anchorPoint = CGPoint(x: 0.5, y: 0)
-        ground.position = CGPoint(x: size.width / 2, y: 0)
-        addChild(ground)
+        let g = SKSpriteNode(color: .clear, size: CGSize(width: size.width * 2, height: groundY))
+        g.anchorPoint = CGPoint(x: 0.5, y: 0)
+        g.position = CGPoint(x: size.width / 2, y: 0)
+        addChild(g)
+        ground = g
 
         // a few world decorations
         for i in 0..<6 {
             let deco = SKShapeNode(circleOfRadius: CGFloat(4 + (i % 3) * 3))
-            deco.fillColor = UIColor(hex: c.accent).withAlphaComponent(setup.background == "night" ? 0.9 : 0.55)
             deco.strokeColor = .clear
             deco.position = CGPoint(x: size.width * CGFloat(i) / 6 + 30, y: size.height * (0.62 + 0.05 * CGFloat(i % 3)))
             addChild(deco)
+            decorations.append(deco)
         }
+        paint(setup.background, animated: false)
 
         if setup.background == nil {
             label("Add set_background() to pick a world", y: size.height * 0.75)
@@ -86,7 +94,48 @@ final class CodeGameScene: SKScene {
             addChild(s)
             stars.append(s)
         }
+        for i in 0..<setup.bubbles {
+            let b = Self.makeBubble()
+            b.position = CGPoint(x: size.width * 1.3 + CGFloat(i) * size.width * 0.55, y: groundY + 26)
+            b.zPosition = 6
+            addChild(b)
+            bubbles.append(b)
+        }
         onScore?(program.score)
+        applyEffects()   // say() in the setup code shows right away
+    }
+
+    /// Colors the sky, ground and decorations for a world.
+    private func paint(_ newWorld: String?, animated: Bool) {
+        world = newWorld
+        let c = Self.colors(newWorld)
+        let sky = UIColor(hex: c.sky)
+        backgroundColor = sky
+        if animated {
+            ground?.run(.colorize(with: UIColor(hex: c.ground), colorBlendFactor: 1, duration: 0.6))
+        } else {
+            ground?.color = UIColor(hex: c.ground)
+        }
+        for d in decorations {
+            d.fillColor = UIColor(hex: c.accent).withAlphaComponent(newWorld == "night" ? 0.9 : 0.55)
+        }
+    }
+
+    /// A soft, shiny soap bubble to jump over.
+    private static func makeBubble() -> SKNode {
+        let root = SKNode()
+        let ball = SKShapeNode(circleOfRadius: 22)
+        ball.fillColor = UIColor(hex: 0xBFE8FF).withAlphaComponent(0.55)
+        ball.strokeColor = UIColor(hex: 0x6FC3F0)
+        ball.lineWidth = 3
+        root.addChild(ball)
+        let shine = SKShapeNode(circleOfRadius: 6)
+        shine.fillColor = UIColor.white.withAlphaComponent(0.85)
+        shine.strokeColor = .clear
+        shine.position = CGPoint(x: -8, y: 8)
+        root.addChild(shine)
+        root.run(.repeatForever(.sequence([.moveBy(x: 0, y: 6, duration: 0.6), .moveBy(x: 0, y: -6, duration: 0.6)])))
+        return root
     }
 
     private func starHeight() -> CGFloat {
@@ -124,7 +173,7 @@ final class CodeGameScene: SKScene {
 
         // stars slide past; catch them by jumping
         for s in stars {
-            s.position.x -= CGFloat(150 * dt)
+            s.position.x -= pace * CGFloat(dt)
             if s.position.x < -30 {
                 s.position = CGPoint(x: size.width + 40 + CGFloat.random(in: 0...120), y: starHeight())
             }
@@ -133,6 +182,41 @@ final class CodeGameScene: SKScene {
                 catchStar(s)
             }
         }
+
+        // bubbles float along the ground; jump over them
+        bumpCooldown = max(0, bumpCooldown - dt)
+        for b in bubbles {
+            b.position.x -= pace * 0.8 * CGFloat(dt)
+            if b.position.x < -40 {
+                b.position.x = size.width + 60 + CGFloat.random(in: 0...size.width * 0.6)
+            }
+            let heroCenter = CGPoint(x: hero.position.x, y: hero.position.y + 30)
+            if bumpCooldown == 0, hypot(b.position.x - heroCenter.x, b.position.y - heroCenter.y) < 42 {
+                bump(b)
+            }
+        }
+    }
+
+    private func bump(_ b: SKNode) {
+        bumpCooldown = 0.8
+        let pop = SKShapeNode(circleOfRadius: 22)
+        pop.strokeColor = UIColor(hex: 0x6FC3F0)
+        pop.lineWidth = 3
+        pop.position = b.position
+        pop.zPosition = 30
+        addChild(pop)
+        pop.run(.sequence([.group([.scale(to: 1.8, duration: 0.25), .fadeOut(withDuration: 0.25)]), .removeFromParent()]))
+        b.position.x = size.width + 80 + CGFloat.random(in: 0...size.width * 0.5)
+        hero?.run(.sequence([.rotate(byAngle: 0.25, duration: 0.08), .rotate(byAngle: -0.5, duration: 0.12), .rotate(toAngle: 0, duration: 0.08)]))
+        SoundFX.shared.play(.pop)
+        guard program.hasBumpEvent else { return }
+        do {
+            try program.bumped()
+        } catch let e as PyError {
+            onError?(e)
+        } catch {}
+        applyEffects()
+        onScore?(program.score)
     }
 
     private func catchStar(_ s: SKSpriteNode) {
@@ -179,6 +263,12 @@ final class CodeGameScene: SKScene {
             case .say(let text):
                 showBubble(text)
                 onMessage?(text)
+            case .background(let w):
+                guard w != world else { continue }
+                paint(w, animated: true)
+                SoundFX.shared.play(.chime)
+            case .speed(let n):
+                pace = CGFloat(GameProgram.pointsPerSecond(n))
             }
         }
     }

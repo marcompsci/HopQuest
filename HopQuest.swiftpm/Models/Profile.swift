@@ -395,6 +395,16 @@ final class GameStore: ObservableObject {
 
     // MARK: Coding Lab
 
+    /// Changes a Free Build project. Saves only when something actually changed.
+    func editSandbox(_ change: (inout SandboxSave) -> Void) {
+        guard var p = profile else { return }
+        var sb = p.codeLab.sandbox
+        change(&sb)
+        guard sb != p.codeLab.sandbox else { return }
+        p.codeLab.sandbox = sb
+        profile = p
+    }
+
     func setCodeValue(_ key: String, _ value: String) {
         guard var p = profile, p.codeLab.values[key] != value else { return }
         p.codeLab.values[key] = value

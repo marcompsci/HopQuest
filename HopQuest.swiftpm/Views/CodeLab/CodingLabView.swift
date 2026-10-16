@@ -8,6 +8,7 @@ struct CodingLabView: View {
 
     @State private var openLesson: CodeLesson?
     @State private var openProject: CodeTrack?
+    @State private var openSandbox: CodeTrack?
     @State private var expanded: CodeTrack?
 
     private static let teacher = Roster.character(id: "ocho")
@@ -42,6 +43,10 @@ struct CodingLabView: View {
             ProjectView(track: track, onClose: { openProject = nil })
                 .environmentObject(store)
         }
+        .fullScreenCover(item: $openSandbox) { track in
+            SandboxView(track: track, onClose: { openSandbox = nil })
+                .environmentObject(store)
+        }
         .onAppear {
             Narrator.shared.say("Welcome to the Coding Lab! Pick a track and let's build something.")
         }
@@ -65,7 +70,7 @@ struct CodingLabView: View {
     private var teacherBubble: some View {
         HStack(alignment: .top, spacing: 10) {
             CharacterBadge(character: Self.teacher, size: 62, animated: true)
-            Text("Hi, I'm Ocho! Here you learn real code: HTML and CSS for websites, and Python for programs and games. Every lesson, you build something new!")
+            Text("Hi, I'm Ocho! Here you learn real code: HTML and CSS for websites, and Python for programs and games. Every lesson, you build something new. Then try Free Build and make anything you like!")
                 .font(.kid(16, .bold)).foregroundStyle(Palette.ink)
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 18).fill(.white))
@@ -119,6 +124,7 @@ struct CodingLabView: View {
                 }
                 .accessibilityLabel("Show all \(track.title) lessons")
             }
+            freeBuildButton(track, tint: tint)
             if expanded == track {
                 VStack(spacing: 6) {
                     ForEach(lessons) { l in lessonRow(l, tint: tint) }
@@ -130,6 +136,43 @@ struct CodingLabView: View {
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(tint)
             .shadow(color: .black.opacity(0.3), radius: 0, x: 0, y: 5))
+    }
+
+    /// Free Build opens after the first lesson of a track.
+    private func freeBuildButton(_ track: CodeTrack, tint: Color) -> some View {
+        let open = Sandbox.isOpen(track, save: save)
+        let count = save.sandbox.lines(for: track).count
+        return Button {
+            guard open else { return }
+            Haptics.tap()
+            openSandbox = track
+        } label: {
+            HStack(spacing: 8) {
+                Text("🧪").font(.system(size: 22))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Free Build").font(.kid(16, .black))
+                    Text(open ? (count == 0 ? "Make your own \(Self.thing(track)) from scratch" : "Your project: \(count) lines")
+                              : "Opens after lesson 1")
+                        .font(.kid(12, .bold)).opacity(0.85)
+                }
+                Spacer()
+                Image(systemName: open ? "chevron.right.circle.fill" : "lock.fill").font(.title3)
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(open ? 0.22 : 0.1)))
+            .opacity(open ? 1 : 0.65)
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .disabled(!open)
+        .accessibilityLabel(open ? "Free Build for \(track.title)" : "Free Build, opens after lesson 1")
+    }
+
+    private static func thing(_ track: CodeTrack) -> String {
+        switch track {
+        case .web: return "web page"
+        case .python: return "program"
+        case .games: return "game"
+        }
     }
 
     private func lessonRow(_ l: CodeLesson, tint: Color) -> some View {

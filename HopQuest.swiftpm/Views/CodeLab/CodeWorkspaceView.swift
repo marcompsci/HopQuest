@@ -11,12 +11,7 @@ struct CodeWorkspaceView: View {
     var onRanOK: () -> Void = {}
 
     @State private var editing: String?
-    @State private var output: [String] = []
-    @State private var error: PyError?
-    @State private var ran = false
-    @State private var webHTML = ""
-    @State private var game: GameProgram?
-    @State private var gameNonce = 0
+    @StateObject private var runner = CodeRunner()
     @State private var toast: String?
 
     private var save: CodeLabSave { store.profile?.codeLab ?? CodeLabSave() }
@@ -41,7 +36,7 @@ struct CodeWorkspaceView: View {
         let p = project
         ZStack(alignment: .bottom) {
             VStack(spacing: 10) {
-                CodeEditorView(lines: p.render(), currentLesson: current?.id, errorLine: error?.line,
+                CodeEditorView(lines: p.render(), currentLesson: current?.id, errorLine: runner.error?.line,
                                selectedSlot: editing) { key in
                     Haptics.tap()
                     editing = key
@@ -68,7 +63,8 @@ struct CodeWorkspaceView: View {
                     .accessibilityLabel("Run your code")
                 }
 
-                outputView
+                CodeOutputView(track: track, runner: runner,
+                               onMessage: { text in showToast(text); Narrator.shared.say(text) })
                     .frame(maxHeight: .infinity)
             }
 
@@ -78,7 +74,7 @@ struct CodeWorkspaceView: View {
                     store.setCodeValue(key, choice)
                     editing = nil
                     // web pages update right away; Python waits for ▶ Run (that's how coders test)
-                    if track == .web && ran { DispatchQueue.main.async { run(project) } }
+                    if track == .web && runner.ran { DispatchQueue.main.async { run(project) } }
                 } onClose: { editing = nil }
                 .padding(.bottom, 8)
             }
@@ -95,51 +91,14 @@ struct CodeWorkspaceView: View {
         }
     }
 
-    @ViewBuilder
-    private var outputView: some View {
-        switch track {
-        case .web:
-            if ran {
-                WebPreviewView(html: webHTML)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Palette.ink.opacity(0.15), lineWidth: 2))
-                    .overlay(alignment: .topTrailing) {
-                        Text("🌐 your page").font(.kid(12, .black)).padding(6)
-                            .background(Capsule().fill(.white.opacity(0.9))).padding(8)
-                    }
-            } else {
-                placeholder("Press ▶ Run to see your web page!")
-            }
-        case .python:
-            ConsoleView(lines: output, error: error, ran: ran)
-        case .games:
-            if let game, error == nil {
-                CodeGameStageView(program: game,
-                                  onMessage: { text in showToast(text); Narrator.shared.say(text) },
-                                  onError: { e in error = e })
-                    .id(gameNonce)
-            } else if let error {
-                ConsoleView(lines: [], error: error, ran: true)
-            } else {
-                placeholder("Press ▶ Run to start your game!")
-            }
-        }
-    }
-
-    private func placeholder(_ text: String) -> some View {
-        RoundedRectangle(cornerRadius: 18)
-            .fill(Color(hex: 0xF3F1FA))
-            .overlay(Text(text).font(.kid(17, .bold)).foregroundStyle(.secondary).multilineTextAlignment(.center).padding())
-    }
-
     private func hint(_ p: CodeProject) -> String {
         if !p.missingSlots.isEmpty { return "Tap the yellow ? blanks to fill in your code." }
-        if !ran { return "All filled in! Press ▶ Run." }
-        if error != nil { return "Oops, a bug! 🐞 Change a blank and run again." }
+        if !runner.ran { return "All filled in! Press ▶ Run." }
+        if runner.error != nil { return "Oops, a bug! 🐞 Change a blank and run again." }
         switch track {
         case .web: return "That's your web page! Tap any part of your code to change it."
         case .python: return "Your program ran! Try changing a blank and run it again."
-        case .games: return game?.hasTapEvent == true ? "Tap the game to jump!" : "Your game is running!"
+        case .games: return runner.game?.hasTapEvent == true ? "Tap the game to jump!" : "Your game is running!"
         }
     }
 
@@ -155,39 +114,8 @@ struct CodeWorkspaceView: View {
             return
         }
         if !quiet { Haptics.tap(.pop) }
-        error = nil
-        switch track {
-        case .web:
-            webHTML = CodeLabAssets.previewHTML(p.source, buddyID: store.character.id, theme: store.theme)
-            ran = true
-            onRanOK()
-        case .python:
-            let py = MiniPython()
-            do {
-                try py.run(p.source)
-                output = py.output
-                ran = true
-                if !quiet, let first = output.first { Narrator.shared.say(output.count > 1 ? first + ". " + output[1] : first) }
-                onRanOK()
-            } catch let e as PyError {
-                output = py.output
-                error = e
-                ran = true
-            } catch {}
-        case .games:
-            let g = GameProgram(validHeroes: Set(Roster.all.map(\.id)))
-            do {
-                try g.load(p.source)
-                game = g
-                gameNonce += 1
-                ran = true
-                onRanOK()
-            } catch let e as PyError {
-                game = nil
-                error = e
-                ran = true
-            } catch {}
-        }
+        let ok = runner.run(track: track, source: p.source, buddyID: store.character.id, theme: store.theme, speak: !quiet)
+        if ok { onRanOK() }
     }
 
     private func showToast(_ text: String) {

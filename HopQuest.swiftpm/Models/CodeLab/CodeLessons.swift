@@ -1,6 +1,6 @@
 import Foundation
 
-// The Coding Lab curriculum. Three tracks, five lessons each. Every lesson adds real lines of code to a project
+// The Coding Lab curriculum. Three tracks, eight lessons each. Every lesson adds real lines of code to a project
 // the child keeps building: a web page (HTML + CSS), a Python program, and a playable Python game.
 // Kids fill in code by tapping choices (no typing needed), then press Run to see what their code does.
 
@@ -108,15 +108,18 @@ struct CodeLabSave: Codable, Equatable {
     var completed: Set<String> = []
     /// Chosen values: "web1.title" → "Hi, I'm {kid}!"
     var values: [String: String] = [:]
+    /// Free Build projects (added in v2.4; older saves start empty).
+    var sandbox = SandboxSave()
 
     init() {}
 
-    enum CodingKeys: String, CodingKey { case completed, values }
+    enum CodingKeys: String, CodingKey { case completed, values, sandbox }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         completed = (try? c.decodeIfPresent(Set<String>.self, forKey: .completed)) ?? []
         values = (try? c.decodeIfPresent([String: String].self, forKey: .values)) ?? [:]
+        sandbox = (try? c.decodeIfPresent(SandboxSave.self, forKey: .sandbox)) ?? SandboxSave()
     }
 
     func isDone(_ lesson: CodeLesson) -> Bool { completed.contains(lesson.id) }
@@ -245,6 +248,72 @@ enum CodeCurriculum {
                    funFact: "Designers try lots of colors and corner sizes before picking one. Tap any part of your code to try more!",
                    quiz: LessonQuiz(prompt: "What does border-radius do?", choices: ["Rounds the corners", "Makes it bigger", "Plays a sound"],
                                     explain: "border-radius rounds a box's corners.")),
+        CodeLesson(id: "web6", track: .web, number: 6, title: "Fonts and text",
+                   goal: "Words in your own style",
+                   cards: [
+                    LearnCard(title: "font-family picks the letters",
+                              text: "font-family changes the style of the letters. cursive looks hand-written, monospace looks like code.",
+                              example: "h1 { font-family: cursive; }"),
+                    LearnCard(title: "Size and lining up",
+                              text: "font-size makes words bigger or smaller. text-align lines words up on the left, in the center or on the right.",
+                              example: "p { font-size: 20px; }"),
+                    LearnCard(title: "Rules can stack",
+                              text: "You already gave h1 a color. A new h1 rule adds more style on top. CSS stands for Cascading Style Sheets: styles cascade, like a waterfall!", example: nil),
+                   ],
+                   lines: [
+                    CodeLineTemplate("h1 { font-family: [[font]]; text-align: [[align]]; }", section: .style,
+                                     [slot("font", .word, "a letter style", ["cursive", "monospace", "serif", "fantasy"]),
+                                      slot("align", .word, "where the title sits", ["center", "left", "right"])]),
+                    CodeLineTemplate("p { font-size: [[size]]px; }", section: .style,
+                                     [slot("size", .number, "how big your words are", ["16", "20", "26"])]),
+                    CodeLineTemplate("<h2>[[sub]]</h2>", section: .body,
+                                     [slot("sub", .text, "a smaller heading", ["My favorite things", "All about me", "Fun facts"])]),
+                   ],
+                   funFact: "There are thousands of fonts. Some designers spend years drawing just one!",
+                   quiz: LessonQuiz(prompt: "Which CSS property makes words bigger?", choices: ["font-size", "text-align", "border"],
+                                    explain: "font-size sets how big the letters are.")),
+        CodeLesson(id: "web7", track: .web, number: 7, title: "Line things up with flexbox",
+                   goal: "A row of colorful chips",
+                   cards: [
+                    LearnCard(title: "display: flex",
+                              text: "display: flex puts the things inside a box in a neat row. gap adds space between them.",
+                              example: ".row { display: flex; gap: 12px; }"),
+                    LearnCard(title: "Boxes inside boxes",
+                              text: "A div can hold other parts. Here a row holds three chips. Almost every app screen is boxes inside boxes!", example: nil),
+                   ],
+                   lines: [
+                    CodeLineTemplate(".row { display: flex; gap: [[gap]]px; justify-content: center; flex-wrap: wrap; }", section: .style,
+                                     [slot("gap", .number, "the space between chips", ["4", "12", "24"])]),
+                    CodeLineTemplate(".chip { background: [[chip]]; color: white; padding: 8px 14px; border-radius: 16px; }", section: .style,
+                                     [slot("chip", .color, "a chip color", ["royalblue", "hotpink", "teal", "darkorange"])]),
+                    CodeLineTemplate("<div class=\"row\"><span class=\"chip\">[[a]]</span><span class=\"chip\">[[b]]</span><span class=\"chip\">[[c]]</span></div>", section: .body,
+                                     [slot("a", .text, "the first chip", ["🐰 Hopping", "⚽ Soccer", "🎨 Drawing"]),
+                                      slot("b", .text, "the second chip", ["💻 Coding", "🛹 Skating", "📚 Reading"]),
+                                      slot("c", .text, "the third chip", ["🍓 Snacks", "🎵 Music", "🏰 Castles"])]),
+                   ],
+                   funFact: "Flexbox lays out the buttons and menus in lots of websites you've seen.",
+                   quiz: LessonQuiz(prompt: "What does display: flex do?", choices: ["Lines things up in a row", "Hides everything", "Plays music"],
+                                    explain: "flex arranges the parts inside a box in a neat row.")),
+        CodeLesson(id: "web8", track: .web, number: 8, title: "Make it move",
+                   goal: "A bouncing animation",
+                   cards: [
+                    LearnCard(title: "Keyframes",
+                              text: "@keyframes describes a move, like a flip-book. At 50% (halfway) the picture is up high, then it comes back down.",
+                              example: "@keyframes bounce { 50% { transform: translateY(-20px); } }"),
+                    LearnCard(title: "animation plays it",
+                              text: "animation: bounce 1s infinite plays the bounce for 1 second, over and over forever.", example: nil),
+                   ],
+                   lines: [
+                    CodeLineTemplate("@keyframes bounce { 50% { transform: translateY(-[[up]]px); } }", section: .style,
+                                     [slot("up", .number, "how high it bounces", ["10", "25", "40"])]),
+                    CodeLineTemplate(".bounce { display: inline-block; font-size: 48px; animation: bounce [[time]]s infinite; }", section: .style,
+                                     [slot("time", .number, "seconds per bounce", ["0.6", "1", "2"])]),
+                    CodeLineTemplate("<div class=\"bounce\">[[emoji]]</div>", section: .body,
+                                     [slot("emoji", .text, "what bounces", ["🐰", "⭐", "🚀", "🏰"])]),
+                   ],
+                   funFact: "Cartoon animators draw keyframes too: the big poses. The computer fills in the moves between them.",
+                   quiz: LessonQuiz(prompt: "What does infinite mean in an animation?", choices: ["It repeats forever", "It plays once", "It goes very fast"],
+                                    explain: "infinite keeps the animation playing over and over.")),
     ]
 
     // MARK: Python Coder
@@ -333,6 +402,63 @@ enum CodeCurriculum {
                    funFact: "Apps make millions of if decisions, like 'if it's dark, turn on dark mode'.",
                    quiz: LessonQuiz(prompt: "When does the else part run?", choices: ["When the if is not true", "Always", "Never"],
                                     explain: "else is the other path, when the if question is answered no.")),
+        CodeLesson(id: "python6", track: .python, number: 6, title: "Make your own function",
+                   goal: "A cheer you can use again and again",
+                   cards: [
+                    LearnCard(title: "def makes a new command",
+                              text: "def gives a name to some code. Then you can run all of it again just by saying its name. That's a function!",
+                              example: "def cheer(name):\n    print(\"Go, \" + name + \"!\")"),
+                    LearnCard(title: "Parameters are blanks",
+                              text: "name is a parameter: a blank the function fills in each time you call it. cheer(\"Pip\") cheers for Pip.",
+                              example: "cheer(\"Pip\")"),
+                   ],
+                   lines: [
+                    CodeLineTemplate("def cheer(name):"),
+                    CodeLineTemplate("print(\"[[cheer]] \" + name + \"!\")", indent: 1,
+                                     [slot("cheer", .text, "how the cheer starts", ["Go,", "Hooray for", "High five,"])]),
+                    CodeLineTemplate("cheer(\"[[a]]\")", [slot("a", .text, "who to cheer for first", ["{buddy}", "Ollie", "Pip", "{kid}"])]),
+                    CodeLineTemplate("cheer(\"[[b]]\")", [slot("b", .text, "who to cheer for next", ["Stella", "Rocky", "Ocho", "{kid}"])]),
+                   ],
+                   funFact: "print() is a function too! Someone wrote it so everybody can use it.",
+                   quiz: LessonQuiz(prompt: "In def cheer(name):, what is name?", choices: ["A parameter the function fills in", "A loop", "A color"],
+                                    explain: "name is a parameter: each call gives it a value, like cheer(\"Pip\").")),
+        CodeLesson(id: "python7", track: .python, number: 7, title: "Functions give answers",
+                   goal: "A function that does math for you",
+                   cards: [
+                    LearnCard(title: "return hands back an answer",
+                              text: "return sends a value back to whoever called the function. It's like asking a friend a question and getting an answer.",
+                              example: "def double(n):\n    return n * 2"),
+                    LearnCard(title: "Keep the answer",
+                              text: "answer = double(4) stores what the function gives back. Now answer holds 8.", example: nil),
+                   ],
+                   lines: [
+                    CodeLineTemplate("def times(n):"),
+                    CodeLineTemplate("return n * [[k]]", indent: 1, [slot("k", .number, "what to multiply by", ["2", "3", "10"])]),
+                    CodeLineTemplate("answer = times([[x]])", [slot("x", .number, "a number to give it", ["4", "5", "7"])]),
+                    CodeLineTemplate("print(\"The answer is\", answer)"),
+                   ],
+                   funFact: "A calculator app is full of little functions that each give back one answer.",
+                   quiz: LessonQuiz(prompt: "What does return do?", choices: ["Gives an answer back", "Starts the program over", "Deletes the function"],
+                                    explain: "return hands a value back to the code that called the function.")),
+        CodeLesson(id: "python8", track: .python, number: 8, title: "The Hop-Skip game",
+                   goal: "A counting game that uses everything",
+                   cards: [
+                    LearnCard(title: "% finds the leftover",
+                              text: "% gives the remainder after dividing. 7 % 2 is 1, because 7 split into 2s leaves 1 over. 6 % 2 is 0.",
+                              example: "print(7 % 2)"),
+                    LearnCard(title: "Loop + if together",
+                              text: "This loop counts. Each time, if asks: does this number divide evenly? If yes, print a cheer. If no, just print the number.", example: nil),
+                   ],
+                   lines: [
+                    CodeLineTemplate("for i in range(1, [[stop]]):", [slot("stop", .number, "where counting stops", ["7", "11", "16"])]),
+                    CodeLineTemplate("if i % [[every]] == 0:", indent: 1, [slot("every", .number, "cheer every how many", ["2", "3", "5"])]),
+                    CodeLineTemplate("print(i, \"[[yes]]\")", indent: 2, [slot("yes", .text, "the cheer", ["Hop! 🐰", "Skip! ⭐", "Splash! 🌊"])]),
+                    CodeLineTemplate("else:", indent: 1),
+                    CodeLineTemplate("print(i)", indent: 2),
+                   ],
+                   funFact: "Coders practice with a counting game just like this one, called FizzBuzz.",
+                   quiz: LessonQuiz(prompt: "What is 7 % 2?", choices: ["1", "3", "14"],
+                                    explain: "7 split into 2s is 3 twos with 1 left over, so 7 % 2 is 1.")),
     ]
 
     // MARK: Game Maker (Python)
@@ -418,6 +544,58 @@ enum CodeCurriculum {
                    funFact: "You just used variables, functions, events, loops and if: the same tools real game makers use!",
                    quiz: LessonQuiz(prompt: "Why do we write global score inside on_star?", choices: ["To change the game's score", "To make stars", "To jump higher"],
                                     explain: "global lets the function change the score variable everyone uses.")),
+        CodeLesson(id: "games6", track: .games, number: 6, title: "Speed it up",
+                   goal: "A game with the speed you choose",
+                   cards: [
+                    LearnCard(title: "Tuning",
+                              text: "Game designers change numbers until a game feels just right. Too slow is boring, too fast is frustrating. That's called tuning.", example: nil),
+                    LearnCard(title: "A variable for speed",
+                              text: "Keep the speed in a variable so it's easy to find and change. set_speed() takes a number from 1 (slow) to 10 (zoom!).",
+                              example: "speed = 5\nset_speed(speed)"),
+                   ],
+                   lines: [
+                    CodeLineTemplate("speed = [[speed]]", [slot("speed", .number, "how fast stars fly", ["2", "4", "6", "9"])]),
+                    CodeLineTemplate("set_speed(speed)"),
+                   ],
+                   funFact: "Some game makers test the same jump hundreds of times to make it feel perfect.",
+                   quiz: LessonQuiz(prompt: "Why keep the speed in a variable?", choices: ["It's easy to find and change", "It makes stars", "It's required for jumping"],
+                                    explain: "A variable gives the number a name, so you can change it in one place.")),
+        CodeLesson(id: "games7", track: .games, number: 7, title: "Bubbles to dodge",
+                   goal: "Bubbles to jump over",
+                   cards: [
+                    LearnCard(title: "A challenge makes it fun",
+                              text: "Games need something to dodge. Bubbles float at you; jump over them! add_bubble() adds one.", example: nil),
+                    LearnCard(title: "Another event",
+                              text: "on_bump runs whenever your hero bumps a bubble. You decide what happens!",
+                              example: "def on_bump():\n    say(\"Oops!\")"),
+                   ],
+                   lines: [
+                    CodeLineTemplate("for i in range([[count]]):", [slot("count", .number, "how many bubbles", ["1", "2", "3"])]),
+                    CodeLineTemplate("add_bubble()", indent: 1),
+                    CodeLineTemplate("def on_bump():"),
+                    CodeLineTemplate("say(\"[[oops]]\")", indent: 1, [slot("oops", .text, "what your hero says", ["Boing! 🫧", "Oops, a bubble!", "Pop! Try again!"])]),
+                   ],
+                   funFact: "Bubbles in games are drawn as circles, then shine is added with a lighter circle on top.",
+                   quiz: LessonQuiz(prompt: "When does on_bump() run?", choices: ["When the hero bumps a bubble", "When you tap", "At the very start"],
+                                    explain: "on_bump is an event: the game runs it each time a bubble bumps your hero.")),
+        CodeLesson(id: "games8", track: .games, number: 8, title: "Level up!",
+                   goal: "A game that gets harder as you win",
+                   cards: [
+                    LearnCard(title: "Levels",
+                              text: "Many games change when you score enough: a new world and a faster pace. That's a new level!", example: nil),
+                    LearnCard(title: "on_score",
+                              text: "on_score runs every time your score changes. Inside it, if checks whether it's time to level up.",
+                              example: "def on_score():\n    if score >= 10:\n        set_speed(8)"),
+                   ],
+                   lines: [
+                    CodeLineTemplate("def on_score():"),
+                    CodeLineTemplate("if score >= [[lvl]]:", indent: 1, [slot("lvl", .number, "points for level 2", ["3", "6", "10"])]),
+                    CodeLineTemplate("set_background(\"[[world2]]\")", indent: 2, [slot("world2", .text, "the level 2 world", ["night", "ocean", "candy", "meadow"])]),
+                    CodeLineTemplate("set_speed([[fast]])", indent: 2, [slot("fast", .number, "the level 2 speed", ["5", "7", "10"])]),
+                   ],
+                   funFact: "Big games plan their levels on paper first, so each one is a bit harder than the last.",
+                   quiz: LessonQuiz(prompt: "What does on_score() let your game do?", choices: ["Change when the score changes", "Make the hero jump", "Pick the hero"],
+                                    explain: "on_score runs whenever the score changes, so it can level up the game.")),
     ]
 
     /// Fills {kid}, {buddy} and {buddyID} in a choice.
@@ -534,7 +712,7 @@ struct CodeProject {
     // MARK: Syntax colors
 
     private static let pyKeywords: Set<String> = ["for", "in", "if", "elif", "else", "def", "global", "return", "and", "or", "not", "True", "False", "None"]
-    private static let pyBuiltins: Set<String> = ["print", "range", "str", "int", "len", "set_background", "add_player", "jump", "add_star", "say"]
+    private static let pyBuiltins: Set<String> = ["print", "range", "str", "int", "len", "set_background", "add_player", "jump", "add_star", "say", "set_speed", "add_bubble"]
 
     func highlight(_ s: String) -> [Segment] {
         guard !s.isEmpty else { return [] }
@@ -610,8 +788,12 @@ struct CodeProject {
             if inRule {
                 if c == " " { push(" ", .plain); i += 1; continue }
                 var j = i
-                while j < chars.count, !":;}".contains(chars[j]) { j += 1 }
-                if j < chars.count, chars[j] == ":" {
+                while j < chars.count, !":;{}".contains(chars[j]) { j += 1 }
+                if j < chars.count, chars[j] == "{" {
+                    // a nested block, like 50% { ... } inside @keyframes
+                    push(String(chars[i..<j]), .number)
+                    i = j
+                } else if j < chars.count, chars[j] == ":" {
                     push(String(chars[i..<j]), .property)
                     push(":", .punctuation)
                     i = j + 1
