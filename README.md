@@ -120,4 +120,6 @@ All characters are **original designs**. They're inspired by the *feel* of class
 
 ---
 
+[Privacy Policy](PRIVACY.md) · [Support](SUPPORT.md)
+
 © Phoronomics. All rights reserved.
