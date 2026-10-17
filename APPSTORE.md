@@ -27,7 +27,7 @@ New in 2.0: Hop Village, Coding Lab, Reading Nook, Math Market, two new worlds, 
 HopQuest is a cozy adventure where kids hop, drive, build and code their way to the castle, and learn something new at every step.
 
 HOP ACROSS THE WORLD
-Cross busy streets, rivers and lily pads with your buddy. Every crash is soft and silly: cars go BOING, water goes SPLISH, and you float right back with a safety tip. When the castle is done, new worlds open: Snowy Peaks, with icy lakes and winter science, then Sunny Shores, with surfboards, tide pools and a lighthouse. Picture-book story scenes, read aloud in character voices, carry the adventure along.
+Cross busy streets, rivers and lily pads with your buddy. Every crash is soft and silly: cars go BOING, water goes SPLISH, and you float right back with a safety tip. When the castle is done, new worlds open: Snowy Peaks, with icy lakes and winter science, then Sunny Shores, with surfboards, tide pools and a lighthouse, and Jungle Journey, with parrots, hippos and a temple at the top. Picture-book story scenes, read aloud in character voices, carry the adventure along.
 
 LEARNING BUILT IN
 Brain Gates ask quick questions about math, road safety, nature, science and words. Wrong answers just get a hint and another try. Questions match your child: picture counting for little learners, times tables and harder science for big learners, or let it adjust automatically.
@@ -35,8 +35,8 @@ Brain Gates ask quick questions about math, road safety, nature, science and wor
 HOP VILLAGE
 Walk around a living village full of buddies to help. Seasons and weather change with the calendar, festivals come round all year, and kids can decorate a house of their own, grow a garden and pick a pet to walk with.
 
-READING NOOK AND MATH MARKET
-Five reading games (letter sounds, spelling, sight words, rhymes and sentences) and five money games (counting coins, paying, making change, comparing and adding prices), matched to your child's level.
+READING, MATH, SCIENCE AND MUSIC
+Five reading games (letter sounds, spelling, sight words, rhymes and sentences), five money games (counting coins, paying, making change, comparing and adding prices), five guess-then-test science experiments, and a Music Maker with rainbow keys, drums and songs to learn.
 
 CODING LAB
 24 short lessons that teach real code a few blocks at a time:
@@ -81,6 +81,8 @@ The biggest HopQuest update yet! Now on iPad too.
 • Two players on one device in Bubble Kart, Pillow Bop, Code Club and Fort Friends.
 • Sunny Shores: a third world with surfboards and tide pools.
 • Reading Nook and Math Market: reading and money games in the village.
+• Science Lab experiments and Music Maker with four instruments.
+• Jungle Journey: a fourth world.
 • A garden to grow, and a pet that walks with you.
 • Story cutscenes with character voices, and a Story Book to watch them again.
 • New kart tracks with jump ramps, and four Pillow Bop arenas.

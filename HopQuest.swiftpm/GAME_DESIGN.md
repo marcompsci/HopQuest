@@ -250,6 +250,18 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 ### v3.9: Story cutscenes and the Story Book
 - Nine short picture-book scenes (the invitation, one after each story level, and after both new worlds), each line read in its character's voice. Shown once, skippable, and replayable from the Story Book.
 
+### v4.0: Polish pass
+- A runtime audit of v3.2–v3.9 found 12 issues, all fixed: kart ramps now fly a set distance (they always clear the puddle on any screen), tips never talk over a Math Gate question, Ice Rink bots don't slide off, Moon Base has a ceiling, a double tap on a cutscene can't skip the next screen, the Story Book unlocks stories for finished levels, speaker buttons work with narration off, day keys are region-proof, the iPad play area reaches under the status bar, and taps near the pet walk instead of patting.
+
+### v4.1: Science Lab
+- Five experiments with Professor Ocho, each "guess, then watch": Sink or Float (an animated water tank), Magnet Test, Plant Parts, Weather Watch, Solid/Liquid/Gas. Every answer comes with a one-line why. 3 stars per experiment, best only.
+
+### v4.2: Music Maker
+- Eight rainbow keys (C to C with do-re-mi names) and four drum pads; piano, xylophone, flute and drums synthesized on the device. Echo Me and Drum Copy (patterns of 3 to 5), Learn a Song with glowing keys (public-domain tunes only), and an 8-step song builder that's saved. Background music pauses here.
+
+### v4.3: Jungle Journey
+- A fourth world after Lighthouse Point: Vine Valley, Hippo River, Temple Top. New "jungle" ground in `worlds.json`; the lighthouse story now points to the jungle and a new finale plays at Temple Top.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.
