@@ -137,9 +137,9 @@ struct ParentSettingsView: View {
 
             Section {
                 Picker("Play with others", selection: Binding(
-                    get: { store.profile?.village.playMode ?? .off },
+                    get: { store.profile?.village.playMode.effective ?? .off },
                     set: { mode in store.updateVillage { $0.playMode = mode } })) {
-                    ForEach(VillagePlayMode.allCases, id: \.self) { Text($0.label).tag($0) }
+                    ForEach(VillagePlayMode.available, id: \.self) { Text($0.label).tag($0) }
                 }
                 Toggle("Lighter effects (older phones)", isOn: villageBinding(\.lightEffects))
                 Toggle("Evening lights follow the clock", isOn: villageBinding(\.eveningLights))
@@ -147,7 +147,7 @@ struct ParentSettingsView: View {
             } header: {
                 Text("Hop Village")
             } footer: {
-                Text("Play with others lets kids see friends' buddies in the village and play Brain Duels: five quiz questions, no chat, no free text. It starts off: turn it on here if you'd like. Nearby only uses Wi-Fi or Bluetooth in the same room (no internet). Other players only ever see your child's buddy name, never their real name. Game Center friends goes online through Apple's Game Center and only connects with your child's Game Center friends, never strangers; Game Center follows Screen Time's multiplayer limits. Village buddies only say pre-written, kid-safe lines. Lighter effects shows fewer butterflies, leaves, raindrops and snowflakes. With seasons off, the village is always a sunny spring day. Seasons and weather come from the device date: nothing is downloaded.")
+                Text("Play with others lets kids see friends' buddies in the village and play Brain Duels: five quiz questions, no chat, no free text. It starts off: turn it on here if you'd like. Nearby only uses Wi-Fi or Bluetooth in the same room (no internet). Other players only ever see your child's buddy name, never their real name. Village buddies only say pre-written, kid-safe lines. Lighter effects shows fewer butterflies, leaves, raindrops and snowflakes. With seasons off, the village is always a sunny spring day. Seasons and weather come from the device date: nothing is downloaded.")
             }
 
             Section {
@@ -184,7 +184,7 @@ struct ParentSettingsView: View {
                 Label("No ads", systemImage: "nosign")
                 Label("No in-app purchases", systemImage: "cart.badge.minus")
                 Label("No chat or free text, ever", systemImage: "hand.raised.fill")
-                switch store.profile?.village.playMode ?? .off {
+                switch store.profile?.village.playMode.effective ?? .off {
                 case .off:
                     Label("Nothing leaves this device", systemImage: "iphone")
                 case .nearby:

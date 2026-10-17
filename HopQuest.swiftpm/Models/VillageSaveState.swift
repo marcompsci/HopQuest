@@ -11,6 +11,17 @@ enum VillagePlayMode: String, Codable, CaseIterable {
         case .friends: return "Game Center friends"
         }
     }
+
+    /// Game Center play needs the Game Center entitlement, which a Swift Playgrounds app package can't add
+    /// (Apple requires it for submissions that use Game Center). Until the project moves to an Xcode project
+    /// with the Game Center capability, only Off and Nearby are offered. The online code stays in place.
+    static let gameCenterAvailable = false
+
+    /// The choices grown-ups can pick from right now.
+    static var available: [VillagePlayMode] { allCases.filter { $0 != .friends || gameCenterAvailable } }
+
+    /// What actually runs: a saved choice that isn't available falls back to Off.
+    var effective: VillagePlayMode { Self.available.contains(self) ? self : .off }
 }
 
 /// Everything Hop Village remembers, stored inside PlayerProfile (on this device only).

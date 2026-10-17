@@ -96,7 +96,7 @@ Grown-up settings are behind a parental gate: tap the gear ("Grown-ups") at the 
 
 To see everything quickly: complete onboarding (any name). The home screen has PLAY (Hop Village), Coding Lab, My Castle, and tiles for Stickers, Fort Friends, Pillow Bop and Bubble Kart. "Adventure Map" opens the story levels, which unlock in order starting with Meadow Street; the Robot Lab stop leads to Code Club and the Machine Workshop once the robot is built, Snowy Peaks opens after Castle Hill and Sunny Shores after Peak Castle. "Together" has the two-player modes and "Stories" replays the story scenes. The Reading Nook and Math Market are menu cards and buildings in the village; the garden is below the house on the hill.
 
-Play with others (new in 2.0): OFF by default. A grown-up can turn it on in Grown-up settings → Hop Village → "Play with others": Nearby only (Multipeer Connectivity, same room, no internet), or Game Center friends (only people already on the child's Game Center friends list; there is no matching with strangers). Players see each other's buddies walking in Hop Village and can play Brain Duels: five preset multiple-choice quiz questions. There is no chat, no free text, no voice and no way to send anything a child types. The only name shared is the buddy's name (e.g. "Pip"), never the child's name. Game Center follows the device's Screen Time multiplayer restrictions. Nothing is sent to the developer.
+Play with others (new in 2.0): OFF by default. A grown-up can turn it on in Grown-up settings → Hop Village → "Play with others": Nearby only (Multipeer Connectivity, same room, no internet). There is no online play in this version. Players see each other's buddies walking in Hop Village and can play Brain Duels: five preset multiple-choice quiz questions. There is no chat, no free text, no voice and no way to send anything a child types. The only name shared is the buddy's name (e.g. "Pip"), never the child's name. Nothing is sent to the developer. Testing it needs two devices with HopQuest in the same room.
 
 Coding Lab's Web Builder previews the page the child builds in a web view. It loads only that local HTML with JavaScript off, a content policy that blocks all network loads, every navigation cancelled and no address bar, so it cannot reach the internet.
 
@@ -116,10 +116,10 @@ No sign-in is required.
 - Expected rating: 4+
 
 ## App Privacy (nutrition label)
-**Data Not Collected.** The developer receives nothing. When a grown-up turns on play with others, the device shares a random session key, the buddy's name and character, the buddy's position in the village and duel answers directly with the other players' devices (or through Apple's Game Center). None of it reaches the developer or any third party besides Apple, and none of it identifies the child.
+**Data Not Collected.** The developer receives nothing. When a grown-up turns on play with others, the device shares a random session key, the buddy's name and character, the buddy's position in the village and duel answers directly with the other players' devices in the same room. None of it reaches the developer or any third party, and none of it identifies the child.
 
 ## Export compliance
-When uploading the build, App Store Connect asks about encryption. Answer that the app uses only the encryption built into iOS (Multipeer Connectivity and Game Center), which is exempt, so no documentation is needed. Please double-check this answer yourself: you're responsible for it.
+When uploading the build, App Store Connect asks about encryption. Answer that the app uses only the encryption built into iOS (Multipeer Connectivity), which is exempt, so no documentation is needed. Please double-check this answer yourself: you're responsible for it.
 
 ## iPad screenshots (required now that the app runs on iPad)
 App Store Connect needs at least one 13" iPad screenshot set (2064 × 2752 portrait). Take them on an iPad (or the iPad simulator) with the 2.0 build: Hop Village, Reading Nook, Math Market, Sunny Shores, and a landscape shot showing the play area with the sky around it.

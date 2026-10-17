@@ -421,7 +421,7 @@ struct HopVillageView: View {
 
     /// Starts (or restarts) live play the way the grown-ups set it up.
     private func startNetwork() {
-        let mode = store.profile?.village.playMode ?? .off
+        let mode = store.profile?.village.playMode.effective ?? .off
         // Only the buddy's name ever leaves the device (nearby or online), never the child's name.
         let nick = store.character.name
         if mode == .off {

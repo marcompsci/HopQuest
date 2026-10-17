@@ -64,7 +64,7 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 |---|---|---|
 | **Hop Village** | Walk anywhere with the joystick or by tapping. Every game has a building. Finish all 10 challenges to open your castle. Chat with 12 villagers, take on 7 missions (fix the clock, water the garden, deliver mail, hop the lily pads and more). Hop forward a few feet with the Hop button, even across water. **Seasons** follow the calendar, the **weather** changes daily (sun, clouds, wind, rain, snow), and Gemma Giraffe hosts a **festival** each week (7 in all, any of them playable any time from the notice board). **Your own house** on the hill can be painted and decorated, with a new decoration from every festival. A pop-quiz buddy drops by every 2 minutes with a follow-up question | Road safety, math, science, nature and words riddles; seasons and weather science; recall of what each game taught; exploring and wayfinding |
 | **Coding Lab** 💻 | A building in the village (and a menu tile). Ocho the octopus teaches 24 beginner lessons in 3 tracks, and every lesson adds to a real project the child keeps and can remix: **Web Designer** (HTML & CSS: a live web page with fonts, flexbox and a CSS animation), **Python Coder** (print, variables, math, loops, if/else, functions with parameters and return, and the Hop-Skip counting game, run in a safe built-in Python), **Game Maker** (a Python star-catching game with speed, bubbles to dodge and a level-up). **Free Build** in each track: make your own project from the blocks you've learned | HTML tags, CSS colors, fonts, layout and animation; print, variables, loops, if/else, functions, return, remainders; events and game design |
-| **Brain Duels** (live play) | Off until a grown-up turns it on. Then friends in the same room (or Game Center friends) see each other's buddies and can duel: 5 questions, fastest right answers win. Only buddy names are shared, never the child's name. No chat, ever | Quick recall, sportsmanship |
+| **Brain Duels** (live play) | Off until a grown-up turns it on. Then friends in the same room see each other's buddies and can duel: 5 questions, fastest right answers win. Only buddy names are shared, never the child's name. No chat, ever | Quick recall, sportsmanship |
 | **Hop levels** (Meadow Street, Lily River, Castle Hill, then **Snowy Peaks**: Frosty Path, Icy Lake, Peak Castle, then **Sunny Shores**: Sandy Path, Tide Pools, Lighthouse Point, then **Jungle Journey**: Vine Valley, Hippo River, Temple Top) | Hop across roads, rivers and lily pads to reach the castle, then across snowy roads and ice floes, then ride surfboards across the waves. Worlds after the first are data (`worlds.json`), not code | Looking both ways, timing, patience |
 | **Brain Gates** | Ollie Owl asks a question, answered with lettered, color-coded buttons | Math, road safety, nature, science, words |
 | **Driving School and City Rally** | Steer with a wheel, use the **brake** and **gas** pedals (gas on the far right, like a real car), use blinkers and stop at lights | Real road rules, in a kid-friendly way |
@@ -118,6 +118,15 @@ python3 Tests/FortLevels/check_levels.py   # every Fort Friends level can be fin
 Tests/Worlds/run.sh            # worlds.json decodes and passes every content check
 Tests/Learn/run.sh             # Reading Nook, Math Market, Science Lab, Music Maker and Story Book: every round over hundreds of seeds
 ```
+
+## Release gate (run before every TestFlight upload)
+
+```bash
+bash scripts/run_tests.sh          # every test suite; fails if any suite fails or can't run
+python3 scripts/release_check.py   # Apple compliance checks: privacy manifest vs code, Kids Category rules, secrets, listing limits
+```
+
+GitHub Actions runs both, plus a secret scan and an iOS Simulator build, on every push (`.github/workflows/release-gate.yml`). See [docs/apple-compliance-report.md](docs/apple-compliance-report.md) and [docs/testflight-release-checklist.md](docs/testflight-release-checklist.md).
 
 ## Project layout
 

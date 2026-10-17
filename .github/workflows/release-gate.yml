@@ -1,0 +1,66 @@
+name: Release gate
+
+# Runs on every push and pull request. A failing or skipped job fails the gate:
+# nothing here uses continue-on-error.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Logic tests (all suites)
+    runs-on: ubuntu-latest
+    container: swift:5.10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Python
+        run: apt-get update -qq && apt-get install -y -qq python3 > /dev/null
+      - name: Run every test suite
+        run: bash scripts/run_tests.sh
+
+  compliance:
+    name: Apple compliance checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # the policy check compares this branch with main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Pillow (app icon check)
+        run: pip install pillow
+      - name: Release gate
+        run: python3 scripts/release_check.py
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ios-build:
+    name: iOS build (simulator, unsigned)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode
+        run: xcodebuild -version
+      - name: List schemes
+        working-directory: HopQuest.swiftpm
+        run: xcodebuild -list
+      - name: Build for the iOS Simulator
+        working-directory: HopQuest.swiftpm
+        run: |
+          set -o pipefail
+          xcodebuild -scheme HopQuest \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tail -n 60

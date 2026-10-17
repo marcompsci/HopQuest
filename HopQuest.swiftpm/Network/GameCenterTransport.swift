@@ -2,8 +2,9 @@ import Foundation
 import GameKit
 import UIKit
 
-/// Online play through Apple's Game Center: friends (invited from Apple's own friend picker) or anyone
-/// (Game Center matchmaking). Game Center handles sign-in and respects Screen Time's multiplayer limits.
+/// Online play through Apple's Game Center with friends (invited from Apple's own friend picker).
+/// Game Center handles sign-in and respects Screen Time's multiplayer limits.
+/// Not offered yet: see `VillagePlayMode.gameCenterAvailable` (needs the Game Center entitlement).
 /// HopQuest sends only positions, buddy choices and duel answers; the nickname is the buddy's name.
 ///
 /// Note: Game Center must be turned on for the app (the Game Center capability in an Xcode project, plus
