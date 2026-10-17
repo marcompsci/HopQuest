@@ -146,7 +146,7 @@ struct ParentSettingsView: View {
             } header: {
                 Text("Hop Village")
             } footer: {
-                Text("Play with others lets kids see friends' buddies in the village and play Brain Duels: five quiz questions, no chat, no free text. It starts off: turn it on here if you'd like. Nearby only uses Wi-Fi or Bluetooth in the same room (no internet). Other players only ever see your child's buddy name, never their real name. Game Center modes go online through Apple's Game Center; Game Center follows Screen Time's multiplayer limits. Village buddies only say pre-written, kid-safe lines. Lighter effects shows fewer butterflies, leaves, raindrops and snowflakes. With seasons off, the village is always a sunny spring day. Seasons and weather come from the device date: nothing is downloaded.")
+                Text("Play with others lets kids see friends' buddies in the village and play Brain Duels: five quiz questions, no chat, no free text. It starts off: turn it on here if you'd like. Nearby only uses Wi-Fi or Bluetooth in the same room (no internet). Other players only ever see your child's buddy name, never their real name. Game Center friends goes online through Apple's Game Center and only connects with your child's Game Center friends, never strangers; Game Center follows Screen Time's multiplayer limits. Village buddies only say pre-written, kid-safe lines. Lighter effects shows fewer butterflies, leaves, raindrops and snowflakes. With seasons off, the village is always a sunny spring day. Seasons and weather come from the device date: nothing is downloaded.")
             }
 
             Section("Play time") {
@@ -182,8 +182,6 @@ struct ParentSettingsView: View {
                     Label("Live play: same room only, no internet", systemImage: "wifi")
                 case .friends:
                     Label("Live play: Game Center friends", systemImage: "person.2")
-                case .anyone:
-                    Label("Live play: anyone on Game Center", systemImage: "globe")
                 }
                 Text("HopQuest saves only a first name, the choices above, and stars, on this device. No accounts of its own, no tracking, no analytics. During live play, phones share only buddy positions, buddy choices, the buddy's name and duel answers.")
                     .font(.footnote)

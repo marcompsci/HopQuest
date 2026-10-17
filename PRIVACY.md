@@ -30,7 +30,7 @@ This information never leaves the device and is never sent to us or anyone else.
 In Hop Village, kids can see friends' buddies walking around and play Brain Duels (five multiple-choice quiz questions). This is **off** until a grown-up turns it on in Grown-up settings, behind the parental gate. There are three choices:
 
 - **Nearby only:** phones in the same room connect directly over Wi-Fi or Bluetooth using Apple's Multipeer Connectivity. No internet is used. iOS will ask for permission to use the local network.
-- **Game Center friends** or **Anyone (Game Center):** players are matched through Apple's Game Center, which follows the Screen Time multiplayer settings on the device. Apple's [Game Center privacy policy](https://www.apple.com/legal/privacy/) applies to Game Center itself.
+- **Game Center friends:** play only with people already on the child's Game Center friends list, never strangers. It goes through Apple's Game Center, which follows the Screen Time multiplayer settings on the device. Apple's [Game Center privacy policy](https://www.apple.com/legal/privacy/) applies to Game Center itself.
 
 While playing with others, the device shares only: a random code for this play session, the buddy's name and look (for example "Pip"), where the buddy is standing in the village, and duel answers. It **never** shares the child's name, and there is no way to send words, pictures, or voice. This goes directly to the other players' devices (or through Game Center) and is never sent to us. Turning the setting back to Off stops it straight away.
 

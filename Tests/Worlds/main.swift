@@ -36,6 +36,25 @@ test("Snowy Peaks: three snowy hop levels after Castle Hill") {
     check(subjects.isSubset(of: ["Math", "Road Safety", "Nature", "Science", "Words", "Coding", "Kindness"]), "question subjects are real subjects: \(subjects)")
 }
 
+test("Sunny Shores: three seaside levels after Peak Castle") {
+    let file = try WorldData.decode(Data(contentsOf: URL(fileURLWithPath: path)))
+    guard let w = file.worlds.first(where: { $0.id == "sunny-shores" }) else { check(false, "Sunny Shores exists"); return }
+    check(w.unlockAfter == 9, "opens after Peak Castle")
+    check(w.chapters.map(\.id) == [10, 11, 12], "chapters 10, 11, 12")
+    check(w.ground == "sand" && w.chapters.allSatisfy { $0.style.isSand && $0.style.floaters == "surfboard" }, "sand and surfboards everywhere")
+    check(zip(w.chapters, w.chapters.dropFirst()).allSatisfy { $0.difficulty < $1.difficulty && $0.rows <= $1.rows }, "each level a bit harder and longer")
+    check(w.chapters.allSatisfy { $0.style.questions.count >= 3 }, "each level brings its own questions")
+    check(w.chapters.flatMap(\.style.questions).allSatisfy { $0.choices.count == 3 }, "three choices each")
+}
+
+test("worlds open one after another") {
+    let file = try WorldData.decode(Data(contentsOf: URL(fileURLWithPath: path)))
+    check(file.worlds.first?.unlockAfter == 6, "the first new world follows Castle Hill")
+    for (a, b) in zip(file.worlds, file.worlds.dropFirst()) {
+        check(b.unlockAfter == a.chapters.last?.id, "\(b.title) opens after the end of \(a.title)")
+    }
+}
+
 test("the checker catches broken data") {
     var file = try WorldData.decode(Data(contentsOf: URL(fileURLWithPath: path)))
     file.worlds[0].chapters[0].id = 3                 // clashes with Robot Lab

@@ -107,7 +107,7 @@ final class HopScene: SKScene {
     override func didMove(to view: SKView) {
         view.isMultipleTouchEnabled = true
         guard rows.isEmpty else { return }
-        backgroundColor = UIColor(hex: snowy ? 0xEAF6FF : 0x8FD86E)
+        backgroundColor = UIColor(hex: snowy ? 0xEAF6FF : sandy ? 0xF6DFA0 : 0x8FD86E)
         cell = size.width / CGFloat(columns)
         loopLength = size.width + cell * 4
         buildRows()
@@ -152,6 +152,7 @@ final class HopScene: SKScene {
     /// Worlds from data (Snowy Peaks) restyle the classic level.
     private var style: HopStyle? { chapter.style }
     private var snowy: Bool { style?.isSnow == true }
+    private var sandy: Bool { style?.isSand == true }
 
     private func buildRows() {
         let finish = chapter.rows
@@ -238,6 +239,20 @@ final class HopScene: SKScene {
                 stripe.colorBlendFactor = 0.18
             }
         }
+        if sandy {
+            // warm sand, turquoise sea water, sandy roads
+            switch kind {
+            case .grass, .castle, .gate:
+                stripe.color = UIColor(hex: 0xF4D48A)
+                stripe.colorBlendFactor = kind == .gate ? 0.3 : 0.6
+            case .river:
+                stripe.color = UIColor(hex: 0x3FD0D6)
+                stripe.colorBlendFactor = 0.35
+            case .road:
+                stripe.color = UIColor(hex: 0xE8D6B0)
+                stripe.colorBlendFactor = 0.15
+            }
+        }
         node.addChild(stripe)
 
         let mid = cell / 2
@@ -252,7 +267,13 @@ final class HopScene: SKScene {
                     node.addChild(f)
                 }
             } else {
-                for _ in 0..<Int.random(in: 1...3) {
+                for _ in 0..<Int.random(in: 1...3) where sandy {
+                    // palm trees instead of leafy ones at the seaside
+                    let palm = SpriteFactory.emoji("🌴", size: cell * 0.95, at: CGPoint(x: CGFloat.random(in: 0...size.width), y: mid))
+                    palm.zPosition = 5
+                    node.addChild(palm)
+                }
+                for _ in 0..<(sandy ? 0 : Int.random(in: 1...3)) {
                     let tree = SKSpriteNode(texture: DriveArt.tree, size: CGSize(width: cell * 1.1, height: cell * 1.1))
                     tree.position = CGPoint(x: CGFloat.random(in: 0...size.width), y: mid)
                     tree.zPosition = 5
@@ -297,8 +318,26 @@ final class HopScene: SKScene {
             let offset = CGFloat.random(in: 0..<spacing)
             let lilies = (chapter.id == 4 || style?.floaters == "lily") && Bool.random()
             let ice = style?.floaters == "ice"
+            let boards = style?.floaters == "surfboard"
             for k in 0..<count {
-                if ice {
+                if boards {
+                    // a striped surfboard (works just like a log)
+                    let w = cell * CGFloat.random(in: 2.2...2.9) * (1 - chapter.difficulty * 0.2)
+                    let board = SKShapeNode(rectOf: CGSize(width: w, height: cell * 0.56), cornerRadius: cell * 0.28)
+                    let colors: [UInt32] = [0xFF6B6B, 0xFFC93C, 0x4D96FF, 0xB983FF, 0x34C77B]
+                    board.fillColor = UIColor(hex: colors.randomElement()!)
+                    board.strokeColor = .white
+                    board.lineWidth = 3
+                    let stripe = SKShapeNode(rectOf: CGSize(width: w * 0.7, height: cell * 0.1), cornerRadius: cell * 0.05)
+                    stripe.fillColor = .white
+                    stripe.strokeColor = .clear
+                    board.addChild(stripe)
+                    board.position = CGPoint(x: -cell * 2 + offset + CGFloat(k) * spacing, y: mid)
+                    board.zPosition = 5
+                    board.run(.repeatForever(.sequence([.moveBy(x: 0, y: 2, duration: 0.6), .moveBy(x: 0, y: -2, duration: 0.6)])))
+                    node.addChild(board)
+                    row.movers.append(Mover(node: board, width: w))
+                } else if ice {
                     // a flat ice floe (works just like a log)
                     let w = cell * CGFloat.random(in: 2.3...3.0) * (1 - chapter.difficulty * 0.2)
                     let floe = SKShapeNode(rectOf: CGSize(width: w, height: cell * 0.62), cornerRadius: cell * 0.22)
@@ -610,7 +649,9 @@ final class HopScene: SKScene {
         guard !h.busy else { return }
         h.busy = true
         Haptics.bump(.splash)
-        tip(style?.floaters == "ice" ? "Splash! Hop onto the ice floes to cross the cold water." : Self.riverTips.randomElement()!, force: true)
+        tip(style?.floaters == "ice" ? "Splash! Hop onto the ice floes to cross the cold water."
+            : style?.floaters == "surfboard" ? "Splash! Hop onto the surfboards to cross the waves."
+            : Self.riverTips.randomElement()!, force: true)
 
         let pop = SpriteFactory.popWord("SPLISH!", size: cell * 0.45, color: UIColor(hex: 0xD6F1FF))
         pop.position = CGPoint(x: h.node.position.x, y: h.node.position.y + cell * 0.6)

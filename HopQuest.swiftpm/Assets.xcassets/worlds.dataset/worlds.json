@@ -21,14 +21,58 @@
           "style": {
             "ground": "snow",
             "floaters": "ice",
-            "decorations": ["❄️", "⛄", "🌲"],
-            "vehicleColors": ["FF9F45", "FFD24D", "4D96FF"],
+            "decorations": [
+              "❄️",
+              "⛄",
+              "🌲"
+            ],
+            "vehicleColors": [
+              "FF9F45",
+              "FFD24D",
+              "4D96FF"
+            ],
             "riverChance": 0.15,
             "questions": [
-              { "subject": "Science", "prompt": "What is snow made of?", "choices": ["Tiny ice crystals", "Cotton", "Sugar"], "explain": "Snow is frozen water: tiny ice crystals that stick together into snowflakes." },
-              { "subject": "Science", "prompt": "When water gets very cold, it turns into…", "choices": ["Ice", "Steam", "Juice"], "explain": "Water freezes into ice at 0 degrees Celsius, which is 32 degrees Fahrenheit." },
-              { "subject": "Road Safety", "prompt": "On snowy days, cars need…", "choices": ["More space to stop", "Less space to stop", "No lights"], "explain": "Snow and ice are slippery, so cars take longer to stop. Always wait for cars to stop before you cross." },
-              { "subject": "Nature", "prompt": "What helps you stay warm outside in winter?", "choices": ["A hat, gloves and a coat", "Sandals", "An ice pop"], "explain": "Warm clothes trap your body heat. A hat helps a lot!" }
+              {
+                "subject": "Science",
+                "prompt": "What is snow made of?",
+                "choices": [
+                  "Tiny ice crystals",
+                  "Cotton",
+                  "Sugar"
+                ],
+                "explain": "Snow is frozen water: tiny ice crystals that stick together into snowflakes."
+              },
+              {
+                "subject": "Science",
+                "prompt": "When water gets very cold, it turns into…",
+                "choices": [
+                  "Ice",
+                  "Steam",
+                  "Juice"
+                ],
+                "explain": "Water freezes into ice at 0 degrees Celsius, which is 32 degrees Fahrenheit."
+              },
+              {
+                "subject": "Road Safety",
+                "prompt": "On snowy days, cars need…",
+                "choices": [
+                  "More space to stop",
+                  "Less space to stop",
+                  "No lights"
+                ],
+                "explain": "Snow and ice are slippery, so cars take longer to stop. Always wait for cars to stop before you cross."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "What helps you stay warm outside in winter?",
+                "choices": [
+                  "A hat, gloves and a coat",
+                  "Sandals",
+                  "An ice pop"
+                ],
+                "explain": "Warm clothes trap your body heat. A hat helps a lot!"
+              }
             ]
           }
         },
@@ -44,14 +88,58 @@
           "style": {
             "ground": "snow",
             "floaters": "ice",
-            "decorations": ["❄️", "🐧", "🌲"],
-            "vehicleColors": ["FF9F45", "FFFFFF", "B983FF"],
+            "decorations": [
+              "❄️",
+              "🐧",
+              "🌲"
+            ],
+            "vehicleColors": [
+              "FF9F45",
+              "FFFFFF",
+              "B983FF"
+            ],
             "riverChance": 0.42,
             "questions": [
-              { "subject": "Science", "prompt": "When a lake freezes, where does the ice form first?", "choices": ["On the top", "At the bottom", "In the middle"], "explain": "Ice is lighter than water, so it floats. Lakes freeze from the top down, and fish stay safe in the water underneath." },
-              { "subject": "Nature", "prompt": "Where do wild penguins live?", "choices": ["Antarctica and the southern seas", "The North Pole", "The desert"], "explain": "Wild penguins live in the southern half of the world. No penguins live at the North Pole!" },
-              { "subject": "Science", "prompt": "How many points does a snowflake have?", "choices": ["6", "4", "8"], "explain": "Snowflakes almost always have six points, because of the way water freezes." },
-              { "subject": "Road Safety", "prompt": "Why do people put salt or sand on icy sidewalks?", "choices": ["So shoes and tires don't slip", "To make it snow more", "To feed the birds"], "explain": "Salt helps melt the ice and sand adds grip, so people and cars slip less." }
+              {
+                "subject": "Science",
+                "prompt": "When a lake freezes, where does the ice form first?",
+                "choices": [
+                  "On the top",
+                  "At the bottom",
+                  "In the middle"
+                ],
+                "explain": "Ice is lighter than water, so it floats. Lakes freeze from the top down, and fish stay safe in the water underneath."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "Where do wild penguins live?",
+                "choices": [
+                  "Antarctica and the southern seas",
+                  "The North Pole",
+                  "The desert"
+                ],
+                "explain": "Wild penguins live in the southern half of the world. No penguins live at the North Pole!"
+              },
+              {
+                "subject": "Science",
+                "prompt": "How many points does a snowflake have?",
+                "choices": [
+                  "6",
+                  "4",
+                  "8"
+                ],
+                "explain": "Snowflakes almost always have six points, because of the way water freezes."
+              },
+              {
+                "subject": "Road Safety",
+                "prompt": "Why do people put salt or sand on icy sidewalks?",
+                "choices": [
+                  "So shoes and tires don't slip",
+                  "To make it snow more",
+                  "To feed the birds"
+                ],
+                "explain": "Salt helps melt the ice and sand adds grip, so people and cars slip less."
+              }
             ]
           }
         },
@@ -67,12 +155,252 @@
           "style": {
             "ground": "snow",
             "floaters": "ice",
-            "decorations": ["❄️", "⛄", "🌲", "⛷️"],
-            "vehicleColors": ["FF9F45", "FF6B6B", "4D96FF", "FFFFFF"],
+            "decorations": [
+              "❄️",
+              "⛄",
+              "🌲",
+              "⛷️"
+            ],
+            "vehicleColors": [
+              "FF9F45",
+              "FF6B6B",
+              "4D96FF",
+              "FFFFFF"
+            ],
             "questions": [
-              { "subject": "Nature", "prompt": "Which animal has thick white fur to stay warm in the snow?", "choices": ["Polar bear", "Camel", "Lizard"], "explain": "Polar bears have thick fur and a layer of fat to keep warm in the Arctic." },
-              { "subject": "Science", "prompt": "Why is it colder at the top of a tall mountain?", "choices": ["The air up high is thinner and holds less heat", "The Sun is farther away", "The wind is made of ice"], "explain": "High up, the air is thinner and can't hold as much heat. That's why mountain tops can have snow even in summer." },
-              { "subject": "Nature", "prompt": "What do bears do in winter?", "choices": ["Many sleep for a long time in a den", "They go to the beach", "They build snowmen"], "explain": "Many bears rest in a den for the winter and live off their fat. It's called hibernation." }
+              {
+                "subject": "Nature",
+                "prompt": "Which animal has thick white fur to stay warm in the snow?",
+                "choices": [
+                  "Polar bear",
+                  "Camel",
+                  "Lizard"
+                ],
+                "explain": "Polar bears have thick fur and a layer of fat to keep warm in the Arctic."
+              },
+              {
+                "subject": "Science",
+                "prompt": "Why is it colder at the top of a tall mountain?",
+                "choices": [
+                  "The air up high is thinner and holds less heat",
+                  "The Sun is farther away",
+                  "The wind is made of ice"
+                ],
+                "explain": "High up, the air is thinner and can't hold as much heat. That's why mountain tops can have snow even in summer."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "What do bears do in winter?",
+                "choices": [
+                  "Many sleep for a long time in a den",
+                  "They go to the beach",
+                  "They build snowmen"
+                ],
+                "explain": "Many bears rest in a den for the winter and live off their fat. It's called hibernation."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "sunny-shores",
+      "title": "Sunny Shores",
+      "icon": "🏖️",
+      "blurb": "Hop along a sandy beach, ride surfboards across the waves, and reach the lighthouse at Lighthouse Point.",
+      "unlockAfter": 9,
+      "color": "FF9F1C",
+      "chapters": [
+        {
+          "id": 10,
+          "title": "Sandy Path",
+          "kind": "hop",
+          "icon": "🐚",
+          "rows": 28,
+          "gateEvery": 7,
+          "difficulty": 0.35,
+          "intro": "Welcome to Sunny Shores! Hop along the sandy path, and watch for beach buggies.",
+          "style": {
+            "ground": "sand",
+            "floaters": "surfboard",
+            "decorations": [
+              "🐚",
+              "🦀",
+              "⭐"
+            ],
+            "vehicleColors": [
+              "FFC93C",
+              "FF6B6B",
+              "34C77B",
+              "4D96FF"
+            ],
+            "riverChance": 0.18,
+            "questions": [
+              {
+                "subject": "Nature",
+                "prompt": "Which animal walks sideways on the beach?",
+                "choices": [
+                  "A crab",
+                  "A dog",
+                  "A horse"
+                ],
+                "explain": "Crabs walk sideways because their legs bend best that way."
+              },
+              {
+                "subject": "Science",
+                "prompt": "Why is the ocean salty?",
+                "choices": [
+                  "Rivers carry salt from rocks into the sea",
+                  "Fish add salt",
+                  "Sand is made of salt"
+                ],
+                "explain": "Rain and rivers wash tiny bits of salt out of rocks and carry them to the ocean, where it builds up."
+              },
+              {
+                "subject": "Road Safety",
+                "prompt": "What should you wear at the beach on a sunny day?",
+                "choices": [
+                  "Sunscreen and a hat",
+                  "Nothing extra",
+                  "Snow boots"
+                ],
+                "explain": "Sunscreen and a hat protect your skin from sunburn."
+              },
+              {
+                "subject": "Math",
+                "prompt": "You find 3 shells, then 4 more. How many shells?",
+                "choices": [
+                  "7",
+                  "6",
+                  "8"
+                ],
+                "explain": "3 + 4 = 7 shells."
+              }
+            ]
+          }
+        },
+        {
+          "id": 11,
+          "title": "Tide Pools",
+          "kind": "hop",
+          "icon": "🦀",
+          "rows": 32,
+          "gateEvery": 8,
+          "difficulty": 0.55,
+          "intro": "The tide is coming in! Hop onto the surfboards to cross the waves.",
+          "style": {
+            "ground": "sand",
+            "floaters": "surfboard",
+            "decorations": [
+              "🦀",
+              "🐚",
+              "🪸"
+            ],
+            "vehicleColors": [
+              "FFC93C",
+              "FF6B6B",
+              "34C77B",
+              "4D96FF"
+            ],
+            "riverChance": 0.45,
+            "questions": [
+              {
+                "subject": "Science",
+                "prompt": "What makes the tide go in and out?",
+                "choices": [
+                  "The Moon's pull",
+                  "The wind",
+                  "Big fish"
+                ],
+                "explain": "The Moon's gravity pulls on the ocean, so the water rises and falls twice a day."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "How many arms does a starfish usually have?",
+                "choices": [
+                  "5",
+                  "3",
+                  "8"
+                ],
+                "explain": "Most sea stars have five arms, and some can even grow an arm back!"
+              },
+              {
+                "subject": "Nature",
+                "prompt": "What is a tide pool?",
+                "choices": [
+                  "Sea water left in rocks when the tide goes out",
+                  "A swimming pool at a hotel",
+                  "A puddle of rain"
+                ],
+                "explain": "When the tide goes out, water stays in rocky dips, and little sea animals live there."
+              },
+              {
+                "subject": "Kindness",
+                "prompt": "You see a crab in a tide pool. What's the kind thing to do?",
+                "choices": [
+                  "Look gently and leave it there",
+                  "Take it home",
+                  "Splash it"
+                ],
+                "explain": "Tide pool animals need their home. Look gently, then let them be."
+              }
+            ]
+          }
+        },
+        {
+          "id": 12,
+          "title": "Lighthouse Point",
+          "kind": "hop",
+          "icon": "🗼",
+          "rows": 40,
+          "gateEvery": 10,
+          "difficulty": 0.8,
+          "intro": "Last stop: Lighthouse Point! Hop all the way to the lighthouse at the end of the beach.",
+          "style": {
+            "ground": "sand",
+            "floaters": "surfboard",
+            "decorations": [
+              "🌴",
+              "🐚",
+              "🏝️"
+            ],
+            "vehicleColors": [
+              "FFC93C",
+              "FF6B6B",
+              "34C77B",
+              "4D96FF"
+            ],
+            "questions": [
+              {
+                "subject": "Science",
+                "prompt": "What does a lighthouse do?",
+                "choices": [
+                  "Shines a light so ships stay safe",
+                  "Makes waves",
+                  "Catches fish"
+                ],
+                "explain": "Its bright light warns ships about rocks and shows them where the shore is."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "Is a whale a fish?",
+                "choices": [
+                  "No, it's a mammal",
+                  "Yes, it's a fish",
+                  "It's a bird"
+                ],
+                "explain": "Whales breathe air and feed their babies milk, so they are mammals."
+              },
+              {
+                "subject": "Words",
+                "prompt": "Which word rhymes with 'sand'?",
+                "choices": [
+                  "Hand",
+                  "Sun",
+                  "Sea"
+                ],
+                "explain": "Sand and hand both end with -and."
+              }
             ]
           }
         }

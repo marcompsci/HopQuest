@@ -11,10 +11,11 @@ struct WorldView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(hex: 0xEAF6FF), Color(hex: 0xBFE3FF)], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: world.ground == "sand" ? [Color(hex: 0xFFF4D6), Color(hex: 0x9FE6EA)] : [Color(hex: 0xEAF6FF), Color(hex: 0xBFE3FF)],
+                           startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
-            // gentle falling snow behind everything
-            SnowfallView().ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
+            // gentle falling snow (or rising sea bubbles) behind everything
+            SnowfallView(rising: world.ground == "sand").ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     HStack {
@@ -88,6 +89,8 @@ struct WorldView: View {
 /// Soft snowflakes drifting down (stops when Reduce Motion is on).
 struct SnowfallView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Bubbles that float up instead of snow that falls.
+    var rising = false
 
     var body: some View {
         if reduceMotion {
@@ -100,9 +103,15 @@ struct SnowfallView: View {
                         let seed = Double(i) * 12.9898
                         let x = (sin(seed) * 0.5 + 0.5) * size.width + sin(t * 0.6 + seed) * 18
                         let speed = 18 + Double(i % 5) * 7
-                        let y = (t * speed + seed * 37).truncatingRemainder(dividingBy: size.height + 20) - 10
-                        let r = 2.0 + Double(i % 3)
-                        ctx.fill(Path(ellipseIn: CGRect(x: x, y: y, width: r, height: r)), with: .color(.white.opacity(0.85)))
+                        let fall = (t * speed + seed * 37).truncatingRemainder(dividingBy: size.height + 20) - 10
+                        let y = rising ? size.height - fall : fall
+                        let r = rising ? 4.0 + Double(i % 4) * 2 : 2.0 + Double(i % 3)
+                        let rect = CGRect(x: x, y: y, width: r, height: r)
+                        if rising {
+                            ctx.stroke(Path(ellipseIn: rect), with: .color(.white.opacity(0.8)), lineWidth: 1.2)
+                        } else {
+                            ctx.fill(Path(ellipseIn: rect), with: .color(.white.opacity(0.85)))
+                        }
                     }
                 }
             }

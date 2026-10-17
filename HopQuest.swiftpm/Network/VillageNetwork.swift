@@ -80,8 +80,6 @@ final class VillageNetwork: ObservableObject {
             t = NearbyTransport(peerName: myKey)
         case .friends:
             t = GameCenterTransport(kind: .friends)
-        case .anyone:
-            t = GameCenterTransport(kind: .anyone)
         }
         t.onData = { [weak self] data, from in self?.received(data, from: from) }
         t.onPeerFound = { [weak self] _ in self?.sendHello() }

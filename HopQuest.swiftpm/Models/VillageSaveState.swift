@@ -2,14 +2,13 @@ import Foundation
 
 /// Who a child may play with live in Hop Village. Grown-ups choose this behind the parent gate.
 enum VillagePlayMode: String, Codable, CaseIterable {
-    case off, nearby, friends, anyone
+    case off, nearby, friends
 
     var label: String {
         switch self {
         case .off: return "Off"
         case .nearby: return "Nearby only"
         case .friends: return "Game Center friends"
-        case .anyone: return "Anyone (Game Center)"
         }
     }
 }

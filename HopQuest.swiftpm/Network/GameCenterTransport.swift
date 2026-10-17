@@ -9,7 +9,8 @@ import UIKit
 /// Note: Game Center must be turned on for the app (the Game Center capability in an Xcode project, plus
 /// App Store Connect). Until then sign-in fails and this shows a friendly message instead.
 final class GameCenterTransport: NSObject, VillageTransport {
-    enum Kind { case friends, anyone }
+    /// Only Game Center friends: HopQuest never matches kids with strangers.
+    enum Kind { case friends }
 
     var onData: ((Data, String) -> Void)?
     var onPeerFound: ((String) -> Void)?
@@ -63,16 +64,6 @@ final class GameCenterTransport: NSObject, VillageTransport {
             guard let picker = GKMatchmakerViewController(matchRequest: request) else { return }
             picker.matchmakerDelegate = self
             TopViewController.find()?.present(picker, animated: true)
-        case .anyone:
-            onStatus?("Finding players…")
-            GKMatchmaker.shared().findMatch(for: request) { [weak self] match, error in
-                DispatchQueue.main.async {
-                    guard let self, !self.stopped else { return }
-                    if let match { self.use(match) } else {
-                        self.onStatus?("Couldn't find players right now. Try again in a bit!")
-                    }
-                }
-            }
         }
     }
 
