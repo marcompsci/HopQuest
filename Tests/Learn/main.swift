@@ -183,8 +183,8 @@ test("Math Market save") {
 test("Story Book: a cutscene after every story level and both new worlds, each one well formed") {
     check(Set(StoryBook.all.map(\.id)).count == StoryBook.all.count, "unique ids")
     check(StoryBook.intro.id == "intro" && StoryBook.all.first?.id == "intro", "the intro comes first")
-    for ch in [1, 2, 3, 4, 5, 6, 9, 12] { check(StoryBook.after(chapter: ch) != nil, "a story after chapter \(ch)") }
-    for ch in [7, 8, 10, 11, 101, 201] { check(StoryBook.after(chapter: ch) == nil, "no story after chapter \(ch)") }
+    for ch in [1, 2, 3, 4, 5, 6, 9, 12, 15] { check(StoryBook.after(chapter: ch) != nil, "a story after chapter \(ch)") }
+    for ch in [7, 8, 10, 11, 13, 14, 101, 201] { check(StoryBook.after(chapter: ch) == nil, "no story after chapter \(ch)") }
     for c in StoryBook.all {
         check(!c.title.isEmpty && (1...3).contains(c.panels.count), "\(c.id): 1 to 3 panels")
         for p in c.panels {

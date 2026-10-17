@@ -61,7 +61,7 @@ enum StoryVoice: String, Codable, CaseIterable {
 
 /// Where a panel happens (the backdrop colors and ground).
 enum StoryPlace: String, Codable, CaseIterable {
-    case meadow, road, lab, river, city, castle, sky, snow, beach
+    case meadow, road, lab, river, city, castle, sky, snow, beach, jungle
 
     var skyHex: [UInt32] {
         switch self {
@@ -74,6 +74,7 @@ enum StoryPlace: String, Codable, CaseIterable {
         case .sky: return [0x7FC8FF, 0xD6F0FF]
         case .snow: return [0xD6ECFF, 0xFFFFFF]
         case .beach: return [0x8FE3F0, 0xFFF4D6]
+        case .jungle: return [0x9ED9A0, 0xE6F7D9]
         }
     }
 
@@ -86,6 +87,7 @@ enum StoryPlace: String, Codable, CaseIterable {
         case .sky: return 0xFFFFFF
         case .snow: return 0xF4FBFF
         case .beach: return 0xF2D59A
+        case .jungle: return 0x2E7D32
         }
     }
 
@@ -101,6 +103,7 @@ enum StoryPlace: String, Codable, CaseIterable {
         case .sky: return ["☁️", "🎈", "☁️"]
         case .snow: return ["🏔️", "❄️", "⛄"]
         case .beach: return ["🌴", "🗼", "🐚"]
+        case .jungle: return ["🌿", "🛕", "🦜"]
         }
     }
 }
@@ -219,6 +222,16 @@ enum StoryBook {
             StoryPanel(place: .beach, actors: [.buddy(0.35, .pop), A(who: "🗼", x: 0.75, size: 1.4, entrance: .float)], lines: [
                 L(voice: .narrator, text: "At the end of the beach stood the lighthouse, shining bright."),
                 L(voice: .coral, text: "Its light helps every ship find its way home. Just like you found yours!"),
+            ]),
+            StoryPanel(place: .jungle, actors: [.buddy(0.3, .float), A(who: "🦜", x: 0.75, entrance: .fromRight)], lines: [
+                L(voice: .narrator, text: "From the top of the lighthouse, you spotted a green jungle far across the bay."),
+                L(voice: .buddy, text: "I hear parrots! One more adventure before home?"),
+            ]),
+        ]),
+        Cutscene(id: "after15", title: "The Temple Top", panels: [
+            StoryPanel(place: .jungle, actors: [.buddy(0.35, .pop), A(who: "🛕", x: 0.75, size: 1.4, entrance: .float), A(who: "🐒", x: 0.12, entrance: .fromLeft)], lines: [
+                L(voice: .narrator, text: "At the very top of the jungle, the old temple glowed in the sunset."),
+                L(voice: .ollie, text: "Hoo hoo! You crossed meadows, snow, beaches and jungles. What an explorer!"),
             ]),
             StoryPanel(place: .meadow, actors: [.buddy(0.4, .fromLeft), A(who: "🏡", x: 0.75, entrance: .pop)], lines: [
                 L(voice: .narrator, text: "And then it was time to head home to Hop Village, full of stories to tell."),

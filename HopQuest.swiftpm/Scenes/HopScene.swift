@@ -107,7 +107,7 @@ final class HopScene: SKScene {
     override func didMove(to view: SKView) {
         view.isMultipleTouchEnabled = true
         guard rows.isEmpty else { return }
-        backgroundColor = UIColor(hex: snowy ? 0xEAF6FF : sandy ? 0xF6DFA0 : 0x8FD86E)
+        backgroundColor = UIColor(hex: snowy ? 0xEAF6FF : sandy ? 0xF6DFA0 : jungle ? 0x4E9A3C : 0x8FD86E)
         cell = size.width / CGFloat(columns)
         loopLength = size.width + cell * 4
         buildRows()
@@ -153,6 +153,7 @@ final class HopScene: SKScene {
     private var style: HopStyle? { chapter.style }
     private var snowy: Bool { style?.isSnow == true }
     private var sandy: Bool { style?.isSand == true }
+    private var jungle: Bool { style?.isJungle == true }
 
     private func buildRows() {
         let finish = chapter.rows
@@ -239,6 +240,20 @@ final class HopScene: SKScene {
                 stripe.colorBlendFactor = 0.18
             }
         }
+        if jungle {
+            // deep rainforest green, muddy-green river, dirt roads
+            switch kind {
+            case .grass, .castle, .gate:
+                stripe.color = UIColor(hex: 0x2E7D32)
+                stripe.colorBlendFactor = kind == .gate ? 0.2 : 0.35
+            case .river:
+                stripe.color = UIColor(hex: 0x4F8A5B)
+                stripe.colorBlendFactor = 0.3
+            case .road:
+                stripe.color = UIColor(hex: 0xB08A5A)
+                stripe.colorBlendFactor = 0.25
+            }
+        }
         if sandy {
             // warm sand, turquoise sea water, sandy roads
             switch kind {
@@ -267,13 +282,13 @@ final class HopScene: SKScene {
                     node.addChild(f)
                 }
             } else {
-                for _ in 0..<Int.random(in: 1...3) where sandy {
-                    // palm trees instead of leafy ones at the seaside
-                    let palm = SpriteFactory.emoji("🌴", size: cell * 0.95, at: CGPoint(x: CGFloat.random(in: 0...size.width), y: mid))
+                for _ in 0..<Int.random(in: 1...3) where sandy || jungle {
+                    // palm trees at the seaside, big jungle plants in the rainforest
+                    let palm = SpriteFactory.emoji(jungle ? ["🌴", "🌳", "🎋"].randomElement()! : "🌴", size: cell * 0.95, at: CGPoint(x: CGFloat.random(in: 0...size.width), y: mid))
                     palm.zPosition = 5
                     node.addChild(palm)
                 }
-                for _ in 0..<(sandy ? 0 : Int.random(in: 1...3)) {
+                for _ in 0..<(sandy || jungle ? 0 : Int.random(in: 1...3)) {
                     let tree = SKSpriteNode(texture: DriveArt.tree, size: CGSize(width: cell * 1.1, height: cell * 1.1))
                     tree.position = CGPoint(x: CGFloat.random(in: 0...size.width), y: mid)
                     tree.zPosition = 5

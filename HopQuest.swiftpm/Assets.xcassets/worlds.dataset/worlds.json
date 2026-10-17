@@ -405,6 +405,209 @@
           }
         }
       ]
+    },
+    {
+      "id": "jungle-journey",
+      "title": "Jungle Journey",
+      "icon": "🌴",
+      "blurb": "Swing through a rainforest full of parrots and monkeys, cross the river on lily pads, and climb to the Temple Top.",
+      "unlockAfter": 12,
+      "color": "2E8B57",
+      "chapters": [
+        {
+          "id": 13,
+          "title": "Vine Valley",
+          "kind": "hop",
+          "icon": "🐒",
+          "rows": 30,
+          "gateEvery": 7,
+          "difficulty": 0.45,
+          "intro": "Welcome to the jungle! Hop along the trail and watch for the safari jeeps.",
+          "style": {
+            "ground": "jungle",
+            "floaters": "log",
+            "decorations": [
+              "🌺",
+              "🦜",
+              "🌿"
+            ],
+            "vehicleColors": [
+              "34C77B",
+              "FFC93C",
+              "B57A45",
+              "FF7A59"
+            ],
+            "riverChance": 0.22,
+            "questions": [
+              {
+                "subject": "Nature",
+                "prompt": "Which animal swings from tree to tree?",
+                "choices": [
+                  "A monkey",
+                  "A fish",
+                  "A cow"
+                ],
+                "explain": "Monkeys use their arms and tails to swing through the trees."
+              },
+              {
+                "subject": "Science",
+                "prompt": "Why are rainforests so green?",
+                "choices": [
+                  "It rains a lot and it's warm",
+                  "It snows every day",
+                  "They are painted"
+                ],
+                "explain": "Lots of rain and warm sun help plants grow all year."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "What do parrots use to crack nuts?",
+                "choices": [
+                  "Their strong beaks",
+                  "Their feet only",
+                  "A hammer"
+                ],
+                "explain": "Parrots have strong, curved beaks that crack hard shells."
+              },
+              {
+                "subject": "Math",
+                "prompt": "There are 4 parrots and 3 more fly in. How many parrots?",
+                "choices": [
+                  "7",
+                  "6",
+                  "8"
+                ],
+                "explain": "4 + 3 = 7 parrots."
+              }
+            ]
+          }
+        },
+        {
+          "id": 14,
+          "title": "Hippo River",
+          "kind": "hop",
+          "icon": "🦛",
+          "rows": 34,
+          "gateEvery": 8,
+          "difficulty": 0.65,
+          "intro": "A wide river runs through the jungle. Hop across on the lily pads and logs!",
+          "style": {
+            "ground": "jungle",
+            "floaters": "lily",
+            "decorations": [
+              "🦋",
+              "🌺",
+              "🐸"
+            ],
+            "vehicleColors": [
+              "34C77B",
+              "FFC93C",
+              "B57A45",
+              "FF7A59"
+            ],
+            "riverChance": 0.46,
+            "questions": [
+              {
+                "subject": "Nature",
+                "prompt": "Where do hippos spend most of the day?",
+                "choices": [
+                  "In the water",
+                  "Up in trees",
+                  "Under the sand"
+                ],
+                "explain": "Hippos stay in rivers to keep cool, and come out at night to eat grass."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "What does a caterpillar turn into?",
+                "choices": [
+                  "A butterfly",
+                  "A bird",
+                  "A frog"
+                ],
+                "explain": "A caterpillar makes a chrysalis, then comes out as a butterfly."
+              },
+              {
+                "subject": "Science",
+                "prompt": "What do frogs start life as?",
+                "choices": [
+                  "Tadpoles",
+                  "Puppies",
+                  "Seeds"
+                ],
+                "explain": "Frogs hatch from eggs as tadpoles that swim, then grow legs."
+              },
+              {
+                "subject": "Kindness",
+                "prompt": "A friend drops their snack in the river. What could you do?",
+                "choices": [
+                  "Share some of yours",
+                  "Laugh",
+                  "Walk away"
+                ],
+                "explain": "Sharing is a kind way to help a friend."
+              }
+            ]
+          }
+        },
+        {
+          "id": 15,
+          "title": "Temple Top",
+          "kind": "hop",
+          "icon": "🛕",
+          "rows": 42,
+          "gateEvery": 10,
+          "difficulty": 0.85,
+          "intro": "Last climb! Hop all the way to the old stone temple at the top of the jungle.",
+          "style": {
+            "ground": "jungle",
+            "floaters": "log",
+            "decorations": [
+              "🌴",
+              "🦜",
+              "🐒"
+            ],
+            "vehicleColors": [
+              "34C77B",
+              "FFC93C",
+              "B57A45",
+              "FF7A59"
+            ],
+            "questions": [
+              {
+                "subject": "Nature",
+                "prompt": "Which big cat has spots and lives in rainforests?",
+                "choices": [
+                  "A jaguar",
+                  "A polar bear",
+                  "A penguin"
+                ],
+                "explain": "Jaguars are big spotted cats that live in rainforests and love to swim."
+              },
+              {
+                "subject": "Science",
+                "prompt": "Which layer of the rainforest is the very top?",
+                "choices": [
+                  "The emergent layer",
+                  "The floor",
+                  "The roots"
+                ],
+                "explain": "The emergent layer is made of the tallest trees, poking up above the rest."
+              },
+              {
+                "subject": "Words",
+                "prompt": "Which word rhymes with 'tree'?",
+                "choices": [
+                  "Bee",
+                  "Tray",
+                  "Toe"
+                ],
+                "explain": "Tree and bee both end with the -ee sound."
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

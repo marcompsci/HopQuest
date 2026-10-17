@@ -47,6 +47,16 @@ test("Sunny Shores: three seaside levels after Peak Castle") {
     check(w.chapters.flatMap(\.style.questions).allSatisfy { $0.choices.count == 3 }, "three choices each")
 }
 
+test("Jungle Journey: three rainforest levels after Lighthouse Point") {
+    let file = try WorldData.decode(Data(contentsOf: URL(fileURLWithPath: path)))
+    guard let w = file.worlds.first(where: { $0.id == "jungle-journey" }) else { check(false, "Jungle Journey exists"); return }
+    check(w.unlockAfter == 12, "opens after Lighthouse Point")
+    check(w.chapters.map(\.id) == [13, 14, 15], "chapters 13, 14, 15")
+    check(w.ground == "jungle" && w.chapters.allSatisfy { $0.style.isJungle }, "jungle ground everywhere")
+    check(zip(w.chapters, w.chapters.dropFirst()).allSatisfy { $0.difficulty < $1.difficulty && $0.rows <= $1.rows }, "each level a bit harder and longer")
+    check(w.chapters.allSatisfy { $0.style.questions.count >= 3 }, "each level brings its own questions")
+}
+
 test("worlds open one after another") {
     let file = try WorldData.decode(Data(contentsOf: URL(fileURLWithPath: path)))
     check(file.worlds.first?.unlockAfter == 6, "the first new world follows Castle Hill")
