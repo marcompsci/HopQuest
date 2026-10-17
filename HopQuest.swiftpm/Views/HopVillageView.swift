@@ -30,6 +30,7 @@ struct HopVillageView: View {
     @State private var duelStars: Int?
     @State private var homeOpen = false
     @State private var gardenOpen = false
+    @AppStorage(Handedness.key) private var leftHanded = false
     @State private var festivalOpen = false
     @State private var storyTurn = 0
     /// Screen height, so tall panels fit small phones.
@@ -83,11 +84,20 @@ struct HopVillageView: View {
                     Spacer()
                     if !anyOverlay {
                         HStack(alignment: .bottom) {
-                            VillageJoystick { v in scene?.setJoystick(v) }
-                            Spacer()
-                            VStack(spacing: 10) {
-                                missionsButton
-                                actionButton
+                            if leftHanded {
+                                VStack(spacing: 10) {
+                                    missionsButton
+                                    actionButton
+                                }
+                                Spacer()
+                                VillageJoystick { v in scene?.setJoystick(v) }
+                            } else {
+                                VillageJoystick { v in scene?.setJoystick(v) }
+                                Spacer()
+                                VStack(spacing: 10) {
+                                    missionsButton
+                                    actionButton
+                                }
                             }
                         }
                         .padding(.horizontal, 12)

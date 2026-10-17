@@ -69,6 +69,7 @@ struct ParentGateView: View {
 struct ParentSettingsView: View {
     @EnvironmentObject var store: GameStore
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(Handedness.key) private var leftHanded = false
     @State private var confirmReset = false
     @State private var soundTick = false
     @State private var confirmStartOver = false
@@ -147,6 +148,14 @@ struct ParentSettingsView: View {
                 Text("Hop Village")
             } footer: {
                 Text("Play with others lets kids see friends' buddies in the village and play Brain Duels: five quiz questions, no chat, no free text. It starts off: turn it on here if you'd like. Nearby only uses Wi-Fi or Bluetooth in the same room (no internet). Other players only ever see your child's buddy name, never their real name. Game Center friends goes online through Apple's Game Center and only connects with your child's Game Center friends, never strangers; Game Center follows Screen Time's multiplayer limits. Village buddies only say pre-written, kid-safe lines. Lighter effects shows fewer butterflies, leaves, raindrops and snowflakes. With seasons off, the village is always a sunny spring day. Seasons and weather come from the device date: nothing is downloaded.")
+            }
+
+            Section {
+                Toggle("Left-handed controls", isOn: $leftHanded)
+            } header: {
+                Text("Controls")
+            } footer: {
+                Text("Puts the joystick and arrows on the right and the action buttons on the left, in Hop Village and Pillow Bop. Text in HopQuest also grows with the iPhone's Text Size setting, and Reduce Motion calms the animations.")
             }
 
             Section("Play time") {

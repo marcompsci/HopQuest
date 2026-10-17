@@ -87,6 +87,7 @@ struct RootView: View {
                 MessageBubble(text: castleNote).padding(.bottom, 40)
             }
         }
+        .modifier(TabletFrame(sky: store.theme.sky))
         .animation(.easeInOut(duration: 0.35), value: route)
         .animation(.easeInOut(duration: 0.35), value: store.profile == nil)
         .onAppear {

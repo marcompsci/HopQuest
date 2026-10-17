@@ -22,10 +22,14 @@ let package = Package(
             appIcon: .asset("AppIcon"),
             accentColor: .presetColor(.purple),
             supportedDeviceFamilies: [
+                .pad,
                 .phone
             ],
             supportedInterfaceOrientations: [
-                .portrait
+                .portrait,
+                .landscapeRight(.when(deviceFamilies: [.pad])),
+                .landscapeLeft(.when(deviceFamilies: [.pad])),
+                .portraitUpsideDown(.when(deviceFamilies: [.pad]))
             ],
             capabilities: [
                 .localNetwork(purposeString: "HopQuest uses your local network so kids in the same room can see each other's buddies in Hop Village and play Brain Duels.",

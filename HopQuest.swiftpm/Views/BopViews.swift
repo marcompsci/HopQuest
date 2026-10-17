@@ -13,6 +13,7 @@ struct BopGameView: View {
     @StateObject private var hud = BopHUD()
     @State private var scene: BopScene?
     @State private var showIntro = true
+    @AppStorage(Handedness.key) private var leftHanded = false
     @AppStorage("hopquest.bop.arena") private var arenaID = BopArena.cloud.rawValue
     private var arena: BopArena { BopArena(rawValue: arenaID) ?? .cloud }
     @State private var left = false
@@ -306,11 +307,19 @@ struct BopGameView: View {
 
     private var soloControls: some View {
         HStack(alignment: .bottom, spacing: 12) {
-            WalkButton(icon: "arrowtriangle.left.fill", label: "Move left", pressed: $left)
-            WalkButton(icon: "arrowtriangle.right.fill", label: "Move right", pressed: $right)
-            Spacer(minLength: 0)
-            actionButton(title: "JUMP", color: Color(hex: 0x4D96FF), size: 74) { scene?.jump() }
-            actionButton(title: "BOP!", color: Color(hex: 0xFF7FC4), size: 92) { scene?.bop() }
+            if leftHanded {
+                actionButton(title: "BOP!", color: Color(hex: 0xFF7FC4), size: 92) { scene?.bop() }
+                actionButton(title: "JUMP", color: Color(hex: 0x4D96FF), size: 74) { scene?.jump() }
+                Spacer(minLength: 0)
+                WalkButton(icon: "arrowtriangle.left.fill", label: "Move left", pressed: $left)
+                WalkButton(icon: "arrowtriangle.right.fill", label: "Move right", pressed: $right)
+            } else {
+                WalkButton(icon: "arrowtriangle.left.fill", label: "Move left", pressed: $left)
+                WalkButton(icon: "arrowtriangle.right.fill", label: "Move right", pressed: $right)
+                Spacer(minLength: 0)
+                actionButton(title: "JUMP", color: Color(hex: 0x4D96FF), size: 74) { scene?.jump() }
+                actionButton(title: "BOP!", color: Color(hex: 0xFF7FC4), size: 92) { scene?.bop() }
+            }
         }
         .padding(.horizontal, 14)
         .padding(.top, 12)

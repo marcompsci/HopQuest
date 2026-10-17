@@ -66,9 +66,16 @@ struct AnswerButton: View {
 
     enum Mark { case plain, right, wrong }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         Button(action: action) {
-            Text(text)
+            HStack(spacing: 8) {
+                // a shape as well as a color, for kids who see colors differently
+                if state == .right { Image(systemName: "checkmark.circle.fill").font(.system(size: 24, weight: .black)) }
+                if state == .wrong { Image(systemName: "xmark").font(.system(size: 18, weight: .black)) }
+                Text(text)
+            }
                 .font(font)
                 .foregroundStyle(state == .plain ? Palette.ink : .white)
                 .lineLimit(2).minimumScaleFactor(0.5)
@@ -77,11 +84,12 @@ struct AnswerButton: View {
                 .background(RoundedRectangle(cornerRadius: 20)
                     .fill(state == .right ? Palette.green : state == .wrong ? Color(hex: 0xC9C3D6) : .white)
                     .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 4))
-                .modifier(Shake(animatableData: state == .wrong ? 1 : 0))
-                .animation(.default, value: state == .wrong)
+                .modifier(Shake(animatableData: state == .wrong && !reduceMotion ? 1 : 0))
+                .animation(reduceMotion ? nil : .default, value: state == .wrong)
         }
         .buttonStyle(BouncyButtonStyle())
         .disabled(state == .wrong)
+        .accessibilityValue(state == .right ? "Correct" : state == .wrong ? "Not this one" : "")
     }
 }
 

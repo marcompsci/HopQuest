@@ -30,8 +30,78 @@ enum Palette {
 }
 
 extension Font {
+    /// HopQuest's rounded font. It grows with the iPhone's Text Size setting (up to a quarter bigger,
+    /// so screens built for small phones still fit).
     static func kid(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font {
-        .system(size: size, weight: weight, design: .rounded)
+        .system(size: KidType.scaled(size), weight: weight, design: .rounded)
+    }
+}
+
+/// Text sizes that follow the iPhone's Text Size setting, capped so layouts keep fitting.
+enum KidType {
+    static let maxGrowth: CGFloat = 1.25
+
+    static func scaled(_ size: CGFloat) -> CGFloat {
+        let scaled = UIFontMetrics(forTextStyle: .body).scaledValue(for: size)
+        return min(max(scaled, size), size * maxGrowth)
+    }
+}
+
+/// Grown-ups' "Left-handed controls": joysticks and arrows on the right, action buttons on the left.
+enum Handedness {
+    static let key = "hopquest.lefthanded"
+}
+
+/// iPad (v3.8): HopQuest's screens are made for a tall phone, so on an iPad the game sits in a tall play area
+/// in the middle (in portrait or landscape) with a soft backdrop around it. Every game then plays exactly as it
+/// does on a phone, just bigger. On iPhone this does nothing.
+struct TabletFrame: ViewModifier {
+    var sky: [Color]
+    /// Height / width of the play area (phones are about 2.1; a little squarer uses more of the iPad).
+    static let aspect: CGFloat = 1.6
+
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+
+    func body(content: Content) -> some View {
+        if isPad {
+            GeometryReader { geo in
+                let fullHeight = geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom
+                let width = min(geo.size.width, fullHeight / Self.aspect)
+                ZStack {
+                    if width < geo.size.width - 1 {
+                        TabletBackdrop(sky: sky).ignoresSafeArea()
+                    }
+                    content
+                        .frame(width: width)
+                        .clipped()
+                        .shadow(color: .black.opacity(width < geo.size.width - 1 ? 0.25 : 0), radius: 18)
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
+            }
+        } else {
+            content
+        }
+    }
+}
+
+/// The soft sky around the play area on an iPad.
+private struct TabletBackdrop: View {
+    var sky: [Color]
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: sky, startPoint: .top, endPoint: .bottom)
+            Color.white.opacity(0.25)
+            GeometryReader { geo in
+                ForEach(0..<8, id: \.self) { i in
+                    Text(["☁️", "⭐", "🎈", "☁️", "🌼", "⭐", "☁️", "🎈"][i])
+                        .font(.system(size: 54))
+                        .opacity(0.35)
+                        .position(x: geo.size.width * (i % 2 == 0 ? 0.08 : 0.92),
+                                  y: geo.size.height * (0.1 + CGFloat(i) * 0.11))
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 

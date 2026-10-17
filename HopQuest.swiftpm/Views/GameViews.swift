@@ -262,6 +262,9 @@ struct QuizCard: View {
                     Circle().fill(isWrong ? Color.gray.opacity(0.35) : (isRight ? Palette.green : tint))
                     if isRight {
                         Image(systemName: "checkmark").font(.system(size: 16, weight: .black)).foregroundStyle(.white)
+                    } else if isWrong {
+                        // a shape as well as a color, for kids who see colors differently
+                        Image(systemName: "xmark").font(.system(size: 14, weight: .black)).foregroundStyle(.white)
                     } else {
                         Text(["A", "B", "C", "D", "E"][i % 5]).font(.kid(16, .black)).foregroundStyle(.white)
                     }
@@ -285,6 +288,8 @@ struct QuizCard: View {
         }
         .buttonStyle(BouncyButtonStyle())
         .disabled(solved || isWrong)
+        .accessibilityLabel("\(["A", "B", "C", "D", "E"][i % 5]). \(question.choices[i])")
+        .accessibilityValue(isRight ? "Correct" : isWrong ? "Not this one" : "")
     }
 
     private func fill(for i: Int) -> Color {

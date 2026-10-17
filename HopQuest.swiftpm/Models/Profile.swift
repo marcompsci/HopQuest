@@ -371,7 +371,6 @@ final class GameStore: ObservableObject {
 
     // MARK: Hop Village
 
-    /// Changes the village save block (only writes when something actually changed).
     /// Today as "yyyy-MM-dd" on this device (garden growth).
     static var todayKey: String { dayFormat.string(from: Date()) }
 
@@ -386,6 +385,7 @@ final class GameStore: ObservableObject {
         return (picked.kind, stars)
     }
 
+    /// Changes the village save block (only writes when something actually changed).
     func updateVillage(_ change: (inout VillageSaveState) -> Void) {
         guard var p = profile else { return }
         var v = p.village
