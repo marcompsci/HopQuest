@@ -222,6 +222,34 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - The Web Builder preview gets a content policy that blocks every network load, on top of JavaScript off and navigation blocked.
 - Listing, What's New, review notes, age-rating and privacy answers for 2.0 are in `APPSTORE.md`; `PRIVACY.md` and `SUPPORT.md` cover playing with others.
 
+### v3.2: Sunny Shores, the third story world
+- Opens after Peak Castle: Sandy Path, Tide Pools and Lighthouse Point, with sand, palm trees, surfboards on the waves and ocean questions. All from `worlds.json` (new ground "sand" and floater "surfboard").
+- Live play keeps only Nearby and Game Center friends: the "Anyone" mode is gone, so kids are never matched with strangers.
+
+### v3.3: Reading Nook
+- Ollie Owl's library in the village (new building N): First Sounds, Build a Word, Word Pop (sight words), Rhyme Time and Read & Match. Word lists are short CVC words with pictures, so every word can be sounded out.
+- Stars come only from beating your best (3 per game, 15 in all).
+
+### v3.4: Math Market
+- Benny Bear's shop (building E): Count the Coins, Pay Exactly, Make Change, Better Buy and Shopping List, with US coins. Coins and amounts follow the Learning level (little learners: no quarters, up to 20¢; big learners: change from $1).
+
+### v3.5: Garden & pets
+- A fenced garden (O) below your house: six beds, six plants. Growth = days since planting + days watered (once a day), so watering speeds it up but nothing ever wilts. The first of each plant gives a star.
+- Pets follow your buddy by walking on the buddy's own footsteps (never through walls), and pop back beside you after a long jump. Puppy and kitten from the start; the bunny after your first carrot; the duckling after three plants.
+
+### v3.6: Kart & Bop 2
+- Bubble Kart: Snowy Slalom and Beach Boardwalk, with jump ramps that sail over slush and sand. Paint your kart.
+- Pillow Bop arenas: Ice Rink (low grip), Bouncy Castle (landings spring back), Moon Base (0.45× gravity), each with a science line.
+
+### v3.7: Accessibility
+- Text follows the Text Size setting (capped at +25%), right/wrong uses a shape as well as a color, VoiceOver labels on answers, left-handed controls, Reduce Motion respected.
+
+### v3.8: iPad
+- Runs on iPad in any orientation. The game sits in a tall play area (height 1.6× width) in the middle with a soft sky around it, so every screen plays as it does on a phone.
+
+### v3.9: Story cutscenes and the Story Book
+- Nine short picture-book scenes (the invitation, one after each story level, and after both new worlds), each line read in its character's voice. Shown once, skippable, and replayable from the Story Book.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.
