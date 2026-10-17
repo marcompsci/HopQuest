@@ -465,6 +465,7 @@ struct HopVillageView: View {
         case .clubhouse: leave(.together, via: i)
         case .codingLab: leave(.codingLab, via: i)
         case .nook: leave(.readingNook, via: i)
+        case .market: leave(.mathMarket, via: i)
         case .cottage, .academy, .workshop, .boathouse, .garage, .tower:
             if let chapter = kind.storyChapter { leave(.chapter(chapter), via: i) }
         case .castle, .fountain, .home:

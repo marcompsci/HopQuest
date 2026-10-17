@@ -108,5 +108,77 @@ test("stars: first-try score, and stars only for beating your best") {
 }
 
 
+test("Math Market: coins and fewest coins") {
+    check(MarketBank.total([.quarter, .dime, .nickel, .penny]) == 41, "41 cents")
+    for amount in 0...99 {
+        let coins = MarketBank.fewestCoins(amount)
+        check(MarketBank.total(coins) == amount, "fewest coins add up to \(amount)")
+        let small = MarketBank.fewestCoins(amount, from: Coin.forLevel(1))
+        check(MarketBank.total(small) == amount && !small.contains(.quarter), "little learners never need a quarter")
+    }
+    check(Coin.forLevel(1) == [.penny, .nickel, .dime] && Coin.forLevel(3).count == 4, "coins by level")
+}
+
+test("Math Market: every game, every level, 300 seeds") {
+    for seed in 0..<300 {
+        for level in 1...3 {
+            var rng = SeededRNG(state: UInt64(seed * 7 + level))
+            let top = MarketBank.maxCents(level)
+            for game in MarketGame.allCases {
+                let rounds = MarketBank.rounds(for: game, level: level, count: 5, using: &rng)
+                check(rounds.count == 5, "5 rounds")
+                for r in rounds {
+                    check(!r.say.isEmpty && !r.cheer.isEmpty, "\(game) has words")
+                    check(Set(r.choices).count == r.choices.count, "\(game) choices differ: \(r.choices)")
+                    switch r.kind {
+                    case .choose:
+                        check(r.choices.filter { $0 == r.answer }.count == 1, "\(game) answer once: \(r.answer) in \(r.choices)")
+                        check(r.choices.allSatisfy { !$0.hasPrefix("0") && !$0.hasPrefix("-") }, "\(game) no zero or negative amounts")
+                    case .pay(let target):
+                        check(target >= 1 && target <= top, "price in range for level \(level): \(target)")
+                        let usable = Coin.forLevel(level)
+                        check(r.choices == usable.map(\.label), "pay with this level's coins")
+                        check(MarketBank.total(MarketBank.fewestCoins(target, from: usable)) == target, "payable exactly")
+                    }
+                    if level == 1, case .pay = r.kind { check(!r.choices.contains("25¢"), "no quarter to pay with for little learners") }
+                    if level == 1 { check(!r.coins.contains(.quarter), "no quarters pictured for little learners") }
+                }
+                switch game {
+                case .countCoins:
+                    for r in rounds {
+                        check(r.answer == MarketBank.cents(MarketBank.total(r.coins)), "count is the coins' total")
+                        check(MarketBank.total(r.coins) <= top && r.coins.count >= 2, "coins within the level")
+                    }
+                case .makeChange:
+                    for r in rounds {
+                        let nums = r.show.components(separatedBy: CharacterSet.decimalDigits.inverted).compactMap(Int.init)
+                        check(nums.count == 2 && r.answer == MarketBank.cents(nums[1] - nums[0]) && nums[1] > nums[0], "change = paid - price: \(r.show)")
+                    }
+                case .addUp:
+                    for r in rounds {
+                        let nums = r.show.components(separatedBy: CharacterSet.decimalDigits.inverted).compactMap(Int.init)
+                        check(nums.count == 2 && r.answer == MarketBank.cents(nums[0] + nums[1]) && nums[0] + nums[1] <= top, "sum: \(r.show)")
+                    }
+                case .compare:
+                    for r in rounds {
+                        let prices = r.choices.map { Int($0.components(separatedBy: CharacterSet.decimalDigits.inverted).joined())! }
+                        let picked = Int(r.answer.components(separatedBy: CharacterSet.decimalDigits.inverted).joined())!
+                        let wantLess = r.say.contains("less")
+                        check(picked == (wantLess ? prices.min()! : prices.max()!) && prices[0] != prices[1], "compare picks the \(wantLess ? "cheaper" : "pricier")")
+                    }
+                case .payExactly: break
+                }
+            }
+        }
+    }
+}
+
+test("Math Market save") {
+    var s = MarketSave()
+    check(s.record(.makeChange, stars: 1) == 1 && s.record(.makeChange, stars: 3) == 2 && s.record(.makeChange, stars: 2) == 0, "best only")
+    check(s.totalStars == 3 && MarketSave.maxStars == 15, "totals")
+    check(try JSONDecoder().decode(MarketSave.self, from: JSONEncoder().encode(s)) == s, "round trip")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

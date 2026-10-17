@@ -11,8 +11,8 @@ struct VillageCollision {
 
     /// True if a mover centered at `p` overlaps no blocked tile.
     func fits(_ p: VPoint) -> Bool {
-        let c0 = Int(floor(p.x - radius)), c1 = Int(floor(p.x + radius - eps))
-        let r0 = Int(floor(p.y - radius)), r1 = Int(floor(p.y + radius - eps))
+        let c0 = Int(floor(p.x - radius + eps)), c1 = Int(floor(p.x + radius - eps))
+        let r0 = Int(floor(p.y - radius + eps)), r1 = Int(floor(p.y + radius - eps))
         for r in r0...r1 {
             for c in c0...c1 where blocked(c, r) { return false }
         }
@@ -35,7 +35,7 @@ struct VillageCollision {
     private func moveAxisX(_ p: VPoint, _ dx: Double) -> VPoint {
         guard dx != 0 else { return p }
         var x = p.x + dx
-        let r0 = Int(floor(p.y - radius)), r1 = Int(floor(p.y + radius - eps))
+        let r0 = Int(floor(p.y - radius + eps)), r1 = Int(floor(p.y + radius - eps))
         if dx > 0 {
             let col = Int(floor(x + radius - eps))
             for r in r0...r1 where blocked(col, r) { x = Double(col) - radius; break }
@@ -49,7 +49,7 @@ struct VillageCollision {
     private func moveAxisY(_ p: VPoint, _ dy: Double) -> VPoint {
         guard dy != 0 else { return p }
         var y = p.y + dy
-        let c0 = Int(floor(p.x - radius)), c1 = Int(floor(p.x + radius - eps))
+        let c0 = Int(floor(p.x - radius + eps)), c1 = Int(floor(p.x + radius - eps))
         if dy > 0 {
             let row = Int(floor(y + radius - eps))
             for c in c0...c1 where blocked(c, row) { y = Double(row) - radius; break }

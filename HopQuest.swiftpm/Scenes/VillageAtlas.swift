@@ -91,6 +91,7 @@ enum VillageAtlas {
         "village_codinglab": CGSize(width: 96, height: 112),
         "village_cottage": CGSize(width: 80, height: 98),
         "village_garage": CGSize(width: 112, height: 104),
+        "village_market": CGSize(width: 80, height: 66),
         "village_museum": CGSize(width: 96, height: 118),
         "village_nook": CGSize(width: 80, height: 92),
         "village_shed": CGSize(width: 80, height: 76),

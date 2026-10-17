@@ -18,6 +18,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
     case home = "J"
     case fountain = "Q"
     case nook = "N"
+    case market = "E"
 
     /// Stable id for saves (visited places).
     var id: String {
@@ -38,6 +39,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .home: return "home"
         case .fountain: return "fountain"
         case .nook: return "nook"
+        case .market: return "market"
         }
     }
 
@@ -60,6 +62,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .home: return "My House"
         case .fountain: return "Wishing Fountain"
         case .nook: return "Reading Nook"
+        case .market: return "Math Market"
         }
     }
 
@@ -82,6 +85,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .home: return ""          // drawn from layers (see HomeStyle)
         case .fountain: return ""
         case .nook: return "village_nook"
+        case .market: return "village_market"
         }
     }
 
@@ -125,6 +129,6 @@ struct VillageBuilding: Equatable {
 /// What the village asks the app to open. `RootView` turns these into routes, so rewards and
 /// progress keep running through the same code as the menu and the world map.
 enum VillageDestination: Equatable {
-    case castle, stickers, bop, fortSelect, kartSelect, together, codingLab, readingNook
+    case castle, stickers, bop, fortSelect, kartSelect, together, codingLab, readingNook, mathMarket
     case chapter(Int)          // a story chapter (hop levels, Robot Lab, driving)
 }

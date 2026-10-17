@@ -814,6 +814,29 @@ def building_nook():
     rect(im, 0, base + 1, 79, base + 1, INK)
     return im
 
+def building_market():
+    """Math Market: Benny's shop with a striped awning, fruit crates and a big coin sign (kept short so it doesn't cover the road)."""
+    W, H = 80, 66; im = img(W, H); base = H - 2
+    # coin sign on top
+    ellipse(im, [30, 0, 49, 17], INK); ellipse(im, [31, 1, 48, 16], P['gold']); ellipse(im, [34, 4, 45, 13], P['gold2'])
+    rect(im, 39, 5, 40, 12, P['white']); rect(im, 37, 6, 42, 6, P['white']); rect(im, 37, 11, 42, 11, P['white'])
+    # back wall
+    bricks(im, 6, 18, 73, base, P['c0'], P['c1']); rect(im, 5, 17, 5, base, INK); rect(im, 74, 17, 74, base, INK)
+    # striped awning with scalloped edge
+    for k in range(9):
+        x = 3 + k * 8
+        outline_rect(im, x, 16, x + 8, 26, P['orng'] if k % 2 == 0 else P['white'])
+        ellipse(im, [x, 23, x + 8, 30], P['orng2'] if k % 2 == 0 else P['white'])
+    # counter with crates of fruit
+    outline_rect(im, 4, 44, 75, base, P['k0']); rect(im, 5, 45, 74, 46, P['k1'])
+    for i, (x, c) in enumerate([(8, 'red'), (22, 'gold'), (52, 'leaf0'), (66, 'orng')]):
+        outline_rect(im, x - 1, 38, x + 9, 46, P['k1'])
+        for dx in (1, 4, 7): ellipse(im, [x + dx - 2, 34, x + dx + 2, 40], P[c])
+    # the doorway in the middle of the counter
+    door(im, 40, base, w=16, h=22, c=P['teal2'])
+    rect(im, 0, base + 1, 79, base + 1, INK)
+    return im
+
 def item_gear():
     t = img(14, 14)
     for k in range(8):
@@ -1200,7 +1223,7 @@ def main():
                  'workshop': building_workshop(), 'academy': building_academy(), 'stadium': building_stadium(), 'shed': building_shed(),
                  'garage': building_garage(), 'clubhouse': building_clubhouse(), 'cottage': building_cottage(),
                  'boathouse': building_boathouse(), 'tower': building_tower(), 'codinglab': building_codinglab(),
-                 'nook': building_nook()}
+                 'nook': building_nook(), 'market': building_market()}
     for k, im in buildings.items(): save_imageset(assets, f'village_{k}', im)
 
     # your house: layers drawn on top of each other in the game
