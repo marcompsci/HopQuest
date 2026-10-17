@@ -32,14 +32,19 @@ final class Narrator: NSObject, AVSpeechSynthesizerDelegate {
 
     /// Speaks `text`, cutting off whatever was being said before.
     func say(_ text: String) {
+        say(text, pitch: 1.15, rate: 0.9)
+    }
+
+    /// Speaks in a character's voice (story cutscenes): `pitch` 0.5...2, `rate` compared to normal speed.
+    func say(_ text: String, pitch: Float, rate: Float) {
         guard enabled else { return }
         let clean = Self.speakable(text)
         guard !clean.isEmpty else { return }
         configureSession()
         if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
         let utterance = AVSpeechUtterance(string: clean)
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.9   // a little slower for kids
-        utterance.pitchMultiplier = 1.15                             // a little brighter
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * rate   // a little slower for kids
+        utterance.pitchMultiplier = min(2, max(0.5, pitch))          // a little brighter by default
         utterance.postUtteranceDelay = 0.05
         // All game text is English for now, so always use an English voice.
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")

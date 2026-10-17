@@ -15,6 +15,7 @@ struct MainMenuView: View {
     var onCodingLab: () -> Void
     var onReading: () -> Void = {}
     var onMarket: () -> Void = {}
+    var onStories: () -> Void = {}
     var onMap: () -> Void
     /// Opens a story world from data (Snowy Peaks).
     var onWorld: (String) -> Void = { _ in }
@@ -65,6 +66,7 @@ struct MainMenuView: View {
                     HStack(spacing: 12) {
                         smallButton(icon: "map.fill", title: "Adventure Map", action: onMap)
                         smallButton(icon: "person.2.fill", title: "Together", action: onTeam)
+                        smallButton(icon: "book.fill", title: "Stories", action: onStories)
                     }
                     Spacer(minLength: 20)
                 }
@@ -389,7 +391,7 @@ struct MainMenuView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                Text(title)
+                Text(title).lineLimit(1).minimumScaleFactor(0.6)
             }
             .font(.kid(17, .black))
             .foregroundStyle(Palette.ink)

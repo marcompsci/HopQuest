@@ -180,5 +180,27 @@ test("Math Market save") {
     check(try JSONDecoder().decode(MarketSave.self, from: JSONEncoder().encode(s)) == s, "round trip")
 }
 
+test("Story Book: a cutscene after every story level and both new worlds, each one well formed") {
+    check(Set(StoryBook.all.map(\.id)).count == StoryBook.all.count, "unique ids")
+    check(StoryBook.intro.id == "intro" && StoryBook.all.first?.id == "intro", "the intro comes first")
+    for ch in [1, 2, 3, 4, 5, 6, 9, 12] { check(StoryBook.after(chapter: ch) != nil, "a story after chapter \(ch)") }
+    for ch in [7, 8, 10, 11, 101, 201] { check(StoryBook.after(chapter: ch) == nil, "no story after chapter \(ch)") }
+    for c in StoryBook.all {
+        check(!c.title.isEmpty && (1...3).contains(c.panels.count), "\(c.id): 1 to 3 panels")
+        for p in c.panels {
+            check((1...3).contains(p.lines.count), "\(c.id): 1 to 3 lines a panel")
+            check((1...3).contains(p.actors.count), "\(c.id): 1 to 3 actors")
+            check(p.actors.allSatisfy { (0.05...0.95).contains($0.x) && $0.size > 0 }, "\(c.id): actors on stage")
+            for l in p.lines {
+                check(l.text.count >= 10 && l.text.count <= 120, "\(c.id): short, readable lines (\(l.text.count) letters)")
+                check(l.text.last.map { ".!?".contains($0) } == true, "\(c.id): lines end like sentences")
+            }
+        }
+    }
+    check(StoryVoice.allCases.allSatisfy { (0.5...2).contains($0.pitch) && (0.5...1.2).contains($0.rate) }, "voices in a safe range")
+    check(Set(StoryVoice.allCases.map(\.pitch)).count >= 5, "voices sound different")
+    check(StoryPlace.allCases.allSatisfy { $0.skyHex.count == 2 && !$0.props.isEmpty }, "every place has a sky and props")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

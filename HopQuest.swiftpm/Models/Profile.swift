@@ -175,6 +175,8 @@ struct PlayerProfile: Codable, Equatable {
     var reading = ReadingSave()
     /// Math Market: best stars per money game.
     var market = MarketSave()
+    /// Story cutscenes already watched (they then live in the Story Book).
+    var seenStories: Set<String> = []
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -182,7 +184,7 @@ struct PlayerProfile: Codable, Equatable {
         case codeBest, brainAnswered, brainFirstTry
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
-        case village, codeLab, missions, reading, market
+        case village, codeLab, missions, reading, market, seenStories
     }
 }
 
@@ -224,6 +226,9 @@ extension PlayerProfile {
         missions = (try? c.decodeIfPresent(MissionSave.self, forKey: .missions)) ?? MissionSave()
         reading = (try? c.decodeIfPresent(ReadingSave.self, forKey: .reading)) ?? ReadingSave()
         market = (try? c.decodeIfPresent(MarketSave.self, forKey: .market)) ?? MarketSave()
+        // Players from before the Story Book get the stories for levels they already finished.
+        seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
+            ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
     }
 }
 
@@ -469,6 +474,16 @@ final class GameStore: ObservableObject {
         profile = p
         return given
     }
+
+    // MARK: Story
+
+    func markStorySeen(_ id: String) {
+        guard var p = profile, !p.seenStories.contains(id) else { return }
+        p.seenStories.insert(id)
+        profile = p
+    }
+
+    func hasSeenStory(_ id: String) -> Bool { profile?.seenStories.contains(id) == true }
 
     // MARK: Missions
 

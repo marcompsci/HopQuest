@@ -30,6 +30,9 @@ enum Route: Equatable {
     case village
     case codingLab
     case readingNook
+    /// A story cutscene (by id); `afterStory` says where to go next.
+    case story(String)
+    case storyBook
     case mathMarket
     // two players on one phone
     case teamKartSelect
@@ -46,6 +49,8 @@ enum Route: Equatable {
 struct RootView: View {
     @EnvironmentObject var store: GameStore
     @State private var route: Route = .menu
+    /// Where to go when the cutscene ends.
+    @State private var afterStory: Route?
     @State private var sessionStart = Date()
     @State private var showBreak = false
     @State private var restTime = false
@@ -129,6 +134,7 @@ struct RootView: View {
                          onCodingLab: { route = .codingLab },
                          onReading: { route = .readingNook },
                          onMarket: { route = .mathMarket },
+                         onStories: { route = .storyBook },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
                 .onAppear { hub = .menu }
@@ -205,6 +211,19 @@ struct RootView: View {
 
         case .readingNook:
             ReadingNookView(onBack: goHome)
+
+        case .story(let id):
+            if let scene = StoryBook.cutscene(id) {
+                CutsceneView(scene: scene, character: store.character) {
+                    store.markStorySeen(id)
+                    let next = afterStory
+                    afterStory = nil
+                    if let next { route = next } else { goHome() }
+                }
+            }
+
+        case .storyBook:
+            StoryBookView(onBack: goHome)
 
         case .mathMarket:
             MathMarketView(onBack: goHome)
@@ -372,6 +391,12 @@ struct RootView: View {
 
     /// Opens a story chapter. Once the robot is built, the Robot Lab stop opens Code Club.
     private func play(_ chapter: Chapter) {
+        if chapter.id == 1 && !store.hasSeenStory(StoryBook.intro.id) && store.profile?.completedChapters.isEmpty == true {
+            // the very first level starts with the story's invitation
+            afterStory = .playing(chapter.id)
+            route = .story(StoryBook.intro.id)
+            return
+        }
         if chapter.kind == .robot && store.state(of: chapter) == .done {
             route = .codeClub
         } else {
@@ -380,17 +405,27 @@ struct RootView: View {
     }
 
     private func finish(_ chapter: Chapter, stars: Int) {
+        let firstTime = store.profile?.completedChapters.contains(chapter.id) == false
+        let next: Route
         if Chapters.isWorldChapter(chapter.id) {
             // Snowy Peaks and later worlds: saved as finished, then back to the world screen
             store.complete(chapter: chapter.id, stars: stars)
-            if let w = Worlds.world(containing: chapter.id) { route = .world(w.id) } else { route = .balloon(next: nil) }
+            if let w = Worlds.world(containing: chapter.id) { next = .world(w.id) } else { next = .balloon(next: nil) }
         } else if !Chapters.isStory(chapter.id) {
             // Team play earns stars but doesn't move the story along.
             store.addStars(stars)
             route = .balloon(next: nil)
+            return
         } else {
             store.complete(chapter: chapter.id, stars: stars)
-            route = .balloon(next: store.nextChapterID)
+            next = .balloon(next: store.nextChapterID)
+        }
+        // the first time a story level is finished, its cutscene plays before moving on
+        if firstTime, let scene = StoryBook.after(chapter: chapter.id), !store.hasSeenStory(scene.id) {
+            afterStory = next
+            route = .story(scene.id)
+        } else {
+            route = next
         }
     }
 }
