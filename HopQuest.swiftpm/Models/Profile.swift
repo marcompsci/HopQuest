@@ -171,6 +171,8 @@ struct PlayerProfile: Codable, Equatable {
     var codeLab = CodeLabSave()
     /// Village missions: which step each mission is on, and items already picked up.
     var missions = MissionSave()
+    /// Reading Nook: best stars per reading game.
+    var reading = ReadingSave()
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -178,7 +180,7 @@ struct PlayerProfile: Codable, Equatable {
         case codeBest, brainAnswered, brainFirstTry
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
-        case village, codeLab, missions
+        case village, codeLab, missions, reading
     }
 }
 
@@ -218,6 +220,7 @@ extension PlayerProfile {
         village = (try? c.decodeIfPresent(VillageSaveState.self, forKey: .village)) ?? VillageSaveState()
         codeLab = (try? c.decodeIfPresent(CodeLabSave.self, forKey: .codeLab)) ?? CodeLabSave()
         missions = (try? c.decodeIfPresent(MissionSave.self, forKey: .missions)) ?? MissionSave()
+        reading = (try? c.decodeIfPresent(ReadingSave.self, forKey: .reading)) ?? ReadingSave()
     }
 }
 
@@ -424,6 +427,19 @@ final class GameStore: ObservableObject {
         p.lifetimeStars += 2
         profile = p
         return true
+    }
+
+    // MARK: Reading Nook
+
+    /// Records a finished reading game. Returns the new stars (only for beating your best).
+    @discardableResult
+    func recordReading(_ game: ReadingGame, stars: Int) -> Int {
+        guard var p = profile else { return 0 }
+        let given = p.reading.record(game, stars: stars)
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return given
     }
 
     // MARK: Missions

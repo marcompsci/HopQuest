@@ -161,7 +161,7 @@ enum MissionCatalog {
         MissionDef(id: "flowers", giver: "flora", title: "Thirsty Flowers", icon: "💧",
                    intro: "The flower patches are thirsty! Can you give water to 4 of them?",
                    lesson: "Plants need water, sunlight and air to grow. Their roots drink water from the soil, and their leaves use sunlight to make food.",
-                   steps: [.collect(item: "drop", spots: [GridPoint(3, 9), GridPoint(13, 9), GridPoint(27, 9), GridPoint(30, 14)],
+                   steps: [.collect(item: "drop", spots: [GridPoint(3, 9), GridPoint(15, 9), GridPoint(27, 9), GridPoint(30, 14)],
                                     hint: "Water 4 flower patches")],
                    thanks: "Look at them bloom! Thank you for helping them grow.", reward: 2),
         MissionDef(id: "mail", giver: "buzzy", title: "Special Delivery", icon: "✉️",

@@ -13,6 +13,7 @@ struct MainMenuView: View {
     var onTeam: () -> Void
     var onCastle: () -> Void
     var onCodingLab: () -> Void
+    var onReading: () -> Void = {}
     var onMap: () -> Void
     /// Opens a story world from data (Snowy Peaks).
     var onWorld: (String) -> Void = { _ in }
@@ -52,6 +53,9 @@ struct MainMenuView: View {
                                  badge: 0, label: "Bubble Kart racing", action: onKart)
                     }
                     codingLabCard
+                    learnCard(icon: "📚", title: "Reading Nook",
+                              subtitle: "Letter sounds, spelling, sight words, rhymes and sentences · \(store.profile?.reading.totalStars ?? 0)/\(ReadingSave.maxStars) ⭐",
+                              color: 0xD94A57, shadow: 0x9E2A3A, action: onReading)
                     ForEach(Worlds.all) { w in worldCard(w) }
                     castleCard
                     HStack(spacing: 12) {
@@ -274,6 +278,31 @@ struct MainMenuView: View {
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel("Coding Lab: \(done) of \(CodeCurriculum.lessons.count) lessons done")
+    }
+
+    /// A learning place from the village (Reading Nook, Math Market) as a big menu card.
+    private func learnCard(icon: String, title: String, subtitle: String, color: UInt32, shadow: UInt32, action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.tap()
+            action()
+        } label: {
+            HStack(spacing: 14) {
+                Text(icon).font(.system(size: 44))
+                    .frame(width: 70, height: 70)
+                    .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.2)))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.kid(22, .black))
+                    Text(subtitle).font(.kid(14, .bold)).opacity(0.9)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 24).fill(Color(hex: color))
+                .shadow(color: Color(hex: shadow), radius: 0, x: 0, y: 5))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("\(title): \(subtitle)")
     }
 
     /// A story world from data, like Snowy Peaks. Opens after its unlock chapter.

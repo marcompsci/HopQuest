@@ -27,7 +27,7 @@ struct VillageNPCDef: Equatable {
 
     static let all: [VillageNPCDef] = [
         VillageNPCDef(id: "ollie", characterID: "ollie", fallbackID: "gemma",
-                      home: GridPoint(13, 14), wanderRadius: 3, activitySpot: GridPoint(12, 10), activity: "stargazing",
+                      home: GridPoint(13, 14), wanderRadius: 3, activitySpot: GridPoint(16, 10), activity: "stargazing",
                       greeting: "Hello, explorer! Want to solve a mystery about the stars?",
                       chatter: ["At night I look up from the castle garden. There are so many stars that nobody has ever counted them all!",
                                 "Our Sun is a star too. It looks big because it's the closest one to us."],
@@ -63,7 +63,7 @@ struct VillageNPCDef: Equatable {
                       thanksLine: "Splash-tastic! A star for you!",
                       seed: 41),
         VillageNPCDef(id: "stella", characterID: "stella", fallbackID: "gigi",
-                      home: GridPoint(10, 11), wanderRadius: 3, activitySpot: GridPoint(4, 10), activity: "reading",
+                      home: GridPoint(9, 11), wanderRadius: 3, activitySpot: GridPoint(4, 10), activity: "reading",
                       greeting: "Hi there! I look after the Sticker Book Museum. Do you like word games?",
                       chatter: ["Every buddy you collect gets a spot in the Sticker Book. Can you find all 29?",
                                 "Reading a little every day makes your brain extra strong!"],
@@ -93,7 +93,7 @@ struct VillageNPCDef: Equatable {
                                 "Try hopping across the lily pads with the Hop button!"],
                       lesson: .nature, askLine: "Ribbit, riddle time!", thanksLine: "Ribbit-rific! Here's a star!", seed: 71),
         VillageNPCDef(id: "flora", characterID: "flora", fallbackID: "starspark",
-                      home: GridPoint(13, 10), wanderRadius: 3, activitySpot: GridPoint(16, 9), activity: "smelling flowers",
+                      home: GridPoint(15, 11), wanderRadius: 3, activitySpot: GridPoint(16, 9), activity: "smelling flowers",
                       greeting: "Hello, darling! I'm Flora. Do you like science questions?",
                       chatter: ["Flamingos are pink because of the tiny shrimp they eat!",
                                 "Sunflowers turn to face the sun when they're young."],

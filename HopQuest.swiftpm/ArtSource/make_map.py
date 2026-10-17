@@ -9,6 +9,7 @@ Row 0 is the NORTH edge. Legend (also documented in VillageMap.swift):
     C castle   M sticker museum   A pillow bop arena   W robot lab   D driving school   X city rally garage
     K kart stadium   Y fort friends shed   U together clubhouse   G meadow street cottage
     V lily river boathouse   H castle hill tower   Q fountain   P coding lab   J your house
+    N reading nook
 """
 import random
 W, H = 44, 54
@@ -127,6 +128,9 @@ for r in range(2, 38):
 
 # --- Your house on the hill (NE of the castle). Placed after the flowers so the rest of the map stays the same.
 rect(26, 4, 30, 7, 'J'); put(28, 8, '.')
+
+# --- v3.3 Reading Nook, below the sticker museum (doors face the north road)
+rect(10, 9, 14, 11, 'N')
 
 rows = [''.join(r) for r in g]
 assert all(len(r) == W for r in rows)

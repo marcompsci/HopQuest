@@ -790,6 +790,30 @@ def building_codinglab():
     rect(im, 0, base + 1, 95, base + 1, INK)
     return im
 
+def building_nook():
+    """Reading Nook: a cozy little library with a book sign and shelves in the window."""
+    W, H = 80, 92; im = img(W, H); base = H - 2
+    gable(im, 40, 14, 44, 36, P['red'], P['red2'], overhang=3)
+    # open-book sign on the roof
+    ImageDraw.Draw(im).polygon([(24, 22), (40, 26), (56, 22), (56, 36), (40, 40), (24, 36)], fill=INK)
+    ImageDraw.Draw(im).polygon([(26, 24), (39, 28), (39, 37), (26, 34)], fill=P['white'])
+    ImageDraw.Draw(im).polygon([(41, 28), (54, 24), (54, 34), (41, 37)], fill=P['white'])
+    for y in (28, 31): rect(im, 29, y, 36, y, P['st1']); rect(im, 44, y, 51, y, P['st1'])
+    bricks(im, 6, 45, 73, base, P['c0'], P['c1']); rect(im, 5, 44, 5, base, INK); rect(im, 74, 44, 74, base, INK)
+    # shelf windows full of colorful books
+    for x0 in (10, 54):
+        outline_rect(im, x0, 54, x0 + 15, 76, P['k1'])
+        for row, y in enumerate((56, 67)):
+            x = x0 + 2
+            for i, c in enumerate(['red', 'blue', 'gold', 'teal', 'purp', 'pink']):
+                h = 8 - ((i + row) % 3)
+                rect(im, x, y + (9 - h), x + 1, y + 8, P[c]); x += 2
+                if x > x0 + 13: break
+            rect(im, x0 + 1, y + 9, x0 + 14, y + 9, P['k2'])
+    door(im, 40, base, w=16, h=26, c=P['blue2'])
+    rect(im, 0, base + 1, 79, base + 1, INK)
+    return im
+
 def item_gear():
     t = img(14, 14)
     for k in range(8):
@@ -1175,7 +1199,8 @@ def main():
                  'castle_rainbow': building_castle('rainbow'), 'museum': building_museum(), 'arena': building_arena(),
                  'workshop': building_workshop(), 'academy': building_academy(), 'stadium': building_stadium(), 'shed': building_shed(),
                  'garage': building_garage(), 'clubhouse': building_clubhouse(), 'cottage': building_cottage(),
-                 'boathouse': building_boathouse(), 'tower': building_tower(), 'codinglab': building_codinglab()}
+                 'boathouse': building_boathouse(), 'tower': building_tower(), 'codinglab': building_codinglab(),
+                 'nook': building_nook()}
     for k, im in buildings.items(): save_imageset(assets, f'village_{k}', im)
 
     # your house: layers drawn on top of each other in the game

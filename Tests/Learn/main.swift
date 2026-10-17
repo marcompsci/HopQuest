@@ -1,0 +1,112 @@
+import Foundation
+
+var failures = 0, passes = 0
+func check(_ ok: Bool, _ what: @autoclosure () -> String, line: Int = #line) {
+    if ok { passes += 1 } else { failures += 1; print("FAIL [\(line)] \(what())") }
+}
+func test(_ name: String, _ body: () throws -> Void) {
+    let before = failures
+    do { try body() } catch { failures += 1; print("FAIL \(name): threw \(error)") }
+    print(failures == before ? "  ok   \(name)" : "  FAIL \(name)")
+}
+
+/// Repeatable randomness so every seed is a different, checkable play.
+struct SeededRNG: RandomNumberGenerator {
+    var state: UInt64
+    mutating func next() -> UInt64 {
+        state &+= 0x9E3779B97F4A7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
+        z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
+        return z ^ (z >> 31)
+    }
+}
+
+print("Reading Nook and Math Market tests")
+
+test("word bank: short words with pictures, no repeats") {
+    let words = ReadingBank.words
+    check(words.count >= 20, "enough words")
+    check(Set(words.map(\.word)).count == words.count, "no repeated words")
+    check(Set(words.map(\.emoji)).count == words.count, "no repeated pictures")
+    check(words.allSatisfy { $0.word.count == 3 && $0.word == $0.word.lowercased() }, "three-letter lowercase words")
+    check(words.allSatisfy { "aeiou".contains($0.word[$0.word.index(after: $0.word.startIndex)]) }, "middle letter is a vowel (can be sounded out)")
+    check(ReadingBank.rhymeFamilies.count >= 5, "at least five rhyme families")
+    check(Set(ReadingBank.sightWords).count == ReadingBank.sightWords.count, "no repeated sight words")
+}
+
+test("every game, 400 seeds: answers are always among the choices, and nothing repeats") {
+    for seed in 0..<400 {
+        var rng = SeededRNG(state: UInt64(seed))
+        for game in ReadingGame.allCases {
+            let rounds = ReadingBank.rounds(for: game, count: 5, using: &rng)
+            check(rounds.count == 5, "\(game) has 5 rounds")
+            for r in rounds {
+                check(!r.say.isEmpty && !r.show.isEmpty && !r.cheer.isEmpty, "\(game) round has words")
+                check(Set(r.choices).count == r.choices.count, "\(game) choices are different: \(r.choices)")
+                switch r.kind {
+                case .choose:
+                    check(r.choices.filter { $0 == r.answer }.count == 1, "\(game) answer appears once: \(r.answer) in \(r.choices)")
+                    check((3...4).contains(r.choices.count), "\(game) 3 or 4 choices")
+                case .spell:
+                    var tiles = r.choices
+                    for ch in r.answer {
+                        if let i = tiles.firstIndex(of: String(ch)) { tiles.remove(at: i) } else { check(false, "tile for \(ch) in \(r.answer)") }
+                    }
+                    check(tiles.count == 1, "exactly one extra tile")
+                }
+            }
+            if game == .firstSound || game == .buildWord || game == .sightWords {
+                let shows = rounds.map(\.say)
+                check(Set(shows).count == shows.count, "\(game) doesn't repeat a word in one play")
+            }
+        }
+    }
+}
+
+test("each game checks the right thing") {
+    var rng = SeededRNG(state: 7)
+    for r in ReadingBank.rounds(for: .firstSound, count: 20, using: &rng) {
+        let w = ReadingBank.words.first { $0.emoji == r.show }!
+        check(r.answer == w.firstLetter, "first letter of \(w.word)")
+    }
+    for r in ReadingBank.rounds(for: .rhymes, count: 30, using: &rng) {
+        let target = String(r.show.split(separator: " ").last!)
+        check(r.answer.dropFirst() == target.dropFirst() && r.answer != target, "\(r.answer) rhymes with \(target)")
+        for c in r.choices where c != r.answer { check(c.dropFirst() != target.dropFirst(), "\(c) doesn't rhyme with \(target)") }
+    }
+    for r in ReadingBank.rounds(for: .sentences, count: 30, using: &rng) {
+        let words = r.show.dropLast().split(separator: " ").map(String.init)   // The cat is on the bed
+        let animal = ReadingBank.words.first { $0.word == words[1] }!, place = ReadingBank.words.first { $0.word == words[5] }!
+        check(r.answer == ReadingBank.picture(animal, place), "the picture matches \(r.show)")
+        check(r.choices.count == 3, "three pictures")
+    }
+    for r in ReadingBank.rounds(for: .sightWords, count: 10, using: &rng) {
+        check(r.say.hasSuffix("\(r.answer)."), "says the word to find")
+    }
+}
+
+test("spelling: next letter") {
+    check(ReadingBank.nextLetter(of: "cat", typed: "") == "c", "first")
+    check(ReadingBank.nextLetter(of: "cat", typed: "ca") == "t", "last")
+    check(ReadingBank.nextLetter(of: "cat", typed: "cat") == nil, "done")
+    check(ReadingBank.nextLetter(of: "cat", typed: "x") == nil, "off track")
+}
+
+test("stars: first-try score, and stars only for beating your best") {
+    check(LearnScore.stars(firstTry: 5, of: 5) == 3 && LearnScore.stars(firstTry: 3, of: 5) == 2
+          && LearnScore.stars(firstTry: 2, of: 5) == 1 && LearnScore.stars(firstTry: 0, of: 5) == 1, "1 to 3 stars")
+    var s = ReadingSave()
+    check(s.record(.rhymes, stars: 2) == 2, "first play gives its stars")
+    check(s.record(.rhymes, stars: 1) == 0, "a lower score gives nothing")
+    check(s.record(.rhymes, stars: 3) == 1, "beating the best gives the difference")
+    check(s.record(.rhymes, stars: 3) == 0, "never more than 3 per game")
+    check(s.totalStars == 3 && s.plays == 4, "totals")
+    let back = try JSONDecoder().decode(ReadingSave.self, from: JSONEncoder().encode(s))
+    check(back == s, "round trip")
+    check(try JSONDecoder().decode(ReadingSave.self, from: Data("{}".utf8)) == ReadingSave(), "empty save")
+}
+
+
+print("\n\(passes) checks passed, \(failures) failed")
+exit(failures == 0 ? 0 : 1)

@@ -278,6 +278,8 @@ test("save state: decodes from empty JSON, old versions, and round-trips") {
     check(empty == VillageSaveState(), "empty → defaults")
     check(empty.safeSpawn(in: map) == map.spawn, "default spawn is the square")
     check(empty.playMode == .off, "live play starts off until a grown-up turns it on")
+    let old = try JSONDecoder().decode(VillageSaveState.self, from: Data(#"{"playMode":"anyone"}"#.utf8))
+    check(old.playMode == .off, "the removed 'anyone' mode falls back to Off")
 
     let v1 = #"{"version":1,"tileX":7,"tileY":9,"facing":"north","solved":["ollie"],"futureField":42}"#
     let s = try JSONDecoder().decode(VillageSaveState.self, from: Data(v1.utf8))
