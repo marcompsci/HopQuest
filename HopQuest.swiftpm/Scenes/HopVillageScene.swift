@@ -16,6 +16,8 @@ final class HopVillageScene: SKScene {
         var day: VillageDay
         /// The festival decorating the square.
         var festival: Festival
+        /// Today as "yyyy-MM-dd" (garden growth).
+        var today: String = ""
     }
 
     enum DoorSign { case locked, done }
@@ -32,6 +34,8 @@ final class HopVillageScene: SKScene {
     var onPopQuiz: ((GameCharacter) -> Void)?
     /// The buddy walked over a mission item (gear, water drop, shape sign, lily pad star).
     var onPickup: ((String) -> Void)?
+    /// The child patted their pet.
+    var onPetTap: ((PetKind) -> Void)?
 
     /// Live play (other players' buddies and Brain Duels). Optional: the village works the same without it.
     weak var network: VillageNetwork?
@@ -61,6 +65,13 @@ final class HopVillageScene: SKScene {
     private var homeNode: SKSpriteNode?
     private var decorNodes: [SKNode] = []
     private var festival: Festival
+    /// Your garden's plants, by bed.
+    private var plantNodes: [SKSpriteNode] = []
+    /// Your pet, if you have one.
+    private var petKind: PetKind?
+    private var pet: PetFollower?
+    private var petSprite: SKSpriteNode?
+    private var petFrame = 0.0
 
     private var accumulator = 0.0
     private var lastTime: TimeInterval = 0
@@ -199,6 +210,49 @@ final class HopVillageScene: SKScene {
         }
     }
 
+    /// Where each garden bed is, in tiles (three across, two down, matching the garden picture).
+    static func bedCenter(_ i: Int, garden b: VillageBuilding) -> VPoint {
+        let xs = [1.125, 3.0, 4.875], ys = [0.625, 1.5]
+        return VPoint(Double(b.minC) + xs[i % 3], Double(b.minR) + ys[i / 3])
+    }
+
+    /// Redraws the plants in your garden.
+    func updateGarden(_ g: GardenSave, today: String) {
+        plantNodes.forEach { $0.removeFromParent() }
+        plantNodes = []
+        guard built, let b = map.building(.garden) else { return }
+        for i in 0..<GardenSave.plotCount {
+            guard let plot = g.plots[i], let stage = g.stage(i, today: today) else { continue }
+            let node = VillageArt.propNode(stage >= GardenSave.ripeStage ? "plant_\(plot.kind.rawValue)3" : "plant_seed\(stage)")
+            let foot = scenePoint(Self.bedCenter(i, garden: b) + VPoint(0, 0.3))
+            node.position = foot
+            node.zPosition = depth(scenePoint(b.foot).y) + 0.2 + CGFloat(i / 3) * 0.01
+            if stage >= GardenSave.ripeStage {
+                node.run(.repeatForever(.sequence([.scale(to: 1.08, duration: 0.5), .scale(to: 1.0, duration: 0.5)])))
+            }
+            world.addChild(node)
+            plantNodes.append(node)
+        }
+    }
+
+    /// Shows, swaps or hides your pet.
+    func setPet(_ kind: PetKind?) {
+        guard kind != petKind || (kind != nil && petSprite == nil) else { return }
+        petKind = kind
+        petSprite?.removeFromParent()
+        petSprite = nil
+        pet = nil
+        guard built, let kind else { return }
+        let node = VillageArt.propNode("pet_\(kind.rawValue)0")
+        node.setScale(0.9)
+        world.addChild(node)
+        petSprite = node
+        pet = PetFollower(near: player.position)
+        node.position = scenePoint(player.position)
+        node.alpha = 0
+        node.run(.fadeAlpha(to: 1, duration: 0.3))
+    }
+
     /// Switches the festival decorating the square (from the notice board).
     func setFestival(_ f: Festival) {
         festival = f
@@ -272,6 +326,9 @@ final class HopVillageScene: SKScene {
         marker.isHidden = true
         marker.run(.repeatForever(.animate(with: VillageArt.frames("marker", count: 2), timePerFrame: 0.35)))
         world.addChild(marker)
+
+        updateGarden(setup.save.garden, today: setup.today)
+        setPet(setup.save.garden.pet)
 
         renderActors()
         cam.snap(to: scenePoint(player.position), view: size, world: worldSize)
@@ -533,6 +590,7 @@ final class HopVillageScene: SKScene {
         }
 
         network?.publish(position: player.position, facing: player.facing, moving: player.isMoving)
+        pet?.step(dt: dt, player: player.position)
 
         // walk (or hop) over mission items to pick them up
         if !frozen && !player.isHopping {
@@ -592,6 +650,20 @@ final class HopVillageScene: SKScene {
         playerSprite.position = pp
         playerSprite.zPosition = depth(pp.y)
         playerSprite.update(stride: player.stride, facing: player.facing, moving: player.isMoving, hop: player.hopProgress ?? 0)
+
+        if let pet, let node = petSprite, let kind = petKind {
+            let p = scenePoint(pet.position)
+            node.position = p
+            node.zPosition = depth(p.y)
+            if pet.isMoving { petFrame += 1.0 / 7 }
+            let frame = pet.isMoving ? Int(petFrame) % 2 : 0
+            node.texture = VillageArt.prop("pet_\(kind.rawValue)\(frame)")
+            switch pet.facing {
+            case .west: node.xScale = -abs(node.xScale)
+            case .east: node.xScale = abs(node.xScale)
+            default: break
+            }
+        }
 
         for npc in npcs {
             let p = scenePoint(npc.position)
@@ -689,6 +761,18 @@ final class HopVillageScene: SKScene {
         let v = tilePoint(p)
         let tile = v.tile
 
+        // your pet? pat it
+        if let pet, let kind = petKind, abs(pet.position.x - v.x) < 0.6, v.y < pet.position.y + 0.3, v.y > pet.position.y - 0.9 {
+            petSprite?.run(.sequence([.moveBy(x: 0, y: 18, duration: 0.12), .moveBy(x: 0, y: -18, duration: 0.18)]))
+            let heart = SKLabelNode(text: "❤️")
+            heart.fontSize = 30
+            heart.position = scenePoint(pet.position + VPoint(0, -0.9))
+            heart.zPosition = 995
+            heart.run(.sequence([.group([.moveBy(x: 0, y: 50, duration: 0.8), .fadeOut(withDuration: 0.8)]), .removeFromParent()]))
+            world.addChild(heart)
+            onPetTap?(kind)
+            return
+        }
         // a buddy? (their body sits above their feet)
         if let npc = npcs.first(where: { abs($0.position.x - v.x) < 0.7 && v.y < $0.position.y + 0.3 && v.y > $0.position.y - 1.9 }) {
             if player.walk(to: npc.position.tile) {

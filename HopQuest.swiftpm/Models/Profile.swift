@@ -372,6 +372,20 @@ final class GameStore: ObservableObject {
     // MARK: Hop Village
 
     /// Changes the village save block (only writes when something actually changed).
+    /// Today as "yyyy-MM-dd" on this device (garden growth).
+    static var todayKey: String { dayFormat.string(from: Date()) }
+
+    /// Picks a ready plant. The first of each kind gives a star. Returns what was picked and the stars given.
+    @discardableResult
+    func harvestGarden(_ bed: Int) -> (kind: PlantKind, stars: Int)? {
+        guard var p = profile, let picked = p.village.garden.harvest(bed, today: Self.todayKey) else { return nil }
+        let stars = picked.first ? 1 : 0
+        p.stars += stars
+        p.lifetimeStars += stars
+        profile = p
+        return (picked.kind, stars)
+    }
+
     func updateVillage(_ change: (inout VillageSaveState) -> Void) {
         guard var p = profile else { return }
         var v = p.village

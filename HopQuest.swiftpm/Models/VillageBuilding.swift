@@ -19,6 +19,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
     case fountain = "Q"
     case nook = "N"
     case market = "E"
+    case garden = "O"
 
     /// Stable id for saves (visited places).
     var id: String {
@@ -40,6 +41,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .fountain: return "fountain"
         case .nook: return "nook"
         case .market: return "market"
+        case .garden: return "garden"
         }
     }
 
@@ -63,6 +65,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .fountain: return "Wishing Fountain"
         case .nook: return "Reading Nook"
         case .market: return "Math Market"
+        case .garden: return "My Garden"
         }
     }
 
@@ -86,6 +89,7 @@ enum BuildingKind: Character, CaseIterable, Codable {
         case .fountain: return ""
         case .nook: return "village_nook"
         case .market: return "village_market"
+        case .garden: return "village_garden"
         }
     }
 

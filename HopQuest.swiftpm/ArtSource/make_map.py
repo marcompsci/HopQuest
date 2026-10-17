@@ -9,7 +9,7 @@ Row 0 is the NORTH edge. Legend (also documented in VillageMap.swift):
     C castle   M sticker museum   A pillow bop arena   W robot lab   D driving school   X city rally garage
     K kart stadium   Y fort friends shed   U together clubhouse   G meadow street cottage
     V lily river boathouse   H castle hill tower   Q fountain   P coding lab   J your house
-    N reading nook   E math market
+    N reading nook   E math market   O your garden
 """
 import random
 W, H = 44, 54
@@ -134,6 +134,9 @@ rect(10, 9, 14, 11, 'N')
 
 # --- v3.4 Math Market, between the fort yard and the main avenue (door faces the south path)
 rect(16, 31, 20, 33, 'E')
+
+# --- v3.5 your garden, beside your house (gate faces south)
+rect(24, 9, 29, 10, 'O')
 
 rows = [''.join(r) for r in g]
 assert all(len(r) == W for r in rows)

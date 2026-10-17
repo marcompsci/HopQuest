@@ -29,6 +29,7 @@ struct HopVillageView: View {
     @State private var showCharacters = false
     @State private var duelStars: Int?
     @State private var homeOpen = false
+    @State private var gardenOpen = false
     @State private var festivalOpen = false
     @State private var storyTurn = 0
     /// Screen height, so tall panels fit small phones.
@@ -36,7 +37,7 @@ struct HopVillageView: View {
 
     private var anyOverlay: Bool {
         dialogue != nil || quiz != nil || boardOpen || missionsOpen || castleParty || showParent || showCharacters
-            || homeOpen || festivalOpen || network.incoming != nil || network.duel != nil
+            || homeOpen || gardenOpen || festivalOpen || network.incoming != nil || network.duel != nil
     }
 
     private var seasonsOn: Bool { store.profile?.village.seasons ?? true }
@@ -176,6 +177,38 @@ struct HopVillageView: View {
                           })
         }
 
+        if gardenOpen {
+            Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { gardenOpen = false }
+            GardenView(garden: store.profile?.village.garden ?? GardenSave(), today: GameStore.todayKey,
+                       maxHeight: screenHeight - 200,
+                       onPlant: { bed, kind in
+                           store.updateVillage { $0.garden.plant(kind, in: bed, today: GameStore.todayKey) }
+                           Narrator.shared.say("You planted a \(kind.title.lowercased()) seed! \(kind.fact)")
+                           refreshGarden()
+                       },
+                       onWater: { bed in
+                           store.updateVillage { $0.garden.water(bed, today: GameStore.todayKey) }
+                           Haptics.tap(.splash)
+                           Narrator.shared.say("Splish! Plants drink water through their roots.")
+                           refreshGarden()
+                       },
+                       onHarvest: { bed in
+                           guard let picked = store.harvestGarden(bed) else { return }
+                           Haptics.success(.chime)
+                           Narrator.shared.say(picked.stars > 0 ? "Your first \(picked.kind.title.lowercased())! Here's a star!" : "You picked a \(picked.kind.title.lowercased())! Yum!")
+                           refreshGarden()
+                       },
+                       onPet: { kind in
+                           store.updateVillage { $0.garden.pet = kind }
+                           scene?.setPet(kind)
+                           if let kind { Narrator.shared.say("\(kind.name) the \(kind.title.lowercased()) will walk with you!") }
+                       },
+                       onClose: {
+                           gardenOpen = false
+                           scene?.celebrate()
+                       })
+        }
+
         if festivalOpen {
             Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { festivalOpen = false }
             FestivalBoardView(day: today, current: festival, missions: store.profile?.missions ?? MissionSave(), seasonsOn: seasonsOn,
@@ -302,6 +335,10 @@ struct HopVillageView: View {
         }
     }
 
+    private func refreshGarden() {
+        scene?.updateGarden(store.profile?.village.garden ?? GardenSave(), today: GameStore.todayKey)
+    }
+
     // MARK: Building the scene
 
     private func doorSign(_ kind: BuildingKind) -> HopVillageScene.DoorSign? {
@@ -318,7 +355,7 @@ struct HopVillageView: View {
         for kind in BuildingKind.allCases { if let s = doorSign(kind) { signs[kind] = s } }
         let setup = HopVillageScene.Setup(character: store.character, theme: store.theme, save: profile.village,
                                           doorSigns: signs, hour: Calendar.current.component(.hour, from: Date()),
-                                          day: today, festival: festival)
+                                          day: today, festival: festival, today: GameStore.todayKey)
         let s = HopVillageScene(size: size, setup: setup)
         s.network = network
         s.onInteractionChange = { i in
@@ -333,6 +370,10 @@ struct HopVillageView: View {
         }
         s.onPopQuiz = { character in popQuiz(from: character) }
         s.onPickup = { key in pickedUp(key) }
+        s.onPetTap = { kind in
+            Haptics.tap(.pop)
+            showNote("\(kind.emoji) \(kind.pat)", speak: true)
+        }
         s.setPickups(profile.missions.pickups())
         scene = s
         builtFor = store.character.id
@@ -444,6 +485,13 @@ struct HopVillageView: View {
             }
             return
         }
+        if kind == .garden {
+            Haptics.tap(.whoosh)
+            store.updateVillage { $0.visited.insert(kind.id) }
+            gardenOpen = true
+            Narrator.shared.say("Welcome to your garden! Plant a seed, or water your plants.")
+            return
+        }
         if kind == .home {
             Haptics.tap(.whoosh)
             store.updateVillage { $0.visited.insert(kind.id) }
@@ -468,7 +516,7 @@ struct HopVillageView: View {
         case .market: leave(.mathMarket, via: i)
         case .cottage, .academy, .workshop, .boathouse, .garage, .tower:
             if let chapter = kind.storyChapter { leave(.chapter(chapter), via: i) }
-        case .castle, .fountain, .home:
+        case .castle, .fountain, .home, .garden:
             break
         }
     }

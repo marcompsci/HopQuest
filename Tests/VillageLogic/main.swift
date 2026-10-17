@@ -631,5 +631,77 @@ test("villager stories change with the season and weather") {
     check(heard.count == 3, "over a few chats you hear the season line and both weather lines: \(heard.count)")
 }
 
+test("garden: plants grow with days and water, never wilt, and pay a star once per kind") {
+    check(GardenSave.dayNumber("1970-01-01") == 0 && GardenSave.dayNumber("2026-10-16")! - GardenSave.dayNumber("2026-09-30")! == 16, "day numbers")
+    check(GardenSave.dayNumber("2024-03-01")! - GardenSave.dayNumber("2024-02-28")! == 2, "leap day counted")
+    check(GardenSave.dayNumber("oops") == nil && GardenSave.dayNumber("2026-13-01") == nil, "bad dates")
+    var g = GardenSave()
+    check(g.plant(.carrot, in: 0, today: "2026-10-16"), "plant")
+    check(!g.plant(.tulip, in: 0, today: "2026-10-16"), "bed taken")
+    check(!g.plant(.tulip, in: 6, today: "2026-10-16"), "only six beds")
+    check(g.stage(0, today: "2026-10-16") == 0, "a seed today")
+    check(g.water(0, today: "2026-10-16") && !g.water(0, today: "2026-10-16"), "water once a day")
+    check(g.stage(0, today: "2026-10-16") == 1, "water makes it sprout")
+    check(g.stage(0, today: "2026-10-17") == 2, "a day later it buds")
+    check(g.harvest(0, today: "2026-10-17") == nil, "not ready yet")
+    check(g.water(0, today: "2026-10-17") && g.isRipe(0, today: "2026-10-17"), "watered twice: ready on day two")
+    check(!g.water(0, today: "2026-10-17"), "no watering when ready")
+    check(g.stage(0, today: "2027-10-17") == 3, "a year away: still fine, never wilts")
+    let first = g.harvest(0, today: "2026-10-17")
+    check(first?.kind == .carrot && first?.first == true && g.plots[0] == nil, "picked, first carrot")
+    check(g.isUnlocked(.bunny) && !g.isUnlocked(.duckling), "a carrot brings the bunny")
+    g.plant(.carrot, in: 1, today: "2026-10-17")
+    check(g.daysLeft(1, today: "2026-10-17") == 3 && g.daysLeft(1, today: "2026-10-20") == 0, "ready in 3 days without water")
+    check(g.harvest(1, today: "2026-10-20")?.first == false, "second carrot: no new star")
+    g.plant(.tulip, in: 2, today: "2026-10-01")
+    check(g.harvest(2, today: "2026-10-16")?.first == true && g.isUnlocked(.duckling), "three picked: duckling")
+    check(g.stage(4, today: "2026-10-16") == nil, "empty bed has no stage")
+    // planted "in the future" (clock changed) never goes negative
+    g.plant(.pumpkin, in: 3, today: "2026-12-01")
+    check(g.stage(3, today: "2026-10-16") == 0, "clock moved back: still a seed")
+    g.pet = .bunny
+    let back = try JSONDecoder().decode(GardenSave.self, from: JSONEncoder().encode(g))
+    check(back == g, "round trip")
+    let bad = try JSONDecoder().decode(GardenSave.self, from: Data(#"{"plots":{"9":{"kind":"tulip","planted":"2026-10-01"}},"pet":"dragon"}"#.utf8))
+    check(bad.plots.isEmpty && bad.pet == nil, "bad beds and unknown pets are dropped")
+    var v = VillageSaveState(); v.garden = g
+    check(try JSONDecoder().decode(VillageSaveState.self, from: JSONEncoder().encode(v)).garden == g, "saved with the village")
+}
+
+test("garden: on the map beside your house, gate reachable, house door still reachable") {
+    guard let garden = map.building(.garden), let home = map.building(.home) else { check(false, "garden and house exist"); return }
+    check(garden.widthTiles == 6 && garden.heightTiles == 2, "six tiles wide, two tall")
+    check(pf.path(from: map.spawn, to: garden.doorstep) != nil, "garden gate reachable")
+    check(pf.path(from: garden.doorstep, to: home.doorstep) != nil, "house door reachable from the garden")
+}
+
+test("pet: follows behind along the buddy's own footsteps, catches up after a jump") {
+    var player = VillagePlayerController(map: map, start: map.spawn)
+    var pet = PetFollower(near: player.position)
+    let dirs = [VPoint(1, 0), VPoint(0, 1), VPoint(-1, 0), VPoint(0.7, -0.7), VPoint(-0.6, -0.8)]
+    var maxGap = 0.0
+    let petBox = VillageCollision(map: map, radius: 0.22)   // the pet is smaller than a buddy
+    for d in dirs {
+        player.joystick = d
+        for _ in 0..<240 {
+            player.step(dt: 1.0 / 60)
+            pet.step(dt: 1.0 / 60, player: player.position)
+            check(petBox.fits(pet.position), "pet never stands in a wall: \(pet.position)")
+            maxGap = max(maxGap, pet.position.distance(to: player.position))
+        }
+    }
+    player.joystick = .zero
+    for _ in 0..<180 { player.step(dt: 1.0 / 60); pet.step(dt: 1.0 / 60, player: player.position) }
+    let gap = pet.position.distance(to: player.position)
+    check(gap <= PetFollower.followDistance + 0.2, "settles close behind: \(gap)")
+    check(gap > 0.3, "doesn't stand on top of the buddy: \(gap)")
+    check(maxGap < PetFollower.snapDistance, "keeps up while walking: \(maxGap)")
+    // jump across the village (coming back from a game)
+    let far = map.building(.tower)!.doorstep.center
+    pet.step(dt: 1.0 / 60, player: far)
+    check(pet.position.distance(to: far) < 1.0, "pops next to the buddy after a long jump")
+    check(!pet.isMoving, "and stands still")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

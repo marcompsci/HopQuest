@@ -837,6 +837,80 @@ def building_market():
     rect(im, 0, base + 1, 79, base + 1, INK)
     return im
 
+def building_garden():
+    """Your garden: a low picket fence around six soil beds (plants are drawn on top by the game)."""
+    W, H = 96, 36; im = img(W, H); base = H - 2
+    rect(im, 1, 4, 94, base, P['g1'])
+    for row in range(2):
+        for col in range(3):
+            x0 = 5 + col * 30; y0 = 6 + row * 14
+            outline_rect(im, x0, y0, x0 + 25, y0 + 11, P['k2'])
+            rect(im, x0 + 1, y0 + 1, x0 + 24, y0 + 10, P['k1'])
+            for k in range(3): rect(im, x0 + 3, y0 + 3 + k * 3, x0 + 22, y0 + 3 + k * 3, P['k2'])
+    # picket fence: top rail and posts, gate gap in the middle of the bottom
+    for x in range(0, W, 6):
+        outline_rect(im, x, 0, x + 3, 6, P['white']); px(im, x + 1, 0, P['c1'])
+    rect(im, 0, 3, W - 1, 3, P['c1'])
+    for y in range(4, base, 6):
+        outline_rect(im, 0, y, 3, y + 4, P['white']); outline_rect(im, W - 4, y, W - 1, y + 4, P['white'])
+    for x in list(range(0, 40, 6)) + list(range(56, W, 6)):
+        outline_rect(im, x, base - 5, x + 3, base, P['white'])
+    rect(im, 0, base + 1, W - 1, base + 1, INK)
+    return im
+
+def plant(kind, stage):
+    """Garden plants: 0 seeds, 1 sprout, 2 bud, 3 ready (one look per plant)."""
+    t = img(16, 18); d = ImageDraw.Draw(t)
+    ellipse(t, [3, 14, 12, 17], P['k2'])                      # soil mound
+    if stage == 0:
+        for x in (5, 8, 11): px(t, x, 14, P['c1'])
+        return t
+    rect(t, 7, 7 if stage == 1 else 4, 8, 15, P['leaf1'])       # stem
+    ellipse(t, [2, 8, 7, 12], P['leaf0']); ellipse(t, [8, 8, 13, 12], P['leaf0'])
+    if stage == 1: return t
+    if stage == 2:
+        ellipse(t, [5, 1, 10, 6], P['leaf3']); return t
+    if kind == 'sunflower':
+        for (dx, dy) in [(-3, 0), (3, 0), (0, -3), (0, 3), (-2, -2), (2, -2), (-2, 2), (2, 2)]:
+            ellipse(t, [7 + dx - 2, 3 + dy - 2, 7 + dx + 2, 3 + dy + 2], P['gold'])
+        ellipse(t, [5, 1, 10, 6], P['k2'])
+    elif kind == 'carrot':
+        for x in (5, 7, 9): rect(t, x, 3, x, 9, P['leaf1'])
+        d.polygon([(4, 10), (11, 10), (7, 17)], fill=P['orng'], outline=INK)
+    elif kind == 'tomato':
+        for (cx, cy) in [(4, 6), (10, 4), (9, 10)]: ellipse(t, [cx - 2, cy - 2, cx + 3, cy + 3], P['red'])
+    elif kind == 'strawberry':
+        for (cx, cy) in [(4, 9), (11, 8)]:
+            d.polygon([(cx - 3, cy - 2), (cx + 3, cy - 2), (cx, cy + 4)], fill=P['red'], outline=INK)
+            px(t, cx, cy, P['gold'])
+    elif kind == 'pumpkin':
+        ellipse(t, [2, 7, 14, 16], INK); ellipse(t, [3, 8, 13, 15], P['orng']); rect(t, 8, 8, 8, 15, P['orng2'])
+        rect(t, 7, 5, 8, 8, P['leaf2'])
+    elif kind == 'tulip':
+        d.polygon([(4, 1), (6, 4), (8, 1), (10, 4), (12, 1), (12, 7), (4, 7)], fill=P['pink'], outline=INK)
+    return t
+
+def pet(kind, frame):
+    """Little pets that follow your buddy (2 walk frames)."""
+    t = img(16, 14); d = ImageDraw.Draw(t)
+    body = {'puppy': P['k0'], 'kitten': P['st1'], 'bunny': P['white'], 'duckling': P['gold']}[kind]
+    ear = {'puppy': P['k2'], 'kitten': P['st2'], 'bunny': P['blos0'], 'duckling': P['orng']}[kind]
+    leg = 1 if frame else 0
+    ellipse(t, [2, 6, 12, 12], INK); ellipse(t, [3, 7, 11, 11], body)               # body
+    for x in (4, 9): rect(t, x + leg, 11, x + 1 + leg, 13, INK)                       # feet
+    ellipse(t, [7, 1, 15, 9], INK); ellipse(t, [8, 2, 14, 8], body)                  # head
+    px(t, 12, 4, INK); px(t, 10, 4, INK)                                            # eyes
+    if kind == 'puppy':
+        ellipse(t, [6, 2, 9, 7], ear); px(t, 14, 6, INK); rect(t, 1, 6, 2, 7, body)   # floppy ear, nose, tail
+    elif kind == 'kitten':
+        d.polygon([(8, 3), (9, 0), (11, 2)], fill=ear); d.polygon([(12, 2), (14, 0), (14, 3)], fill=ear)
+        rect(t, 0, 4, 1, 8, body)
+    elif kind == 'bunny':
+        rect(t, 9, 0, 10, 3, ear); rect(t, 12, 0, 13, 3, ear); ellipse(t, [0, 7, 3, 10], P['white'])
+    elif kind == 'duckling':
+        rect(t, 14, 5, 15, 6, P['orng']); px(t, 2, 7, body)
+    return t
+
 def item_gear():
     t = img(14, 14)
     for k in range(8):
@@ -1208,6 +1282,9 @@ def main():
               ('snowman', snowman()), ('bunting', bunting()), ('stall_red', stall('red', 'red2')), ('stall_blue', stall('blue', 'blue2')),
               ('kite_fly', kite_flying()), ('note', music_note()), ('snowflake', snowflake()), ('raindrop', raindrop()), ('petal', petal())]
     props += [(f'flowers{v}', flowers(v)) for v in range(4)]
+    props += [(f'plant_{k}{st}', plant(k, st)) for k in ('sunflower', 'carrot', 'tomato', 'strawberry', 'pumpkin', 'tulip') for st in (3,)]
+    props += [(f'plant_seed{st}', plant('', st)) for st in range(3)]
+    props += [(f'pet_{k}{f}', pet(k, f)) for k in ('puppy', 'kitten', 'bunny', 'duckling') for f in range(2)]
     props += [(f'fountain{f}', fountain(f)) for f in range(3)]
     props += [(f'lily{f}', lily(f)) for f in range(2)]
     props += [(f'portal{f}', portal(f)) for f in range(4)]
@@ -1223,7 +1300,8 @@ def main():
                  'workshop': building_workshop(), 'academy': building_academy(), 'stadium': building_stadium(), 'shed': building_shed(),
                  'garage': building_garage(), 'clubhouse': building_clubhouse(), 'cottage': building_cottage(),
                  'boathouse': building_boathouse(), 'tower': building_tower(), 'codinglab': building_codinglab(),
-                 'nook': building_nook(), 'market': building_market()}
+                 'nook': building_nook(), 'market': building_market(),
+                 'garden': building_garden()}
     for k, im in buildings.items(): save_imageset(assets, f'village_{k}', im)
 
     # your house: layers drawn on top of each other in the game

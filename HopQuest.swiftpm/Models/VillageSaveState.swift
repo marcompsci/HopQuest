@@ -51,6 +51,8 @@ struct VillageSaveState: Codable, Equatable {
     var home = HomeStyle()
     /// Grown-ups' setting: seasons and weather follow the calendar (off = always a sunny spring day).
     var seasons: Bool = true
+    /// The garden beside your house, and your pet.
+    var garden = GardenSave()
 
     static let bonusPerDay = 5
     static let duelStarsPerDay = 6
@@ -65,7 +67,7 @@ struct VillageSaveState: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case version, tileX, tileY, facing, visited, talkedTo, solved, lightEffects, eveningLights, startInVillage
         case castleCelebrated, bonusDay, bonusToday, duelDay, duelStarsToday, popTurn, playMode
-        case festivalPick, home, seasons
+        case festivalPick, home, seasons, garden
     }
 
     init(from decoder: Decoder) throws {
@@ -90,6 +92,7 @@ struct VillageSaveState: Codable, Equatable {
         festivalPick = try? c.decodeIfPresent(String.self, forKey: .festivalPick)
         home = (try? c.decodeIfPresent(HomeStyle.self, forKey: .home)) ?? HomeStyle()
         seasons = (try? c.decodeIfPresent(Bool.self, forKey: .seasons)) ?? true
+        garden = (try? c.decodeIfPresent(GardenSave.self, forKey: .garden)) ?? GardenSave()
         // Saves from the first, smaller village: the old spot means something else on the new map.
         if version < 2 {
             tileX = 22
