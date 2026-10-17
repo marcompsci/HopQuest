@@ -34,6 +34,7 @@ enum Route: Equatable {
     case story(String)
     case storyBook
     case scienceLab
+    case musicMaker
     case mathMarket
     // two players on one phone
     case teamKartSelect
@@ -137,6 +138,7 @@ struct RootView: View {
                          onMarket: { route = .mathMarket },
                          onStories: { route = .storyBook },
                          onScience: { route = .scienceLab },
+                         onMusic: { route = .musicMaker },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
                 .onAppear { hub = .menu }
@@ -231,6 +233,9 @@ struct RootView: View {
 
         case .scienceLab:
             ScienceLabView(onBack: goHome)
+
+        case .musicMaker:
+            MusicMakerView(onBack: goHome)
 
         case .mathMarket:
             MathMarketView(onBack: goHome)
@@ -371,6 +376,8 @@ struct RootView: View {
     /// Racing music for driving and karts; the adventure theme everywhere else.
     private func updateMusic() {
         switch route {
+        case .musicMaker:
+            SoundFX.shared.stopMusic()   // the child makes the music here
         case .kartSelect, .bop, .teamKartSelect, .teamKart, .teamBop:
             SoundFX.shared.playMusic(.race)
         case .playing(let id):

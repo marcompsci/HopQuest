@@ -157,6 +157,24 @@ final class SoundFX {
         if !p.isPlaying { p.play() }
     }
 
+    // MARK: Music Maker
+
+    private var noteBuffers: [String: AVAudioPCMBuffer] = [:]
+
+    /// Plays one Music Maker note (key 0...7, or drum pad 0...3 for drums). Made on the device the first time.
+    func playNote(_ instrument: Instrument, key: Int, volume: Float = 0.9) {
+        guard sfxOn else { return }
+        start()
+        let id = "\(instrument.rawValue)\(key)"
+        if noteBuffers[id] == nil { noteBuffers[id] = Synth.instrumentNote(instrument, key: key, format: format) }
+        guard engine.isRunning, let buf = noteBuffers[id], !players.isEmpty else { return }
+        let p = players[nextPlayer]
+        nextPlayer = (nextPlayer + 1) % players.count
+        p.volume = volume
+        p.scheduleBuffer(buf, at: nil, options: .interrupts)
+        if !p.isPlaying { p.play() }
+    }
+
     // MARK: Music
 
     func startMusic() {
@@ -286,6 +304,49 @@ enum Synth {
             let alpha = min(1, 2 * .pi * cutoff(t) / sr)
             low += alpha * (white - low)
             data[i] += Float(low * vol * env(t))
+        }
+    }
+
+    /// Music Maker notes: piano (bright, fading), xylophone (short, woody), flute (soft and breathy), drums (pads).
+    static func instrumentNote(_ instrument: Instrument, key: Int, format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        let f = MusicKeys.hz(key)
+        switch instrument {
+        case .piano:
+            return buffer(format, seconds: 1.0) { d, n in
+                note(d, frames: n, start: 0, dur: 1.0, wave: .triangle, vol: 0.32, attack: 0.004, release: 0.95) { _ in f }
+                note(d, frames: n, start: 0, dur: 0.6, wave: .sine, vol: 0.12, attack: 0.004, release: 0.55) { _ in f * 2 }
+            }
+        case .xylophone:
+            return buffer(format, seconds: 0.45) { d, n in
+                note(d, frames: n, start: 0, dur: 0.42, wave: .sine, vol: 0.4, attack: 0.002, release: 0.4) { _ in f * 2 }
+                note(d, frames: n, start: 0, dur: 0.12, wave: .sine, vol: 0.12, attack: 0.002, release: 0.1) { _ in f * 8 }
+            }
+        case .flute:
+            return buffer(format, seconds: 0.8) { d, n in
+                note(d, frames: n, start: 0, dur: 0.78, wave: .sine, vol: 0.34, attack: 0.08, release: 0.3) { t in f * 2 * (1 + 0.004 * sin(t * 30)) }
+                noise(d, frames: n, start: 0, dur: 0.2, vol: 0.05, cutoff: { _ in 3000 }, env: { t in max(0, 1 - t * 5) })
+            }
+        case .drums:
+            switch key % 4 {
+            case 0:   // boom: kick drum
+                return buffer(format, seconds: 0.4) { d, n in
+                    note(d, frames: n, start: 0, dur: 0.38, wave: .sine, vol: 0.7, attack: 0.001, release: 0.36) { t in 140 * exp(-t * 9) + 45 }
+                }
+            case 1:   // tap: tom
+                return buffer(format, seconds: 0.3) { d, n in
+                    note(d, frames: n, start: 0, dur: 0.28, wave: .sine, vol: 0.5, attack: 0.001, release: 0.26) { t in 260 * exp(-t * 4) + 120 }
+                }
+            case 2:   // tss: hi-hat
+                return buffer(format, seconds: 0.18) { d, n in
+                    noise(d, frames: n, start: 0, dur: 0.17, vol: 0.35, cutoff: { _ in 9000 }, env: { t in max(0, 1 - t * 6) })
+                }
+            default:  // clap
+                return buffer(format, seconds: 0.25) { d, n in
+                    for k in 0..<3 {
+                        noise(d, frames: n, start: Double(k) * 0.012, dur: 0.2, vol: 0.3, cutoff: { _ in 2500 }, env: { t in max(0, 1 - t * 7) })
+                    }
+                }
+            }
         }
     }
 

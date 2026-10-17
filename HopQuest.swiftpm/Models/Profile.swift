@@ -175,6 +175,8 @@ struct PlayerProfile: Codable, Equatable {
     var reading = ReadingSave()
     /// Math Market: best stars per money game.
     var market = MarketSave()
+    /// Music Maker: best stars per music game, songs learned, and the song you built.
+    var music = MusicSave()
     /// Science Lab: best stars per experiment.
     var science = ScienceSave()
     /// Story cutscenes already watched (they then live in the Story Book).
@@ -186,7 +188,7 @@ struct PlayerProfile: Codable, Equatable {
         case codeBest, brainAnswered, brainFirstTry
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
-        case village, codeLab, missions, reading, market, seenStories, science
+        case village, codeLab, missions, reading, market, seenStories, science, music
     }
 }
 
@@ -229,6 +231,7 @@ extension PlayerProfile {
         reading = (try? c.decodeIfPresent(ReadingSave.self, forKey: .reading)) ?? ReadingSave()
         market = (try? c.decodeIfPresent(MarketSave.self, forKey: .market)) ?? MarketSave()
         science = (try? c.decodeIfPresent(ScienceSave.self, forKey: .science)) ?? ScienceSave()
+        music = (try? c.decodeIfPresent(MusicSave.self, forKey: .music)) ?? MusicSave()
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -490,6 +493,24 @@ final class GameStore: ObservableObject {
         p.lifetimeStars += given
         profile = p
         return given
+    }
+
+    /// Records a finished music game (and the song, for Learn a Song). Returns the new stars (best only).
+    @discardableResult
+    func recordMusic(_ game: MusicGame, stars: Int, tune: String? = nil) -> Int {
+        guard var p = profile else { return 0 }
+        let given = p.music.record(game, stars: stars)
+        if let tune { p.music.tunesLearned.insert(tune) }
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return given
+    }
+
+    func updateMusic(_ change: (inout MusicSave) -> Void) {
+        guard var p = profile else { return }
+        change(&p.music)
+        profile = p
     }
 
     // MARK: Story

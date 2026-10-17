@@ -17,6 +17,7 @@ struct MainMenuView: View {
     var onMarket: () -> Void = {}
     var onStories: () -> Void = {}
     var onScience: () -> Void = {}
+    var onMusic: () -> Void = {}
     var onMap: () -> Void
     /// Opens a story world from data (Snowy Peaks).
     var onWorld: (String) -> Void = { _ in }
@@ -65,6 +66,9 @@ struct MainMenuView: View {
                     learnCard(icon: "🔬", title: "Science Lab",
                               subtitle: "Sink or float, magnets, plants, weather, solids and liquids · \(store.profile?.science.totalStars ?? 0)/\(ScienceSave.maxStars) ⭐",
                               color: 0x1F7A8C, shadow: 0x135563, action: onScience)
+                    learnCard(icon: "🎹", title: "Music Maker",
+                              subtitle: "Rainbow keys, drums, songs to learn and your own tune · \(store.profile?.music.totalStars ?? 0)/\(MusicSave.maxStars) ⭐",
+                              color: 0xB0459C, shadow: 0x7E2C6F, action: onMusic)
                     ForEach(Worlds.all) { w in worldCard(w) }
                     castleCard
                     HStack(spacing: 12) {

@@ -226,5 +226,39 @@ test("Science Lab: every experiment, 300 seeds, and the science is right") {
     check(ScienceSave.maxStars == 15 && s.totalStars == 3, "totals")
 }
 
+test("Music Maker: keys, tunes, patterns, checking taps, and the song builder") {
+    check(MusicKeys.names.count == 8 && MusicKeys.midi.count == 8 && MusicKeys.colors.count == 8 && MusicKeys.solfege.count == 8, "eight keys")
+    check(abs(MusicKeys.hz(0) - 261.63) < 0.1 && abs(MusicKeys.hz(5) - 440) < 0.01 && abs(MusicKeys.hz(7) - 523.25) < 0.1, "middle C, A440, high C")
+    check(zip(MusicKeys.midi, MusicKeys.midi.dropFirst()).allSatisfy { $0 < $1 }, "keys go up")
+    // the songs as letters
+    func letters(_ id: String) -> String { MusicBank.tunes.first { $0.id == id }!.keys.map { MusicKeys.names[$0] }.joined() }
+    check(letters("twinkle") == "CCGGAAGFFEEDDC", "Twinkle, Twinkle")
+    check(letters("mary") == "EDCDEEEDDDEGG", "Mary Had a Little Lamb")
+    check(letters("buns") == "EDCEDCCCCCDDDDEDC", "Hot Cross Buns")
+    check(letters("joy") == "EEFGGFEDCCDEEDD", "Ode to Joy")
+    for seed in 0..<300 {
+        var rng = SeededRNG(state: UInt64(seed) &+ 99)
+        let echo = MusicBank.echoPatterns(using: &rng)
+        check(echo.map(\.count) == [3, 3, 4, 4, 5], "echo patterns grow")
+        check(echo.allSatisfy { p in zip(p, p.dropFirst()).allSatisfy { $0 != $1 } && p.allSatisfy { (0..<8).contains($0) } }, "no repeated neighbors, real keys")
+        check(echo.prefix(2).allSatisfy { $0.allSatisfy { $0 <= 4 } }, "short patterns use the first five keys")
+        let drums = MusicBank.rhythmPatterns(using: &rng)
+        check(drums.map(\.count) == [3, 3, 4, 4, 5] && drums.allSatisfy { $0.allSatisfy { (0..<4).contains($0) } }, "drum patterns")
+    }
+    var c = PatternCheck([2, 4, 1])
+    check(c.next == 2 && c.tap(2) == .good && c.tap(3) == .wrong && c.next == 4, "wrong tap: try the same note again")
+    check(c.tap(4) == .good && c.tap(1) == .done && c.isDone && c.mistakes == 1 && c.tap(1) == .done, "finish")
+    var song = SongSteps()
+    song.toggle(step: 0, key: 3); song.toggle(step: 7, key: 7); song.toggle(step: 8, key: 1); song.toggle(step: 2, key: 9)
+    check(song.steps[0] == 3 && song.steps[7] == 7 && song.steps.compactMap { $0 }.count == 2, "set steps, ignore bad ones")
+    song.toggle(step: 0, key: 3)
+    check(song.steps[0] == nil, "tap again to clear")
+    var ms = MusicSave(); ms.song = song; ms.tunesLearned = ["mary"]
+    check(try JSONDecoder().decode(MusicSave.self, from: JSONEncoder().encode(ms)) == ms, "round trip")
+    let bad = try JSONDecoder().decode(SongSteps.self, from: Data(#"{"steps":[1,99,null,4],"instrument":"tuba"}"#.utf8))
+    check(bad.steps.count == 8 && bad.steps[0] == 1 && bad.steps[1] == nil && bad.steps[3] == 4 && bad.instrument == .xylophone, "bad song data is cleaned up")
+    check(ms.record(.echo, stars: 3) == 3 && ms.record(.echo, stars: 3) == 0 && MusicSave.maxStars == 9, "best only")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

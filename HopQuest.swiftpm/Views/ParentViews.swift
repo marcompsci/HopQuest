@@ -256,6 +256,7 @@ struct LearningReportSection: View {
             LabeledContent("Coding Lab lessons", value: "\(p?.codeLab.completed.count ?? 0) of \(CodeCurriculum.lessons.count)")
             LabeledContent("Reading Nook", value: "\(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars")
             LabeledContent("Math Market", value: "\(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars")
+            LabeledContent("Music Maker", value: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars, \(p?.music.tunesLearned.count ?? 0) of \(MusicBank.tunes.count) songs")
             LabeledContent("Science Lab", value: "\(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars")
             LabeledContent("Garden plants grown", value: "\(PlantKind.allCases.filter { (p?.village.garden.harvested[$0.rawValue] ?? 0) > 0 }.count) of \(PlantKind.allCases.count)")
             LabeledContent("Village missions", value: "\(MissionCatalog.base.filter { p?.missions.done.contains($0.id) == true }.count) of \(MissionCatalog.base.count)")
