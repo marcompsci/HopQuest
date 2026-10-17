@@ -73,7 +73,7 @@ struct TabletFrame: ViewModifier {
                     }
                     content
                         .frame(width: width)
-                        .clipped()
+                        .mask { Rectangle().ignoresSafeArea() }
                         .shadow(color: .black.opacity(width < geo.size.width - 1 ? 0.25 : 0), radius: 18)
                 }
                 .frame(width: geo.size.width, height: geo.size.height)

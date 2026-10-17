@@ -215,6 +215,8 @@ struct RootView: View {
         case .story(let id):
             if let scene = StoryBook.cutscene(id) {
                 CutsceneView(scene: scene, character: store.character) {
+                    // a fast double tap on Done mustn't skip where we were going
+                    guard case .story(let current) = route, current == id else { return }
                     store.markStorySeen(id)
                     let next = afterStory
                     afterStory = nil
@@ -337,8 +339,14 @@ struct RootView: View {
                 RobotLabView(onExit: exit,
                              onComplete: { stars in finish(chapter, stars: stars) },
                              onCodeClub: { stars in
+                                 let firstTime = store.profile?.completedChapters.contains(chapter.id) == false
                                  store.complete(chapter: chapter.id, stars: stars)
-                                 route = .codeClub
+                                 if firstTime, let scene = StoryBook.after(chapter: chapter.id), !store.hasSeenStory(scene.id) {
+                                     afterStory = .codeClub
+                                     route = .story(scene.id)
+                                 } else {
+                                     route = .codeClub
+                                 }
                              })
                     .id(id)
             }

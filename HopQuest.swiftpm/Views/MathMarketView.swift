@@ -129,7 +129,7 @@ struct MarketGameView: View {
                 Text(game.title).font(.kid(20, .black)).foregroundStyle(Palette.ink)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 Spacer()
-                SpeakButton(label: "Say it again") { if let r = round { Narrator.shared.say(r.say) } }
+                SpeakButton(label: "Say it again") { if let r = round { Narrator.shared.sayAnyway(r.say) } }
             }
             RoundDots(done: index, total: max(rounds.count, 1))
             if let r = round, result == nil {

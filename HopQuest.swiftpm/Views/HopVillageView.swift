@@ -31,6 +31,7 @@ struct HopVillageView: View {
     @State private var homeOpen = false
     @State private var gardenOpen = false
     @AppStorage(Handedness.key) private var leftHanded = false
+    @Environment(\.scenePhase) private var scenePhase
     @State private var festivalOpen = false
     @State private var storyTurn = 0
     /// Screen height, so tall panels fit small phones.
@@ -133,6 +134,10 @@ struct HopVillageView: View {
             .onChange(of: store.profile?.village.eveningLights) { _, _ in rebuild(size: geo.size) }
             .onChange(of: store.profile?.village.seasons) { _, _ in rebuild(size: geo.size) }
             .onChange(of: store.profile?.village.playMode) { _, _ in startNetwork() }
+            .onChange(of: scenePhase) { _, phase in
+                // back after a night away: the plants grew
+                if phase == .active { refreshGarden() }
+            }
             .onChange(of: anyOverlay) { _, open in scene?.frozen = open }
             .onChange(of: network.notice) { _, text in
                 if let text { showNote(text); network.notice = nil }
@@ -192,8 +197,9 @@ struct HopVillageView: View {
             GardenView(garden: store.profile?.village.garden ?? GardenSave(), today: GameStore.todayKey,
                        maxHeight: screenHeight - 200,
                        onPlant: { bed, kind in
-                           store.updateVillage { $0.garden.plant(kind, in: bed, today: GameStore.todayKey) }
-                           Narrator.shared.say("You planted a \(kind.title.lowercased()) seed! \(kind.fact)")
+                           var planted = false
+                           store.updateVillage { planted = $0.garden.plant(kind, in: bed, today: GameStore.todayKey) }
+                           if planted { Narrator.shared.say("You planted a \(kind.title.lowercased()) seed! \(kind.fact)") }
                            refreshGarden()
                        },
                        onWater: { bed in

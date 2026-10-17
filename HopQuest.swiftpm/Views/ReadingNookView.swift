@@ -96,7 +96,7 @@ struct ReadingGameView: View {
                 Spacer()
                 Text(game.title).font(.kid(20, .black)).foregroundStyle(Palette.ink)
                 Spacer()
-                SpeakButton(label: "Say it again") { if let r = round { Narrator.shared.say(r.say) } }
+                SpeakButton(label: "Say it again") { if let r = round { Narrator.shared.sayAnyway(r.say) } }
             }
             RoundDots(done: index, total: max(rounds.count, 1))
             if let r = round, result == nil {
@@ -135,7 +135,7 @@ struct ReadingGameView: View {
                 .frame(maxWidth: .infinity, minHeight: 140)
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 26).fill(.white.opacity(0.85)))
-                .accessibilityLabel(game == .firstSound || game == .buildWord ? "Picture. \(r.say)" : r.show)
+                .accessibilityLabel(game == .firstSound || game == .buildWord || game == .sightWords ? r.say : r.show)
             if r.kind == .spell {
                 spellArea(r)
             } else {
@@ -230,7 +230,7 @@ struct ReadingGameView: View {
             Haptics.tap(.pop)
             usedTiles.insert(i)
             typed += letter
-            Narrator.shared.say(letter)
+            Narrator.shared.say(letter.uppercased())   // a lone "a" is read as "uh"; the letter name is clearer
             if typed == r.answer {
                 right = r.answer
                 succeed(r)

@@ -35,9 +35,14 @@ final class Narrator: NSObject, AVSpeechSynthesizerDelegate {
         say(text, pitch: 1.15, rate: 0.9)
     }
 
+    /// Speaks even when grown-ups turned narration off: for a speaker button the child tapped on purpose.
+    func sayAnyway(_ text: String) {
+        say(text, pitch: 1.15, rate: 0.9, force: true)
+    }
+
     /// Speaks in a character's voice (story cutscenes): `pitch` 0.5...2, `rate` compared to normal speed.
-    func say(_ text: String, pitch: Float, rate: Float) {
-        guard enabled else { return }
+    func say(_ text: String, pitch: Float, rate: Float, force: Bool = false) {
+        guard enabled || force else { return }
         let clean = Self.speakable(text)
         guard !clean.isEmpty else { return }
         configureSession()

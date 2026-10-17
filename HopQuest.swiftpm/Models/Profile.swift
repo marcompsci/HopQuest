@@ -344,6 +344,9 @@ final class GameStore: ObservableObject {
 
     private static let dayFormat: DateFormatter = {
         let f = DateFormatter()
+        // fixed digits and calendar, so day keys are the same in every region (the garden parses them)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
         f.dateFormat = "yyyy-MM-dd"
         return f
     }()
@@ -484,6 +487,14 @@ final class GameStore: ObservableObject {
     }
 
     func hasSeenStory(_ id: String) -> Bool { profile?.seenStories.contains(id) == true }
+
+    /// In the Story Book: watched, or its level is finished (even if the app closed during the story).
+    func storyUnlocked(_ id: String) -> Bool {
+        if hasSeenStory(id) { return true }
+        guard let p = profile else { return false }
+        if id == "intro" { return !p.completedChapters.isEmpty }
+        return Int(id.dropFirst("after".count)).map { p.completedChapters.contains($0) } ?? false
+    }
 
     // MARK: Missions
 

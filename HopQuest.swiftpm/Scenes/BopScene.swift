@@ -462,6 +462,9 @@ final class BopScene: SKScene {
         let oldY = f.pos.y
         f.pos.x += f.vel.dx * dt
         f.pos.y += f.vel.dy * dt
+        // a ceiling, so big Moon Base jumps never leave the screen
+        let ceiling = size.height - charSize * 1.4
+        if f.pos.y > ceiling { f.pos.y = ceiling; f.vel.dy = min(f.vel.dy, 0) }
 
         // landing
         f.onGround = false
@@ -751,7 +754,9 @@ final class BopScene: SKScene {
 
         // don't walk off the edge on purpose
         if f.onGround && f.pos.y <= groundY + 1 {
-            if (dir < 0 && f.pos.x < left + 30) || (dir > 0 && f.pos.x > right - 30) { dir = 0 }
+            // stop early enough to stop sliding before the edge (much earlier on ice)
+            let margin = 30 + abs(f.vel.dx) / arena.grip
+            if (dir < 0 && f.pos.x < left + margin) || (dir > 0 && f.pos.x > right - margin) { dir = 0 }
         }
         f.wantDir = dir
     }

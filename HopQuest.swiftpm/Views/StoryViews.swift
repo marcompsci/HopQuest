@@ -192,7 +192,7 @@ struct StoryBookView: View {
     }
 
     private func storyCard(_ c: Cutscene, number: Int) -> some View {
-        let seen = store.profile?.seenStories.contains(c.id) == true
+        let seen = store.storyUnlocked(c.id)
         return Button {
             guard seen else {
                 Haptics.bump(.oops)

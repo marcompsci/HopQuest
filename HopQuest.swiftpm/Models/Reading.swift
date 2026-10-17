@@ -129,7 +129,7 @@ enum ReadingBank {
                 let extra = alphabet.filter { !w.word.contains($0) }.randomElement(using: &rng)!
                 let tiles = (w.word.map(String.init) + [extra]).shuffled(using: &rng)
                 return ReadingRound(kind: .spell, show: w.emoji, say: "Spell \(w.word).", choices: tiles, answer: w.word,
-                                    cheer: "\(w.word.map(String.init).joined(separator: ", ")). \(w.word)! \(cheers.randomElement(using: &rng)!)")
+                                    cheer: "\(w.word.uppercased().map(String.init).joined(separator: ", ")). \(w.word)! \(cheers.randomElement(using: &rng)!)")
             }
         case .sightWords:
             return Array(sightWords.shuffled(using: &rng).prefix(count)).map { word in

@@ -84,8 +84,8 @@ final class KartScene: SKScene {
         var topSpeed: CGFloat
         var bubbleUntil: TimeInterval = 0
         var boostUntil: TimeInterval = 0
-        /// Flying off a jump ramp: sails over puddles and jelly pads.
-        var airUntil: TimeInterval = 0
+        /// Flying off a jump ramp until this distance: sails over puddles and jelly pads, at any speed or screen size.
+        var airUntilD: CGFloat = -1
         var shielded = false
         var item: KartItem?
         var useItemAt: TimeInterval = 0
@@ -171,6 +171,9 @@ final class KartScene: SKScene {
     private var pads: [Spot] = []
     /// Jump ramps (Bubble Kart 2 tracks).
     private var ramps: [Spot] = []
+    private var rampTipGiven = false
+    /// A Math Gate question has been read out and not yet driven through: keep quiet so it's heard.
+    private var gatePending: Bool { gates.contains { $0.announced && !$0.resolved } }
     /// The kid's chosen kart color (nil = their buddy's color).
     var kartColor: UInt32?
     private var jellies: [Jelly] = []
@@ -742,13 +745,16 @@ final class KartScene: SKScene {
         r.d += r.vel * dt
 
         // jump ramps: up you go!
-        let flying = now < r.airUntil
+        let flying = r.d < r.airUntilD
         if !inBubble && !flying, ramps.contains(where: { $0.lane == r.lane && abs($0.d - r.d) < carLen * 0.4 }) {
-            r.airUntil = now + 0.75
+            r.airUntilD = r.d + carLen * 2.6          // always clears the puddle at +1.6 kart lengths
             r.node.run(.sequence([.scale(to: 1.35, duration: 0.35), .scale(to: 1.0, duration: 0.4)]), withKey: "jump")
             if r.isPlayer {
                 Haptics.tap(.whoosh)
-                say(who(r) + "Wheee! Ramps jump you right over the bumps!", seconds: 1.4)
+                if !rampTipGiven && !gatePending {
+                    rampTipGiven = true
+                    say(who(r) + "Wheee! Ramps jump you right over the bumps!", seconds: 1.4)
+                }
             }
         }
 
@@ -773,7 +779,7 @@ final class KartScene: SKScene {
             r.boostUntil = now + 1.0
             if r.isPlayer {
                 Haptics.tap(.whoosh)
-                say(who(r) + "Rainbow pad! Speed up!", seconds: 1.4)
+                if !gatePending { say(who(r) + "Rainbow pad! Speed up!", seconds: 1.4) }
             }
         }
         for box in boxes where box.lane == r.lane && now >= box.readyAt && abs(box.d - r.d) < carLen * 0.5 {

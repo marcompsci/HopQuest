@@ -762,7 +762,7 @@ final class HopVillageScene: SKScene {
         let tile = v.tile
 
         // your pet? pat it
-        if let pet, let kind = petKind, abs(pet.position.x - v.x) < 0.6, v.y < pet.position.y + 0.3, v.y > pet.position.y - 0.9 {
+        if let pet, let kind = petKind, !player.isMoving, v.distance(to: pet.position + VPoint(0, -0.4)) < 0.5 {
             petSprite?.run(.sequence([.moveBy(x: 0, y: 18, duration: 0.12), .moveBy(x: 0, y: -18, duration: 0.18)]))
             let heart = SKLabelNode(text: "❤️")
             heart.fontSize = 30
