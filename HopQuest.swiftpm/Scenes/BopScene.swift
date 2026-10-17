@@ -1,4 +1,80 @@
 import SpriteKit
+
+/// Pillow Bop 2 (v3.6): four arenas that play a little differently. Picked on the how-to card.
+enum BopArena: String, CaseIterable, Identifiable {
+    case cloud, ice, bouncy, moon
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .cloud: return "Cloud Island"
+        case .ice: return "Ice Rink"
+        case .bouncy: return "Bouncy Castle"
+        case .moon: return "Moon Base"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .cloud: return "☁️"
+        case .ice: return "⛸️"
+        case .bouncy: return "🏰"
+        case .moon: return "🌙"
+        }
+    }
+
+    var blurb: String {
+        switch self {
+        case .cloud: return "The classic floating island."
+        case .ice: return "Slippery! Everyone slides after a bop."
+        case .bouncy: return "Boing! Land and bounce back up."
+        case .moon: return "Low gravity: big, floaty jumps."
+        }
+    }
+
+    /// A science line read when the match starts.
+    var fact: String? {
+        switch self {
+        case .cloud: return nil
+        case .ice: return "Ice is slippery because there is very little friction, so it's hard to stop!"
+        case .bouncy: return "Springy floors push back when you land on them. That's why you bounce!"
+        case .moon: return "The Moon's gravity is only about one sixth of Earth's, so you can jump really high there."
+        }
+    }
+
+    /// Gravity compared to Cloud Island.
+    var gravity: CGFloat { self == .moon ? 0.45 : 1 }
+    /// How quickly feet grip the ground (lower = slidier).
+    var grip: CGFloat { self == .ice ? 2.2 : 14 }
+    /// How much of the landing speed bounces back up (0 = none).
+    var bounce: CGFloat { self == .bouncy ? 0.55 : 0 }
+    var sky: UInt32 {
+        switch self {
+        case .cloud: return 0xBFE6FF
+        case .ice: return 0xDDF3FF
+        case .bouncy: return 0xFFD6EC
+        case .moon: return 0x1E1B4B
+        }
+    }
+    /// Tint for the island and clouds.
+    var tint: UInt32? {
+        switch self {
+        case .cloud: return nil
+        case .ice: return 0xBFE9FF
+        case .bouncy: return 0xFF9FD0
+        case .moon: return 0xB8B8C8
+        }
+    }
+    var decorations: [String] {
+        switch self {
+        case .cloud: return []
+        case .ice: return ["❄️", "⛄", "❄️"]
+        case .bouncy: return ["🎈", "🎀", "🎈"]
+        case .moon: return ["⭐", "🪐", "✨", "🚀"]
+        }
+    }
+}
 import SwiftUI
 import UIKit
 
@@ -99,6 +175,11 @@ final class BopScene: SKScene {
     /// Who popped the Brain Bubble (they get the giant pillow).
     private var bubblePopper: Fighter?
     private var platforms: [Platform] = []
+    /// The arena (set before the match starts).
+    var arena: BopArena = .cloud { didSet { if arena != oldValue { applyArena() } } }
+    private var arenaArt: [SKSpriteNode] = []
+    private var backdrop: SKSpriteNode?
+    private var arenaDecor = SKNode()
     private var bubble: SKNode?
     private var bubbleUntil: TimeInterval = 0
     private var bubbleTimes: [TimeInterval] = [14, 36]
@@ -150,6 +231,7 @@ final class BopScene: SKScene {
             bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
             bg.zPosition = -20
             addChild(bg)
+            backdrop = bg
         }
 
         // floating island
@@ -161,6 +243,7 @@ final class BopScene: SKScene {
             island.position = CGPoint(x: size.width / 2, y: groundY)
             island.zPosition = -5
             addChild(island)
+            arenaArt.append(island)
             island.run(.repeatForever(.sequence([
                 .moveBy(x: 0, y: 3, duration: 1.6), .moveBy(x: 0, y: -3, duration: 1.6)
             ])))
@@ -179,12 +262,38 @@ final class BopScene: SKScene {
                 cloud.position = CGPoint(x: x, y: y)
                 cloud.zPosition = -4
                 addChild(cloud)
+                arenaArt.append(cloud)
             }
             platforms.append(Platform(minX: x - cw * 0.42, maxX: x + cw * 0.42, y: y, solid: false))
         }
 
+        arenaDecor.zPosition = -15
+        addChild(arenaDecor)
+        applyArena()
+
         buildFighters()
         pushHud(force: true)
+    }
+
+    /// Recolors the arena and adds its decorations.
+    private func applyArena() {
+        guard !platforms.isEmpty else { return }
+        backgroundColor = UIColor(hex: arena.sky)
+        backdrop?.color = UIColor(hex: arena.sky)
+        backdrop?.colorBlendFactor = arena == .cloud ? 0 : (arena == .moon ? 0.85 : 0.45)
+        for node in arenaArt {
+            node.color = UIColor(hex: arena.tint ?? 0xFFFFFF)
+            node.colorBlendFactor = arena.tint == nil ? 0 : 0.5
+        }
+        arenaDecor.removeAllChildren()
+        for (i, e) in arena.decorations.enumerated() {
+            let n = SpriteFactory.emoji(e, size: 34 * unit)
+            let fx = CGFloat(i + 1) / CGFloat(arena.decorations.count + 1)
+            n.position = CGPoint(x: size.width * fx, y: size.height * (i % 2 == 0 ? 0.82 : 0.74))
+            n.alpha = 0.85
+            n.run(.repeatForever(.sequence([.moveBy(x: 0, y: 6, duration: 1.2 + Double(i) * 0.2), .moveBy(x: 0, y: -6, duration: 1.2 + Double(i) * 0.2)])))
+            arenaDecor.addChild(n)
+        }
     }
 
     private func buildFighters() {
@@ -335,13 +444,13 @@ final class BopScene: SKScene {
             if !f.inBalloon && now - since > 2.0 { respawn(f) }
             return
         }
-        let gravity: CGFloat = -1900 * unit
+        let gravity: CGFloat = -1900 * unit * arena.gravity
         let runSpeed: CGFloat = 240 * unit
         let stunned = now < f.stunUntil
 
         if !stunned {
             let target = f.wantDir * runSpeed
-            let accel: CGFloat = f.onGround ? 14 : 6
+            let accel: CGFloat = f.onGround ? arena.grip : 6
             f.vel.dx += (target - f.vel.dx) * min(1, accel * dt)
             if f.wantDir != 0 && now > f.swingingUntil { f.facing = f.wantDir > 0 ? 1 : -1 }
         } else {
@@ -360,6 +469,12 @@ final class BopScene: SKScene {
             for p in platforms where f.pos.x >= p.minX && f.pos.x <= p.maxX {
                 if oldY >= p.y - 2 && f.pos.y <= p.y {
                     f.pos.y = p.y
+                    if arena.bounce > 0 && f.vel.dy < -520 * unit {
+                        // Bouncy Castle: spring back up (it doesn't count as landing yet)
+                        f.vel.dy = -f.vel.dy * arena.bounce
+                        landPuff(f)
+                        break
+                    }
                     f.vel.dy = 0
                     if !f.onGround && oldY > p.y + 30 { landPuff(f) }
                     f.onGround = true
@@ -368,7 +483,7 @@ final class BopScene: SKScene {
                 }
             }
         }
-        if f.onGround && stunned { f.vel.dx *= (1 - min(1, 6 * dt)) }
+        if f.onGround && stunned { f.vel.dx *= (1 - min(1, (arena == .ice ? 1.2 : 6) * dt)) }
 
         // fell off the world → float back
         if f.pos.y < -80 || f.pos.x < -120 || f.pos.x > size.width + 120 {

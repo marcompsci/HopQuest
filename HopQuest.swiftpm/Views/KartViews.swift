@@ -8,6 +8,13 @@ struct KartSelectView: View {
     var onStart: (Chapter) -> Void
 
     @AppStorage("hopquest.kart.autogas") private var autoGas = true
+    /// The kart's paint (0 = your buddy's color).
+    @AppStorage("hopquest.kart.color") private var kartColor = 0
+
+    static let paints: [(name: String, hex: UInt32)] = [
+        ("Cherry red", 0xFF5A5F), ("Sunny yellow", 0xFFC93C), ("Leaf green", 0x34C77B),
+        ("Ocean blue", 0x4D96FF), ("Grape purple", 0x9B6BDF), ("Bubblegum pink", 0xFF8CC6),
+    ]
 
     var body: some View {
         ZStack {
@@ -34,6 +41,8 @@ struct KartSelectView: View {
                     }
                     .padding(12)
                     .background(RoundedRectangle(cornerRadius: 20).fill(.white.opacity(0.85)))
+
+                    paintPicker
 
                     ForEach(Chapters.kartCups) { cup in
                         cupCard(cup)
@@ -75,7 +84,7 @@ struct KartSelectView: View {
                 Text(cup.icon).font(.system(size: 42))
                 VStack(alignment: .leading, spacing: 4) {
                     Text(cup.title).font(.kid(22, .black)).foregroundStyle(.white)
-                    Text("\(level) · 3 laps").font(.kid(14, .bold)).foregroundStyle(.white.opacity(0.9))
+                    Text("\(level) · 3 laps\(cup.id >= 204 ? " · ramps" : "")").font(.kid(14, .bold)).foregroundStyle(.white.opacity(0.9))
                 }
                 Spacer()
                 if let medal {
@@ -91,10 +100,47 @@ struct KartSelectView: View {
         .accessibilityLabel("\(cup.title), \(level)")
     }
 
+    /// Paint your kart (it's yours in solo races; ⭐'s kart in two-player races).
+    private var paintPicker: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Paint your kart").font(.kid(18, .black)).foregroundStyle(Palette.ink)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    paintSwatch(name: "\(store.character.name)'s color", hex: store.character.colorHex, value: 0)
+                    ForEach(Self.paints, id: \.hex) { p in paintSwatch(name: p.name, hex: p.hex, value: Int(p.hex)) }
+                }
+                .padding(4)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 20).fill(.white.opacity(0.85)))
+    }
+
+    private func paintSwatch(name: String, hex: UInt32, value: Int) -> some View {
+        let on = kartColor == value
+        return Button {
+            Haptics.tap(.pop)
+            kartColor = value
+        } label: {
+            ZStack {
+                Circle().fill(Color(hex: hex)).frame(width: 44, height: 44)
+                    .overlay(Circle().stroke(Palette.ink.opacity(0.25), lineWidth: 2))
+                if value == 0 { Text(store.character.emoji).font(.system(size: 20)) }
+            }
+            .overlay(Circle().stroke(Palette.purple, lineWidth: on ? 4 : 0).padding(-4))
+            .frame(width: 52, height: 52)
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("\(name)\(on ? ", chosen" : "")")
+    }
+
     private func cupColor(_ cup: Chapter) -> Color {
         switch cup.id {
         case 202: return Color(hex: 0xFF7FC4)
         case 203: return Color(hex: 0x6C7BD9)
+        case 204: return Color(hex: 0x4DB6E8)
+        case 205: return Color(hex: 0xF0A030)
         default: return Color(hex: 0x34C77B)
         }
     }
@@ -108,7 +154,8 @@ struct KartSelectView: View {
             artRow("item_carrot", "Carrot Boost makes you zoom.")
             artRow("item_jelly", "Jelly Pad drops behind you — racers bounce on it.")
             row("🧠", "Math Gates: drive through the right answer for a super boost!")
-            row("🟤", "Steer around mud puddles.")
+            row("🟤", "Steer around mud puddles (slush on Snowy Slalom, sand on Beach Boardwalk).")
+            row("🔶", "Jump ramps on the new tracks fly you over puddles and jelly pads!")
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -143,6 +190,7 @@ struct KartGameView: View {
     @StateObject private var hud = KartHUD()
     @State private var scene: KartScene?
     @AppStorage("hopquest.kart.autogas") private var autoGas = true
+    @AppStorage("hopquest.kart.color") private var kartColor = 0
 
     var body: some View {
         GeometryReader { geo in
@@ -186,6 +234,7 @@ struct KartGameView: View {
                 guard scene == nil, geo.size.width > 0 else { return }
                 let s = KartScene(size: geo.size, chapter: chapter, character: store.character, partner: partner, theme: store.theme, hud: hud)
                 s.autoGas = autoGas
+                s.kartColor = kartColor == 0 ? nil : UInt32(kartColor)
                 scene = s
             }
             .onDisappear { Narrator.shared.stop() }

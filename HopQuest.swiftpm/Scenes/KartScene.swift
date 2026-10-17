@@ -84,6 +84,8 @@ final class KartScene: SKScene {
         var topSpeed: CGFloat
         var bubbleUntil: TimeInterval = 0
         var boostUntil: TimeInterval = 0
+        /// Flying off a jump ramp: sails over puddles and jelly pads.
+        var airUntil: TimeInterval = 0
         var shielded = false
         var item: KartItem?
         var useItemAt: TimeInterval = 0
@@ -167,6 +169,10 @@ final class KartScene: SKScene {
     private var boxes: [ItemBox] = []
     private var puddles: [Spot] = []
     private var pads: [Spot] = []
+    /// Jump ramps (Bubble Kart 2 tracks).
+    private var ramps: [Spot] = []
+    /// The kid's chosen kart color (nil = their buddy's color).
+    var kartColor: UInt32?
     private var jellies: [Jelly] = []
     private var gates: [MathGate] = []
 
@@ -230,10 +236,15 @@ final class KartScene: SKScene {
         SoundFX.shared.stopEngineHum()
     }
 
+    /// Ramps only on the newer tracks.
+    private var hasRamps: Bool { chapter.id >= 204 }
+
     private var groundColor: UIColor {
         switch chapter.id {
         case 202: return UIColor(hex: 0xFFD1E8)
         case 203: return UIColor(hex: 0xB8C4D6)
+        case 204: return UIColor(hex: 0xEAF6FF)
+        case 205: return UIColor(hex: 0xF6DFA0)
         default: return UIColor(hex: 0x8FD86E)
         }
     }
@@ -242,6 +253,8 @@ final class KartScene: SKScene {
         switch chapter.id {
         case 202: return ["🍭", "🧁", "🍬", "🍩", "🎂"]
         case 203: return ["🏰", "🌲", "🚩", "🛡️", "🌳"]
+        case 204: return ["⛄", "🌲", "❄️", "🐧", "🏔️"]
+        case 205: return ["🌴", "🐚", "🦀", "⛱️", "🏄"]
         default: return ["🌼", "🌳", "🌷", "🐄", "🌻"]
         }
     }
@@ -344,6 +357,37 @@ final class KartScene: SKScene {
             }
             hd += gap * CGFloat.random(in: 0.7...1.3)
         }
+
+        // jump ramps across one lane, a little before a puddle so a good jump sails right over it
+        if hasRamps {
+            for mud in puddles where Double.random(in: 0...1) < 0.55 {
+                let rd = mud.d - carLen * 1.6
+                guard rd > 400, !nearGate(rd, 180), !pads.contains(where: { abs($0.d - rd) < 100 }) else { continue }
+                let ramp = makeRamp()
+                ramp.position = CGPoint(x: laneX(mud.lane), y: rd)
+                ramp.zPosition = 3
+                world.addChild(ramp)
+                ramps.append(Spot(node: ramp, lane: mud.lane, d: rd))
+            }
+        }
+    }
+
+    private func makeRamp() -> SKNode {
+        let w = laneW * 0.7, h = laneW * 0.42
+        let ramp = SKShapeNode(rectOf: CGSize(width: w, height: h), cornerRadius: 6)
+        ramp.fillColor = UIColor(hex: 0xFFB347)
+        ramp.strokeColor = .white
+        ramp.lineWidth = 3
+        for k in 0..<3 {
+            let chevron = SKLabelNode(text: "▲")
+            chevron.fontName = "AvenirNext-Heavy"
+            chevron.fontSize = h * 0.38
+            chevron.fontColor = .white
+            chevron.verticalAlignmentMode = .center
+            chevron.position = CGPoint(x: 0, y: (CGFloat(k) - 1) * h * 0.28)
+            ramp.addChild(chevron)
+        }
+        return ramp
     }
 
     private func nearGate(_ d: CGFloat, _ margin: CGFloat) -> Bool {
@@ -422,8 +466,17 @@ final class KartScene: SKScene {
 
     private func makePuddle() -> SKNode {
         let mud = SKShapeNode(ellipseOf: CGSize(width: laneW * 0.75, height: laneW * 0.45))
-        mud.fillColor = UIColor(hex: 0x8A5A35, alpha: 0.85)
-        mud.strokeColor = UIColor(hex: 0x6E4325)
+        switch chapter.id {
+        case 204:   // icy slush
+            mud.fillColor = UIColor(hex: 0xA9D8F5, alpha: 0.9)
+            mud.strokeColor = UIColor(hex: 0x6FB3E0)
+        case 205:   // soft sand
+            mud.fillColor = UIColor(hex: 0xE2BD7A, alpha: 0.95)
+            mud.strokeColor = UIColor(hex: 0xC99E58)
+        default:
+            mud.fillColor = UIColor(hex: 0x8A5A35, alpha: 0.85)
+            mud.strokeColor = UIColor(hex: 0x6E4325)
+        }
         mud.lineWidth = 2
         let shine = SKShapeNode(ellipseOf: CGSize(width: laneW * 0.2, height: laneW * 0.08))
         shine.fillColor = UIColor.white.withAlphaComponent(0.35)
@@ -489,7 +542,8 @@ final class KartScene: SKScene {
         all += humans
         racers = all
         for r in racers {
-            let body = SpriteFactory.topCar(color: UIColor(hex: r.character.colorHex), width: laneW * 0.5, height: carLen * 0.8)
+            let color = (r.isPlayer && r.seat == 0 ? kartColor : nil) ?? r.character.colorHex
+            let body = SpriteFactory.topCar(color: UIColor(hex: color), width: laneW * 0.5, height: carLen * 0.8)
             r.node.addChild(body)
             let driver = SpriteFactory.driver(r.character, size: laneW * 0.46)
             driver.position = CGPoint(x: 0, y: -carLen * 0.06)
@@ -687,10 +741,27 @@ final class KartScene: SKScene {
         }
         r.d += r.vel * dt
 
+        // jump ramps: up you go!
+        let flying = now < r.airUntil
+        if !inBubble && !flying, ramps.contains(where: { $0.lane == r.lane && abs($0.d - r.d) < carLen * 0.4 }) {
+            r.airUntil = now + 0.75
+            r.node.run(.sequence([.scale(to: 1.35, duration: 0.35), .scale(to: 1.0, duration: 0.4)]), withKey: "jump")
+            if r.isPlayer {
+                Haptics.tap(.whoosh)
+                say(who(r) + "Wheee! Ramps jump you right over the bumps!", seconds: 1.4)
+            }
+        }
+
         // track pieces
-        if !inBubble {
+        if !inBubble && !flying {
             if puddles.contains(where: { $0.lane == r.lane && abs($0.d - r.d) < carLen * 0.45 }) {
-                pop(r, reason: r.isPlayer ? who(r) + "Squish! Mud makes you bounce in a bubble. Steer around the brown puddles!" : nil)
+                let tip: String
+                switch chapter.id {
+                case 204: tip = "Slip! Icy slush makes you bounce in a bubble. Steer around the blue patches!"
+                case 205: tip = "Whoops! Soft sand makes you bounce in a bubble. Steer around the sand pits!"
+                default: tip = "Squish! Mud makes you bounce in a bubble. Steer around the brown puddles!"
+                }
+                pop(r, reason: r.isPlayer ? who(r) + tip : nil)
             }
             if let j = jellies.firstIndex(where: { $0.lane == r.lane && abs($0.d - r.d) < carLen * 0.45 && ($0.owner !== r || now > $0.armedAt + 1.5) && now > $0.armedAt }) {
                 let jelly = jellies.remove(at: j)

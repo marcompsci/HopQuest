@@ -13,6 +13,8 @@ struct BopGameView: View {
     @StateObject private var hud = BopHUD()
     @State private var scene: BopScene?
     @State private var showIntro = true
+    @AppStorage("hopquest.bop.arena") private var arenaID = BopArena.cloud.rawValue
+    private var arena: BopArena { BopArena(rawValue: arenaID) ?? .cloud }
     @State private var left = false
     @State private var right = false
     @State private var left2 = false
@@ -80,6 +82,7 @@ struct BopGameView: View {
                 // the arena is visible (paused) behind the how-to card
                 guard scene == nil, geo.size.width > 0 else { return }
                 let s = BopScene(size: geo.size, character: store.character, partner: partner, theme: store.theme, hud: hud)
+                s.arena = arena
                 scene = s
             }
             .onDisappear { Narrator.shared.stop() }
@@ -117,6 +120,7 @@ struct BopGameView: View {
             }
             .padding(14)
             .background(RoundedRectangle(cornerRadius: 20).fill(Color(hex: 0xF3ECFF)))
+            arenaPicker
             }
             }
             BigButton(title: "Let's bop! 🪶", color: Palette.green) {
@@ -128,6 +132,38 @@ struct BopGameView: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 30).fill(.white))
         .padding(18)
+    }
+
+    /// Pick where to bop. Each arena plays a little differently.
+    private var arenaPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Pick an arena").font(.kid(18, .black)).foregroundStyle(Palette.ink)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                ForEach(BopArena.allCases) { a in
+                    let on = a == arena
+                    Button {
+                        Haptics.tap(.pop)
+                        arenaID = a.rawValue
+                        scene?.arena = a
+                        Narrator.shared.say("\(a.title)! \(a.blurb) \(a.fact ?? "")")
+                    } label: {
+                        VStack(spacing: 2) {
+                            Text(a.icon).font(.system(size: 28))
+                            Text(a.title).font(.kid(14, .black)).foregroundStyle(Palette.ink)
+                                .lineLimit(1).minimumScaleFactor(0.7)
+                            Text(a.blurb).font(.kid(11, .bold)).foregroundStyle(Palette.ink.opacity(0.7))
+                                .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 92)
+                        .padding(6)
+                        .background(RoundedRectangle(cornerRadius: 16).fill(on ? Color(hex: 0xDDF7E5) : Color(hex: 0xF3F1FA)))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(on ? Palette.green : .clear, lineWidth: 3))
+                    }
+                    .buttonStyle(BouncyButtonStyle())
+                    .accessibilityLabel("\(a.title). \(a.blurb)\(on ? ", chosen" : "")")
+                }
+            }
+        }
     }
 
     private func row(art: String? = nil, icon: String? = nil, _ text: LocalizedStringKey) -> some View {

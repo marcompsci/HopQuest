@@ -43,6 +43,9 @@ enum Chapters {
         Chapter(id: 201, title: "Meadow Loop", kind: .kart, icon: "🌼", rows: 0, gateEvery: 0, trackLength: 7000, difficulty: 0.0, mapX: 0, mapY: 0),
         Chapter(id: 202, title: "Candy City", kind: .kart, icon: "🍭", rows: 0, gateEvery: 0, trackLength: 8000, difficulty: 0.4, mapX: 0, mapY: 0),
         Chapter(id: 203, title: "Castle Circuit", kind: .kart, icon: "🏰", rows: 0, gateEvery: 0, trackLength: 9000, difficulty: 0.8, mapX: 0, mapY: 0),
+        // Bubble Kart 2 (v3.6): jump ramps, and slush or sand instead of mud
+        Chapter(id: 204, title: "Snowy Slalom", kind: .kart, icon: "⛷️", rows: 0, gateEvery: 0, trackLength: 8500, difficulty: 0.55, mapX: 0, mapY: 0),
+        Chapter(id: 205, title: "Beach Boardwalk", kind: .kart, icon: "🏖️", rows: 0, gateEvery: 0, trackLength: 9000, difficulty: 0.7, mapX: 0, mapY: 0),
     ]
 
     static func chapter(_ id: Int) -> Chapter {
