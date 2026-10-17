@@ -33,6 +33,7 @@ enum Route: Equatable {
     /// A story cutscene (by id); `afterStory` says where to go next.
     case story(String)
     case storyBook
+    case scienceLab
     case mathMarket
     // two players on one phone
     case teamKartSelect
@@ -135,6 +136,7 @@ struct RootView: View {
                          onReading: { route = .readingNook },
                          onMarket: { route = .mathMarket },
                          onStories: { route = .storyBook },
+                         onScience: { route = .scienceLab },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
                 .onAppear { hub = .menu }
@@ -226,6 +228,9 @@ struct RootView: View {
 
         case .storyBook:
             StoryBookView(onBack: goHome)
+
+        case .scienceLab:
+            ScienceLabView(onBack: goHome)
 
         case .mathMarket:
             MathMarketView(onBack: goHome)

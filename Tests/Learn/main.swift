@@ -202,5 +202,29 @@ test("Story Book: a cutscene after every story level and both new worlds, each o
     check(StoryPlace.allCases.allSatisfy { $0.skyHex.count == 2 && !$0.props.isEmpty }, "every place has a sky and props")
 }
 
+test("Science Lab: every experiment, 300 seeds, and the science is right") {
+    for seed in 0..<300 {
+        var rng = SeededRNG(state: UInt64(seed) &* 31 &+ 5)
+        for e in Experiment.allCases {
+            let rounds = ScienceBank.rounds(for: e, count: 5, using: &rng)
+            check(rounds.count == 5, "\(e): 5 rounds")
+            check(Set(rounds.map(\.say)).count == 5, "\(e): no repeats in one play")
+            for r in rounds {
+                check(r.choices.filter { $0 == r.answer }.count == 1 && Set(r.choices).count == r.choices.count, "\(e): answer once in \(r.choices)")
+                check((2...3).contains(r.choices.count), "\(e): 2 or 3 choices")
+                check(r.explain.count > 15 && r.say.hasSuffix("?"), "\(e): a question and an explanation")
+            }
+        }
+    }
+    check(ScienceBank.sinkFloat.contains { $0.answer == "Sink" } && ScienceBank.sinkFloat.contains { $0.answer == "Float" }, "both sink and float")
+    check(ScienceBank.magnets.filter { $0.answer == "Yes" }.count >= 3 && ScienceBank.magnets.filter { $0.answer == "No" }.count >= 3, "both kinds of magnet test")
+    check(Set(ScienceBank.matter.map(\.answer)) == ["Solid", "Liquid", "Gas"], "all three states")
+    check(ScienceBank.plantParts.allSatisfy { ScienceBank.parts.contains($0.1) }, "plant answers are plant parts")
+    check(ScienceBank.magnets.first { $0.emoji == "🪙" } == nil, "no coins in the magnet test (some coins are magnetic, some aren't)")
+    var s = ScienceSave()
+    check(s.record(.magnets, stars: 2) == 2 && s.record(.magnets, stars: 2) == 0 && s.record(.magnets, stars: 3) == 1, "best only")
+    check(ScienceSave.maxStars == 15 && s.totalStars == 3, "totals")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

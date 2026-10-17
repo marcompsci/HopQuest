@@ -175,6 +175,8 @@ struct PlayerProfile: Codable, Equatable {
     var reading = ReadingSave()
     /// Math Market: best stars per money game.
     var market = MarketSave()
+    /// Science Lab: best stars per experiment.
+    var science = ScienceSave()
     /// Story cutscenes already watched (they then live in the Story Book).
     var seenStories: Set<String> = []
 
@@ -184,7 +186,7 @@ struct PlayerProfile: Codable, Equatable {
         case codeBest, brainAnswered, brainFirstTry
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
-        case village, codeLab, missions, reading, market, seenStories
+        case village, codeLab, missions, reading, market, seenStories, science
     }
 }
 
@@ -226,6 +228,7 @@ extension PlayerProfile {
         missions = (try? c.decodeIfPresent(MissionSave.self, forKey: .missions)) ?? MissionSave()
         reading = (try? c.decodeIfPresent(ReadingSave.self, forKey: .reading)) ?? ReadingSave()
         market = (try? c.decodeIfPresent(MarketSave.self, forKey: .market)) ?? MarketSave()
+        science = (try? c.decodeIfPresent(ScienceSave.self, forKey: .science)) ?? ScienceSave()
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -472,6 +475,17 @@ final class GameStore: ObservableObject {
     func recordMarket(_ game: MarketGame, stars: Int) -> Int {
         guard var p = profile else { return 0 }
         let given = p.market.record(game, stars: stars)
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return given
+    }
+
+    /// Records a finished experiment. Returns the new stars (only for beating your best).
+    @discardableResult
+    func recordScience(_ e: Experiment, stars: Int) -> Int {
+        guard var p = profile else { return 0 }
+        let given = p.science.record(e, stars: stars)
         p.stars += given
         p.lifetimeStars += given
         profile = p

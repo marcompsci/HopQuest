@@ -8,5 +8,7 @@ FILES=("$PKG/Models/Reading.swift")
 [ -f "$PKG/Models/MathMarket.swift" ] && FILES+=("$PKG/Models/MathMarket.swift")
 [ -f "$PKG/Models/Garden.swift" ] && FILES+=("$PKG/Models/Garden.swift")
 [ -f "$PKG/Models/Story.swift" ] && FILES+=("$PKG/Models/Story.swift")
+[ -f "$PKG/Models/ScienceLab.swift" ] && FILES+=("$PKG/Models/ScienceLab.swift")
+[ -f "$PKG/Models/Music.swift" ] && FILES+=("$PKG/Models/Music.swift")
 swiftc -O "${FILES[@]}" "$HERE/main.swift" -o "$OUT"
 "$OUT"
