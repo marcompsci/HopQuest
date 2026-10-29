@@ -1,6 +1,6 @@
 import Foundation
 
-// The Math Market (v3.4): Benny Bear's shop in Hop Village. Kids count coins, pay, make change and compare prices.
+// The Math Market (v3.4): Benny Banana's shop in Hop Village. Kids count coins, pay, make change and compare prices.
 // Plain Swift, tested in Tests/Learn. Money is in cents; US coins.
 
 enum Coin: Int, CaseIterable, Codable, Comparable {

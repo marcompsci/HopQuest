@@ -7,25 +7,24 @@ struct ReadingNookView: View {
 
     @State private var playing: ReadingGame?
 
-    private static let colors: [ReadingGame: UInt32] = [
-        .firstSound: 0xFF7A59, .buildWord: 0x4D96FF, .sightWords: 0xB983FF, .rhymes: 0x34C77B, .sentences: 0xD94A57,
-    ]
+    /// One accent for the whole place: the five games read as one group.
+    private let accent = Color(hex: 0xC2364A)
 
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0xFFF4E0), Color(hex: 0xFFD9C2)], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
             if let game = playing {
-                ReadingGameView(game: game, color: Color(hex: Self.colors[game] ?? 0x7C4DFF),
+                ReadingGameView(game: game, color: accent,
                                 onFinish: { stars in store.recordReading(game, stars: stars) },
                                 onBack: { playing = nil; greet(again: true) })
                     .id(game)
-                    .transition(.move(edge: .trailing))
+                    .transition(.pushIn)
             } else {
-                list.transition(.move(edge: .leading))
+                list.transition(.pushedBack)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: playing)
+        .animation(Motion.standard, value: playing)
         .onAppear { greet(again: false) }
         .onDisappear { Narrator.shared.stop() }
     }
@@ -33,27 +32,18 @@ struct ReadingNookView: View {
     private var list: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
-                HStack {
-                    CircleIconButton(systemName: "chevron.left", label: "Back", action: onBack)
-                    Spacer()
-                    Text("⭐ \(store.profile?.reading.totalStars ?? 0)/\(ReadingSave.maxStars)")
-                        .font(.kid(17, .black)).foregroundStyle(Palette.ink)
-                        .padding(.horizontal, 12).frame(minHeight: 44)
-                        .background(Capsule().fill(.white.opacity(0.9)))
-                }
-                Text("🦉📚").font(.system(size: 60)).accessibilityHidden(true)
-                Text("Reading Nook").font(.kid(34, .black)).foregroundStyle(Color(hex: 0xB0303F))
-                Text("Ollie Owl reads with you. Pick a game!")
-                    .font(.kid(16, .bold)).foregroundStyle(Palette.ink.opacity(0.85))
-                    .multilineTextAlignment(.center)
+                PlaceHeader(host: PlaceHost.reading, title: "Reading Nook", line: "Hoo! Which story game shall we play?",
+                            stars: store.profile?.reading.totalStars ?? 0, maxStars: ReadingSave.maxStars,
+                            accent: accent, onBack: onBack)
+                    .padding(.bottom, 4)
                 ForEach(ReadingGame.allCases) { g in
-                    LearnGameCard(icon: g.icon, title: g.title, blurb: g.intro, stars: store.profile?.reading.best(g) ?? 0,
-                                  color: Color(hex: Self.colors[g] ?? 0x7C4DFF)) {
+                    LearnGameCard(symbol: g.symbol, title: g.title, blurb: g.intro, stars: store.profile?.reading.best(g) ?? 0,
+                                  color: accent) {
                         playing = g
                     }
                 }
-                Text("Each game gives up to 3 stars. Beat your best for more!")
-                    .font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.6))
+                Text("Each game gives up to 3 stars. Beat your best for more.")
+                    .font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 20)
             }
@@ -112,7 +102,7 @@ struct ReadingGameView: View {
             if let result {
                 ZStack {
                     Color.black.opacity(0.25).ignoresSafeArea()
-                    LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry,
+                    LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry, host: PlaceHost.reading,
                                   total: rounds.count, onAgain: start, onBack: onBack)
                 }
             }
@@ -264,7 +254,7 @@ struct ReadingGameView: View {
                 let stars = LearnScore.stars(firstTry: firstTry, of: rounds.count)
                 let earned = onFinish(stars)
                 Haptics.success(.fanfare)
-                withAnimation(.spring()) { result = (stars, earned) }
+                withAnimation(Motion.present) { result = (stars, earned) }
                 Narrator.shared.say(earned > 0 ? "You did it! \(earned) new stars!" : "You did it! Great reading!")
             }
         }

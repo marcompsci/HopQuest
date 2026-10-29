@@ -38,7 +38,7 @@ struct VillageChallengeBoard: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
         .padding(.horizontal, 16)
-        .transition(.scale(scale: 0.85).combined(with: .opacity))
+        .transition(.panel)
     }
 
     private func row(_ c: VillageChallenge) -> some View {
@@ -160,7 +160,7 @@ struct DuelInviteCard: View {
         .padding(22)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
         .padding(.horizontal, 22)
-        .transition(.scale(scale: 0.8).combined(with: .opacity))
+        .transition(.panel)
         .onAppear { Narrator.shared.say("\(nick) wants a Brain Duel!") }
     }
 }
@@ -323,7 +323,7 @@ struct MissionLogView: View {
         VStack(spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Missions 📜").font(.kid(24, .black)).foregroundStyle(Palette.ink)
+                    Text("Missions").font(.kid(24, .black)).displayTracking(24).foregroundStyle(Palette.ink)
                     Text("\(missions.filter { save.status($0) == .done }.count) of \(missions.count) done").font(.kid(14, .bold)).foregroundStyle(Palette.purple)
                 }
                 Spacer()
@@ -339,7 +339,7 @@ struct MissionLogView: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
         .padding(.horizontal, 16)
-        .transition(.scale(scale: 0.85).combined(with: .opacity))
+        .transition(.panel)
     }
 
     private func row(_ m: MissionDef) -> some View {

@@ -7,25 +7,24 @@ struct ScienceLabView: View {
 
     @State private var playing: Experiment?
 
-    private static let colors: [Experiment: UInt32] = [
-        .sinkFloat: 0x4D96FF, .magnets: 0xFF6B6B, .plantParts: 0x34C77B, .weather: 0xFF9F1C, .matter: 0x7C4DFF,
-    ]
+    /// One accent for the whole place: the five experiments read as one group.
+    private let accent = Color(hex: 0x1F7A8C)
 
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0xE4F7FF), Color(hex: 0xD6F5E3)], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
             if let e = playing {
-                ExperimentView(experiment: e, color: Color(hex: Self.colors[e] ?? 0x7C4DFF),
+                ExperimentView(experiment: e, color: accent,
                                onFinish: { stars in store.recordScience(e, stars: stars) },
                                onBack: { playing = nil; Narrator.shared.say("Pick another experiment!") })
                     .id(e)
-                    .transition(.move(edge: .trailing))
+                    .transition(.pushIn)
             } else {
-                list.transition(.move(edge: .leading))
+                list.transition(.pushedBack)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: playing)
+        .animation(Motion.standard, value: playing)
         .onAppear { Narrator.shared.say("Welcome to the Science Lab! I'm Professor Ocho. Scientists guess first, then test. Pick an experiment!") }
         .onDisappear { Narrator.shared.stop() }
     }
@@ -33,25 +32,16 @@ struct ScienceLabView: View {
     private var list: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
-                HStack {
-                    CircleIconButton(systemName: "chevron.left", label: "Back", action: onBack)
-                    Spacer()
-                    Text("⭐ \(store.profile?.science.totalStars ?? 0)/\(ScienceSave.maxStars)")
-                        .font(.kid(17, .black)).foregroundStyle(Palette.ink)
-                        .padding(.horizontal, 12).frame(minHeight: 44)
-                        .background(Capsule().fill(.white.opacity(0.9)))
-                }
-                Text("🐙🔬").font(.system(size: 60)).accessibilityHidden(true)
-                Text("Science Lab").font(.kid(34, .black)).foregroundStyle(Color(hex: 0x1F7A8C))
-                Text("Guess first, then test it, like a real scientist!")
-                    .font(.kid(16, .bold)).foregroundStyle(Palette.ink.opacity(0.85))
-                    .multilineTextAlignment(.center)
+                PlaceHeader(host: PlaceHost.science, title: "Science Lab", line: "Scientists guess first, then test. Ready?",
+                            stars: store.profile?.science.totalStars ?? 0, maxStars: ScienceSave.maxStars,
+                            accent: accent, onBack: onBack)
+                    .padding(.bottom, 4)
                 ForEach(Experiment.allCases) { e in
-                    LearnGameCard(icon: e.icon, title: e.title, blurb: e.intro, stars: store.profile?.science.best(e) ?? 0,
-                                  color: Color(hex: Self.colors[e] ?? 0x7C4DFF)) { playing = e }
+                    LearnGameCard(symbol: e.symbol, title: e.title, blurb: e.intro, stars: store.profile?.science.best(e) ?? 0,
+                                  color: accent) { playing = e }
                 }
                 Text("Each experiment gives up to 3 stars. Beat your best for more!")
-                    .font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.6))
+                    .font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 20)
             }
@@ -101,7 +91,7 @@ struct ExperimentView: View {
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                         if right != nil {
-                            Text("🐙 \(r.explain)")
+                            Label(r.explain, systemImage: "lightbulb.fill")
                                 .font(.kid(17, .bold)).foregroundStyle(Palette.ink)
                                 .padding(14)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -133,7 +123,7 @@ struct ExperimentView: View {
             if let result {
                 ZStack {
                     Color.black.opacity(0.25).ignoresSafeArea()
-                    LearnDoneCard(title: experiment.title, stars: result.stars, earned: result.earned, firstTry: firstTry,
+                    LearnDoneCard(title: experiment.title, stars: result.stars, earned: result.earned, firstTry: firstTry, host: PlaceHost.science,
                                   total: rounds.count, onAgain: start, onBack: onBack)
                 }
             }
@@ -231,7 +221,7 @@ struct ExperimentView: View {
             let stars = LearnScore.stars(firstTry: firstTry, of: rounds.count)
             let earned = onFinish(stars)
             Haptics.success(.fanfare)
-            withAnimation(.spring()) { result = (stars, earned) }
+            withAnimation(Motion.present) { result = (stars, earned) }
             Narrator.shared.say(earned > 0 ? "Great experimenting! \(earned) new stars!" : "Great experimenting!")
         }
     }

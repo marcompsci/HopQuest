@@ -19,16 +19,17 @@ struct MusicMakerView: View {
         }
         var icon: String {
             switch self {
-            case .play: return "🎹"
-            case .echo: return "🦜"
-            case .rhythm: return "🥁"
-            case .tune: return "🎶"
-            case .build: return "🧱"
+            case .play: return "pianokeys"
+            case .echo: return "ear.fill"
+            case .rhythm: return "metronome.fill"
+            case .tune: return "music.note.list"
+            case .build: return "square.grid.3x3.fill"
             }
         }
     }
 
     @State private var mode: Mode = .play
+    private let accent = Color(hex: 0xB0459C)
     @State private var instrument: Instrument = .xylophone
     /// The key that's glowing right now (being played or to play next).
     @State private var lit: Int?
@@ -72,12 +73,12 @@ struct MusicMakerView: View {
             if let result {
                 Color.black.opacity(0.25).ignoresSafeArea()
                 LearnDoneCard(title: mode == .tune ? (tune?.title ?? "Song") : mode.title, stars: result.stars, earned: result.earned,
-                              firstTry: result.firstTry, total: result.total,
+                              firstTry: result.firstTry, total: result.total, host: PlaceHost.music,
                               onAgain: { self.result = nil; startMode() },
                               onBack: { self.result = nil; mode = .play })
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: mode)
+        .animation(Motion.snappy, value: mode)
         .onChange(of: mode) { _, _ in startMode() }
         .onAppear {
             instrument = store.profile?.music.song.instrument ?? .xylophone
@@ -89,15 +90,21 @@ struct MusicMakerView: View {
     // MARK: Header and pickers
 
     private var header: some View {
-        HStack {
+        HStack(spacing: 10) {
             CircleIconButton(systemName: "chevron.left", label: "Back", action: { stopAll(); onBack() })
-            Spacer()
-            Text("🎵 Music Maker").font(.kid(24, .black)).foregroundStyle(Palette.purple)
-            Spacer()
-            Text("⭐ \(store.profile?.music.totalStars ?? 0)/\(MusicSave.maxStars)")
-                .font(.kid(15, .black)).foregroundStyle(Palette.ink)
-                .padding(.horizontal, 10).frame(minHeight: 44)
-                .background(Capsule().fill(.white.opacity(0.9)))
+            CharacterBadge(character: PlaceHost.music, size: 48).accessibilityHidden(true)
+            Text("Music Maker").font(.kid(24, .black)).displayTracking(24).foregroundStyle(accent)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            Spacer(minLength: 4)
+            HStack(spacing: 4) {
+                Image(systemName: "star.fill").foregroundStyle(Color(hex: 0xFFC21A))
+                Text("\(store.profile?.music.totalStars ?? 0) of \(MusicSave.maxStars)").monospacedDigit()
+            }
+            .font(.kid(15, .heavy)).foregroundStyle(Palette.ink)
+            .padding(.horizontal, 10).frame(minHeight: 44)
+            .background(Capsule().fill(.regularMaterial))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(store.profile?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars")
         }
     }
 
@@ -109,10 +116,10 @@ struct MusicMakerView: View {
                         Haptics.tap(.pop)
                         mode = m
                     } label: {
-                        Text("\(m.icon) \(m.title)").font(.kid(15, .black))
+                        Label(m.title, systemImage: m.icon).font(.kid(15, .heavy))
                             .foregroundStyle(mode == m ? .white : Palette.ink)
                             .padding(.horizontal, 14).frame(minHeight: 44)
-                            .background(Capsule().fill(mode == m ? Palette.purple : .white.opacity(0.9)))
+                            .background(Capsule().fill(mode == m ? accent : .white.opacity(0.9)))
                     }
                     .buttonStyle(BouncyButtonStyle())
                     .accessibilityLabel(m.title + (mode == m ? ", chosen" : ""))
@@ -214,7 +221,7 @@ struct MusicMakerView: View {
                 .font(.kid(15, .bold)).foregroundStyle(Palette.ink.opacity(0.75))
                 .multilineTextAlignment(.center)
             if !SoundFX.shared.sfxOn {
-                Text("🔇 Sounds are off in Grown-up settings.").font(.kid(14, .black)).foregroundStyle(Palette.red)
+                Label("Sounds are off in Grown-up settings.", systemImage: "speaker.slash.fill").font(.kid(14, .black)).foregroundStyle(Palette.red)
             }
         }
     }
@@ -264,7 +271,7 @@ struct MusicMakerView: View {
                     let stars = LearnScore.stars(firstTry: firstTry, of: patterns.count)
                     let earned = store.recordMusic(game, stars: stars)
                     Haptics.success(.fanfare)
-                    withAnimation(.spring()) { result = (stars, earned, firstTry, patterns.count) }
+                    withAnimation(Motion.present) { result = (stars, earned, firstTry, patterns.count) }
                     Narrator.shared.say(earned > 0 ? "Amazing ears! \(earned) new stars!" : "Amazing ears!")
                 }
             }
@@ -303,7 +310,7 @@ struct MusicMakerView: View {
     private var tuneArea: some View {
         VStack(spacing: 14) {
             if let tune {
-                Text("🎶 \(tune.title)").font(.kid(22, .black)).foregroundStyle(Palette.ink)
+                Label(tune.title, systemImage: "music.note").font(.kid(22, .black)).foregroundStyle(Palette.ink)
                 ProgressView(value: Double(check.position), total: Double(max(check.pattern.count, 1)))
                     .tint(Palette.green)
                 instrumentPicker
@@ -349,7 +356,7 @@ struct MusicMakerView: View {
             let stars = check.mistakes == 0 ? 3 : check.mistakes <= 3 ? 2 : 1
             let earned = store.recordMusic(.learnTune, stars: stars, tune: t.id)
             Haptics.success(.fanfare)
-            withAnimation(.spring()) { result = (stars, earned, max(0, t.keys.count - check.mistakes), t.keys.count) }
+            withAnimation(Motion.present) { result = (stars, earned, max(0, t.keys.count - check.mistakes), t.keys.count) }
             Narrator.shared.say("You played \(t.title)! Bravo!")
             tune = nil
         }

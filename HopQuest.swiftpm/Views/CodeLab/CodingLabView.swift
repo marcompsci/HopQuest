@@ -59,7 +59,7 @@ struct CodingLabView: View {
     private var header: some View {
         HStack(spacing: 10) {
             CircleIconButton(systemName: "chevron.left", label: "Back", action: onBack)
-            Text("Coding Lab 💻").font(.kid(28, .black)).foregroundStyle(.white)
+            Text("Coding Lab").font(.kid(28, .black)).displayTracking(28).foregroundStyle(.white)
                 .lineLimit(1).minimumScaleFactor(0.7)
                 .accessibilityLabel("Coding Lab")
             Spacer()

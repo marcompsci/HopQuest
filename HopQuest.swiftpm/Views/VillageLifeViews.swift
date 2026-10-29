@@ -39,7 +39,7 @@ struct VillageTodayPill: View {
             .foregroundStyle(Palette.ink)
             .lineLimit(1).minimumScaleFactor(0.7)
             .padding(.horizontal, 12).frame(minHeight: 44)
-            .background(Capsule().fill(.white.opacity(0.92)).shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 3))
+            .background(Capsule().fill(.regularMaterial).shadow(color: .black.opacity(0.12), radius: 8, y: 3))
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel(seasonsOn
@@ -63,7 +63,7 @@ struct FestivalBoardView: View {
         VStack(spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Notice Board 📌").font(.kid(24, .black)).foregroundStyle(Palette.ink)
+                    Text("Notice Board").font(.kid(24, .black)).displayTracking(24).foregroundStyle(Palette.ink)
                     Text("\(FestivalMissions.all.filter { missions.status($0) == .done }.count) of \(Festival.allCases.count) festivals celebrated")
                         .font(.kid(14, .bold)).foregroundStyle(Palette.purple)
                 }
@@ -81,7 +81,7 @@ struct FestivalBoardView: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
         .padding(.horizontal, 16)
-        .transition(.scale(scale: 0.85).combined(with: .opacity))
+        .transition(.panel)
     }
 
     private var todayCard: some View {
@@ -172,7 +172,7 @@ struct HomeDecorView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("🏡 \(ownerName)'s House").font(.kid(24, .black)).foregroundStyle(Palette.ink)
+                Text("\(ownerName)'s House").font(.kid(24, .black)).displayTracking(24).foregroundStyle(Palette.ink)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 Spacer()
                 CircleIconButton(systemName: "xmark", label: "Done", action: onClose)
@@ -197,7 +197,7 @@ struct HomeDecorView: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
         .padding(.horizontal, 16)
-        .transition(.scale(scale: 0.85).combined(with: .opacity))
+        .transition(.panel)
     }
 
     private var preview: some View {

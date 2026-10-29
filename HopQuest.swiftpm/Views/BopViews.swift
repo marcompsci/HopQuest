@@ -65,7 +65,7 @@ struct BopGameView: View {
                 if showIntro {
                     Color.black.opacity(0.3).ignoresSafeArea()
                     intro
-                        .transition(.scale(scale: 0.8).combined(with: .opacity))
+                        .transition(.panel)
                 }
 
                 if hud.finished {

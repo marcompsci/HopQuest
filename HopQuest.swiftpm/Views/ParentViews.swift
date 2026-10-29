@@ -32,7 +32,7 @@ struct ParentGateView: View {
     private var gate: some View {
         VStack(spacing: 18) {
             Spacer()
-            Text("👨‍👩‍👧 Grown-ups only").font(.kid(28, .black))
+            Label("Grown-ups only", systemImage: "lock.shield.fill").font(.kid(28, .black)).displayTracking(28)
             Text("To open settings, type the answer:")
                 .font(.kid(17, .medium))
                 .foregroundStyle(.secondary)

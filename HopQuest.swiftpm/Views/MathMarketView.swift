@@ -31,16 +31,15 @@ struct CoinView: View {
     }
 }
 
-/// The Math Market: Benny Bear's shop in Hop Village, with five money games.
+/// The Math Market: Benny Banana's shop in Hop Village, with five money games.
 struct MathMarketView: View {
     @EnvironmentObject var store: GameStore
     var onBack: () -> Void
 
     @State private var playing: MarketGame?
 
-    private static let colors: [MarketGame: UInt32] = [
-        .countCoins: 0xE07B00, .payExactly: 0x34C77B, .makeChange: 0x4D96FF, .compare: 0xB983FF, .addUp: 0xFF6B6B,
-    ]
+    /// One accent for the whole place: the five games read as one group.
+    private let accent = Color(hex: 0xD06A00)
 
     /// 1 = little learner, 2 = growing, 3 = big (follows the grown-ups' Learning level).
     private var level: Int { min(3, max(1, store.effectiveTier)) }
@@ -50,46 +49,39 @@ struct MathMarketView: View {
             LinearGradient(colors: [Color(hex: 0xFFF7D6), Color(hex: 0xFFE0A3)], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
             if let game = playing {
-                MarketGameView(game: game, level: level, color: Color(hex: Self.colors[game] ?? 0x7C4DFF),
+                MarketGameView(game: game, level: level, color: accent,
                                onFinish: { stars in store.recordMarket(game, stars: stars) },
                                onBack: { playing = nil; Narrator.shared.say("Pick another game!") })
                     .id(game)
-                    .transition(.move(edge: .trailing))
+                    .transition(.pushIn)
             } else {
-                list.transition(.move(edge: .leading))
+                list.transition(.pushedBack)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: playing)
-        .onAppear { Narrator.shared.say("Welcome to the Math Market! I'm Benny Bear. Let's count some money!") }
+        .animation(Motion.standard, value: playing)
+        .onAppear { Narrator.shared.say("Welcome to the Math Market! I'm Benny Banana. Let's count some money!") }
         .onDisappear { Narrator.shared.stop() }
     }
 
     private var list: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
-                HStack {
-                    CircleIconButton(systemName: "chevron.left", label: "Back", action: onBack)
-                    Spacer()
-                    Text("⭐ \(store.profile?.market.totalStars ?? 0)/\(MarketSave.maxStars)")
-                        .font(.kid(17, .black)).foregroundStyle(Palette.ink)
-                        .padding(.horizontal, 12).frame(minHeight: 44)
-                        .background(Capsule().fill(.white.opacity(0.9)))
-                }
-                Text("🐻🛒").font(.system(size: 60)).accessibilityHidden(true)
-                Text("Math Market").font(.kid(34, .black)).foregroundStyle(Color(hex: 0xB35F00))
+                PlaceHeader(host: PlaceHost.market, title: "Math Market", line: "Welcome to my shop! Let's count some coins.",
+                            stars: store.profile?.market.totalStars ?? 0, maxStars: MarketSave.maxStars,
+                            accent: accent, onBack: onBack)
                 HStack(spacing: 8) {
                     ForEach(Coin.forLevel(level), id: \.self) { CoinView(coin: $0, scale: 0.8) }
                 }
-                Text("Benny Bear's shop. Pick a game!")
-                    .font(.kid(16, .bold)).foregroundStyle(Palette.ink.opacity(0.85))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 4)
                 ForEach(MarketGame.allCases) { g in
-                    LearnGameCard(icon: g.icon, title: g.title, blurb: g.intro, stars: store.profile?.market.best(g) ?? 0,
-                                  color: Color(hex: Self.colors[g] ?? 0x7C4DFF)) {
+                    LearnGameCard(symbol: g.symbol, title: g.title, blurb: g.intro, stars: store.profile?.market.best(g) ?? 0,
+                                  color: accent) {
                         playing = g
                     }
                 }
                 Text("Prices and coins match the Learning level set by a grown-up. Each game gives up to 3 stars.")
-                    .font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.6))
+                    .font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 20)
             }
@@ -144,7 +136,7 @@ struct MarketGameView: View {
             if let result {
                 ZStack {
                     Color.black.opacity(0.25).ignoresSafeArea()
-                    LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry,
+                    LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry, host: PlaceHost.market,
                                   total: rounds.count, onAgain: start, onBack: onBack)
                 }
             }
@@ -302,7 +294,7 @@ struct MarketGameView: View {
                 let stars = LearnScore.stars(firstTry: firstTry, of: rounds.count)
                 let earned = onFinish(stars)
                 Haptics.success(.fanfare)
-                withAnimation(.spring()) { result = (stars, earned) }
+                withAnimation(Motion.present) { result = (stars, earned) }
                 Narrator.shared.say(earned > 0 ? "Great shopping! \(earned) new stars!" : "Great shopping!")
             }
         }

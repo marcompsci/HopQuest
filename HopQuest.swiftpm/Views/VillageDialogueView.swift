@@ -106,6 +106,6 @@ struct VillageChapterPicker: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
         .padding(.horizontal, 20)
-        .transition(.scale(scale: 0.8).combined(with: .opacity))
+        .transition(.panel)
     }
 }

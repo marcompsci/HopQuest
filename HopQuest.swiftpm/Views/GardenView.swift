@@ -20,7 +20,10 @@ struct GardenView: View {
         VStack(spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("🌻 My Garden").font(.kid(24, .black)).foregroundStyle(Palette.ink)
+                    HStack(spacing: 8) {
+                        ArtImage("icon_garden").frame(width: 40, height: 40).accessibilityHidden(true)
+                        Text("My Garden").font(.kid(24, .black)).displayTracking(24).foregroundStyle(Palette.ink)
+                    }
                     Text("\(PlantKind.allCases.filter { (garden.harvested[$0.rawValue] ?? 0) > 0 }.count) of \(PlantKind.allCases.count) plants grown")
                         .font(.kid(14, .bold)).foregroundStyle(Palette.purple)
                 }
@@ -46,7 +49,7 @@ struct GardenView: View {
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.white).shadow(color: .black.opacity(0.25), radius: 14, y: 6))
         .padding(.horizontal, 16)
-        .transition(.scale(scale: 0.85).combined(with: .opacity))
+        .transition(.panel)
     }
 
     @ViewBuilder

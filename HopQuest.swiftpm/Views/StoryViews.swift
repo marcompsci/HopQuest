@@ -172,8 +172,8 @@ struct StoryBookView: View {
                             CircleIconButton(systemName: "chevron.left", label: "Back", action: onBack)
                             Spacer()
                         }
-                        Text("📖").font(.system(size: 60)).accessibilityHidden(true)
-                        Text("Story Book").font(.kid(34, .black)).foregroundStyle(Palette.purple)
+                        CharacterBadge(character: PlaceHost.reading, size: 92, animated: true).accessibilityHidden(true)
+                        Text("Story Book").font(.kid(34, .black)).displayTracking(34).foregroundStyle(Palette.purple)
                         Text("Watch your adventure again. New stories appear as you finish levels.")
                             .font(.kid(15, .bold)).foregroundStyle(Palette.ink.opacity(0.8))
                             .multilineTextAlignment(.center)
@@ -187,7 +187,7 @@ struct StoryBookView: View {
                 .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: playing?.id)
+        .animation(Motion.standard, value: playing?.id)
         .onAppear { Narrator.shared.say("The Story Book! Pick a story to watch again.") }
     }
 

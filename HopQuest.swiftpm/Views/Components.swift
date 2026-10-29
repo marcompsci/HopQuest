@@ -125,11 +125,23 @@ enum Haptics {
 
 // MARK: - Buttons
 
+/// Every tappable card and button: it sinks the instant a finger lands (on touch-down, not on release),
+/// then settles back without wobbling. A small press (96%) reads as physical; a big wobble reads as a toy.
 struct BouncyButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.92 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.55), value: configuration.isPressed)
+        PressedLabel(configuration: configuration)
+    }
+
+    private struct PressedLabel: View {
+        let configuration: Configuration
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        var body: some View {
+            configuration.label
+                .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
+                .brightness(configuration.isPressed ? -0.03 : 0)
+                .animation(configuration.isPressed ? Motion.press : Motion.release, value: configuration.isPressed)
+        }
     }
 }
 

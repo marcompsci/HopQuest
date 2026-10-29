@@ -56,19 +56,24 @@ struct MainMenuView: View {
                         gameTile(art: "icon_kart", title: "Bubble Kart", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
                                  badge: 0, label: "Bubble Kart racing", action: onKart)
                     }
+                    section("Learn")
                     codingLabCard
-                    learnCard(icon: "📚", title: "Reading Nook",
-                              subtitle: "Letter sounds, spelling, sight words, rhymes and sentences · \(store.profile?.reading.totalStars ?? 0)/\(ReadingSave.maxStars) ⭐",
-                              color: 0xD94A57, shadow: 0x9E2A3A, action: onReading)
-                    learnCard(icon: "🛒", title: "Math Market",
-                              subtitle: "Count coins, pay, make change and compare prices · \(store.profile?.market.totalStars ?? 0)/\(MarketSave.maxStars) ⭐",
-                              color: 0xE07B00, shadow: 0xA35A00, action: onMarket)
-                    learnCard(icon: "🔬", title: "Science Lab",
-                              subtitle: "Sink or float, magnets, plants, weather, solids and liquids · \(store.profile?.science.totalStars ?? 0)/\(ScienceSave.maxStars) ⭐",
-                              color: 0x1F7A8C, shadow: 0x135563, action: onScience)
-                    learnCard(icon: "🎹", title: "Music Maker",
-                              subtitle: "Rainbow keys, drums, songs to learn and your own tune · \(store.profile?.music.totalStars ?? 0)/\(MusicSave.maxStars) ⭐",
-                              color: 0xB0459C, shadow: 0x7E2C6F, action: onMusic)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                        let p = store.profile
+                        gameTile(art: "icon_reading", title: "Reading Nook", color: Color(hex: 0xD94A57), shadow: Color(hex: 0x9E2A3A),
+                                 badge: 0, detail: "\(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars",
+                                 label: "Reading Nook, \(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars", action: onReading)
+                        gameTile(art: "icon_market", title: "Math Market", color: Color(hex: 0xE07B00), shadow: Color(hex: 0xA35A00),
+                                 badge: 0, detail: "\(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars",
+                                 label: "Math Market, \(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars", action: onMarket)
+                        gameTile(art: "icon_science", title: "Science Lab", color: Color(hex: 0x1F7A8C), shadow: Color(hex: 0x135563),
+                                 badge: 0, detail: "\(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars",
+                                 label: "Science Lab, \(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars", action: onScience)
+                        gameTile(art: "icon_music", title: "Music Maker", color: Color(hex: 0xB0459C), shadow: Color(hex: 0x7E2C6F),
+                                 badge: 0, detail: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars",
+                                 label: "Music Maker, \(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars", action: onMusic)
+                    }
+                    section("Worlds")
                     ForEach(Worlds.all) { w in worldCard(w) }
                     castleCard
                     HStack(spacing: 12) {
@@ -176,7 +181,7 @@ struct MainMenuView: View {
 
     private func section(_ title: String) -> some View {
         HStack {
-            Text(title).font(.kid(20, .black)).foregroundStyle(Palette.ink)
+            Text(title).font(.kid(20, .black)).tracking(-0.3).foregroundStyle(Palette.ink)
             Spacer()
         }
         .padding(.horizontal, 4)
@@ -238,7 +243,7 @@ struct MainMenuView: View {
         .accessibilityLabel("\(title), \(state == .locked ? "locked" : state == .done ? "finished" : "ready to play")")
     }
 
-    private func gameTile(art: String, title: String, color: Color, shadow: Color, badge: Int, label: String,
+    private func gameTile(art: String, title: String, color: Color, shadow: Color, badge: Int, detail: String? = nil, label: String,
                           action: @escaping () -> Void) -> some View {
         Button {
             Haptics.tap()
@@ -247,6 +252,9 @@ struct MainMenuView: View {
             VStack(spacing: 4) {
                 ArtImage(art).frame(width: 64, height: 64)
                 Text(title).font(.kid(18, .black)).lineLimit(1).minimumScaleFactor(0.7)
+                if let detail {
+                    Text(detail).font(.kid(12, .semibold)).opacity(0.85).monospacedDigit()
+                }
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -275,13 +283,13 @@ struct MainMenuView: View {
             onCodingLab()
         } label: {
             HStack(spacing: 14) {
-                Text("💻").font(.system(size: 44))
-                    .frame(width: 70, height: 70)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.2)))
+                ArtImage("icon_code").frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Coding Lab").font(.kid(22, .black))
-                    Text("Build web pages, Python programs and games · \(done)/\(CodeCurriculum.lessons.count) lessons")
-                        .font(.kid(14, .bold)).opacity(0.9)
+                    Text("Web pages, Python and games")
+                        .font(.kid(14, .semibold)).opacity(0.85)
+                    Text("\(done) of \(CodeCurriculum.lessons.count) lessons")
+                        .font(.kid(12, .semibold)).opacity(0.7).monospacedDigit()
                 }
                 Spacer(minLength: 0)
             }
@@ -292,31 +300,6 @@ struct MainMenuView: View {
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel("Coding Lab: \(done) of \(CodeCurriculum.lessons.count) lessons done")
-    }
-
-    /// A learning place from the village (Reading Nook, Math Market) as a big menu card.
-    private func learnCard(icon: String, title: String, subtitle: String, color: UInt32, shadow: UInt32, action: @escaping () -> Void) -> some View {
-        Button {
-            Haptics.tap()
-            action()
-        } label: {
-            HStack(spacing: 14) {
-                Text(icon).font(.system(size: 44))
-                    .frame(width: 70, height: 70)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.2)))
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.kid(22, .black))
-                    Text(subtitle).font(.kid(14, .bold)).opacity(0.9)
-                }
-                Spacer(minLength: 0)
-            }
-            .foregroundStyle(.white)
-            .padding(14)
-            .background(RoundedRectangle(cornerRadius: 24).fill(Color(hex: color))
-                .shadow(color: Color(hex: shadow), radius: 0, x: 0, y: 5))
-        }
-        .buttonStyle(BouncyButtonStyle())
-        .accessibilityLabel("\(title): \(subtitle)")
     }
 
     /// A story world from data, like Snowy Peaks. Opens after its unlock chapter.

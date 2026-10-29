@@ -39,7 +39,7 @@ struct WorldView: View {
                         levelCard(c, number: i + 1)
                     }
                     if world.chapters.allSatisfy({ store.profile?.completedChapters.contains($0.id) == true }) {
-                        Text("🏆 You finished \(world.title)! Play any level again whenever you like.")
+                        Label("You finished \(world.title)! Play any level again whenever you like.", systemImage: "trophy.fill")
                             .font(.kid(17, .black)).foregroundStyle(Palette.green)
                             .multilineTextAlignment(.center)
                             .padding(14)
