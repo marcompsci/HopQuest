@@ -123,8 +123,8 @@ struct ExperimentView: View {
             if let result {
                 ZStack {
                     Color.black.opacity(0.25).ignoresSafeArea()
-                    LearnDoneCard(title: experiment.title, stars: result.stars, earned: result.earned, firstTry: firstTry, host: PlaceHost.science,
-                                  total: rounds.count, onAgain: start, onBack: onBack)
+                    LearnDoneCard(title: experiment.title, stars: result.stars, earned: result.earned, firstTry: firstTry, total: rounds.count,
+                                  host: PlaceHost.science, onAgain: start, onBack: onBack)
                 }
             }
         }

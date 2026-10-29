@@ -102,8 +102,8 @@ struct ReadingGameView: View {
             if let result {
                 ZStack {
                     Color.black.opacity(0.25).ignoresSafeArea()
-                    LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry, host: PlaceHost.reading,
-                                  total: rounds.count, onAgain: start, onBack: onBack)
+                    LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry, total: rounds.count,
+                                  host: PlaceHost.reading, onAgain: start, onBack: onBack)
                 }
             }
         }
