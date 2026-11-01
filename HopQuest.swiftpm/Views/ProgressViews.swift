@@ -1,5 +1,8 @@
 import SwiftUI
 import MessageUI
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 // Grown-ups only (behind the parental gate): what the child has practised, where they could use a hand,
 // and milestone notes a grown-up can text to themselves or a family member.
@@ -30,6 +33,9 @@ extension GameStore {
             LearningArea(id: "science", title: "Science Lab", skills: Experiment.allCases.map { SkillProgress(skill: $0.skill, best: p.science.best($0)) }),
             LearningArea(id: "world", title: "Around the World", skills: WorldGame.allCases.map { SkillProgress(skill: $0.skill, best: p.world.best($0)) }),
             LearningArea(id: "music", title: "Music Maker", skills: MusicGame.allCases.map { SkillProgress(skill: $0.skill, best: p.music.best($0)) }),
+            LearningArea(id: "spelling", title: "Spelling Bee", skills: SpellingBank.games.map { SkillProgress(skill: $0.skill, best: p.places["spelling"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "fractions", title: "Fraction Bakery", skills: FractionBank.games.map { SkillProgress(skill: $0.skill, best: p.places["fractions"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "shapes", title: "Shape Studio", skills: ShapeBank.games.map { SkillProgress(skill: $0.skill, best: p.places["shapes"]?.best($0.id) ?? 0) }),
             LearningArea(id: "code", title: "Code Club", skills: CodeChallenge.all.map { SkillProgress(skill: "coding: \($0.topic.lowercased())", best: p.codeBest[$0.id] ?? 0) }),
         ]
     }
@@ -37,7 +43,7 @@ extension GameStore {
     var milestoneInput: MilestoneInput {
         let p = profile
         return MilestoneInput(lifetimeStars: p?.lifetimeStars ?? 0, areas: learningAreas, postcards: p?.world.postcards.count ?? 0,
-                              lettersWritten: p?.writing.written.count ?? 0, storyFinished: p?.completedChapters.contains(18) == true)
+                              lettersWritten: p?.writing.written.count ?? 0, storyFinished: p?.completedChapters.contains(21) == true)
     }
 
     /// Milestones waiting for a grown-up to share (only when milestone notes are switched on).
@@ -50,6 +56,29 @@ extension GameStore {
         guard var p = profile else { return }
         change(&p.milestones)
         profile = p
+    }
+
+    /// The widget's view of the child: buddy, stars, and what to play next.
+    var widgetSnapshot: WidgetSnapshot {
+        guard let p = profile else { return .placeholder }
+        let areas = learningAreas
+        let c = character
+        // next up: something being practised, else the first game not started, else a game already learned
+        let practising = areas.lazy.compactMap { a in a.needsPractice.first.map { (a.title, $0.skill, "Practising") } }.first
+        let fresh = areas.lazy.compactMap { a in a.skills.first { $0.status == .notStarted }.map { (a.title, $0.skill, "Up next") } }.first
+        let learned = areas.lazy.compactMap { a in a.learned.last.map { (a.title, $0.skill, "Got it") } }.first
+        let pick = practising ?? fresh ?? learned ?? ("Hop Village", "exploring", "Up next")
+        return WidgetSnapshot(name: p.name, buddyName: c.name, buddyEmoji: c.emoji, buddyID: c.id, stars: p.stars, lifetimeStars: p.lifetimeStars,
+                              lessonTitle: pick.0, skill: pick.1, skillState: pick.2,
+                              skillsLearned: areas.reduce(0) { $0 + $1.learned.count }, skillsTotal: areas.reduce(0) { $0 + $1.skills.count },
+                              quickBest: p.quick.best)
+    }
+
+    func publishWidget() {
+        guard profile != nil, SharedStore.save(widgetSnapshot) else { return }
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 
     func milestoneNote(_ m: Milestone?) -> String {

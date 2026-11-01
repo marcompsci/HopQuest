@@ -21,6 +21,10 @@ struct MainMenuView: View {
     var onWriting: () -> Void = {}
     var onClock: () -> Void = {}
     var onWorldTour: () -> Void = {}
+    var onQuickGame: () -> Void = {}
+    var onQuizPlace: (String) -> Void = { _ in }
+    var onStoryMaker: () -> Void = {}
+    var onBadges: () -> Void = {}
     var onMap: () -> Void
     /// Opens a story world from data (Snowy Peaks).
     var onWorld: (String) -> Void = { _ in }
@@ -28,6 +32,7 @@ struct MainMenuView: View {
     @State private var showParent = false
     @State private var showCharacters = false
     @State private var bounce = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var note: String?
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -47,11 +52,14 @@ struct MainMenuView: View {
                 VStack(spacing: 16) {
                     header
                     playButton
+                        .padding(.top, 6)
                     section("Adventures")
+                        .padding(.top, 10)
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(Chapters.all) { chapter in chapterTile(chapter) }
                     }
                     section("Games")
+                        .padding(.top, 10)
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                         let packs = store.packsAvailable
                         gameTile(art: "icon_stickers", title: "Stickers", color: Color(hex: 0xFF9F45), shadow: Color(hex: 0xD9731C),
@@ -62,8 +70,12 @@ struct MainMenuView: View {
                                  badge: 0, label: "Pillow Bop party game", action: onBop)
                         gameTile(art: "icon_kart", title: "Bubble Kart", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
                                  badge: 0, label: "Bubble Kart racing", action: onKart)
+                        gameTile(art: "icon_dash", title: "Star Dash", color: Color(hex: 0x4D7CFF), shadow: Color(hex: 0x2F55C7),
+                                 badge: 0, detail: (store.profile?.quick.best ?? 0) > 0 ? "Best \(store.profile?.quick.best ?? 0)" : "1-minute quick game",
+                                 label: "Star Dash, a one-minute quick game", action: onQuickGame)
                     }
                     section("Learn")
+                        .padding(.top, 10)
                     codingLabCard
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                         let p = store.profile
@@ -88,9 +100,17 @@ struct MainMenuView: View {
                         gameTile(art: "icon_world", title: "Around the World", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
                                  badge: 0, detail: "\(p?.world.postcards.count ?? 0) of 7 postcards",
                                  label: "Around the World, \(p?.world.postcards.count ?? 0) of 7 postcards", action: onWorldTour)
+                        placeTile("spelling", art: "icon_spelling", title: "Spelling Bee", color: 0xB7791F, shadow: 0x8A5A12)
+                        placeTile("fractions", art: "icon_fractions", title: "Fraction Bakery", color: 0xC2185B, shadow: 0x8E1243)
+                        placeTile("shapes", art: "icon_shapes", title: "Shape Studio", color: 0x00796B, shadow: 0x00564C)
+                        gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
+                                 badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
+                                 label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)
                     }
                     section("Worlds")
+                        .padding(.top, 10)
                     ForEach(Worlds.all) { w in worldCard(w) }
+                    badgesCard
                     castleCard
                     HStack(spacing: 12) {
                         smallButton(icon: "map.fill", title: "Adventure Map", action: onMap)
@@ -125,87 +145,136 @@ struct MainMenuView: View {
 
     // MARK: Pieces
 
+    /// The greeting sits straight on the sky: buddy, name, a star count, and the grown-ups button.
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .center, spacing: 12) {
             Button { showCharacters = true } label: {
-                CharacterBadge(character: store.character, size: 52)
-                    .background(Circle().fill(.white.opacity(0.9)))
+                CharacterBadge(character: store.character, size: 50)
+                    .frame(width: 56, height: 56)
+                    .background(Circle().fill(.regularMaterial))
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 10, weight: .black))
+                            .foregroundStyle(.white)
+                            .frame(width: 20, height: 20)
+                            .background(Circle().fill(Palette.purple))
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                    }
             }
             .buttonStyle(BouncyButtonStyle())
             .accessibilityLabel("Change your buddy")
 
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Hi, \(store.profile?.name ?? "friend")!")
-                    .font(.kid(22, .black))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(L10n.tr("Hi, \(displayName)!"))
+                    .font(.kid(26, .black))
+                    .displayTracking(26)
                     .foregroundStyle(Palette.ink)
-                HStack(spacing: 4) {
-                    ArtImage("goal_star").frame(width: 20, height: 20)
-                    Text("\(store.profile?.stars ?? 0) stars")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                HStack(spacing: 5) {
+                    ArtImage("goal_star").frame(width: 18, height: 18)
+                    Text("\(store.profile?.stars ?? 0)").monospacedDigit()
+                    Text(L10n.isSpanish ? "estrellas" : "stars").foregroundStyle(Palette.ink.opacity(0.55))
                 }
-                .font(.kid(16, .bold))
-                .foregroundStyle(Palette.purple)
+                .font(.kid(15, .bold))
+                .foregroundStyle(Palette.ink)
+                .padding(.leading, 8).padding(.trailing, 10).padding(.vertical, 4)
+                .background(Capsule().fill(.regularMaterial))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(store.profile?.stars ?? 0) stars")
             }
-            Spacer()
-            CircleIconButton(systemName: "gearshape.fill", label: store.pendingMilestones.isEmpty ? "Grown-ups" : "Grown-ups, a milestone note is ready") { showParent = true }
-                .overlay(alignment: .topTrailing) {
-                    // a quiet dot for grown-ups: a milestone note is waiting behind the gate
-                    if !store.pendingMilestones.isEmpty {
-                        Circle().fill(Palette.red).frame(width: 12, height: 12)
-                            .overlay(Circle().stroke(.white, lineWidth: 2))
-                            .accessibilityHidden(true)
+
+            Spacer(minLength: 8)
+
+            Button { showParent = true } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(Palette.ink.opacity(0.75))
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(.regularMaterial))
+                    .overlay(alignment: .topTrailing) {
+                        // a quiet dot for grown-ups: a milestone note is waiting behind the gate
+                        if !store.pendingMilestones.isEmpty {
+                            Circle().fill(Palette.red).frame(width: 11, height: 11)
+                                .overlay(Circle().stroke(.white, lineWidth: 2))
+                        }
                     }
-                }
+            }
+            .buttonStyle(BouncyButtonStyle())
+            .accessibilityLabel(store.pendingMilestones.isEmpty ? "Grown-ups" : "Grown-ups, a milestone note is ready")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 26).fill(.white.opacity(0.8)))
+        .padding(.horizontal, 4)
+        .padding(.top, 4)
     }
 
+    /// Names are shown as typed, but an all-caps name ("MAR") reads as shouting, so it's softened to "Mar".
+    private var displayName: String {
+        let n = (store.profile?.name ?? "friend").trimmingCharacters(in: .whitespaces)
+        guard n.count > 1, n == n.uppercased(), n.rangeOfCharacter(from: .letters) != nil else { return n }
+        return String(n.prefix(1)) + n.dropFirst().lowercased()
+    }
+
+    /// The big way into Hop Village: what it is, and how far along the castle is.
     private var playButton: some View {
         let progress = store.challengeProgress
+        let left = ChallengeProgress.total - progress.doneCount
         return Button {
             Haptics.success(.whoosh)
             onPlay()
         } label: {
-            VStack(spacing: 6) {
-                HStack(spacing: 14) {
-                    CharacterBadge(character: store.character, size: 70)
-                        .offset(y: bounce ? -6 : 0)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 14) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(Color(hex: 0x1F8F55))
+                        .frame(width: 58, height: 58)
+                        .background(Circle().fill(.white))
+                        .offset(x: 2)
                     VStack(alignment: .leading, spacing: 0) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "play.fill").font(.system(size: 30, weight: .black))
-                            Text("PLAY").font(.kid(44, .black))
-                        }
-                        Text("Hop Village").font(.kid(20, .black)).opacity(0.95)
+                        Text(L10n.tr("Play")).font(.kid(36, .black)).displayTracking(36)
+                        Text(L10n.tr("Hop Village")).font(.kid(17, .bold)).opacity(0.85)
                     }
                     Spacer(minLength: 0)
+                    ArtImage("village_castle_\(store.theme.rawValue)")
+                        .frame(width: 92, height: 92)
+                        .opacity(progress.allDone ? 1 : 0.92)
+                        .offset(y: bounce ? -3 : 0)
+                        .accessibilityHidden(true)
                 }
-                HStack(spacing: 6) {
-                    Text("🏆 \(progress.doneCount)/\(ChallengeProgress.total) challenges")
-                    Spacer()
-                    Text(progress.allDone ? "Castle open! 🏰" : "Finish all to open your castle")
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "trophy.fill").font(.system(size: 13, weight: .bold))
+                        Text(L10n.tr("\(progress.doneCount) of \(ChallengeProgress.total) challenges")).monospacedDigit()
+                    }
+                    .font(.kid(14, .bold))
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(.white.opacity(0.28))
+                            Capsule().fill(.white)
+                                .frame(width: max(10, geo.size.width * CGFloat(progress.doneCount) / CGFloat(ChallengeProgress.total)))
+                        }
+                    }
+                    .frame(height: 8)
+                    Text(L10n.tr(progress.allDone ? "Your castle is open!" : "\(left) more to open your castle"))
+                        .font(.kid(13, .semibold)).opacity(0.8)
                 }
-                .font(.kid(13, .bold))
-                .opacity(0.95)
-                ProgressView(value: Double(progress.doneCount), total: Double(ChallengeProgress.total))
-                    .tint(.white)
             }
             .foregroundStyle(.white)
-            .padding(18)
-            .background(RoundedRectangle(cornerRadius: 30, style: .continuous).fill(Color(hex: 0x34C77B))
-                .shadow(color: Color(hex: 0x239A5C), radius: 0, x: 0, y: 7))
-            .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous).stroke(.white, lineWidth: 4))
+            .padding(20)
+            .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(Color(hex: 0x34C77B))
+                .shadow(color: Color(hex: 0x239A5C), radius: 0, x: 0, y: 6))
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel("Play Hop Village. \(progress.doneCount) of \(ChallengeProgress.total) challenges done.")
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { bounce = true }
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) { bounce = true }
         }
     }
 
     private func section(_ title: String) -> some View {
         HStack {
-            Text(title).font(.kid(20, .black)).tracking(-0.3).foregroundStyle(Palette.ink)
+            Text(L10n.tr(title)).font(.kid(20, .black)).tracking(-0.3).foregroundStyle(Palette.ink)
             Spacer()
         }
         .padding(.horizontal, 4)
@@ -275,9 +344,9 @@ struct MainMenuView: View {
         } label: {
             VStack(spacing: 4) {
                 ArtImage(art).frame(width: 64, height: 64)
-                Text(title).font(.kid(18, .black)).lineLimit(1).minimumScaleFactor(0.7)
+                Text(L10n.tr(title)).font(.kid(18, .black)).lineLimit(1).minimumScaleFactor(0.7)
                 if let detail {
-                    Text(detail).font(.kid(12, .semibold)).opacity(0.85).monospacedDigit()
+                    Text(L10n.tr(detail)).font(.kid(12, .semibold)).opacity(0.85).monospacedDigit()
                 }
             }
             .foregroundStyle(.white)
@@ -298,6 +367,41 @@ struct MainMenuView: View {
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel(label)
+    }
+
+    private func placeTile(_ id: String, art: String, title: String, color: UInt32, shadow: UInt32) -> some View {
+        let stars = store.profile?.places[id]?.totalStars ?? 0
+        return gameTile(art: art, title: title, color: Color(hex: color), shadow: Color(hex: shadow), badge: 0,
+                        detail: "\(stars) of 12 stars", label: "\(title), \(stars) of 12 stars") { onQuizPlace(id) }
+    }
+
+    /// The badges wall: a row of the latest badges earned.
+    private var badgesCard: some View {
+        let earned = Badges.earned(store.badgeInput)
+        return Button { Haptics.tap(); onBadges() } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "rosette").font(.system(size: 26, weight: .bold)).foregroundStyle(Color(hex: 0xE0A800))
+                    .frame(width: 48, height: 48).background(Circle().fill(Color(hex: 0xFFF4C2)))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.tr("Badges")).font(.kid(19, .black)).foregroundStyle(Palette.ink)
+                    Text(L10n.tr("\(earned.count) of \(Badges.all.count) earned")).font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.6)).monospacedDigit()
+                }
+                Spacer()
+                HStack(spacing: -10) {
+                    ForEach(earned.suffix(4)) { b in
+                        Image(systemName: b.symbol).font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 30, height: 30).background(Circle().fill(Color(hex: b.colorHex)))
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                    }
+                }
+                Image(systemName: "chevron.right").font(.system(size: 14, weight: .bold)).foregroundStyle(Palette.ink.opacity(0.35))
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.white.opacity(0.9))
+                .shadow(color: Palette.ink.opacity(0.1), radius: 0, x: 0, y: 4))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("Badges, \(earned.count) of \(Badges.all.count) earned")
     }
 
     private var codingLabCard: some View {
@@ -406,7 +510,7 @@ struct MainMenuView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                Text(title).lineLimit(1).minimumScaleFactor(0.6)
+                Text(L10n.tr(title)).lineLimit(1).minimumScaleFactor(0.6)
             }
             .font(.kid(17, .black))
             .foregroundStyle(Palette.ink)

@@ -127,7 +127,7 @@ final class SoundFX {
 
     /// Reads a sound from the asset catalog into a buffer in the engine's format (44.1 kHz mono).
     private static func loadAsset(_ name: String) -> AVAudioPCMBuffer? {
-        guard let data = NSDataAsset(name: name, bundle: .module)?.data ?? NSDataAsset(name: name)?.data else { return nil }
+        guard let data = NSDataAsset(name: name, bundle: HQBundle.resources)?.data ?? NSDataAsset(name: name)?.data else { return nil }
         let ext = name.hasPrefix("music_") ? "m4a" : "wav"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).\(ext)")
         do {

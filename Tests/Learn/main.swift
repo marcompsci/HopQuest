@@ -183,8 +183,8 @@ test("Math Market save") {
 test("Story Book: a cutscene after every story level and both new worlds, each one well formed") {
     check(Set(StoryBook.all.map(\.id)).count == StoryBook.all.count, "unique ids")
     check(StoryBook.intro.id == "intro" && StoryBook.all.first?.id == "intro", "the intro comes first")
-    for ch in [1, 2, 3, 4, 5, 6, 9, 12, 15, 18] { check(StoryBook.after(chapter: ch) != nil, "a story after chapter \(ch)") }
-    for ch in [7, 8, 10, 11, 13, 14, 16, 17, 101, 201] { check(StoryBook.after(chapter: ch) == nil, "no story after chapter \(ch)") }
+    for ch in [1, 2, 3, 4, 5, 6, 9, 12, 15, 18, 21] { check(StoryBook.after(chapter: ch) != nil, "a story after chapter \(ch)") }
+    for ch in [7, 8, 10, 11, 13, 14, 16, 17, 19, 20, 101, 201] { check(StoryBook.after(chapter: ch) == nil, "no story after chapter \(ch)") }
     for c in StoryBook.all {
         check(!c.title.isEmpty && (1...3).contains(c.panels.count), "\(c.id): 1 to 3 panels")
         for p in c.panels {
@@ -452,6 +452,232 @@ test("Grown-ups progress: skills, areas and milestones") {
     check(try JSONDecoder().decode(MilestoneSettings.self, from: JSONEncoder().encode(m)) == m, "round trip")
     check(try JSONDecoder().decode(MilestoneSettings.self, from: Data("{}".utf8)) == MilestoneSettings(), "off by default")
     check(try JSONDecoder().decode(MilestoneSettings.self, from: Data(#"{"enabled":true,"phone":"hi"}"#.utf8)).phone == "", "junk numbers are dropped")
+}
+
+test("Quick Game: physics, jumps, double jumps, gaps and the finish") {
+    var g = QuickGameState.level(seed: 1)
+    check(g.onGround && g.y == 0, "starts on the ground")
+    g.step(1.0 / 60, QuickInput(jump: true))
+    check(!g.onGround && g.jumpsUsed == 1 && g.vy > 0, "a tap jumps")
+    for _ in 0..<10 { g.step(1.0 / 60, QuickInput()) }
+    let before = g.vy
+    g.step(1.0 / 60, QuickInput(jump: true))
+    check(g.jumpsUsed == 2 && g.vy > before, "a second tap in the air double jumps")
+    g.step(1.0 / 60, QuickInput(jump: true))
+    check(g.jumpsUsed == 2, "no triple jump")
+    for _ in 0..<120 { g.step(1.0 / 60, QuickInput()) }
+    check(g.onGround && g.jumpsUsed == 0, "lands and can jump again")
+    let x0 = g.x
+    for _ in 0..<30 { g.step(1.0 / 60, QuickInput(left: true)) }
+    check(g.x < x0 && !g.facingRight, "holding left runs left")
+    for _ in 0..<1000 { g.step(1.0 / 60, QuickInput(left: true)) }
+    check(g.x >= -150, "can't run off the start")
+
+    // a simple player: run right, jump at every edge, double jump at the top. Every seed must be finishable in time.
+    for seed in 0..<60 {
+        var q = QuickGameState.level(seed: UInt64(seed))
+        var frames = 0
+        while !q.over && frames < 60 * 70 {
+            let ahead = q.floor(at: q.x + 40, below: q.y + 1)
+            let jump = q.onGround && (ahead == nil || ahead! < q.y - 1 || (q.floor(at: q.x + 40, below: q.y + 60) ?? 0) > q.y)
+            let dbl = !q.onGround && q.jumpsUsed == 1 && q.vy < 50 && q.floor(at: q.x + 60, below: q.y) == nil
+            q.step(1.0 / 60, QuickInput(right: true, jump: jump || dbl))
+            frames += 1
+        }
+        check(q.finished, "seed \(seed): reachable finish (falls \(q.falls))")
+        check(q.collected > 0 && q.score >= q.collected * 10 + 50, "seed \(seed): stars and finish bonus")
+    }
+
+    // every star sits where a jump or double jump can reach: within 230 of the platform under it
+    for seed in 0..<60 {
+        let q = QuickGameState.level(seed: UInt64(seed))
+        for s in q.stars {
+            let under = q.platforms.filter { s.x >= $0.x - 80 && s.x <= $0.x + $0.width + 80 && $0.y <= s.y }.map(\.y).max()
+            check(under != nil && s.y - under! <= 230, "seed \(seed): star at \(Int(s.x)) can be reached")
+        }
+    }
+    var f = QuickGameState.level(seed: 3)
+    f.x = 900; f.y = -100; f.vy = -500; f.onGround = false
+    for _ in 0..<60 where f.falls == 0 { f.step(1.0 / 60, QuickInput()) }
+    check(f.falls == 1 && f.floatBack > 0, "falling into a gap floats you back")
+    for _ in 0..<80 { f.step(1.0 / 60, QuickInput()) }
+    check(f.onGround && f.y >= 0 && f.floatBack <= 0, "back on safe ground")
+    var t = QuickGameState.level(seed: 4)
+    for _ in 0..<(61 * 60) { t.step(1.0 / 60, QuickInput()) }
+    check(t.over && !t.finished && t.timeLeft == 0, "time runs out after a minute")
+}
+
+test("Widget: snapshot saving and the Star Hop game") {
+    let d = UserDefaults(suiteName: "hopquest.tests.widget")!
+    d.removePersistentDomain(forName: "hopquest.tests.widget")
+    check(SharedStore.loadSnapshot(d) == .placeholder, "placeholder before the app writes")
+    var snap = WidgetSnapshot.placeholder; snap.stars = 42; snap.name = "Sam"
+    check(SharedStore.save(snap, d), "first save changes")
+    check(!SharedStore.save(snap, d), "saving the same thing again changes nothing (no extra widget reloads)")
+    check(SharedStore.loadSnapshot(d) == snap, "round trip")
+    check(WidgetSnapshot(name: "", buddyName: "", buddyEmoji: "", buddyID: "", stars: 0, lifetimeStars: 0, lessonTitle: "", skill: "",
+                         skillState: "", skillsLearned: 5, skillsTotal: 0, quickBest: 0).progress == 0, "no divide by zero")
+
+    var h = StarHop()
+    h.stars = []
+    h.right()
+    check(h.row == 1 && h.col == 2 && h.jumps == 1 && h.message == "Jump!", "tap right jumps up and right")
+    h.right()
+    check(h.row == 2 && h.col == 3 && h.jumps == 2 && h.message == "Double jump!", "tap right again in the air double jumps")
+    h.right()
+    check(h.row == 1 && h.col == 4, "a third tap glides down")
+    h.left()
+    check(h.row == 0 && h.col == 3 && h.jumps == 0, "tap left steps left and comes down")
+    h.left(); h.left(); h.left(); h.left()
+    check(h.col == 5, "the board wraps around")
+    check(h.stars.count == 2 && !h.stars.contains(h.cell(h.col, h.row)), "always two stars, never on the buddy")
+    check(h.stars.allSatisfy { (0..<(StarHop.columns * StarHop.rows)).contains($0) }, "stars stay on the board")
+
+    // a simple player can always win: chase the nearest star
+    for seed in 0..<50 {
+        var g = StarHop(); g.turn = seed
+        var taps = 0
+        while !g.won && taps < 400 {
+            let target = g.stars.first ?? 0
+            let tc = target % StarHop.columns, tr = target / StarHop.columns
+            if g.row < tr && g.jumps < 2 { g.right() }
+            else if (tc - g.col + StarHop.columns) % StarHop.columns <= StarHop.columns / 2 && tc != g.col { g.right() }
+            else { g.left() }
+            taps += 1
+        }
+        check(g.won && g.collected == StarHop.goal, "seed \(seed): the game can be won (\(taps) taps)")
+        check(g.best == g.moves, "best is the fewest moves")
+        let best = g.best
+        g.right()
+        check(g.moves == best, "no moves after winning")
+        g.newGame()
+        check(g.collected == 0 && g.best == best && !g.won, "new game keeps the best")
+    }
+    SharedStore.save(h, d)
+    check(SharedStore.loadHop(d) == h, "game round trip")
+    d.removePersistentDomain(forName: "hopquest.tests.widget")
+}
+
+test("Spelling Bee, Fraction Bakery and Shape Studio: every game, 300 seeds, and the answers are really right") {
+    func value(_ s: String) -> Double? {
+        let p = s.split(separator: "/"); guard p.count == 2, let a = Double(p[0]), let b = Double(p[1]), b > 0 else { return nil }
+        return a / b
+    }
+    let places: [([QuizGameInfo], (String, inout SeededRNG) -> [QuizRound])] = [
+        (SpellingBank.games, { SpellingBank.rounds(for: $0, using: &$1) }),
+        (FractionBank.games, { FractionBank.rounds(for: $0, using: &$1) }),
+        (ShapeBank.games, { ShapeBank.rounds(for: $0, using: &$1) }),
+    ]
+    for (games, make) in places {
+        check(games.count == 4 && Set(games.map(\.id)).count == 4, "four games")
+        for g in games {
+            for seed in 0..<300 {
+                var rng = SeededRNG(state: UInt64(seed))
+                let rounds = make(g.id, &rng)
+                check(rounds.count == 5, "\(g.id): five rounds")
+                for r in rounds {
+                    if r.kind == .spell {
+                        var tiles = r.choices
+                        let ok = r.answer.allSatisfy { ch in
+                            if let i = tiles.firstIndex(of: String(ch)) { tiles.remove(at: i); return true }
+                            return false
+                        }
+                        check(ok && r.choices.count == r.answer.count + 2, "\(g.id): the tiles spell \(r.answer), plus two extras")
+                    } else {
+                        check(r.choices.contains(r.answer) && Set(r.choices).count == r.choices.count && r.choices.count >= 2, "\(g.id): choices hold the answer once")
+                        check(r.choiceVisuals.isEmpty || r.choiceVisuals.count == r.choices.count, "\(g.id): one picture per choice")
+                    }
+                    if let v = value(r.answer), r.choiceVisuals.isEmpty {
+                        check(r.choices.filter { value($0) == v }.count == 1, "\(g.id): no other choice is the same fraction (\(r.choices))")
+                    }
+                    if case .fraction(let parts, let shaded, _) = r.visual {
+                        check(shaded >= 0 && shaded <= parts && value(r.answer) == Double(shaded) / Double(parts), "name: the picture shows \(r.answer)")
+                    }
+                    if g.id == "findHalf", case .text(let f) = r.visual {
+                        let matches = r.choiceVisuals.enumerated().filter { _, v in
+                            if case .fraction(let p, let s, _) = v { return Double(s) / Double(p) == value(f)! && s <= p }
+                            return false
+                        }
+                        check(matches.count == 1 && r.choices[matches[0].offset] == r.answer, "findHalf: exactly one picture shows \(f)")
+                        check(r.choiceVisuals.allSatisfy { if case .fraction(let p, let s, _) = $0 { return s >= 0 && s <= p } else { return false } }, "pictures are valid")
+                    }
+                    if g.id == "bigger", r.choices.count == 2 {
+                        check(value(r.answer)! >= r.choices.compactMap(value).max()!, "bigger: the answer is the bigger slice")
+                    }
+                    if g.id == "sides", case .shapes(let s) = r.visual { check(r.answer == "\(s[0].sides)", "sides counted right") }
+                    if g.id == "pattern", case .pattern(let s) = r.visual { check(s.count >= 4, "a pattern long enough to see") }
+                }
+            }
+        }
+    }
+    check(SpellingBank.tricky.allSatisfy { !$0.wrong.contains($0.word) }, "misspellings are really wrong")
+    check(SpellingBank.magicE.allSatisfy { $0.long == $0.short + "e" }, "magic e words")
+    check(FractionBank.words(1, 2) == "one half" && FractionBank.words(3, 4) == "three quarters" && FractionBank.words(2, 2) == "two halves", "fraction words")
+    check(ShapeKind.hexagon.sides == 6 && ShapeKind.circle.sides == 0 && ShapeKind.cube.isSolid, "shape facts")
+    var ps = PlaceSave()
+    check(ps.record("x", stars: 2) == 2 && ps.record("x", stars: 1) == 0 && ps.totalStars == 2, "place save best only")
+    check(try JSONDecoder().decode(PlaceSave.self, from: JSONEncoder().encode(ps)) == ps, "round trip")
+}
+
+test("Story Maker: sentences, titles and saving") {
+    let page = { (place: StoryPlace, action: String, thing: String) in
+        MadePage(place: place, heroID: "pip", heroName: "Pip Penguin", heroEmoji: "🐧", action: action, thing: thing)
+    }
+    let pages = [page(.beach, "found", "shell"), page(.jungle, "shared", "shell"), page(.castle, "gave", "crown")]
+    check(StoryMakerBank.sentence(pages[0], index: 0) == "One day, Pip Penguin went to the beach and found a shiny shell.", "page one")
+    check(StoryMakerBank.sentence(pages[1], index: 1) == "Then at the jungle, Pip shared a shiny shell with a friend.", "page two")
+    check(StoryMakerBank.sentence(pages[2], index: 2).hasPrefix("At last, at the castle, Pip gave a golden crown"), "page three")
+    check(StoryMakerBank.title(for: pages) == "Pip and the Golden Crown", "title from the last thing")
+    for a in StoryMakerBank.actions { check(a.text.contains("{thing}"), "\(a.id) uses the thing") }
+    for p in StoryMakerBank.places { check(!StoryMakerBank.placeName(p).isEmpty, "place name") }
+    check(Set(StoryMakerBank.things.map(\.id)).count == StoryMakerBank.things.count, "unique things")
+    check(StoryMakerBank.isComplete(pages) && !StoryMakerBank.isComplete(Array(pages.prefix(2))), "three pages make a story")
+    var sv = StoryMakerSave()
+    var given = 0
+    for i in 0..<8 { given += sv.save(MadeStory(id: "s\(i)", pages: pages, made: Date(timeIntervalSince1970: Double(i)))) }
+    check(given == 3 && sv.stories.count == StoryMakerBank.maxSaved && sv.stories.first?.id == "s7", "three stars ever, six newest kept")
+    check(sv.save(MadeStory(id: "x", pages: Array(pages.prefix(1)), made: Date())) == 0 && sv.stories.first?.id == "s7", "half a story isn't saved")
+    sv.delete("s7")
+    check(sv.stories.first?.id == "s6", "delete")
+    let data = try JSONEncoder().encode(sv)
+    check(try JSONDecoder().decode(StoryMakerSave.self, from: data) == sv, "round trip")
+}
+
+test("Badges: earned from real progress, never lost") {
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 23, "23 unique badges")
+    check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
+    var b = BadgeInput()
+    b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
+    let ids = Set(Badges.earned(b).map(\.id))
+    check(ids == ["firstHop", "stars50", "stars150", "area-reading", "area-clock"], "earned: \(ids.sorted())")
+    b.chaptersDone.insert(21); b.postcards = 7; b.lettersWritten = 62; b.storiesMade = 3; b.biggestIsland = 40; b.dashFinished = true
+    b.codePuzzles = 10; b.stickers = 20; b.lifetimeStars = 300
+    b.finishedAreas = Set(Badges.areaBadges.map(\.0))
+    check(Badges.earned(b).count == Badges.all.count, "every badge can be earned")
+    check(Badges.all.allSatisfy { !$0.how.isEmpty && !$0.title.isEmpty }, "every badge says how to earn it")
+    check(!Badges.all.contains { $0.how.lowercased().contains("every day") || $0.how.lowercased().contains("in a row") }, "no streaks")
+}
+
+test("Español: the interface table, patterns and the narrator never mixing languages") {
+    check(L10n.patterns.count == L10n.rawPatterns.count, "every pattern compiles")
+    check(L10n.spanish("Play") == "Jugar" && L10n.spanish("Hi, Mar!") == "¡Hola, Mar!", "words and patterns")
+    check(L10n.spanish("12 of 15 stars") == "12 de 15 estrellas" && L10n.spanish("You did it! 3 new stars!") == "¡Lo lograste! ¡3 estrellas nuevas!", "numbers")
+    check(L10n.spanishSpeech("Not quite. Try another one!") == "Casi. ¡Prueba otra!", "a whole line")
+    check(L10n.spanishSpeech("Pick a game! Nice!") == "¡Elige un juego! ¡Bien!", "sentence by sentence")
+    check(L10n.spanishSpeech("Pick a game! How much is colored?") == nil, "half-translated lines stay English")
+    check(L10n.table.values.allSatisfy { !$0.isEmpty } && L10n.table.count > 150, "a full table")
+    let titles = WritingGame.allCases.map(\.title) + ClockGame.allCases.map(\.title) + WorldGame.allCases.map(\.title)
+        + SpellingBank.games.map(\.title) + FractionBank.games.map(\.title) + ShapeBank.games.map(\.title)
+        + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
+    for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
+    let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
+        + SpellingBank.games.map(\.intro) + FractionBank.games.map(\.intro) + ShapeBank.games.map(\.intro)
+    for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
+    UserDefaults.standard.set(AppLanguage.english.rawValue, forKey: L10n.key)
+    check(L10n.tr("Play") == "Play", "English stays English")
+    UserDefaults.standard.set(AppLanguage.spanish.rawValue, forKey: L10n.key)
+    check(L10n.tr("Play") == "Jugar" && L10n.tr("Not in the table") == "Not in the table", "Spanish, with English for anything missing")
+    UserDefaults.standard.removeObject(forKey: L10n.key)
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

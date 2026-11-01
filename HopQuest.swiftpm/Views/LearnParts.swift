@@ -38,7 +38,7 @@ struct PlaceHeader: View {
                 Spacer()
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill").foregroundStyle(Color(hex: 0xFFC21A))
-                    Text("\(stars) of \(maxStars)").monospacedDigit()
+                    Text(L10n.tr("\(stars) of \(maxStars)")).monospacedDigit()
                 }
                 .font(.kid(15, .heavy))
                 .foregroundStyle(Palette.ink)
@@ -50,9 +50,9 @@ struct PlaceHeader: View {
             HStack(alignment: .bottom, spacing: 12) {
                 CharacterBadge(character: host, size: 92, animated: true)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(title).font(.kid(32, .black)).displayTracking(32).foregroundStyle(accent)
+                    Text(L10n.tr(title)).font(.kid(32, .black)).displayTracking(32).foregroundStyle(accent)
                         .lineLimit(1).minimumScaleFactor(0.7)
-                    Text(line)
+                    Text(L10n.tr(line))
                         .font(.kid(15, .semibold)).foregroundStyle(Palette.ink.opacity(0.8))
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 12).padding(.vertical, 8)
@@ -99,9 +99,9 @@ struct LearnGameCard: View {
                     .frame(width: 52, height: 52)
                     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(color))
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(title).font(.kid(19, .black)).displayTracking(19).foregroundStyle(Palette.ink)
+                    Text(L10n.tr(title)).font(.kid(19, .black)).displayTracking(19).foregroundStyle(Palette.ink)
                         .lineLimit(1).minimumScaleFactor(0.7)
-                    Text(blurb).font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.62))
+                    Text(L10n.tr(blurb)).font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.62))
                         .lineLimit(2).minimumScaleFactor(0.85)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -194,7 +194,7 @@ struct LearnDoneCard: View {
             if let host {
                 CharacterBadge(character: host, size: 96, animated: true).accessibilityHidden(true)
             }
-            Text("\(title) done!").font(.kid(28, .black)).displayTracking(28).foregroundStyle(Palette.ink)
+            Text(L10n.tr("\(L10n.tr(title)) done!")).font(.kid(28, .black)).displayTracking(28).foregroundStyle(Palette.ink)
                 .multilineTextAlignment(.center)
             HStack(spacing: 6) {
                 ForEach(0..<3, id: \.self) { i in
@@ -207,10 +207,10 @@ struct LearnDoneCard: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(stars) of 3 stars")
-            Text("\(firstTry) of \(total) right on the first try")
+            Text(L10n.tr("\(firstTry) of \(total) right on the first try"))
                 .font(.kid(16, .semibold)).foregroundStyle(Palette.ink.opacity(0.7)).monospacedDigit()
             if earned > 0 {
-                Label("\(earned) new \(earned == 1 ? "star" : "stars")", systemImage: "sparkles")
+                Label(L10n.tr("\(earned) new \(earned == 1 ? "star" : "stars")"), systemImage: "sparkles")
                     .font(.kid(18, .black)).foregroundStyle(Palette.green)
             }
             BigButton(title: "Play again", color: Palette.green, action: onAgain)

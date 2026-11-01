@@ -134,6 +134,33 @@ struct RobotWorld: Equatable {
 
     func inside(_ c: RobotCell) -> Bool { (0..<Self.size).contains(c.x) && (0..<Self.size).contains(c.y) }
 
+    static let directionNames = ["up", "right", "down", "left"]
+
+    /// Where something is from the robot, in kid words: "2 squares up and 1 square to the right".
+    static func relative(from a: RobotCell, to b: RobotCell) -> String {
+        if a == b { return "right here" }
+        var parts: [String] = []
+        let dy = a.y - b.y, dx = b.x - a.x
+        if dy != 0 { parts.append("\(abs(dy)) square\(abs(dy) == 1 ? "" : "s") \(dy > 0 ? "up" : "down")") }
+        if dx != 0 { parts.append("\(abs(dx)) square\(abs(dx) == 1 ? "" : "s") to the \(dx > 0 ? "right" : "left")") }
+        return parts.joined(separator: " and ")
+    }
+
+    /// The whole board for VoiceOver: where the robot faces, the star, rocks and gears, all measured from the robot.
+    func describe(robot: RobotCell, facing dir: Int, gearsLeft: Set<RobotCell>) -> String {
+        var s = "The robot faces \(Self.directionNames[dir % 4]). The star is \(Self.relative(from: robot, to: goal))."
+        let ahead = Self.ahead(of: robot, facing: dir)
+        s += !inside(ahead) ? " A wall is just ahead." : rocks.contains(ahead) ? " A rock is just ahead." : " The way ahead is clear."
+        if !rocks.isEmpty {
+            let near = rocks.sorted { abs($0.x - robot.x) + abs($0.y - robot.y) < abs($1.x - robot.x) + abs($1.y - robot.y) }
+            s += " Rocks: " + near.map { Self.relative(from: robot, to: $0) }.joined(separator: "; ") + "."
+        }
+        if !gearsLeft.isEmpty {
+            s += " Gears: " + gearsLeft.sorted { ($0.y, $0.x) < ($1.y, $1.x) }.map { Self.relative(from: robot, to: $0) }.joined(separator: "; ") + "."
+        }
+        return s
+    }
+
     /// What the robot's sensor sees: a wall or a rock one square ahead.
     func blocked(from cell: RobotCell, facing dir: Int) -> Bool {
         let next = Self.ahead(of: cell, facing: dir)

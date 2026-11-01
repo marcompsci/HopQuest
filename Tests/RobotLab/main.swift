@@ -234,5 +234,17 @@ test("My Block puzzles need My Block: no plain program reaches the limit") {
     }
 }
 
+test("VoiceOver board description") {
+    let c = { (x: Int, y: Int) in RobotCell(x: x, y: y) }
+    check(RobotWorld.relative(from: c(0, 5), to: c(2, 2)) == "3 squares up and 2 squares to the right", "relative")
+    check(RobotWorld.relative(from: c(3, 3), to: c(3, 4)) == "1 square down", "one square")
+    check(RobotWorld.relative(from: c(1, 1), to: c(1, 1)) == "right here", "same square")
+    let w = RobotWorld(start: c(0, 5), dir: 0, goal: c(0, 0), rocks: [c(0, 4), c(3, 3)], gears: [c(2, 2)])
+    let d = w.describe(robot: c(0, 5), facing: 0, gearsLeft: w.gears)
+    check(d.hasPrefix("The robot faces up. The star is 5 squares up.") && d.contains("A rock is just ahead.") && d.contains("Gears: 3 squares up and 2 squares to the right."), d)
+    check(w.describe(robot: c(0, 5), facing: 3, gearsLeft: []).contains("A wall is just ahead.") , "wall ahead")
+    check(!w.describe(robot: c(0, 5), facing: 1, gearsLeft: []).contains("Gears"), "no gears left, none listed")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

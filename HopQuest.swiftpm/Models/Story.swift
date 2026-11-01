@@ -61,7 +61,7 @@ enum StoryVoice: String, Codable, CaseIterable {
 
 /// Where a panel happens (the backdrop colors and ground).
 enum StoryPlace: String, Codable, CaseIterable {
-    case meadow, road, lab, river, city, castle, sky, snow, beach, jungle
+    case meadow, road, lab, river, city, castle, sky, snow, beach, jungle, ocean
 
     var skyHex: [UInt32] {
         switch self {
@@ -75,6 +75,7 @@ enum StoryPlace: String, Codable, CaseIterable {
         case .snow: return [0xD6ECFF, 0xFFFFFF]
         case .beach: return [0x8FE3F0, 0xFFF4D6]
         case .jungle: return [0x9ED9A0, 0xE6F7D9]
+        case .ocean: return [0x2A9DC4, 0x9FE3F5]
         }
     }
 
@@ -88,6 +89,7 @@ enum StoryPlace: String, Codable, CaseIterable {
         case .snow: return 0xF4FBFF
         case .beach: return 0xF2D59A
         case .jungle: return 0x2E7D32
+        case .ocean: return 0xE8C98F
         }
     }
 
@@ -104,6 +106,7 @@ enum StoryPlace: String, Codable, CaseIterable {
         case .snow: return ["🏔️", "❄️", "⛄"]
         case .beach: return ["🌴", "🗼", "🐚"]
         case .jungle: return ["🌿", "🛕", "🦜"]
+        case .ocean: return ["🪸", "🐠", "🫧"]
         }
     }
 }
@@ -243,8 +246,18 @@ enum StoryBook {
                 L(voice: .narrator, text: "At the top of the sky, the Rainbow Bridge shimmered in every color."),
                 L(voice: .pip, text: "Meadows, snow, beaches, jungles and clouds. You've been everywhere!"),
             ]),
+            StoryPanel(place: .ocean, actors: [.buddy(0.3, .float), A(who: "🐢", x: 0.72, size: 1.2, entrance: .fromRight)], lines: [
+                L(voice: .narrator, text: "The rainbow slid all the way down into the sparkling sea, where a sea turtle was waiting."),
+                L(voice: .coral, text: "Want to see the Coral Castle? Hold on tight!"),
+            ]),
+        ]),
+        Cutscene(id: "after21", title: "The Coral Castle", panels: [
+            StoryPanel(place: .ocean, actors: [.buddy(0.35, .pop), A(who: "🏰", x: 0.75, size: 1.4, entrance: .float), A(who: "🐙", x: 0.12, entrance: .fromLeft)], lines: [
+                L(voice: .narrator, text: "Deep under the waves, the Coral Castle glowed pink and gold."),
+                L(voice: .ocho, text: "Meadows, mountains, beaches, jungles, clouds and the deep blue sea. What an explorer!"),
+            ]),
             StoryPanel(place: .meadow, actors: [.buddy(0.4, .fromLeft), A(who: "🏡", x: 0.75, entrance: .pop)], lines: [
-                L(voice: .narrator, text: "And then the rainbow slid all the way down to Hop Village, full of stories to tell."),
+                L(voice: .narrator, text: "And then a big bubble floated all the way home to Hop Village, full of stories to tell."),
                 L(voice: .buddy, text: "Thank you for playing with me! See you in the village!"),
             ]),
         ]),

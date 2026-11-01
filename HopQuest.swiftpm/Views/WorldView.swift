@@ -14,11 +14,12 @@ struct WorldView: View {
             LinearGradient(colors: world.ground == "sand" ? [Color(hex: 0xFFF4D6), Color(hex: 0x9FE6EA)]
                                  : world.ground == "jungle" ? [Color(hex: 0xD8F5C8), Color(hex: 0x7CC47F)]
                                  : world.ground == "sky" ? [Color(hex: 0xF3EEFF), Color(hex: 0xB9D7FF)]
+                                 : world.ground == "ocean" ? [Color(hex: 0x8FDDF2), Color(hex: 0x1E88A8)]
                                  : [Color(hex: 0xEAF6FF), Color(hex: 0xBFE3FF)],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
             // gentle falling snow (or rising sea bubbles) behind everything
-            SnowfallView(rising: world.ground == "sand" || world.ground == "sky", tint: world.ground == "jungle" ? Color(hex: 0x2E7D32) : .white).ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
+            SnowfallView(rising: world.ground == "sand" || world.ground == "sky" || world.ground == "ocean", tint: world.ground == "jungle" ? Color(hex: 0x2E7D32) : .white).ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     HStack {

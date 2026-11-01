@@ -194,6 +194,12 @@ struct PlayerProfile: Codable, Equatable {
     var partner: PartnerKind = .grownUp
     /// Milestone notes for grown-ups (off by default; kept on this device).
     var milestones = MilestoneSettings()
+    /// Star Dash (the Quick Game): best score and stars.
+    var quick = QuickSave()
+    /// Spelling Bee, Fraction Bakery and Shape Studio: best stars per game, by place id.
+    var places: [String: PlaceSave] = [:]
+    /// Story Maker: the stories a child made.
+    var storyMaker = StoryMakerSave()
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -202,7 +208,7 @@ struct PlayerProfile: Codable, Equatable {
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
         case village, codeLab, missions, reading, market, seenStories, science, music
-        case writing, clock, world, partner, milestones
+        case writing, clock, world, partner, milestones, quick, places, storyMaker
     }
 }
 
@@ -254,6 +260,9 @@ extension PlayerProfile {
         world = (try? c.decodeIfPresent(WorldTourSave.self, forKey: .world)) ?? WorldTourSave()
         partner = (try? c.decodeIfPresent(PartnerKind.self, forKey: .partner)) ?? .grownUp
         milestones = (try? c.decodeIfPresent(MilestoneSettings.self, forKey: .milestones)) ?? MilestoneSettings()
+        quick = (try? c.decodeIfPresent(QuickSave.self, forKey: .quick)) ?? QuickSave()
+        places = (try? c.decodeIfPresent([String: PlaceSave].self, forKey: .places)) ?? [:]
+        storyMaker = (try? c.decodeIfPresent(StoryMakerSave.self, forKey: .storyMaker)) ?? StoryMakerSave()
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -308,7 +317,7 @@ enum PartnerKind: String, Codable, CaseIterable, Identifiable {
 /// Only touched from the UI / SpriteKit main thread.
 final class GameStore: ObservableObject {
     @Published var profile: PlayerProfile? {
-        didSet { persist(); refreshSeason() }
+        didSet { persist(); refreshSeason(); scheduleWidgetUpdate() }
     }
 
     private let key = "hopquest.profile.v1"
@@ -321,6 +330,16 @@ final class GameStore: ObservableObject {
         Narrator.shared.enabled = profile?.narration ?? true
         QuestionBank.tier = effectiveTier
         refreshSeason()
+    }
+
+    private var widgetWork: DispatchWorkItem?
+
+    /// Tells the home-screen widget about new progress, at most about once a second.
+    private func scheduleWidgetUpdate() {
+        widgetWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.publishWidget() }
+        widgetWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: work)
     }
 
     /// Seasons beyond the village follow the same grown-up switch as the village.
@@ -599,6 +618,39 @@ final class GameStore: ObservableObject {
         p.lifetimeStars += given
         profile = p
         return (given, cards)
+    }
+
+    /// Records a game in one of the quiz places. Returns the new stars (best only).
+    @discardableResult
+    func recordPlace(_ place: String, game: String, stars: Int) -> Int {
+        guard var p = profile else { return 0 }
+        var save = p.places[place] ?? PlaceSave()
+        let given = save.record(game, stars: stars)
+        p.places[place] = save
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return given
+    }
+
+    /// Saves a made-up story (the first three each earn a star).
+    func saveStory(_ s: MadeStory) {
+        guard var p = profile else { return }
+        let given = p.storyMaker.save(s)
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+    }
+
+    /// Records a Star Dash game.
+    @discardableResult
+    func recordQuickGame(score: Int, stars collected: Int, finished: Bool) -> (earned: Int, newBest: Bool) {
+        guard var p = profile else { return (0, false) }
+        let out = p.quick.record(score: score, collected: collected, finished: finished)
+        p.stars += out.earned
+        p.lifetimeStars += out.earned
+        profile = p
+        return out
     }
 
     /// Records a finished music game (and the song, for Learn a Song). Returns the new stars (best only).

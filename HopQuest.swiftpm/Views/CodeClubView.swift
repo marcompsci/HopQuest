@@ -449,6 +449,11 @@ struct CodeChallengeView: View {
                 .fill(Color(hex: 0xC9B8F5))
                 .shadow(color: Color(hex: 0x9B86E0), radius: 0, x: 0, y: 6)
         )
+        // VoiceOver: the whole board described from the robot, so the puzzle can be solved without seeing it
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Puzzle board")
+        .accessibilityValue(w.describe(robot: robot, facing: (Int((angle / 90).rounded()) % 4 + 4) % 4, gearsLeft: w.gears.subtracting(gotGears)))
+        .accessibilityHint("Swipe right to hear the code, then add blocks with the arrows below.")
         .animation(.spring(), value: gotGears)
         .animation(.easeInOut(duration: 0.25), value: mapIndex)
         .onAppear {

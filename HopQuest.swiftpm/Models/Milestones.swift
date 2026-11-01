@@ -61,7 +61,7 @@ enum Milestones {
         }
         if input.postcards >= 7 { out.append(Milestone(id: "postcards7", what: "collected postcards from all 7 continents")) }
         if input.lettersWritten >= 62 { out.append(Milestone(id: "letters62", what: "traced every capital letter, small letter and number")) }
-        if input.storyFinished { out.append(Milestone(id: "story", what: "finished the whole HopQuest story, all the way to the Rainbow Bridge")) }
+        if input.storyFinished { out.append(Milestone(id: "story", what: "finished the whole HopQuest story, all the way to the Coral Castle")) }
         return out
     }
 

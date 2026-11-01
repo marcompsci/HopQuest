@@ -822,6 +822,220 @@
           }
         }
       ]
+    },
+    {
+      "id": "ocean-deep",
+      "title": "Ocean Deep",
+      "icon": "🐠",
+      "blurb": "Dive down under the waves! Hop across giant bubbles, wave to sea turtles, and find the Coral Castle.",
+      "unlockAfter": 18,
+      "color": "1E88A8",
+      "chapters": [
+        {
+          "id": 19,
+          "title": "Kelp Forest",
+          "kind": "hop",
+          "icon": "🌿",
+          "rows": 34,
+          "gateEvery": 7,
+          "difficulty": 0.6,
+          "intro": "Welcome under the sea! Hop through the kelp, and watch for the submarines.",
+          "style": {
+            "ground": "ocean",
+            "floaters": "bubble",
+            "decorations": [
+              "🐚",
+              "🌿",
+              "🫧"
+            ],
+            "vehicleColors": [
+              "FFB84D",
+              "FF7FA8",
+              "7FE0D0",
+              "B983FF"
+            ],
+            "riverChance": 0.26,
+            "questions": [
+              {
+                "subject": "Nature",
+                "prompt": "Which animal has eight arms?",
+                "choices": [
+                  "An octopus",
+                  "A crab",
+                  "A fish"
+                ],
+                "explain": "An octopus has eight arms covered in suckers."
+              },
+              {
+                "subject": "Science",
+                "prompt": "How do fish breathe underwater?",
+                "choices": [
+                  "With gills",
+                  "With a snorkel",
+                  "They hold their breath"
+                ],
+                "explain": "Gills take oxygen out of the water."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "What is a baby whale called?",
+                "choices": [
+                  "A calf",
+                  "A puppy",
+                  "A kitten"
+                ],
+                "explain": "Baby whales, like baby cows, are called calves."
+              },
+              {
+                "subject": "Math",
+                "prompt": "There are 6 fish and 3 swim away. How many are left?",
+                "choices": [
+                  "3",
+                  "9",
+                  "2"
+                ],
+                "explain": "6 take away 3 is 3."
+              }
+            ]
+          }
+        },
+        {
+          "id": 20,
+          "title": "Turtle Reef",
+          "kind": "hop",
+          "icon": "🐢",
+          "rows": 38,
+          "gateEvery": 7,
+          "difficulty": 0.8,
+          "intro": "The coral reef is full of color! Hop on the bubbles to cross the deep water.",
+          "style": {
+            "ground": "ocean",
+            "floaters": "bubble",
+            "decorations": [
+              "🪸",
+              "🐢",
+              "🐠"
+            ],
+            "vehicleColors": [
+              "FFB84D",
+              "FF7FA8",
+              "7FE0D0",
+              "B983FF"
+            ],
+            "riverChance": 0.3,
+            "questions": [
+              {
+                "subject": "Nature",
+                "prompt": "What is coral?",
+                "choices": [
+                  "Tiny animals living together",
+                  "A kind of rock",
+                  "Seaweed"
+                ],
+                "explain": "Coral reefs are built by tiny animals called polyps."
+              },
+              {
+                "subject": "Science",
+                "prompt": "Why is the ocean salty?",
+                "choices": [
+                  "Rivers carry salt from rocks into it",
+                  "Fish make it salty",
+                  "It rains salt"
+                ],
+                "explain": "Rain and rivers wash tiny bits of salt from rocks into the sea."
+              },
+              {
+                "subject": "Road Safety",
+                "prompt": "A submarine is a kind of what?",
+                "choices": [
+                  "Boat",
+                  "Car",
+                  "Plane"
+                ],
+                "explain": "A submarine is a boat that can travel underwater."
+              },
+              {
+                "subject": "Math",
+                "prompt": "A starfish has 5 arms. How many arms do 2 starfish have?",
+                "choices": [
+                  "10",
+                  "7",
+                  "5"
+                ],
+                "explain": "5 + 5 = 10."
+              }
+            ]
+          }
+        },
+        {
+          "id": 21,
+          "title": "Coral Castle",
+          "kind": "hop",
+          "icon": "🏰",
+          "rows": 46,
+          "gateEvery": 6,
+          "difficulty": 0.95,
+          "intro": "Last dive! The Coral Castle is waiting at the bottom of the sea.",
+          "style": {
+            "ground": "ocean",
+            "floaters": "bubble",
+            "decorations": [
+              "🪸",
+              "🦀",
+              "✨"
+            ],
+            "vehicleColors": [
+              "FFB84D",
+              "FF7FA8",
+              "7FE0D0",
+              "B983FF"
+            ],
+            "riverChance": 0.34,
+            "questions": [
+              {
+                "subject": "Nature",
+                "prompt": "Which is the biggest animal that ever lived?",
+                "choices": [
+                  "The blue whale",
+                  "The shark",
+                  "The elephant"
+                ],
+                "explain": "Blue whales are bigger than any dinosaur!"
+              },
+              {
+                "subject": "Science",
+                "prompt": "What makes waves in the ocean?",
+                "choices": [
+                  "Mostly the wind",
+                  "Big fish",
+                  "Boats only"
+                ],
+                "explain": "Wind blowing over the water makes most waves."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "Which ocean animal has a shell on its back?",
+                "choices": [
+                  "A sea turtle",
+                  "A jellyfish",
+                  "A dolphin"
+                ],
+                "explain": "Sea turtles carry their shell everywhere."
+              },
+              {
+                "subject": "Math",
+                "prompt": "You hop 8 bubbles, then 7 more. How many bubbles?",
+                "choices": [
+                  "15",
+                  "14",
+                  "16"
+                ],
+                "explain": "8 + 7 = 15."
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

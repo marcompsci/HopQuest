@@ -152,9 +152,78 @@ def icon_world():
     return s
 
 
+def icon_dash():
+    s = ground()
+    # two platforms and a big star leaping between them, with speed lines
+    s += R(18, 140, 66, 34, 8, "#B57A45") + R(18, 136, 66, 12, 6, "#58C46A")
+    s += R(118, 112, 66, 62, 8, "#B57A45") + R(118, 108, 66, 12, 6, "#58C46A")
+    s += P("M40 120 Q70 40 112 64", "none", 4, op=0.35)
+    s += P(star_path(104, 66, 34, 0.45), "#FFD93D", 6) + shine(94, 56, 7, 4)
+    s += C(96, 70, 3.5, OUT, False) + C(112, 70, 3.5, OUT, False) + P("M98 80 Q104 86 110 80", "none", 3.5)
+    for (y, w) in ((52, 26), (66, 34), (80, 22)):
+        s += P(f"M{60 - w} {y} L{60} {y}", "none", 5)
+    return s
+
+
+def icon_spelling():
+    import math
+    s = ground()
+    # three letter tiles
+    for i, (ch, col) in enumerate((("A", "#FF6B6B"), ("B", "#4D96FF"), ("C", "#34C77B"))):
+        x = 24 + i * 52
+        s += R(x, 112, 46, 50, 9, col)
+        s += f'<text x="{x + 23}" y="{150}" font-family="Arial Rounded MT Bold, Arial" font-weight="900" font-size="34" text-anchor="middle" fill="#FFFFFF">{ch}</text>'
+    # a bee buzzing above
+    s += E(112, 62, 30, 22, "#FFD93D")
+    s += P("M100 42 L100 82 M116 41 L116 83", "none", 6)
+    s += E(98, 36, 14, 10, "#E8F7FF", 4, rot=-25) + E(124, 36, 14, 10, "#E8F7FF", 4, rot=25)
+    s += C(138, 58, 3.5, OUT, False)
+    s += P("M60 70 Q70 60 80 66", "none", 3, op=0.4)
+    s += star(160, 98, 9)
+    return s
+
+
+def icon_fractions():
+    s = ground()
+    # a pie with one slice pulled out
+    s += C(92, 112, 56, "#F2C38B")
+    s += C(92, 112, 44, "#FF6B9A", 4)
+    for a in (0, 90, 180, 270):
+        import math
+        r = math.radians(a)
+        s += P(f"M92 112 L{92 + 44 * math.cos(r):.1f} {112 + 44 * math.sin(r):.1f}", "none", 4)
+    s += P("M118 70 L162 70 A44 44 0 0 1 144 106 Z", "#FF6B9A")
+    s += shine(74, 96, 8, 5)
+    s += star(40, 40, 10) + star(164, 40, 8)
+    return s
+
+
+def icon_shapes():
+    s = ground()
+    s += P("M100 30 L140 98 L60 98 Z", "#FFD93D")
+    s += C(64, 136, 28, "#4D96FF")
+    s += R(108, 110, 54, 54, 6, "#FF6B6B")
+    s += shine(92, 64, 6, 10, rot=30, op=0.4)
+    s += star(160, 40, 9)
+    return s
+
+
+def icon_story():
+    s = ground()
+    # an open book with a little scene popping out
+    s += P("M100 92 Q70 80 32 86 L32 166 Q70 160 100 172 Z", "#FFFFFF")
+    s += P("M100 92 Q130 80 168 86 L168 166 Q130 160 100 172 Z", "#FFFFFF")
+    s += P("M100 92 L100 172", "none", 5)
+    s += C(66, 60, 18, "#FFD93D") + P("M128 92 L146 40 L164 92 Z", "#34C77B")
+    s += P("M46 120 Q62 112 84 122 M46 138 Q62 130 84 140 M116 120 Q138 112 154 122 M116 138 Q138 130 154 140", "none", 3, op=0.3)
+    s += star(160, 30, 9) + star(30, 34, 7)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
-         "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world}
+         "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
+         "icon_spelling": icon_spelling, "icon_fractions": icon_fractions, "icon_shapes": icon_shapes, "icon_story": icon_story}
 
 
 if __name__ == "__main__":

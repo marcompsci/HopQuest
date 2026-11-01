@@ -167,3 +167,11 @@ All characters are **original designs**. They're inspired by the *feel* of class
 [Privacy Policy](PRIVACY.md) · [Support](SUPPORT.md)
 
 © Phoronomics. All rights reserved.
+
+## Building with widgets (v5.5+)
+
+Open **`HopQuest.xcodeproj`** (next to `HopQuest.swiftpm`) to build the app with its home-screen widgets.
+The project is generated from `project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`xcodegen generate`), so edit `project.yml`, not the project file.
+The first build needs Xcode to register the App Group `group.com.phoronomics.hopquest` for both targets (automatic signing does this).
+`HopQuest.swiftpm` still opens in Swift Playgrounds, without the widgets.
+

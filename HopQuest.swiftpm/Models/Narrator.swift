@@ -43,7 +43,9 @@ final class Narrator: NSObject, AVSpeechSynthesizerDelegate {
     /// Speaks in a character's voice (story cutscenes): `pitch` 0.5...2, `rate` compared to normal speed.
     func say(_ text: String, pitch: Float, rate: Float, force: Bool = false) {
         guard enabled || force else { return }
-        let clean = Self.speakable(text)
+        // In Spanish, a line is spoken in Spanish only when every sentence of it has a translation
+        let spanish = L10n.isSpanish ? L10n.spanishSpeech(text) : nil
+        let clean = Self.speakable(spanish ?? text)
         guard !clean.isEmpty else { return }
         configureSession()
         if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
@@ -51,8 +53,8 @@ final class Narrator: NSObject, AVSpeechSynthesizerDelegate {
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * rate   // a little slower for kids
         utterance.pitchMultiplier = min(2, max(0.5, pitch))          // a little brighter by default
         utterance.postUtteranceDelay = 0.05
-        // All game text is English for now, so always use an English voice.
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        // the learning content is English, so anything without a Spanish line is read in English
+        utterance.voice = AVSpeechSynthesisVoice(language: spanish != nil ? "es-MX" : "en-US")
         synth.speak(utterance)
     }
 

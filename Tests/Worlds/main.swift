@@ -68,6 +68,16 @@ test("Sky Islands: three cloud levels after Temple Top") {
     check(w.chapters.flatMap(\.style.questions).allSatisfy { $0.choices.count == 3 && Set($0.choices).count == 3 }, "three different choices each")
 }
 
+test("Ocean Deep: three undersea levels after the Rainbow Bridge") {
+    let file = try WorldData.decode(Data(contentsOf: URL(fileURLWithPath: path)))
+    guard let w = file.worlds.first(where: { $0.id == "ocean-deep" }) else { check(false, "Ocean Deep exists"); return }
+    check(w.unlockAfter == 18, "opens after Rainbow Bridge")
+    check(w.chapters.map(\.id) == [19, 20, 21], "chapters 19, 20, 21")
+    check(w.ground == "ocean" && w.chapters.allSatisfy { $0.style.isOcean && $0.style.floaters == "bubble" }, "sea floor and bubbles everywhere")
+    check(zip(w.chapters, w.chapters.dropFirst()).allSatisfy { $0.difficulty < $1.difficulty && $0.rows <= $1.rows }, "each level a bit harder and longer")
+    check(w.chapters.flatMap(\.style.questions).allSatisfy { $0.choices.count == 3 && Set($0.choices).count == 3 }, "three different choices each")
+}
+
 test("worlds open one after another") {
     let file = try WorldData.decode(Data(contentsOf: URL(fileURLWithPath: path)))
     check(file.worlds.first?.unlockAfter == 6, "the first new world follows Castle Hill")

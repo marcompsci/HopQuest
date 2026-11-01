@@ -42,6 +42,7 @@ struct HopStyle: Codable, Equatable {
     var isSand: Bool { ground == "sand" }
     var isJungle: Bool { ground == "jungle" }
     var isSky: Bool { ground == "sky" }
+    var isOcean: Bool { ground == "ocean" }
 }
 
 struct WorldQuestion: Codable, Equatable {
@@ -88,8 +89,8 @@ struct WorldFile: Codable, Equatable {
 
 enum WorldData {
     static let supportedKinds: Set<String> = ["hop"]
-    static let groundKinds: Set<String> = ["meadow", "snow", "sand", "jungle", "sky"]
-    static let floaterKinds: Set<String> = ["log", "lily", "ice", "surfboard", "cloud"]
+    static let groundKinds: Set<String> = ["meadow", "snow", "sand", "jungle", "sky", "ocean"]
+    static let floaterKinds: Set<String> = ["log", "lily", "ice", "surfboard", "cloud", "bubble"]
 
     static func decode(_ data: Data) throws -> WorldFile {
         try JSONDecoder().decode(WorldFile.self, from: data)

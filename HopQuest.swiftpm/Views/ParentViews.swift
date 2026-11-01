@@ -91,6 +91,18 @@ struct ParentSettingsView: View {
 
             ProgressAndMilestonesSection()
 
+            Section {
+                Picker("Language / Idioma", selection: Binding(
+                    get: { AppLanguage(rawValue: UserDefaults.standard.string(forKey: L10n.key) ?? "") ?? .automatic },
+                    set: { UserDefaults.standard.set($0.rawValue, forKey: L10n.key); soundTick.toggle() })) {
+                    ForEach(AppLanguage.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text("Language")
+            } footer: {
+                Text("Español shows the menus, buttons and place names in Spanish, and the buddies speak Spanish where a line is translated. Questions, word games and stories are still in English (the reading and spelling games teach English).")
+            }
+
             Section("Reading help") {
                 Toggle("Read everything out loud", isOn: binding(\.narration, true))
                 Text("Reads questions, tips, and lessons aloud for kids who are still learning to read. Uses the built-in iPhone voice; no recordings are made.")

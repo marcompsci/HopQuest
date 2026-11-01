@@ -1,0 +1,105 @@
+# HopQuest as an Xcode project (v5.5), so the app can ship home-screen widgets.
+# The sources stay in HopQuest.swiftpm, which still opens in Swift Playgrounds (without the widget).
+# Regenerate with XcodeGen:  xcodegen generate   (needs Supporting files in Support/)
+name: HopQuest
+options:
+  bundleIdPrefix: com.phoronomics
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+settings:
+  base:
+    DEVELOPMENT_TEAM: X6LZQ3FS36
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "2.0"
+    CURRENT_PROJECT_VERSION: "3"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  HopQuest:
+    type: application
+    platform: iOS
+    sources:
+      - path: HopQuest.swiftpm/App
+      - path: HopQuest.swiftpm/Models
+      - path: HopQuest.swiftpm/Views
+      - path: HopQuest.swiftpm/Scenes
+      - path: HopQuest.swiftpm/Network
+      - path: HopQuest.swiftpm/Shared
+      - path: HopQuest.swiftpm/Assets.xcassets
+      - path: HopQuest.swiftpm/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.phoronomics.hopquest
+        PRODUCT_NAME: HopQuest
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: ""
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        SUPPORTS_MACCATALYST: NO
+    info:
+      path: Support/HopQuest-Info.plist
+      properties:
+        CFBundleDisplayName: HopQuest
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.education
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations~iphone: [UIInterfaceOrientationPortrait]
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSLocalNetworkUsageDescription: HopQuest uses your local network so kids in the same room can see each other's buddies in Hop Village and play Brain Duels.
+        NSBonjourServices: [_hopq-village._tcp, _hopq-village._udp]
+        CFBundleURLTypes:
+          - CFBundleURLName: com.phoronomics.hopquest
+            CFBundleURLSchemes: [hopquest]
+    entitlements:
+      path: Support/HopQuest.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.phoronomics.hopquest]
+    dependencies:
+      - target: HopQuestWidget
+        embed: true
+  HopQuestWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: HopQuestWidget
+      - path: HopQuest.swiftpm/Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.phoronomics.hopquest.widget
+        PRODUCT_NAME: HopQuestWidget
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SKIP_INSTALL: YES
+    info:
+      path: Support/HopQuestWidget-Info.plist
+      properties:
+        CFBundleDisplayName: HopQuest
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Support/HopQuestWidget.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.phoronomics.hopquest]
+schemes:
+  HopQuest:
+    build:
+      targets:
+        HopQuest: all
+        HopQuestWidget: all
+    run:
+      config: Debug
+    archive:
+      config: Release

@@ -155,7 +155,7 @@ struct BigButton: View {
             Haptics.tap()
             action()
         }) {
-            Text(title)
+            Text(L10n.tr(title))
                 .font(.kid(22))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -332,13 +332,24 @@ enum ArtLibrary {
 
     static func image(_ name: String) -> UIImage? {
         if let hit = cache[name] { return hit }
-        let img = UIImage(named: name, in: .module, with: nil) ?? UIImage(named: name)
+        let img = UIImage(named: name, in: HQBundle.resources, with: nil) ?? UIImage(named: name)
         if let img { cache[name] = img }
         return img
     }
 }
 
 /// SwiftUI view for an illustrated asset; shows nothing if the art is missing.
+/// Where the art and sounds live: the package's resource bundle in Swift Playgrounds, the app bundle in the Xcode project.
+enum HQBundle {
+    static var resources: Bundle {
+        #if SWIFT_PACKAGE
+        return .module
+        #else
+        return .main
+        #endif
+    }
+}
+
 struct ArtImage: View {
     let name: String
     init(_ name: String) { self.name = name }
@@ -359,7 +370,7 @@ enum CharacterArt {
     static func image(_ character: GameCharacter) -> UIImage? {
         let name = "char_\(character.id)"
         if let hit = cache[name] { return hit }
-        let img = UIImage(named: name, in: .module, with: nil) ?? UIImage(named: name)
+        let img = UIImage(named: name, in: HQBundle.resources, with: nil) ?? UIImage(named: name)
         if let img { cache[name] = img }
         return img
     }

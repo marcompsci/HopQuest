@@ -107,7 +107,7 @@ final class HopScene: SKScene {
     override func didMove(to view: SKView) {
         view.isMultipleTouchEnabled = true
         guard rows.isEmpty else { return }
-        backgroundColor = UIColor(hex: snowy ? 0xEAF6FF : sandy ? 0xF6DFA0 : jungle ? 0x4E9A3C : sky ? 0xBFD9FF : 0x8FD86E)
+        backgroundColor = UIColor(hex: snowy ? 0xEAF6FF : sandy ? 0xF6DFA0 : jungle ? 0x4E9A3C : sky ? 0xBFD9FF : ocean ? 0x1E6E8C : 0x8FD86E)
         cell = size.width / CGFloat(columns)
         loopLength = size.width + cell * 4
         buildRows()
@@ -155,6 +155,7 @@ final class HopScene: SKScene {
     private var sandy: Bool { style?.isSand == true }
     private var jungle: Bool { style?.isJungle == true }
     private var sky: Bool { style?.isSky == true }
+    private var ocean: Bool { style?.isOcean == true }
 
     private func buildRows() {
         let finish = chapter.rows
@@ -269,6 +270,20 @@ final class HopScene: SKScene {
                 stripe.colorBlendFactor = 0.3
             }
         }
+        if ocean {
+            // the sea floor: sandy seabed, deep blue trenches, pale current lanes
+            switch kind {
+            case .grass, .castle, .gate:
+                stripe.color = UIColor(hex: 0xE8C98F)
+                stripe.colorBlendFactor = kind == .gate ? 0.35 : 0.55
+            case .river:
+                stripe.color = UIColor(hex: 0x0D4F73)
+                stripe.colorBlendFactor = 0.6
+            case .road:
+                stripe.color = UIColor(hex: 0x6FB7D6)
+                stripe.colorBlendFactor = 0.4
+            }
+        }
         if sandy {
             // warm sand, turquoise sea water, sandy roads
             switch kind {
@@ -297,14 +312,14 @@ final class HopScene: SKScene {
                     node.addChild(f)
                 }
             } else {
-                for _ in 0..<Int.random(in: 1...3) where sandy || jungle || sky {
+                for _ in 0..<Int.random(in: 1...3) where sandy || jungle || sky || ocean {
                     // palm trees at the seaside, big jungle plants in the rainforest, kites and balloons on the sky islands
-                    let pick = jungle ? ["🌴", "🌳", "🎋"].randomElement()! : sky ? ["🎈", "🪁", "🎐"].randomElement()! : "🌴"
+                    let pick = jungle ? ["🌴", "🌳", "🎋"].randomElement()! : sky ? ["🎈", "🪁", "🎐"].randomElement()! : ocean ? ["🪸", "🌿", "🐚"].randomElement()! : "🌴"
                     let palm = SpriteFactory.emoji(pick, size: cell * (sky ? 0.7 : 0.95), at: CGPoint(x: CGFloat.random(in: 0...size.width), y: mid))
                     palm.zPosition = 5
                     node.addChild(palm)
                 }
-                for _ in 0..<(sandy || jungle || sky ? 0 : Int.random(in: 1...3)) {
+                for _ in 0..<(sandy || jungle || sky || ocean ? 0 : Int.random(in: 1...3)) {
                     let tree = SKSpriteNode(texture: DriveArt.tree, size: CGSize(width: cell * 1.1, height: cell * 1.1))
                     tree.position = CGPoint(x: CGFloat.random(in: 0...size.width), y: mid)
                     tree.zPosition = 5
@@ -356,8 +371,32 @@ final class HopScene: SKScene {
             let ice = style?.floaters == "ice"
             let boards = style?.floaters == "surfboard"
             let clouds = style?.floaters == "cloud"
+            let bubbles = style?.floaters == "bubble"
             for k in 0..<count {
-                if clouds {
+                if bubbles {
+                    // a row of big shiny bubbles stuck together (works just like a log)
+                    let w = cell * CGFloat.random(in: 2.2...2.9) * (1 - chapter.difficulty * 0.2)
+                    let raft = SKNode()
+                    let n = max(2, Int(w / (cell * 0.75)))
+                    for b in 0..<n {
+                        let r = cell * 0.36
+                        let bubble = SKShapeNode(circleOfRadius: r)
+                        bubble.fillColor = UIColor(hex: 0xBFEFFF).withAlphaComponent(0.85)
+                        bubble.strokeColor = .white
+                        bubble.lineWidth = 3
+                        let shine = SKShapeNode(circleOfRadius: r * 0.22)
+                        shine.fillColor = .white; shine.strokeColor = .clear
+                        shine.position = CGPoint(x: -r * 0.35, y: r * 0.35)
+                        bubble.addChild(shine)
+                        bubble.position = CGPoint(x: -w / 2 + w * (CGFloat(b) + 0.5) / CGFloat(n), y: 0)
+                        raft.addChild(bubble)
+                    }
+                    raft.position = CGPoint(x: -cell * 2 + offset + CGFloat(k) * spacing, y: mid)
+                    raft.zPosition = 5
+                    raft.run(.repeatForever(.sequence([.moveBy(x: 0, y: 3, duration: 0.7), .moveBy(x: 0, y: -3, duration: 0.7)])))
+                    node.addChild(raft)
+                    row.movers.append(Mover(node: raft, width: w))
+                } else if clouds {
                     // a puffy cloud (works just like a log): a soft white bar with round bumps on top
                     let w = cell * CGFloat.random(in: 2.2...2.9) * (1 - chapter.difficulty * 0.2)
                     let cloud = SKShapeNode(rectOf: CGSize(width: w, height: cell * 0.5), cornerRadius: cell * 0.25)
@@ -717,6 +756,7 @@ final class HopScene: SKScene {
         tip(style?.floaters == "ice" ? "Splash! Hop onto the ice floes to cross the cold water."
             : style?.floaters == "surfboard" ? "Splash! Hop onto the surfboards to cross the waves."
             : style?.floaters == "cloud" ? "Whoops! Hop onto the clouds to cross the open sky. A balloon floats you back."
+            : style?.floaters == "bubble" ? "Whoosh! Hop onto the big bubbles to cross the deep water."
             : Self.riverTips.randomElement()!, force: true)
 
         let pop = SpriteFactory.popWord("SPLISH!", size: cell * 0.45, color: UIColor(hex: 0xD6F1FF))

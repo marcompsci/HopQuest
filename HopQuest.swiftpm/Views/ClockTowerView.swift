@@ -81,7 +81,7 @@ struct ClockGameView: View {
             HStack {
                 CircleIconButton(systemName: "xmark", label: "Stop playing", action: { advanceTask?.cancel(); onBack() })
                 Spacer()
-                Text(game.title).font(.kid(20, .black)).displayTracking(20).foregroundStyle(Palette.ink)
+                Text(L10n.tr(game.title)).font(.kid(20, .black)).displayTracking(20).foregroundStyle(Palette.ink)
                 Spacer()
                 SpeakButton(label: "Say it again") { if let r = round { Narrator.shared.sayAnyway(r.say) } }
             }

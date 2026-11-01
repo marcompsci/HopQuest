@@ -14,5 +14,11 @@ FILES=("$PKG/Models/Reading.swift")
 [ -f "$PKG/Models/ClockTower.swift" ] && FILES+=("$PKG/Models/ClockTower.swift")
 [ -f "$PKG/Models/WorldTour.swift" ] && FILES+=("$PKG/Models/WorldTour.swift")
 [ -f "$PKG/Models/Milestones.swift" ] && FILES+=("$PKG/Models/Milestones.swift")
+[ -f "$PKG/Models/QuickGame.swift" ] && FILES+=("$PKG/Models/QuickGame.swift")
+[ -f "$PKG/Shared/WidgetShared.swift" ] && FILES+=("$PKG/Shared/WidgetShared.swift")
+[ -f "$PKG/Models/QuizPlace.swift" ] && FILES+=("$PKG/Models/QuizPlace.swift")
+[ -f "$PKG/Models/StoryMaker.swift" ] && FILES+=("$PKG/Models/StoryMaker.swift")
+[ -f "$PKG/Models/Badges.swift" ] && FILES+=("$PKG/Models/Badges.swift")
+[ -f "$PKG/Models/Spanish.swift" ] && FILES+=("$PKG/Models/Spanish.swift")
 swiftc -O "${FILES[@]}" "$HERE/main.swift" -o "$OUT"
 "$OUT"

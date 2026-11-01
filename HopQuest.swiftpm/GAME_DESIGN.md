@@ -291,6 +291,33 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - Music and effects volume sliders. Audio only starts while the app is in the foreground (fixes a launch crash when started from Xcode on a locked phone).
 - The season now reaches beyond the village: petals, leaves or snow drift past the menu and map, meadow levels get seasonal flowers and trees, and castles wear a seasonal topper. The grown-ups' seasons switch turns it all off.
 
+### v5.4: A calmer menu top, and Star Dash
+- The greeting sits on the sky with even spacing; stars in a soft pill; one buddy (not two); the Play card shows your castle and how many challenges are left. All-caps names are shown in normal case.
+- **Star Dash**, a one-minute quick game: hold the left half to run left, hold the right half to run right, tap the right half to jump, tap again in the air to double jump. A test plays 60 levels to prove every one can be finished in time.
+
+### v5.5: An Xcode project (for widgets)
+- `HopQuest.xcodeproj` (generated from `project.yml` with XcodeGen) builds the same sources plus a widget extension, sharing an App Group (`group.com.phoronomics.hopquest`). `HopQuest.swiftpm` still opens in Swift Playgrounds, without widgets. Same bundle id, so saves carry over.
+
+### v5.6–v5.7: Home-screen widgets
+- **My Buddy** (small/medium): buddy, stars, what's up next and the skill being practised, and how many skills are learned. The app writes a small snapshot to the App Group; the widget never uses the network.
+- **Star Hop** (medium/large): a tap-to-play game. Widgets can't sense holding or double taps, so each tap is a move: left half = step left, right half = jump, right half again in the air = double jump. Catch 10 stars; "Play Star Dash" opens the full-speed game.
+
+### v5.8–v6.1: Spelling Bee, Fraction Bakery, Shape Studio, Story Maker
+- One shared quiz engine (`Models/QuizPlace.swift`) with tested word lists, fractions (pies, bars, fair shares, comparing slices) and shapes (2D, sides, 3D, patterns).
+- Story Maker: pick a place, a buddy, what happens and a thing on three pages; the story is read back. No typing. Up to six stories are kept; the first three earn a star each.
+
+### v6.2: Ocean Deep
+- A sixth world after the Rainbow Bridge: Kelp Forest, Turtle Reef, Coral Castle, with bubble rafts to hop on. The story now ends at the Coral Castle.
+
+### v6.3: Badges
+- 23 badges for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
+
+### v6.4: Code Club with VoiceOver
+- The puzzle board is described from the robot ("The star is 3 squares up and 2 to the right. A rock is just ahead."), so robot puzzles can be solved without seeing them.
+
+### v6.5: Español (interface)
+- A Language setting (Automatic / English / Español). Menus, buttons, place and game names, intros and cheers are in Spanish, spoken with a Spanish voice when a whole line is translated. Questions, word games and stories stay in English for now; the reading and spelling games teach English.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

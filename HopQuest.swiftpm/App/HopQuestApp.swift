@@ -39,6 +39,10 @@ enum Route: Equatable {
     case writingDesk
     case clockTower
     case worldTour
+    case quickGame
+    case quizPlace(String)
+    case storyMaker
+    case badges
     // two players on one phone
     case teamKartSelect
     case teamKart(Int)
@@ -66,6 +70,8 @@ struct RootView: View {
     private enum Hub { case menu, map, village }
     @State private var hub: Hub = .menu
     @State private var castleNote: String?
+    /// Changing the language in Grown-up settings redraws everything.
+    @AppStorage(L10n.key) private var language = AppLanguage.automatic.rawValue
     private let ticker = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -98,6 +104,7 @@ struct RootView: View {
                 MessageBubble(text: castleNote).padding(.bottom, 40)
             }
         }
+        .id(language)
         .modifier(TabletFrame(sky: store.theme.sky))
         .animation(.easeInOut(duration: 0.35), value: route)
         .animation(.easeInOut(duration: 0.35), value: store.profile == nil)
@@ -112,6 +119,14 @@ struct RootView: View {
             }
         }
         .onChange(of: route) { _, _ in updateMusic() }
+        // the home-screen widget opens Star Dash with hopquest://quickgame (only once a player exists)
+        .onOpenURL { url in
+            guard url.scheme == "hopquest", store.profile != nil, !restTime else { return }
+            switch url.host {
+            case "quickgame": route = .quickGame
+            default: break
+            }
+        }
         .onReceive(ticker) { _ in
             // daily play limit (counts only while the app is open and in front)
             if scenePhase == .active, store.profile != nil, !restTime, store.addPlayTime(20) {
@@ -146,6 +161,10 @@ struct RootView: View {
                          onWriting: { route = .writingDesk },
                          onClock: { route = .clockTower },
                          onWorldTour: { route = .worldTour },
+                         onQuickGame: { route = .quickGame },
+                         onQuizPlace: { id in route = .quizPlace(id) },
+                         onStoryMaker: { route = .storyMaker },
+                         onBadges: { route = .badges },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
                 .onAppear { hub = .menu }
@@ -255,6 +274,19 @@ struct RootView: View {
 
         case .worldTour:
             WorldTourView(onBack: goHome)
+
+        case .quickGame:
+            QuickGameView(onExit: goHome)
+
+        case .quizPlace(let id):
+            QuizPlaceView(place: id == "spelling" ? .spelling : id == "fractions" ? .fractions : .shapes, onBack: goHome)
+                .id(id)
+
+        case .storyMaker:
+            StoryMakerView(onBack: goHome)
+
+        case .badges:
+            BadgesView(onBack: goHome)
 
         case .castle:
             MyCastleView(onBack: goHome)
