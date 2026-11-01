@@ -39,15 +39,6 @@ struct MainMenuView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: store.theme.sky, startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-            if let land = ArtLibrary.image("map_bg") {
-                Image(uiImage: land).resizable().scaledToFill().ignoresSafeArea().opacity(0.55).allowsHitTesting(false)
-            }
-            if let hex = Season.shown?.driftTintHex {
-                // the season drifts by: spring petals, autumn leaves, winter snow
-                SnowfallView(tint: Color(hex: hex)).ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
-            }
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     header
@@ -120,7 +111,7 @@ struct MainMenuView: View {
                     Spacer(minLength: 20)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 14)
             }
 
             if let note {
@@ -130,6 +121,25 @@ struct MainMenuView: View {
                 }
                 .animation(.spring(), value: note)
             }
+        }
+        // The sky, land and season drift sit behind the content, so the big land picture
+        // can never stretch the layout past the screen and push the header under the clock.
+        .background {
+            ZStack {
+                LinearGradient(colors: store.theme.sky, startPoint: .top, endPoint: .bottom)
+                if let land = ArtLibrary.image("map_bg") {
+                    Color.clear.overlay(
+                        Image(uiImage: land).resizable().scaledToFill().opacity(0.55)
+                    )
+                    .clipped()
+                }
+                if let hex = Season.shown?.driftTintHex {
+                    // the season drifts by: spring petals, autumn leaves, winter snow
+                    SnowfallView(tint: Color(hex: hex)).accessibilityHidden(true)
+                }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
         }
         .sheet(isPresented: $showParent) {
             ParentGateView().environmentObject(store)
@@ -204,7 +214,7 @@ struct MainMenuView: View {
             .accessibilityLabel(store.pendingMilestones.isEmpty ? "Grown-ups" : "Grown-ups, a milestone note is ready")
         }
         .padding(.horizontal, 4)
-        .padding(.top, 4)
+        .padding(.top, 10)
     }
 
     /// Names are shown as typed, but an all-caps name ("MAR") reads as shouting, so it's softened to "Mar".
