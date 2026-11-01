@@ -66,10 +66,43 @@ struct BuddyWidgetView: View {
     var body: some View {
         let s = entry.snapshot
         Group {
-            if family == .systemSmall { small(s) } else { medium(s) }
+            switch family {
+            case .accessoryCircular: circular(s)
+            case .accessoryRectangular: rectangular(s)
+            case .accessoryInline: Text("⭐ \(s.stars) · \(s.lessonTitle)")
+            case .systemSmall: small(s).foregroundStyle(WidgetTheme.ink)
+            default: medium(s).foregroundStyle(WidgetTheme.ink)
+            }
         }
-        .foregroundStyle(WidgetTheme.ink)
         .widgetURL(URL(string: "hopquest://open"))
+    }
+
+    private func t(_ text: String) -> String { HopWords.tr(text, entry.snapshot.spanish == true) }
+
+    // MARK: Lock Screen (v8.0)
+
+    /// Stars in a ring that fills as skills are learned.
+    private func circular(_ s: WidgetSnapshot) -> some View {
+        Gauge(value: s.progress) {
+            Image(systemName: "star.fill")
+        } currentValueLabel: {
+            Text("\(s.stars)").font(.system(size: 15, weight: .black, design: .rounded)).minimumScaleFactor(0.6)
+        }
+        .gaugeStyle(.accessoryCircularCapacity)
+        .widgetAccentable()
+        .accessibilityLabel("\(s.stars) stars. \(s.skillsLearned) of \(s.skillsTotal) skills learned.")
+    }
+
+    private func rectangular(_ s: WidgetSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+                Image(systemName: "star.fill").font(.system(size: 11, weight: .black)).widgetAccentable()
+                Text("\(s.stars)").font(.system(size: 14, weight: .black, design: .rounded))
+                Text("· \(s.name)").font(.system(size: 14, weight: .semibold, design: .rounded)).lineLimit(1)
+            }
+            Text("\(t(s.skillState)): \(s.lessonTitle)").font(.system(size: 13, weight: .bold, design: .rounded)).lineLimit(1).minimumScaleFactor(0.8)
+            ProgressView(value: s.progress).widgetAccentable()
+        }
     }
 
     private func small(_ s: WidgetSnapshot) -> some View {
@@ -80,7 +113,7 @@ struct BuddyWidgetView: View {
                 starPill(s.stars)
             }
             Spacer(minLength: 0)
-            Text(s.skillState.uppercased()).font(WidgetTheme.round(10, .black)).foregroundStyle(WidgetTheme.purple).tracking(0.4)
+            Text(t(s.skillState).uppercased()).font(WidgetTheme.round(10, .black)).foregroundStyle(WidgetTheme.purple).tracking(0.4)
             Text(s.lessonTitle).font(WidgetTheme.round(15, .black)).lineLimit(1).minimumScaleFactor(0.7)
             ProgressView(value: s.progress).tint(WidgetTheme.purple)
         }
@@ -93,9 +126,9 @@ struct BuddyWidgetView: View {
                 starPill(s.stars)
             }
             VStack(alignment: .leading, spacing: 5) {
-                Text("Hi, \(s.name)!").font(WidgetTheme.round(18, .black)).lineLimit(1).minimumScaleFactor(0.7)
+                Text(t("Hi, \(s.name)!")).font(WidgetTheme.round(18, .black)).lineLimit(1).minimumScaleFactor(0.7)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(s.skillState.uppercased()).font(WidgetTheme.round(10, .black)).foregroundStyle(WidgetTheme.purple).tracking(0.4)
+                    Text(t(s.skillState).uppercased()).font(WidgetTheme.round(10, .black)).foregroundStyle(WidgetTheme.purple).tracking(0.4)
                     Text(s.lessonTitle).font(WidgetTheme.round(15, .black)).lineLimit(1)
                     Text(s.skill.prefix(1).uppercased() + s.skill.dropFirst())
                         .font(WidgetTheme.round(13, .semibold)).foregroundStyle(WidgetTheme.ink.opacity(0.65)).lineLimit(2)
@@ -129,8 +162,8 @@ struct BuddyWidget: Widget {
                 }
         }
         .configurationDisplayName("My Buddy")
-        .description("Your buddy, your stars, and what to play next.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .description("Your buddy, your stars, and what to play next. Also on the Lock Screen.")
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
 
@@ -187,40 +220,12 @@ struct HopPickLevelIntent: AppIntent {
     }
 }
 
-extension Color {
-    init(hop hex: UInt32) {
-        self.init(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255)
-    }
-}
-
-/// The level's sky, behind the whole widget.
-struct HopSky: View {
-    let level: HopLevel
-    var body: some View {
-        ZStack {
-            LinearGradient(colors: [Color(hop: level.skyTop), Color(hop: level.skyBottom)], startPoint: .top, endPoint: .bottom)
-            if level.night {
-                // a few twinkles and a moon
-                GeometryReader { geo in
-                    ForEach(0..<9, id: \.self) { i in
-                        Circle().fill(.white.opacity(i % 3 == 0 ? 0.9 : 0.55))
-                            .frame(width: i % 3 == 0 ? 3 : 2, height: i % 3 == 0 ? 3 : 2)
-                            .position(x: geo.size.width * CGFloat((i * 37 + 11) % 100) / 100,
-                                      y: geo.size.height * CGFloat((i * 53 + 7) % 60) / 100)
-                    }
-                    Image(systemName: "moon.fill").font(.system(size: 18)).foregroundStyle(Color(hop: 0xFFF1B8))
-                        .position(x: geo.size.width - 22, y: 20)
-                }
-            }
-        }
-    }
-}
-
 struct StarHopWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: HopEntry
 
     private var h: StarHop { entry.hop }
+    private func t(_ text: String) -> String { HopWords.tr(text, entry.snapshot.spanish == true) }
     private var small: Bool { family == .systemSmall }
     private var ink: Color { h.info.night ? .white : WidgetTheme.ink }
     private var accent: Color { h.info.night ? Color(hop: 0xFFD84D) : WidgetTheme.purple }
@@ -232,22 +237,22 @@ struct StarHopWidgetView: View {
                 board
                     .overlay(alignment: .top) { messageLine }
                 if h.champion {
-                    card(title: "You beat all \(StarHop.levels.count) levels! 🏆",
-                         detail: "\(h.totalRating) of \(StarHop.levels.count * 3) stars", rating: h.lastRating,
-                         button: "Play again", icon: "arrow.clockwise", intent: HopNewGameIntent())
+                    card(title: t("You beat all \(StarHop.levels.count) levels! 🏆"),
+                         detail: t("\(h.totalRating) of \(StarHop.levels.count * 3) stars"), rating: h.lastRating,
+                         button: t("Play again"), icon: "arrow.clockwise", intent: HopNewGameIntent())
                 } else if h.levelDone {
-                    card(title: "Level \(h.level) done!",
-                         detail: "Next: \(StarHop.levels[min(h.level, StarHop.levels.count - 1)].title)", rating: h.lastRating,
-                         button: "Next level", icon: "arrow.right", intent: HopNextLevelIntent())
+                    card(title: t("Level \(h.level) done!"),
+                         detail: t("Next: \(StarHop.levels[min(h.level, StarHop.levels.count - 1)].title)"), rating: h.lastRating,
+                         button: t("Next level"), icon: "arrow.right", intent: HopNextLevelIntent())
                 } else if h.outOfHearts {
-                    card(title: "Out of hearts!", detail: "The puff clouds got you. You can do it!", rating: nil, button: "Try again",
+                    card(title: t("Out of hearts!"), detail: t("The puff clouds got you. You can do it!"), rating: nil, button: t("Try again"),
                          icon: "arrow.clockwise", intent: HopRetryIntent())
                 } else {
                     // the two tap halves sit on top of the board
                     HStack(spacing: 0) {
-                        Button(intent: HopLeftIntent()) { zone("chevron.left", "Step") }
+                        Button(intent: HopLeftIntent()) { zone("chevron.left", t("Step")) }
                             .buttonStyle(.plain)
-                        Button(intent: HopRightIntent()) { zone("arrow.up.right", h.row > 0 && h.jumps == 1 ? "Double jump" : "Jump") }
+                        Button(intent: HopRightIntent()) { zone("arrow.up.right", t(h.row > 0 && h.jumps == 1 ? "Double jump" : "Jump")) }
                             .buttonStyle(.plain)
                     }
                 }
@@ -267,7 +272,7 @@ struct StarHopWidgetView: View {
                     .font(WidgetTheme.round(12, .black)).foregroundStyle(.white)
                     .frame(width: 20, height: 20)
                     .background(Circle().fill(accent))
-                Text(h.info.title).font(WidgetTheme.round(15, .black)).lineLimit(1).minimumScaleFactor(0.75)
+                Text(t(h.info.title)).font(WidgetTheme.round(15, .black)).lineLimit(1).minimumScaleFactor(0.75)
             }
             hearts
             Spacer(minLength: 0)
@@ -312,7 +317,7 @@ struct StarHopWidgetView: View {
             }
         } else if small {
             HStack(spacing: 3) {
-                Text("Next").font(WidgetTheme.round(10, .bold)).foregroundStyle(ink.opacity(0.6))
+                Text(t("Next")).font(WidgetTheme.round(10, .bold)).foregroundStyle(ink.opacity(0.6))
                 Text(h.needed ?? "✓").font(WidgetTheme.round(13, .black)).foregroundStyle(.white)
                     .frame(minWidth: 20, minHeight: 20).padding(.horizontal, 2)
                     .background(Capsule().fill(accent))
@@ -336,7 +341,7 @@ struct StarHopWidgetView: View {
     }
 
     private var messageLine: some View {
-        Text(h.message)
+        Text(t(h.message))
             .font(WidgetTheme.round(small ? 10 : 11, .black))
             .foregroundStyle(h.bumped ? Color(hop: 0xE0445E) : accent)
             .lineLimit(1).minimumScaleFactor(0.7)
@@ -520,9 +525,9 @@ struct StarHopWidgetView: View {
             }
             if labels {
                 HStack(spacing: 8) {
-                    Text("✓ Finished")
-                    Text(h.bumps == 0 ? "✓ No bumps" : "· No bumps").opacity(h.bumps == 0 ? 1 : 0.45)
-                    Text(h.moves <= h.par ? "✓ Quick feet" : "· Quick feet").opacity(h.moves <= h.par ? 1 : 0.45)
+                    Text(t("✓ Finished"))
+                    Text(t(h.bumps == 0 ? "✓ No bumps" : "· No bumps")).opacity(h.bumps == 0 ? 1 : 0.45)
+                    Text(t(h.moves <= h.par ? "✓ Quick feet" : "· Quick feet")).opacity(h.moves <= h.par ? 1 : 0.45)
                 }
                 .font(WidgetTheme.round(10, .bold)).foregroundStyle(WidgetTheme.ink.opacity(0.7))
             }
@@ -549,7 +554,7 @@ struct StarHopWidgetView: View {
             }
             HStack {
                 let b = h.best.indices.contains(h.level - 1) ? h.best[h.level - 1] : 0
-                Text(b > 0 ? "Best on this level: \(b) moves" : h.info.tip)
+                Text(t(b > 0 ? "Best on this level: \(b) moves" : h.info.tip))
                     .font(WidgetTheme.round(12, .semibold)).foregroundStyle(ink.opacity(0.65)).lineLimit(1).minimumScaleFactor(0.8)
                 Spacer()
                 Link(destination: URL(string: "hopquest://quickgame")!) {
@@ -593,75 +598,6 @@ struct StarHopWidgetView: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityLabel("Level \(lv.number), \(lv.title)\(done ? ", \(h.rating.indices.contains(lv.number - 1) ? h.rating[lv.number - 1] : 1) stars" : "")\(open ? "" : ", locked")")
-    }
-}
-
-/// A shiny soap bubble: the shield pickup, and the shield around the buddy.
-struct Bubble: View {
-    var body: some View {
-        ZStack {
-            Circle().fill(RadialGradient(colors: [.white.opacity(0.05), Color(hop: 0x9FDFFF).opacity(0.45)],
-                                         center: .center, startRadius: 0, endRadius: 30))
-            Circle().stroke(LinearGradient(colors: [Color(hop: 0xFF9DE2), Color(hop: 0x7FD6FF), Color(hop: 0xB6F5A8)],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2)
-            GeometryReader { g in
-                Capsule().fill(.white.opacity(0.9))
-                    .frame(width: g.size.width * 0.18, height: g.size.width * 0.32)
-                    .rotationEffect(.degrees(35))
-                    .position(x: g.size.width * 0.3, y: g.size.height * 0.3)
-            }
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-/// A red spring pad set into the ground.
-struct SpringPad: View {
-    let squashed: Bool
-    var body: some View {
-        GeometryReader { g in
-            let w = g.size.width, hgt = g.size.height
-            VStack(spacing: 0) {
-                Capsule().fill(Color(hop: 0xFF5A5F)).frame(width: w, height: hgt * 0.32)
-                    .overlay(Capsule().stroke(.white.opacity(0.6), lineWidth: 1))
-                ZStack {
-                    ForEach(0..<3, id: \.self) { i in
-                        Capsule().stroke(Color(hop: 0x6B6F80), lineWidth: 1.6)
-                            .frame(width: w * 0.55, height: hgt * 0.16)
-                            .offset(y: CGFloat(i - 1) * hgt * (squashed ? 0.08 : 0.16))
-                    }
-                }
-                .frame(height: hgt * 0.68)
-            }
-            .frame(width: w, height: hgt, alignment: .bottom)
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-/// A friendly puff cloud with sleepy eyes.
-struct PuffCloud: View {
-    let night: Bool
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            ZStack {
-                Image(systemName: "cloud.fill").resizable().scaledToFit()
-                    .foregroundStyle(night ? Color(hop: 0xC9C3E6) : .white)
-                    .shadow(color: .black.opacity(0.18), radius: 0, x: 0, y: 2)
-                HStack(spacing: w * 0.14) {
-                    Capsule().fill(WidgetTheme.ink).frame(width: w * 0.07, height: w * 0.1)
-                    Capsule().fill(WidgetTheme.ink).frame(width: w * 0.07, height: w * 0.1)
-                }
-                .offset(y: w * 0.06)
-                Capsule().fill(Color(hop: 0xFF9DB3).opacity(0.7)).frame(width: w * 0.1, height: w * 0.05)
-                    .offset(x: -w * 0.2, y: w * 0.13)
-                Capsule().fill(Color(hop: 0xFF9DB3).opacity(0.7)).frame(width: w * 0.1, height: w * 0.05)
-                    .offset(x: w * 0.2, y: w * 0.13)
-            }
-            .frame(width: w, height: geo.size.height)
-        }
-        .accessibilityHidden(true)
     }
 }
 

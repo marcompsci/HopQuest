@@ -43,6 +43,8 @@ enum Route: Equatable {
     case quizPlace(String)
     case storyMaker
     case badges
+    case starHop
+    case breathe
     // two players on one phone
     case teamKartSelect
     case teamKart(Int)
@@ -72,6 +74,7 @@ struct RootView: View {
     @State private var castleNote: String?
     /// Changing the language in Grown-up settings redraws everything.
     @AppStorage(L10n.key) private var language = AppLanguage.automatic.rawValue
+    @AppStorage(KidType.easyReadKey) private var easyRead = false
     private let ticker = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -104,7 +107,12 @@ struct RootView: View {
                 MessageBubble(text: castleNote).padding(.bottom, 40)
             }
         }
-        .id(language)
+        .id(language + (easyRead ? "-easy" : ""))
+        // easy-read letters: a little more room between letters and lines, everywhere
+        .tracking(easyRead ? 0.6 : 0)
+        .lineSpacing(easyRead ? 3 : 0)
+        // the widgets follow the app's language
+        .onChange(of: language) { _, _ in store.publishWidget() }
         .modifier(TabletFrame(sky: store.theme.sky))
         .animation(.easeInOut(duration: 0.35), value: route)
         .animation(.easeInOut(duration: 0.35), value: store.profile == nil)
@@ -165,6 +173,9 @@ struct RootView: View {
                          onQuizPlace: { id in route = .quizPlace(id) },
                          onStoryMaker: { route = .storyMaker },
                          onBadges: { route = .badges },
+                         onStarHop: { route = .starHop },
+                         onBreathe: { route = .breathe },
+                         onSurprise: { id in route = Self.route(forPlace: id) },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
                 .onAppear { hub = .menu }
@@ -279,7 +290,7 @@ struct RootView: View {
             QuickGameView(onExit: goHome)
 
         case .quizPlace(let id):
-            QuizPlaceView(place: id == "spelling" ? .spelling : id == "fractions" ? .fractions : .shapes, onBack: goHome)
+            QuizPlaceView(place: .named(id), onBack: goHome)
                 .id(id)
 
         case .storyMaker:
@@ -287,6 +298,12 @@ struct RootView: View {
 
         case .badges:
             BadgesView(onBack: goHome)
+
+        case .starHop:
+            StarHopPlayView(onBack: goHome)
+
+        case .breathe:
+            BreatheView(onBack: goHome)
 
         case .castle:
             MyCastleView(onBack: goHome)
@@ -447,6 +464,21 @@ struct RootView: View {
     }
 
     /// Back to wherever the child came from (the menu, Hop Village or the world map).
+    /// Where Surprise Me goes for each learning place.
+    static func route(forPlace id: String) -> Route {
+        switch id {
+        case "reading": return .readingNook
+        case "writing": return .writingDesk
+        case "market": return .mathMarket
+        case "clock": return .clockTower
+        case "science": return .scienceLab
+        case "world": return .worldTour
+        case "music": return .musicMaker
+        case "code": return .codeClub
+        default: return .quizPlace(id)
+        }
+    }
+
     private func goHome() {
         switch hub {
         case .village: route = .village

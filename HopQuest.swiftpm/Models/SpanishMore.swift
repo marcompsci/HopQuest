@@ -1,0 +1,80 @@
+import Foundation
+
+// Spanish for everything added in v6.6–v8.1 (new places, Star Hop, Breathe, Surprise Me, hats, grown-ups pages).
+// Same rules as Spanish.swift: interface words only; questions and word games stay English.
+
+extension L10n {
+    static let more: [String: String] = [
+        // places
+        "Rhyme Pond": "Estanque de Rimas", "Number Builder": "Constructor de Números", "Times Treehouse": "Casa del Árbol de las Tablas",
+        "Measure Meadow": "Prado de Medidas", "Feelings Corner": "Rincón de los Sentimientos",
+        "Cat, hat, bat! Let's play with sounds.": "¡Cat, hat, bat! Juguemos con los sonidos.",
+        "Tens and ones! Let's build big numbers.": "¡Decenas y unidades! Construyamos números grandes.",
+        "Groups of acorns! Count them fast.": "¡Grupos de bellotas! Cuéntalos rápido.",
+        "Long, short, heavy, light. Let's measure!": "Largo, corto, pesado, ligero. ¡A medir!",
+        "All feelings are okay. Let's learn about them.": "Todos los sentimientos están bien. Aprendamos sobre ellos.",
+        "Ribbit! I'm Fizz. Welcome to Rhyme Pond, where words sound alike!": "¡Croac! Soy Fizz. ¡Bienvenido al Estanque de Rimas, donde las palabras suenan parecido!",
+        "Hi, I'm Ocho! I have eight arms for counting. Welcome to Number Builder!": "¡Hola, soy Ocho! Tengo ocho brazos para contar. ¡Bienvenido al Constructor de Números!",
+        "Hello! I'm Iron Acorn. Welcome to my Times Treehouse, where we count in groups!": "¡Hola! Soy Bellota de Hierro. ¡Bienvenido a mi casa del árbol, donde contamos en grupos!",
+        "Hi, I'm Ellie! Welcome to Measure Meadow. Let's find out how long and how heavy things are.": "¡Hola, soy Ellie! Bienvenido al Prado de Medidas. Descubramos qué tan largas y pesadas son las cosas.",
+        "Hi, I'm Kip. Welcome to the Feelings Corner. Every feeling is okay to have.": "Hola, soy Kip. Bienvenido al Rincón de los Sentimientos. Está bien sentir cualquier sentimiento.",
+        // game titles
+        "Find the Rhyme": "Encuentra la Rima", "Odd One Out": "El Diferente", "Clap the Beats": "Aplaude las Sílabas", "Finish the Rhyme": "Termina la Rima",
+        "Count the Blocks": "Cuenta los Bloques", "Tens and Ones": "Decenas y Unidades", "Build the Number": "Construye el Número", "Bigger Number": "Número Mayor",
+        "Equal Groups": "Grupos Iguales", "Skip Counting": "Contar Saltando", "Rows and Rows": "Filas y Filas", "Groups Of": "Grupos De",
+        "Longest Ribbon": "El Listón Más Largo", "Measure with Blocks": "Mide con Bloques", "Heavy or Light": "Pesado o Ligero", "Measuring Tools": "Herramientas para Medir",
+        "Name the Feeling": "Nombra el Sentimiento", "How Would You Feel?": "¿Cómo Te Sentirías?", "What Could Help?": "¿Qué Podría Ayudar?", "Kind Words": "Palabras Amables",
+        // game intros
+        "Words that rhyme sound the same at the end. Which word rhymes?": "Las palabras que riman suenan igual al final. ¿Qué palabra rima?",
+        "Two words rhyme. Which word does not rhyme?": "Dos palabras riman. ¿Cuál no rima?",
+        "Say the word and clap each beat. How many claps?": "Di la palabra y aplaude cada sílaba. ¿Cuántos aplausos?",
+        "Finish the silly sentence with a word that rhymes!": "¡Termina la oración chistosa con una palabra que rime!",
+        "Each tall rod is 10. Each little cube is 1. How many in all?": "Cada barra alta vale 10. Cada cubito vale 1. ¿Cuántos hay en total?",
+        "The first digit tells the tens. The last digit tells the ones.": "El primer dígito dice las decenas. El último dice las unidades.",
+        "Which blocks make the number?": "¿Qué bloques forman el número?",
+        "Which number is bigger? Look at the tens first!": "¿Qué número es mayor? ¡Mira primero las decenas!",
+        "Count the groups, then how many in each. How many in all?": "Cuenta los grupos y cuántos hay en cada uno. ¿Cuántos hay en total?",
+        "Count by 2s, 5s and 10s. What comes next?": "Cuenta de 2 en 2, de 5 en 5 y de 10 en 10. ¿Qué sigue?",
+        "Things in neat rows! How many rows? How many in each row? How many in all?": "¡Cosas en filas ordenadas! ¿Cuántas filas? ¿Cuántos en cada fila? ¿Cuántos en total?",
+        "Find the picture that matches the words.": "Encuentra el dibujo que va con las palabras.",
+        "Line them up! Which ribbon is the longest? Which is the shortest?": "¡Alinéalos! ¿Qué listón es el más largo? ¿Cuál es el más corto?",
+        "Count the blocks under the ribbon. How many blocks long is it?": "Cuenta los bloques debajo del listón. ¿Cuántos bloques mide?",
+        "Which one is heavier? Which one is lighter?": "¿Cuál es más pesado? ¿Cuál es más ligero?",
+        "Which tool measures it?": "¿Qué herramienta lo mide?",
+        "Look at the face. What feeling is it?": "Mira la cara. ¿Qué sentimiento es?",
+        "Listen to the little story. How might they feel?": "Escucha el cuentito. ¿Cómo se sentirán?",
+        "Big feelings are okay! What could help?": "¡Los sentimientos grandes están bien! ¿Qué podría ayudar?",
+        "What is a kind thing to say?": "¿Qué es algo amable que decir?",
+        // Star Hop, Breathe, Surprise, hats
+        "Star Hop": "Salto Estelar", "Breathe": "Respira", "Breathe with Buddy": "Respira con tu Amigo", "Calm breaths with your buddy": "Respiraciones tranquilas con tu amigo",
+        "Breathe in": "Inhala", "Hold": "Sostén", "Breathe out": "Exhala", "All done": "Terminamos", "Start": "Empezar",
+        "Nice and calm.": "Muy tranquilo.", "You can come back and breathe any time.": "Puedes volver a respirar cuando quieras.",
+        "Big feelings? Let's breathe slowly together.": "¿Sentimientos grandes? Respiremos despacio juntos.",
+        "Surprise me!": "¡Sorpréndeme!", "Pick something new to learn": "Elige algo nuevo para aprender",
+        "You've finished every game! Pick any one you like.": "¡Terminaste todos los juegos! Elige el que quieras.",
+        "Buddy hats": "Sombreros para tu amigo", "No hat": "Sin sombrero", "Party Hat": "Gorro de Fiesta", "Ball Cap": "Gorra",
+        "Flower Crown": "Corona de Flores", "Cozy Beanie": "Gorro de Lana", "Golden Crown": "Corona de Oro", "Wizard Hat": "Sombrero de Mago",
+        "Top Hat": "Sombrero de Copa", "Space Helmet": "Casco Espacial",
+        "Level": "Nivel", "Finished": "Terminado", "No bumps": "Sin choques", "Quick feet": "Pies rápidos", "Next level": "Siguiente nivel",
+        "Try again": "Intenta otra vez", "Out of hearts!": "¡Sin corazones!", "The puff clouds got you. You can do it!": "Las nubes te atraparon. ¡Tú puedes!",
+        "Tap left to step. Tap right to jump, and again to double jump!": "Toca a la izquierda para caminar. ¡Toca a la derecha para saltar, y otra vez para doble salto!",
+        "Step": "Paso", "Jump": "Saltar", "Double jump": "Doble salto", "Jump!": "¡Salta!", "Double jump!": "¡Doble salto!", "Glide!": "¡Planea!",
+        "Step!": "¡Paso!", "Whee!": "¡Yupi!", "Got it! ⭐": "¡Atrapada! ⭐", "Golden star! +2": "¡Estrella dorada! +2", "Boing!": "¡Boing!",
+        "Bubble shield! 🫧": "¡Escudo de burbuja! 🫧", "Pop! Your bubble saved you.": "¡Pop! Tu burbuja te salvó.",
+        "Bonk! A puff cloud. 💨": "¡Bonk! Una nube. 💨", "You finished every level!": "¡Terminaste todos los niveles!",
+        "Tap to play!": "¡Toca para jugar!",
+        // grown-ups (v7.7–v8.0)
+        "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
+        "Certificate": "Diploma", "Text size and spacing": "Tamaño y espacio del texto",
+    ]
+
+    static let moreRawPatterns: [(String, String)] = [
+        ("^(\\d+) of (\\d+) levels$", "$1 de $2 niveles"),
+        ("^Level (\\d+) done!$", "¡Nivel $1 terminado!"),
+        ("^You beat all (\\d+) levels! 🏆$", "¡Superaste los $1 niveles! 🏆"),
+        ("^Next: (.+)$", "Siguiente: $1"),
+        ("^You earned (\\d+) stars? in Star Hop!$", "¡Ganaste $1 estrellas en Salto Estelar!"),
+        ("^(\\d+) more badges? for the (.+)$", "$1 insignias más para: $2"),
+        ("^Best (\\d+)$", "Récord $1"),
+    ]
+}

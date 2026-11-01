@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A learning place built on the shared quiz engine (Spelling Bee, Fraction Bakery, Shape Studio).
+/// A learning place built on the shared quiz engine (Spelling Bee, Fraction Bakery, Shape Studio, and five more from v6.8).
 struct QuizPlace {
     let id: String
     let title: String
@@ -24,6 +24,55 @@ struct QuizPlace {
                   greeting: "Hello, I'm Stella! Welcome to the Fraction Bakery. Everything here is cut into fair shares.", host: Roster.character(id: "stella"),
                   accent: Color(hex: 0xC2185B), background: [Color(hex: 0xFFF0F5), Color(hex: 0xFFD6E5)], games: FractionBank.games,
                   rounds: { id in var g = SystemRandomNumberGenerator(); return FractionBank.rounds(for: id, using: &g) })
+    }
+
+    static var rhyme: QuizPlace {
+        QuizPlace(id: "rhyme", title: "Rhyme Pond", line: "Cat, hat, bat! Let's play with sounds.",
+                  greeting: "Ribbit! I'm Fizz. Welcome to Rhyme Pond, where words sound alike!", host: Roster.character(id: "fizz"),
+                  accent: Color(hex: 0x2E8B3E), background: [Color(hex: 0xEFFBEA), Color(hex: 0xCDEFC4)], games: RhymeBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return RhymeBank.rounds(for: id, using: &g) })
+    }
+
+    static var numbers: QuizPlace {
+        QuizPlace(id: "numbers", title: "Number Builder", line: "Tens and ones! Let's build big numbers.",
+                  greeting: "Hi, I'm Ocho! I have eight arms for counting. Welcome to Number Builder!", host: Roster.character(id: "ocho"),
+                  accent: Color(hex: 0x6A3FB5), background: [Color(hex: 0xF4EEFF), Color(hex: 0xDCCDF7)], games: NumberBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return NumberBank.rounds(for: id, using: &g) })
+    }
+
+    static var times: QuizPlace {
+        QuizPlace(id: "times", title: "Times Treehouse", line: "Groups of acorns! Count them fast.",
+                  greeting: "Hello! I'm Iron Acorn. Welcome to my Times Treehouse, where we count in groups!", host: Roster.character(id: "acorn"),
+                  accent: Color(hex: 0x8A5A2B), background: [Color(hex: 0xFFF5E6), Color(hex: 0xF3DDBA)], games: TimesBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return TimesBank.rounds(for: id, using: &g) })
+    }
+
+    static var measure: QuizPlace {
+        QuizPlace(id: "measure", title: "Measure Meadow", line: "Long, short, heavy, light. Let's measure!",
+                  greeting: "Hi, I'm Ellie! Welcome to Measure Meadow. Let's find out how long and how heavy things are.", host: Roster.character(id: "ellie"),
+                  accent: Color(hex: 0x2F6F9F), background: [Color(hex: 0xEAF6FF), Color(hex: 0xC9E6F7)], games: MeasureBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return MeasureBank.rounds(for: id, using: &g) })
+    }
+
+    static var feelings: QuizPlace {
+        QuizPlace(id: "feelings", title: "Feelings Corner", line: "All feelings are okay. Let's learn about them.",
+                  greeting: "Hi, I'm Kip. Welcome to the Feelings Corner. Every feeling is okay to have.", host: Roster.character(id: "kip"),
+                  accent: Color(hex: 0xC2185B), background: [Color(hex: 0xFFF0F6), Color(hex: 0xF9D5E5)], games: FeelingsBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return FeelingsBank.rounds(for: id, using: &g) })
+    }
+
+    /// Every place, by id.
+    static func named(_ id: String) -> QuizPlace {
+        switch id {
+        case "spelling": return .spelling
+        case "fractions": return .fractions
+        case "rhyme": return .rhyme
+        case "numbers": return .numbers
+        case "times": return .times
+        case "measure": return .measure
+        case "feelings": return .feelings
+        default: return .shapes
+        }
     }
 
     static var shapes: QuizPlace {
@@ -148,12 +197,33 @@ struct QuizGameView: View {
                     .padding(12)
                     .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(.white.opacity(0.88)))
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(r.say)
+                    .accessibilityLabel(r.visual.spoken.map { "\($0). \(r.say)" } ?? r.say)
             }
             Text(r.say).font(.kid(19, .bold)).foregroundStyle(Palette.ink).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if r.kind == .spell {
                 spellArea(r)
+            } else if !r.choiceVisuals.isEmpty, r.choiceVisuals.allSatisfy({ if case .bar = $0 { return true }; return false }) {
+                // ribbons line up one under another, so their lengths can be compared from the same starting edge
+                VStack(spacing: 10) {
+                    ForEach(Array(r.choices.enumerated()), id: \.offset) { i, c in
+                        Button { pick(c, in: r) } label: {
+                            HStack(spacing: 10) {
+                                Text(c.capitalized).font(.kid(17, .black)).foregroundStyle(Palette.ink).frame(width: 74, alignment: .leading)
+                                QuizVisualView(visual: r.choiceVisuals[i], accent: place.accent, large: false)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 56)
+                            .padding(.horizontal, 12)
+                            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.white))
+                            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(right == c ? Palette.green : wrong.contains(c) ? Palette.red : Palette.ink.opacity(0.15), lineWidth: right == c || wrong.contains(c) ? 4 : 2))
+                            .opacity(wrong.contains(c) ? 0.5 : 1)
+                        }
+                        .buttonStyle(BouncyButtonStyle())
+                        .accessibilityLabel("\(c) ribbon\(r.choiceVisuals[i].spoken.map { ", \($0)" } ?? "")\(wrong.contains(c) ? ", not this one" : "")")
+                    }
+                }
             } else if !r.choiceVisuals.isEmpty {
                 HStack(spacing: 10) {
                     ForEach(Array(r.choices.enumerated()), id: \.offset) { i, c in
@@ -167,7 +237,7 @@ struct QuizGameView: View {
                                 .opacity(wrong.contains(c) ? 0.5 : 1)
                         }
                         .buttonStyle(BouncyButtonStyle())
-                        .accessibilityLabel("Picture \(c)\(wrong.contains(c) ? ", not this one" : "")")
+                        .accessibilityLabel("Picture \(c)\(r.choiceVisuals[i].spoken.map { ": \($0)" } ?? "")\(wrong.contains(c) ? ", not this one" : "")")
                     }
                 }
             } else {
@@ -307,6 +377,12 @@ struct QuizVisualView: View {
             HStack(spacing: 12) {
                 ForEach(Array(s.enumerated()), id: \.offset) { _, k in ShapeDrawing(kind: k, color: accent).frame(width: large ? 130 : 60, height: large ? 130 : 60) }
             }
+        case .blocks(let tens, let ones):
+            BlocksDrawing(tens: tens, ones: ones, color: accent, large: large)
+        case .groups(let count, let each, let item, let rows):
+            GroupsDrawing(count: count, each: each, item: item, rows: rows, large: large, color: accent)
+        case .bar(let length, let color, let units):
+            RibbonDrawing(length: length, color: QuizColors.named(color), units: units, large: large)
         case .pattern(let s):
             HStack(spacing: 6) {
                 ForEach(Array(s.enumerated()), id: \.offset) { _, k in ShapeDrawing(kind: k, color: accent).frame(width: 40, height: 40) }
@@ -315,6 +391,125 @@ struct QuizVisualView: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(accent, style: StrokeStyle(lineWidth: 2, dash: [4, 3])))
             }
         }
+    }
+}
+
+enum QuizColors {
+    static func named(_ name: String) -> Color {
+        switch name {
+        case "red": return Color(hex: 0xE5484D)
+        case "blue": return Color(hex: 0x3E7BFA)
+        case "green": return Color(hex: 0x2FA35B)
+        case "yellow": return Color(hex: 0xF2B705)
+        default: return Color(hex: 0x8E4EC6)
+        }
+    }
+}
+
+/// Base-ten blocks: tall rods of ten little cubes, then single cubes.
+struct BlocksDrawing: View {
+    let tens: Int
+    let ones: Int
+    let color: Color
+    let large: Bool
+
+    var body: some View {
+        let cube: CGFloat = large ? 12 : 7
+        HStack(alignment: .bottom, spacing: large ? 5 : 3) {
+            ForEach(0..<tens, id: \.self) { _ in
+                VStack(spacing: 1) {
+                    ForEach(0..<10, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 2).fill(color).frame(width: cube, height: cube)
+                    }
+                }
+                .padding(1)
+                .background(RoundedRectangle(cornerRadius: 3).fill(color.opacity(0.35)))
+            }
+            if ones > 0 {
+                // ones in a little grid of up to 3 wide, so they never look like a rod
+                let cols = 3
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(0..<((ones + cols - 1) / cols), id: \.self) { r in
+                        HStack(spacing: 2) {
+                            ForEach(0..<min(cols, ones - r * cols), id: \.self) { _ in
+                                RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0xFF9F45)).frame(width: cube, height: cube)
+                            }
+                        }
+                    }
+                }
+                .padding(.leading, large ? 8 : 4)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Equal groups in circles, or neat rows (an array).
+struct GroupsDrawing: View {
+    let count: Int
+    let each: Int
+    let item: String
+    let rows: Bool
+    let large: Bool
+    let color: Color
+
+    var body: some View {
+        let size: CGFloat = large ? 22 : 12
+        if rows {
+            VStack(spacing: large ? 4 : 2) {
+                ForEach(0..<count, id: \.self) { _ in
+                    HStack(spacing: large ? 4 : 2) {
+                        ForEach(0..<each, id: \.self) { _ in Text(item).font(.system(size: size)) }
+                    }
+                }
+            }
+            .accessibilityHidden(true)
+        } else {
+            let columns = [GridItem](repeating: GridItem(.flexible(), spacing: large ? 8 : 4), count: min(count, large ? 3 : 2))
+            LazyVGrid(columns: columns, spacing: large ? 8 : 4) {
+                ForEach(0..<count, id: \.self) { _ in
+                    // each group: its things in a small cluster inside a circle
+                    let inRow = each <= 3 ? each : (each + 1) / 2
+                    VStack(spacing: 0) {
+                        ForEach(0..<((each + inRow - 1) / inRow), id: \.self) { r in
+                            HStack(spacing: 0) {
+                                ForEach(0..<min(inRow, each - r * inRow), id: \.self) { _ in Text(item).font(.system(size: size)) }
+                            }
+                        }
+                    }
+                    .padding(large ? 8 : 4)
+                    .background(Circle().fill(color.opacity(0.12)).overlay(Circle().stroke(color.opacity(0.5), lineWidth: 2)))
+                }
+            }
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+/// A ribbon measured in blocks. Every ribbon starts at the same left edge.
+struct RibbonDrawing: View {
+    let length: Int
+    let color: Color
+    let units: Bool
+    let large: Bool
+
+    var body: some View {
+        let unit: CGFloat = large ? 30 : 20
+        VStack(alignment: .leading, spacing: 4) {
+            RoundedRectangle(cornerRadius: 5).fill(color)
+                .frame(width: unit * CGFloat(length), height: large ? 20 : 14)
+                .overlay(alignment: .trailing) { Circle().fill(.white.opacity(0.6)).frame(width: 6, height: 6).padding(.trailing, 4) }
+            if units {
+                HStack(spacing: 0) {
+                    ForEach(0..<length, id: \.self) { i in
+                        Rectangle().fill(i % 2 == 0 ? Palette.ink.opacity(0.14) : Palette.ink.opacity(0.06))
+                            .frame(width: unit, height: unit * 0.7)
+                            .overlay(Rectangle().stroke(Palette.ink.opacity(0.35), lineWidth: 1))
+                    }
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 

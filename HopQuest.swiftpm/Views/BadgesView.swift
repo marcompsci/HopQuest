@@ -42,7 +42,9 @@ struct BadgesView: View {
                             .background(Capsule().fill(.regularMaterial))
                             .accessibilityLabel("\(earned.count) of \(Badges.all.count) badges")
                     }
+                    HatShelf(badges: earned.count)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 12)], spacing: 14) {
+
                         ForEach(Badges.all) { b in
                             badge(b, got: earned.contains(b.id))
                         }

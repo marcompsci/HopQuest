@@ -25,6 +25,10 @@ struct MainMenuView: View {
     var onQuizPlace: (String) -> Void = { _ in }
     var onStoryMaker: () -> Void = {}
     var onBadges: () -> Void = {}
+    var onStarHop: () -> Void = {}
+    var onBreathe: () -> Void = {}
+    /// Surprise Me: opens a learning place by id.
+    var onSurprise: (String) -> Void = { _ in }
     var onMap: () -> Void
     /// Opens a story world from data (Snowy Peaks).
     var onWorld: (String) -> Void = { _ in }
@@ -45,6 +49,7 @@ struct MainMenuView: View {
                     header
                     playButton
                         .padding(.top, 6)
+                    surpriseButton
                     section("Adventures")
                         .padding(.top, 10)
                     LazyVGrid(columns: columns, spacing: 12) {
@@ -65,6 +70,12 @@ struct MainMenuView: View {
                         gameTile(art: "icon_dash", title: "Star Dash", color: Color(hex: 0x4D7CFF), shadow: Color(hex: 0x2F55C7),
                                  badge: 0, detail: (store.profile?.quick.best ?? 0) > 0 ? "Best \(store.profile?.quick.best ?? 0)" : "1-minute quick game",
                                  label: "Star Dash, a one-minute quick game", action: onQuickGame)
+                        gameTile(art: "icon_starhop", title: "Star Hop", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
+                                 badge: 0, detail: "\(SharedStore.loadHop().levelsCleared) of \(StarHop.levels.count) levels",
+                                 label: "Star Hop, \(SharedStore.loadHop().levelsCleared) of \(StarHop.levels.count) levels", action: onStarHop)
+                        gameTile(art: "icon_breathe", title: "Breathe", color: Color(hex: 0x4A9EDB), shadow: Color(hex: 0x2F74A8),
+                                 badge: 0, detail: "Calm breaths with your buddy",
+                                 label: "Breathe with Buddy, a calm break", action: onBreathe)
                     }
                     section("Learn")
                         .padding(.top, 10)
@@ -95,6 +106,11 @@ struct MainMenuView: View {
                         placeTile("spelling", art: "icon_spelling", title: "Spelling Bee", color: 0xB7791F, shadow: 0x8A5A12)
                         placeTile("fractions", art: "icon_fractions", title: "Fraction Bakery", color: 0xC2185B, shadow: 0x8E1243)
                         placeTile("shapes", art: "icon_shapes", title: "Shape Studio", color: 0x00796B, shadow: 0x00564C)
+                        placeTile("rhyme", art: "icon_rhyme", title: "Rhyme Pond", color: 0x2E8B3E, shadow: 0x1E5E29)
+                        placeTile("numbers", art: "icon_numbers", title: "Number Builder", color: 0x6A3FB5, shadow: 0x482A7D)
+                        placeTile("times", art: "icon_times", title: "Times Treehouse", color: 0x8A5A2B, shadow: 0x5E3D1D)
+                        placeTile("measure", art: "icon_measure", title: "Measure Meadow", color: 0x2F6F9F, shadow: 0x1F4B6C)
+                        placeTile("feelings", art: "icon_feelings", title: "Feelings Corner", color: 0xC2185B, shadow: 0x8E1243)
                         gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
                                  badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
                                  label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)
@@ -163,7 +179,7 @@ struct MainMenuView: View {
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
             Button { showCharacters = true } label: {
-                CharacterBadge(character: store.character, size: 50)
+                BuddyAvatar(character: store.character, hat: store.profile?.hat ?? .none, size: 50)
                     .frame(width: 56, height: 56)
                     .background(Circle().fill(.regularMaterial))
                     .overlay(alignment: .bottomTrailing) {
@@ -539,6 +555,32 @@ struct MainMenuView: View {
         guard n > 0 else { return }
         Haptics.success()
         showNote(n == 1 ? "You earned 1 star in Star Hop!" : "You earned \(n) stars in Star Hop!")
+    }
+
+    /// Surprise Me: one tap to a learning place with something still to finish.
+    private var surpriseButton: some View {
+        Button {
+            Haptics.tap()
+            if let id = store.surprisePlace() {
+                onSurprise(id)
+            } else {
+                showNote("You've finished every game! Pick any one you like.")
+            }
+        } label: {
+            HStack(spacing: 12) {
+                ArtImage("icon_surprise").frame(width: 46, height: 46)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L10n.tr("Surprise me!")).font(.kid(19, .black)).foregroundStyle(Palette.ink)
+                    Text(L10n.tr("Pick something new to learn")).font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.6))
+                }
+                Spacer()
+                Image(systemName: "shuffle").font(.system(size: 18, weight: .black)).foregroundStyle(Palette.purple)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.white.opacity(0.9)))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("Surprise me! Pick something new to learn")
     }
 
     private func showNote(_ text: String) {

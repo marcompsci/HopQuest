@@ -13,6 +13,7 @@
 		08A99308A93F0EB88A9A8670 /* NearbyTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB99D117E7D6803EFED251B5 /* NearbyTransport.swift */; };
 		0A7E7803B3173B8465EFE099 /* WritingDeskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC6A0D20B0EC4622363C871 /* WritingDeskView.swift */; };
 		0E81F358CC16F3D2320D0374 /* MiniPython.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62378699E228FCA6CEF06347 /* MiniPython.swift */; };
+		0E9921FA3C533FCAC9E65DB0 /* HopWords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82B4CB9D31BF5A687ADE8DFF /* HopWords.swift */; };
 		11EF665A1F5710CDB6FAE405 /* RobotLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3420BBD32A6257D7AE2D9 /* RobotLabView.swift */; };
 		142F10E3E8E25114FA5AF463 /* Reading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4182F06AB75EDCEF2BBF8544 /* Reading.swift */; };
 		1638BAFD204DE55ADDE90B04 /* VillageCameraController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8196B1375485D677E525A9A /* VillageCameraController.swift */; };
@@ -23,6 +24,7 @@
 		1E891A3EB20AAF263B58D4DF /* VillageCollisionSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CA0B8EE2B88FCFFB18F954 /* VillageCollisionSystem.swift */; };
 		2013818BFB1183996FC2800F /* VillageLife.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752E5D07A32B7D9FC9DD58A4 /* VillageLife.swift */; };
 		203A663C82DF7258B66D944D /* WorldMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F597EBE12E5B311A5B5A3B9 /* WorldMapView.swift */; };
+		217CE7F322A6785CB473372A /* SpanishMore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C47A04C683CB4597AC6BF5 /* SpanishMore.swift */; };
 		21AFC1FA11AFB3B9BD94CE37 /* Sandbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28CEA127E6E519BD69B6B880 /* Sandbox.swift */; };
 		2254BDA8DE015F347B146531 /* VillageLifeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92FB99828E85C53693B07DBA /* VillageLifeViews.swift */; };
 		24DF04DCF91F8408B0581921 /* WidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CEA8F2DF9E58B8B0B3E677 /* WidgetShared.swift */; };
@@ -30,9 +32,11 @@
 		27AE6EEDA623B4AA262EFE28 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8A2FED0E8D4F635A650506 /* OnboardingView.swift */; };
 		2818EB4DFEC5874B9AC00E8C /* RobotCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4A290A8A504B077AA7D56 /* RobotCode.swift */; };
 		28A29FBF096ABF4FC2BFB81C /* VillagePlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DA08C6196EF48836FC45560 /* VillagePlayerController.swift */; };
+		2AB22F736399B63ACBFC83BD /* PlayExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91457A3B3EAC56447AA74067 /* PlayExtras.swift */; };
 		2C6FB62E5A936CBD36CBA0A5 /* Characters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA51850F9318BB399F1E238 /* Characters.swift */; };
 		2FF9790E1CF701B5B7101516 /* VillageMapData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CB3734C456F8952FC5C781E /* VillageMapData.swift */; };
 		30EB3272ADBD593791C015B5 /* CodeLabParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CAD7C3E1F9B677A982EB026 /* CodeLabParts.swift */; };
+		339BA1E6F5D375D42B903E3D /* HopWords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82B4CB9D31BF5A687ADE8DFF /* HopWords.swift */; };
 		33C26710F9CD8F71670F4522 /* DriveControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BCE2E3E2D83A6DE94E6785 /* DriveControls.swift */; };
 		3454FC848C8BAC836929DB78 /* Garden.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0DBB3E71B6AB33CB78C12D /* Garden.swift */; };
 		38870B53E0B7470D9DAF5445 /* GameProgram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6178F62B1552E5B68B4161 /* GameProgram.swift */; };
@@ -62,20 +66,24 @@
 		7344A4BBA1610EAC2C1996D4 /* VillageInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644319043B50B060BE05733A /* VillageInteraction.swift */; };
 		7642ABB97DE3E86BE374CCAF /* Chapters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C31E2D4F8EAFF9141F660EF /* Chapters.swift */; };
 		7764B9902E4A3495622F79F8 /* ReadingNookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AACCB8E7AC8BA8367725D7 /* ReadingNookView.swift */; };
+		778FE57AB0D4B7CEC2893C96 /* GrownUpExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A735C02EF8C849879F162B /* GrownUpExtras.swift */; };
 		7A9A13C97685BF862C4BCF07 /* BrainDuel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF0E2D70F40B9E9DED84C6B /* BrainDuel.swift */; };
 		7CF8619D4A24C7A56F67DA58 /* QuizPlace.swift in Sources */ = {isa = PBXBuildFile; fileRef = E028D6C84A4BE3F9F1505956 /* QuizPlace.swift */; };
 		7D41D2C64919092B3CD7D6DD /* VillageHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565994EC2FD5C910B6F3B734 /* VillageHUD.swift */; };
 		8205B1A3EBA55AA04E86DD40 /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E85BFB5305172676BF1E103 /* Sound.swift */; };
 		829FFE2A23AA261392B1DA9A /* KartScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3657EE32F570ADD13A3706E2 /* KartScene.swift */; };
 		8373F61AC1281982D79B381D /* Badges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674FB236523C2224627FC15C /* Badges.swift */; };
+		8402C08C2D9342420CC6C68C /* StarHopPlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7897A26A8390F64021A3684E /* StarHopPlayView.swift */; };
 		85A5F8F7B6B639CB8F839757 /* StoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CAF98AD780449FE270F029 /* StoryViews.swift */; };
 		8848609F12C658BA817958C6 /* VillageMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936D8694A678DCC5A8978548 /* VillageMap.swift */; };
+		8A68D3FE203F3A6E655EFE0E /* BreatheView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53233B33EC569279FE0BF8E8 /* BreatheView.swift */; };
 		8B43FAFD764EC31A88C2210A /* QuizPlaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407A4C94A23F4F01409F766C /* QuizPlaceView.swift */; };
 		8BAF26CC7B67ABD4FD1A72A4 /* ScienceLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6BED0EB1DC3C589F3DC3521 /* ScienceLab.swift */; };
 		90A9EDD2A5F7B2D483BFD4ED /* FortViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D27C732C95DF349FED1C6EC1 /* FortViews.swift */; };
 		910053B5DE30BCA5B93E851D /* MyCastleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DAA2D98DB8F26DCF9D2C1C /* MyCastleView.swift */; };
 		9218D937C9FED382EDA54736 /* HopQuestWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 693F61C8643B9C72F0D1101F /* HopQuestWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9396C8B78D2895C5015DFA79 /* Missions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C138849C35A0377782C6B30 /* Missions.swift */; };
+		967C01CAB145677F9F689364 /* MorePlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC11392AE7FD91FCB289866 /* MorePlaces.swift */; };
 		97E3551D399C3A360E371951 /* VillagePet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08B3F2502D0ABB3BA7D26A4 /* VillagePet.swift */; };
 		9AFCF83BEB9A586D79633D14 /* HopVillageScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028659983AE36A18EC5D6D44 /* HopVillageScene.swift */; };
 		9B6CC8B58551208705FDF858 /* KartViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF2197D62A438A0475238695 /* KartViews.swift */; };
@@ -83,12 +91,15 @@
 		A649B8DE822AF5EF000E9F50 /* BopViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CDBF8A7A8F3CB27B04687FA /* BopViews.swift */; };
 		A7FFB5D0B04B5349B8C7A974 /* CodeClubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98B68692A93ACAE2DCC95137 /* CodeClubView.swift */; };
 		A9091D6DA442891F6AFD78E2 /* StoryMakerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FBE99B975339E4D0F36D9DC /* StoryMakerView.swift */; };
+		AEA925BACF87AC6842EC4BD7 /* StarHopArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E81CD04C57EEA2641E9FAE /* StarHopArt.swift */; };
+		AF559E8F32EC13CC98EA0A9E /* HatViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD45760F4A6EB4D02DFAB90 /* HatViews.swift */; };
 		B0C1FDA2A9F1C04702F881F8 /* CodeWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C54FFE9D1A93EEDA684B1BD /* CodeWorkspaceView.swift */; };
 		B10D79E8B60F8F2942D2E25B /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 488EE05BAB7FA1F10A65ACDC /* Components.swift */; };
 		B1DB0039A0296F78296CB636 /* GardenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90CB5A796D8A34D932D2B0DD /* GardenView.swift */; };
 		B2375D0D433FC7C829CE1A34 /* Story.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A67B10B4F265BD6C4106121 /* Story.swift */; };
 		B65A5E0C16E334DE3261CCF1 /* ProgressViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33D5F6BAC1E4CE21BEEE01AB /* ProgressViews.swift */; };
 		B95DCEE2E4C33F29F339399A /* VillageNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934A7F932D15740087D8DF5E /* VillageNetwork.swift */; };
+		BDAC8C76E3D9648509F40A2E /* StarHopArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E81CD04C57EEA2641E9FAE /* StarHopArt.swift */; };
 		BE0BA6C4210C2144BB0CE0E6 /* MainMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC688492604823C143335E5 /* MainMenuView.swift */; };
 		C0A4F757D0040FDBBA8241F1 /* StoryMaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03EA1F3ABB4350EAAB72C44 /* StoryMaker.swift */; };
 		C267BA86CD6CF3E730611436 /* BadgesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001F2D2232D2BD19E0EB6C6D /* BadgesView.swift */; };
@@ -148,6 +159,7 @@
 /* Begin PBXFileReference section */
 		001F2D2232D2BD19E0EB6C6D /* BadgesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgesView.swift; sourceTree = "<group>"; };
 		01ABE82F171BCDED65327339 /* ScienceLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScienceLabView.swift; sourceTree = "<group>"; };
+		01C47A04C683CB4597AC6BF5 /* SpanishMore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpanishMore.swift; sourceTree = "<group>"; };
 		02005C613CE893F6BA4C165B /* BopScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BopScene.swift; sourceTree = "<group>"; };
 		02501DD7247A547FFC43FCAA /* WorldTour.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldTour.swift; sourceTree = "<group>"; };
 		028659983AE36A18EC5D6D44 /* HopVillageScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HopVillageScene.swift; sourceTree = "<group>"; };
@@ -189,6 +201,7 @@
 		4A67B10B4F265BD6C4106121 /* Story.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Story.swift; sourceTree = "<group>"; };
 		4BC6A0D20B0EC4622363C871 /* WritingDeskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WritingDeskView.swift; sourceTree = "<group>"; };
 		51F4A290A8A504B077AA7D56 /* RobotCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotCode.swift; sourceTree = "<group>"; };
+		53233B33EC569279FE0BF8E8 /* BreatheView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheView.swift; sourceTree = "<group>"; };
 		544A6803B72F887C2C1DE53A /* VillageSaveState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VillageSaveState.swift; sourceTree = "<group>"; };
 		548C5D2B9385D7E0E7FDB0FF /* QuickGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGame.swift; sourceTree = "<group>"; };
 		565994EC2FD5C910B6F3B734 /* VillageHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VillageHUD.swift; sourceTree = "<group>"; };
@@ -207,22 +220,27 @@
 		718B2A972D36E9FD8B913707 /* DriveArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveArt.swift; sourceTree = "<group>"; };
 		752E5D07A32B7D9FC9DD58A4 /* VillageLife.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VillageLife.swift; sourceTree = "<group>"; };
 		76BC8E861EBCDB7D7796E0E2 /* StickerBookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerBookView.swift; sourceTree = "<group>"; };
+		7897A26A8390F64021A3684E /* StarHopPlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarHopPlayView.swift; sourceTree = "<group>"; };
 		7BF0E2D70F40B9E9DED84C6B /* BrainDuel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainDuel.swift; sourceTree = "<group>"; };
 		7C138849C35A0377782C6B30 /* Missions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Missions.swift; sourceTree = "<group>"; };
 		7CDBF8A7A8F3CB27B04687FA /* BopViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BopViews.swift; sourceTree = "<group>"; };
 		7D6178F62B1552E5B68B4161 /* GameProgram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameProgram.swift; sourceTree = "<group>"; };
 		8033D57F8A2234E29096C641 /* ParentViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentViews.swift; sourceTree = "<group>"; };
 		80D28563B9AD8E85D4B6BDD6 /* ClockTowerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockTowerView.swift; sourceTree = "<group>"; };
+		82B4CB9D31BF5A687ADE8DFF /* HopWords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HopWords.swift; sourceTree = "<group>"; };
 		83DAA2D98DB8F26DCF9D2C1C /* MyCastleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyCastleView.swift; sourceTree = "<group>"; };
 		8B6F99D1E2FFC227B2A7A5FE /* MusicMakerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicMakerView.swift; sourceTree = "<group>"; };
 		8C70CCC117C477607F82B3A9 /* WorldData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldData.swift; sourceTree = "<group>"; };
 		90CB5A796D8A34D932D2B0DD /* GardenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GardenView.swift; sourceTree = "<group>"; };
+		91457A3B3EAC56447AA74067 /* PlayExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayExtras.swift; sourceTree = "<group>"; };
 		917B0AB26E0016FF177C8DBD /* VillageNPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VillageNPC.swift; sourceTree = "<group>"; };
 		92FB99828E85C53693B07DBA /* VillageLifeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VillageLifeViews.swift; sourceTree = "<group>"; };
 		934A7F932D15740087D8DF5E /* VillageNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VillageNetwork.swift; sourceTree = "<group>"; };
 		936D8694A678DCC5A8978548 /* VillageMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VillageMap.swift; sourceTree = "<group>"; };
+		95A735C02EF8C849879F162B /* GrownUpExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrownUpExtras.swift; sourceTree = "<group>"; };
 		97AF1071C49C7D06D3D059D4 /* QuickGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGameView.swift; sourceTree = "<group>"; };
 		98B68692A93ACAE2DCC95137 /* CodeClubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeClubView.swift; sourceTree = "<group>"; };
+		98E81CD04C57EEA2641E9FAE /* StarHopArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarHopArt.swift; sourceTree = "<group>"; };
 		9F597EBE12E5B311A5B5A3B9 /* WorldMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMapView.swift; sourceTree = "<group>"; };
 		AB99D117E7D6803EFED251B5 /* NearbyTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyTransport.swift; sourceTree = "<group>"; };
 		ACAC85817982A80E8C2DA36F /* Spanish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spanish.swift; sourceTree = "<group>"; };
@@ -255,8 +273,10 @@
 		F1AACCB8E7AC8BA8367725D7 /* ReadingNookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingNookView.swift; sourceTree = "<group>"; };
 		F242F6A25464AD85C1818D60 /* TeamViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamViews.swift; sourceTree = "<group>"; };
 		F972C722CD4127E78F0639A4 /* SpriteFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpriteFactory.swift; sourceTree = "<group>"; };
+		FAD45760F4A6EB4D02DFAB90 /* HatViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HatViews.swift; sourceTree = "<group>"; };
 		FB1045ABBFA04289CAC5E13F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FF8A2FED0E8D4F635A650506 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		FFC11392AE7FD91FCB289866 /* MorePlaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorePlaces.swift; sourceTree = "<group>"; };
 		FFFFD78D3FE71F3F7F4C1F3A /* CodingLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingLabView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -282,8 +302,10 @@
 				DAB664C300BF905FC45C79F5 /* MathMarket.swift */,
 				C231D9FADC0C2485A5C45182 /* Milestones.swift */,
 				7C138849C35A0377782C6B30 /* Missions.swift */,
+				FFC11392AE7FD91FCB289866 /* MorePlaces.swift */,
 				425522DF390B754DEAEA8749 /* Music.swift */,
 				35036821A79AB23ACE720578 /* Narrator.swift */,
+				91457A3B3EAC56447AA74067 /* PlayExtras.swift */,
 				34B2C9B9367118D8EE038E25 /* Profile.swift */,
 				D034F6293E366C1D7E898D3A /* Questions.swift */,
 				548C5D2B9385D7E0E7FDB0FF /* QuickGame.swift */,
@@ -293,6 +315,7 @@
 				D6BED0EB1DC3C589F3DC3521 /* ScienceLab.swift */,
 				1E85BFB5305172676BF1E103 /* Sound.swift */,
 				ACAC85817982A80E8C2DA36F /* Spanish.swift */,
+				01C47A04C683CB4597AC6BF5 /* SpanishMore.swift */,
 				4A67B10B4F265BD6C4106121 /* Story.swift */,
 				C03EA1F3ABB4350EAAB72C44 /* StoryMaker.swift */,
 				BFC4C0AE0A82A488E60B0E3D /* VillageBuilding.swift */,
@@ -417,6 +440,7 @@
 			children = (
 				001F2D2232D2BD19E0EB6C6D /* BadgesView.swift */,
 				7CDBF8A7A8F3CB27B04687FA /* BopViews.swift */,
+				53233B33EC569279FE0BF8E8 /* BreatheView.swift */,
 				80D28563B9AD8E85D4B6BDD6 /* ClockTowerView.swift */,
 				98B68692A93ACAE2DCC95137 /* CodeClubView.swift */,
 				488EE05BAB7FA1F10A65ACDC /* Components.swift */,
@@ -424,6 +448,8 @@
 				D27C732C95DF349FED1C6EC1 /* FortViews.swift */,
 				D56111BD117F429FD3E7F81F /* GameViews.swift */,
 				90CB5A796D8A34D932D2B0DD /* GardenView.swift */,
+				95A735C02EF8C849879F162B /* GrownUpExtras.swift */,
+				FAD45760F4A6EB4D02DFAB90 /* HatViews.swift */,
 				ECF26EE9BD2A970CAC48EB6A /* HopVillageView.swift */,
 				DF2197D62A438A0475238695 /* KartViews.swift */,
 				BEA970A364577FDE2868DA8E /* LearnParts.swift */,
@@ -442,6 +468,7 @@
 				F1AACCB8E7AC8BA8367725D7 /* ReadingNookView.swift */,
 				5FD3420BBD32A6257D7AE2D9 /* RobotLabView.swift */,
 				01ABE82F171BCDED65327339 /* ScienceLabView.swift */,
+				7897A26A8390F64021A3684E /* StarHopPlayView.swift */,
 				76BC8E861EBCDB7D7796E0E2 /* StickerBookView.swift */,
 				3FBE99B975339E4D0F36D9DC /* StoryMakerView.swift */,
 				16CAF98AD780449FE270F029 /* StoryViews.swift */,
@@ -462,6 +489,8 @@
 		CE59BE798E4A72DDAA759FD0 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				82B4CB9D31BF5A687ADE8DFF /* HopWords.swift */,
+				98E81CD04C57EEA2641E9FAE /* StarHopArt.swift */,
 				C4CEA8F2DF9E58B8B0B3E677 /* WidgetShared.swift */,
 			);
 			path = Shared;
@@ -567,6 +596,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				6F8ED0DDC815D0786F7F1ED5 /* HopQuestWidget.swift in Sources */,
+				339BA1E6F5D375D42B903E3D /* HopWords.swift in Sources */,
+				BDAC8C76E3D9648509F40A2E /* StarHopArt.swift in Sources */,
 				CF99A53124F238234A13971C /* WidgetShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -580,6 +611,7 @@
 				0002E3EC5F5190475FA2A43F /* BopScene.swift in Sources */,
 				A649B8DE822AF5EF000E9F50 /* BopViews.swift in Sources */,
 				7A9A13C97685BF862C4BCF07 /* BrainDuel.swift in Sources */,
+				8A68D3FE203F3A6E655EFE0E /* BreatheView.swift in Sources */,
 				7642ABB97DE3E86BE374CCAF /* Chapters.swift in Sources */,
 				2C6FB62E5A936CBD36CBA0A5 /* Characters.swift in Sources */,
 				6519CDB2356A8897117825A9 /* ClockTower.swift in Sources */,
@@ -604,11 +636,14 @@
 				4C22238CAD343C20D3A05801 /* GameViews.swift in Sources */,
 				3454FC848C8BAC836929DB78 /* Garden.swift in Sources */,
 				B1DB0039A0296F78296CB636 /* GardenView.swift in Sources */,
+				778FE57AB0D4B7CEC2893C96 /* GrownUpExtras.swift in Sources */,
+				AF559E8F32EC13CC98EA0A9E /* HatViews.swift in Sources */,
 				71832015F2E5A0ED46EC27D3 /* HopArt.swift in Sources */,
 				4E7E33BF1CF6048728285B32 /* HopQuestApp.swift in Sources */,
 				FC097554FEBFECCC8074DCD9 /* HopScene.swift in Sources */,
 				9AFCF83BEB9A586D79633D14 /* HopVillageScene.swift in Sources */,
 				CAEC4F5334D95EAC4B02773B /* HopVillageView.swift in Sources */,
+				0E9921FA3C533FCAC9E65DB0 /* HopWords.swift in Sources */,
 				829FFE2A23AA261392B1DA9A /* KartScene.swift in Sources */,
 				9B6CC8B58551208705FDF858 /* KartViews.swift in Sources */,
 				49FF821B5F459CA8DCDA589B /* LearnParts.swift in Sources */,
@@ -620,6 +655,7 @@
 				274DAFEA7BBB41BC2EB7274C /* Milestones.swift in Sources */,
 				0E81F358CC16F3D2320D0374 /* MiniPython.swift in Sources */,
 				9396C8B78D2895C5015DFA79 /* Missions.swift in Sources */,
+				967C01CAB145677F9F689364 /* MorePlaces.swift in Sources */,
 				02670B2C840F9C63FAF1D60E /* Motion.swift in Sources */,
 				CFE8628BCABBB5E8D2794C5D /* Music.swift in Sources */,
 				ED0F7341B8D7BA56186144DD /* MusicMakerView.swift in Sources */,
@@ -628,6 +664,7 @@
 				08A99308A93F0EB88A9A8670 /* NearbyTransport.swift in Sources */,
 				27AE6EEDA623B4AA262EFE28 /* OnboardingView.swift in Sources */,
 				1743B9B3B8D8F81DFCB595E0 /* ParentViews.swift in Sources */,
+				2AB22F736399B63ACBFC83BD /* PlayExtras.swift in Sources */,
 				5C1FEF1B5F64BD945E08DFB7 /* Profile.swift in Sources */,
 				B65A5E0C16E334DE3261CCF1 /* ProgressViews.swift in Sources */,
 				F319767639DCBFE115CAB4E4 /* Questions.swift in Sources */,
@@ -645,7 +682,10 @@
 				F40908FC633DC4849E96A753 /* ScienceLabView.swift in Sources */,
 				8205B1A3EBA55AA04E86DD40 /* Sound.swift in Sources */,
 				1C50827A5B37A58F129C94FE /* Spanish.swift in Sources */,
+				217CE7F322A6785CB473372A /* SpanishMore.swift in Sources */,
 				5134A9CE78E0406247A2BD4B /* SpriteFactory.swift in Sources */,
+				AEA925BACF87AC6842EC4BD7 /* StarHopArt.swift in Sources */,
+				8402C08C2D9342420CC6C68C /* StarHopPlayView.swift in Sources */,
 				38FD170F62C4719079E31C21 /* StickerBookView.swift in Sources */,
 				B2375D0D433FC7C829CE1A34 /* Story.swift in Sources */,
 				C0A4F757D0040FDBBA8241F1 /* StoryMaker.swift in Sources */,

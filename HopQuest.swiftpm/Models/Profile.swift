@@ -202,6 +202,11 @@ struct PlayerProfile: Codable, Equatable {
     var storyMaker = StoryMakerSave()
     /// Star Hop (the widget game): how many of its rating stars have already been added to this player's stars.
     var hopStarsClaimed = 0
+    /// The hat the buddy is wearing (v7.5), and the place Surprise Me picked last (v7.4).
+    var hat: HatKind = .none
+    var lastSurprise: String?
+    /// Minutes played each day for the last two weeks (v7.8), for the grown-ups' chart. Stays on this device.
+    var playHistory = PlayHistory()
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -210,7 +215,7 @@ struct PlayerProfile: Codable, Equatable {
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
         case village, codeLab, missions, reading, market, seenStories, science, music
-        case writing, clock, world, partner, milestones, quick, places, storyMaker, hopStarsClaimed
+        case writing, clock, world, partner, milestones, quick, places, storyMaker, hopStarsClaimed, hat, lastSurprise, playHistory
     }
 }
 
@@ -266,6 +271,9 @@ extension PlayerProfile {
         places = (try? c.decodeIfPresent([String: PlaceSave].self, forKey: .places)) ?? [:]
         storyMaker = (try? c.decodeIfPresent(StoryMakerSave.self, forKey: .storyMaker)) ?? StoryMakerSave()
         hopStarsClaimed = (try? c.decodeIfPresent(Int.self, forKey: .hopStarsClaimed)) ?? 0
+        hat = (try? c.decodeIfPresent(HatKind.self, forKey: .hat)) ?? .none
+        lastSurprise = (try? c.decodeIfPresent(String.self, forKey: .lastSurprise)) ?? nil
+        playHistory = (try? c.decodeIfPresent(PlayHistory.self, forKey: .playHistory)) ?? PlayHistory()
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -474,6 +482,7 @@ final class GameStore: ObservableObject {
             p.playedSeconds = 0
         }
         p.playedSeconds += seconds
+        p.playHistory.add(seconds, on: Date())
         profile = p
         return timeIsUp
     }

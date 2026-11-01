@@ -33,13 +33,21 @@ extension Font {
     /// HopQuest's rounded font. It grows with the iPhone's Text Size setting (up to a quarter bigger,
     /// so screens built for small phones still fit).
     static func kid(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font {
-        .system(size: KidType.scaled(size), weight: weight, design: .rounded)
+        if KidType.easyRead {
+            // very heavy letters fill in their holes (e, a, g); bold keeps them open
+            let w: Font.Weight = (weight == .black || weight == .heavy) ? .bold : weight
+            return .system(size: KidType.scaled(size) * 1.06, weight: w, design: .default)
+        }
+        return .system(size: KidType.scaled(size), weight: weight, design: .rounded)
     }
 }
 
 /// Text sizes that follow the iPhone's Text Size setting, capped so layouts keep fitting.
 enum KidType {
     static let maxGrowth: CGFloat = 1.25
+    /// Grown-ups' "Easy-read letters" (v7.7): plainer letter shapes, a little bigger, with more space between letters and lines.
+    static let easyReadKey = "hopquest.easyread"
+    static var easyRead: Bool { UserDefaults.standard.bool(forKey: easyReadKey) }
 
     static func scaled(_ size: CGFloat) -> CGFloat {
         let scaled = UIFontMetrics(forTextStyle: .body).scaledValue(for: size)

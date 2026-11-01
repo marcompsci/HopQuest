@@ -220,10 +220,119 @@ def icon_story():
     return s
 
 
+def T(x, y, text, size, fill="#FFFFFF"):
+    return (f'<text x="{x}" y="{y}" font-family="Arial Rounded MT Bold, Arial" font-weight="900" font-size="{size}" '
+            f'text-anchor="middle" fill="{fill}" stroke="{OUT}" stroke-width="2" paint-order="stroke">{text}</text>')
+
+
+def icon_rhyme():
+    s = ground()
+    # a frog singing two rhyming words
+    s += E(86, 136, 50, 36, "#5FC86A")
+    s += C(64, 102, 16, "#5FC86A") + C(108, 102, 16, "#5FC86A")
+    s += C(64, 100, 8, "#FFFFFF") + C(108, 100, 8, "#FFFFFF")
+    s += C(66, 101, 3.5, OUT, False) + C(110, 101, 3.5, OUT, False)
+    s += P("M70 140 Q86 154 102 140", "none", 4)
+    s += R(120, 34, 70, 34, 12, "#FFFFFF") + T(155, 59, "cat", 22, "#2E8B3E")
+    s += R(118, 76, 70, 34, 12, "#FFFFFF") + T(153, 101, "hat", 22, "#2E8B3E")
+    s += P("M30 44 L30 74 M30 44 L48 40 L48 68", "none", 4) + C(26, 76, 6, OUT, False) + C(44, 70, 6, OUT, False)
+    return s
+
+
+def icon_numbers():
+    s = ground()
+    # three rods of ten and four ones
+    for i in range(3):
+        x = 30 + i * 30
+        s += R(x, 40, 24, 130, 4, "#8E6BE0")
+        for k in range(1, 10):
+            s += P(f"M{x} {40 + k * 13} L{x + 24} {40 + k * 13}", "none", 2, op=0.5)
+    for i in range(4):
+        s += R(126 + (i % 2) * 26, 118 + (i // 2) * 26, 22, 22, 4, "#FF9F45")
+    s += star(160, 50, 11)
+    return s
+
+
+def icon_times():
+    s = ground()
+    # a treehouse with acorns in groups of three
+    s += R(88, 110, 24, 64, 4, "#9C6B3F")
+    s += C(100, 70, 58, "#5FBF5F")
+    s += R(66, 80, 68, 44, 6, "#C98B4B")
+    s += P("M60 82 L100 54 L140 82 Z", "#E5484D")
+    s += R(92, 96, 16, 28, 3, "#7A4B23")
+    for gx in (36, 164):
+        for k in range(3):
+            s += E(gx - 10 + k * 10, 150 - (k % 2) * 10, 6, 7, "#B5793D")
+    return s
+
+
+def icon_measure():
+    s = ground()
+    # a ruler and a ribbon
+    s += R(22, 120, 156, 34, 5, "#FFD93D")
+    for k in range(13):
+        h = 14 if k % 2 == 0 else 8
+        s += P(f"M{30 + k * 12} 120 L{30 + k * 12} {120 + h}", "none", 2.5)
+    s += P("M22 76 L162 76 L176 90 L162 104 L22 104 Z", "#3E7BFA")
+    s += P("M22 90 L150 90", "none", 2, op=0.35)
+    s += star(160, 40, 10)
+    return s
+
+
+def icon_feelings():
+    s = ground()
+    # a big heart with a happy face, and two small faces
+    s += P("M100 168 C40 120 30 80 58 62 C78 50 96 60 100 76 C104 60 122 50 142 62 C170 80 160 120 100 168 Z", "#FF6B9A")
+    s += C(84, 98, 5, OUT, False) + C(116, 98, 5, OUT, False)
+    s += P("M80 118 Q100 136 120 118", "none", 5)
+    s += C(34, 46, 16, "#FFD93D") + P("M27 50 Q34 56 41 50", "none", 3) + C(29, 42, 2.5, OUT, False) + C(39, 42, 2.5, OUT, False)
+    s += C(168, 44, 16, "#8FD3FF") + P("M161 52 Q168 46 175 52", "none", 3) + C(163, 41, 2.5, OUT, False) + C(173, 41, 2.5, OUT, False)
+    return s
+
+
+def icon_breathe():
+    s = ground()
+    # a balloon breathing in, with soft rings
+    s += C(100, 86, 62, "#BFE3FF", False, op=0.5)
+    s += C(100, 86, 46, "#8FD3FF")
+    s += shine(84, 68, 10, 14)
+    s += P("M100 132 L94 140 L106 140 Z", "#8FD3FF")
+    s += P("M100 140 Q90 156 104 172", "none", 3)
+    s += P("M36 150 Q50 140 64 150 M136 150 Q150 140 164 150", "none", 3, op=0.4)
+    return s
+
+
+def icon_starhop():
+    s = ground()
+    # a star over a puff cloud and a spring
+    s += P("M34 92 Q22 92 24 78 Q26 64 42 66 Q46 44 70 46 Q90 34 106 52 Q128 50 128 72 Q136 92 116 92 Z", "#FFFFFF")
+    s += C(66, 72, 3.5, OUT, False) + C(86, 72, 3.5, OUT, False)
+    s += E(58, 80, 5, 3, "#FF9DB3", False, op=0.8) + E(94, 80, 5, 3, "#FF9DB3", False, op=0.8)
+    s += P(star_path(140, 110, 34, 0.42), "#FFD93D", 4)
+    s += R(42, 150, 48, 12, 6, "#FF5A5F")
+    s += P("M50 162 L82 170 L50 176", "none", 3)
+    return s
+
+
+def icon_surprise():
+    s = ground()
+    # a gift box with a question mark
+    s += R(40, 92, 120, 80, 8, "#7C4DFF")
+    s += R(32, 74, 136, 26, 6, "#9B7BFF")
+    s += R(92, 74, 16, 98, 2, "#FFD93D")
+    s += P("M100 74 Q76 44 66 62 Q62 74 100 74 Q138 74 134 62 Q124 44 100 74 Z", "#FFD93D")
+    s += T(132, 150, "?", 40)
+    s += star(30, 40, 9) + star(170, 36, 8)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
-         "icon_spelling": icon_spelling, "icon_fractions": icon_fractions, "icon_shapes": icon_shapes, "icon_story": icon_story}
+         "icon_spelling": icon_spelling, "icon_fractions": icon_fractions, "icon_shapes": icon_shapes, "icon_story": icon_story,
+         "icon_rhyme": icon_rhyme, "icon_numbers": icon_numbers, "icon_times": icon_times, "icon_measure": icon_measure,
+         "icon_feelings": icon_feelings, "icon_breathe": icon_breathe, "icon_starhop": icon_starhop, "icon_surprise": icon_surprise}
 
 
 if __name__ == "__main__":

@@ -33,7 +33,7 @@ enum L10n {
 
     /// The Spanish for a whole line, or nil when part of it has no translation.
     static func spanish(_ s: String) -> String? {
-        if let hit = table[s] { return hit }
+        if let hit = table[s] ?? more[s] { return hit }
         for (re, template) in patterns {
             let range = NSRange(s.startIndex..., in: s)
             if re.firstMatch(in: s, range: range) != nil { return re.stringByReplacingMatches(in: s, range: range, withTemplate: template) }
@@ -58,7 +58,7 @@ enum L10n {
         return out.joined(separator: " ")
     }
 
-    static let patterns: [(NSRegularExpression, String)] = rawPatterns.compactMap { p in
+    static let patterns: [(NSRegularExpression, String)] = (moreRawPatterns + rawPatterns).compactMap { p in
         (try? NSRegularExpression(pattern: p.0)).map { ($0, p.1) }
     }
 

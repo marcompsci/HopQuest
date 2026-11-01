@@ -39,6 +39,9 @@ enum Badges {
         ("music", "Musician", "music.note", 0xB0459C), ("spelling", "Spelling Champ", "textformat.abc", 0xB7791F),
         ("fractions", "Fair Sharer", "chart.pie.fill", 0xC2185B), ("shapes", "Shape Spotter", "square.on.circle", 0x00796B),
         ("code", "Coder", "chevron.left.forwardslash.chevron.right", 0x3A2E6E),
+        ("rhyme", "Rhyme Star", "music.quarternote.3", 0x2E8B3E), ("numbers", "Number Builder", "square.stack.3d.up.fill", 0x6A3FB5),
+        ("times", "Group Counter", "circle.grid.2x2.fill", 0x8A5A2B), ("measure", "Measurer", "ruler.fill", 0x2F6F9F),
+        ("feelings", "Big Heart", "heart.fill", 0xC2185B),
     ]
 
     static let all: [Badge] = {
@@ -76,6 +79,11 @@ enum Badges {
         case "spelling": return "Spelling Bee"
         case "fractions": return "Fraction Bakery"
         case "shapes": return "Shape Studio"
+        case "rhyme": return "Rhyme Pond"
+        case "numbers": return "Number Builder"
+        case "times": return "Times Treehouse"
+        case "measure": return "Measure Meadow"
+        case "feelings": return "Feelings Corner"
         default: return "Code Club"
         }
     }

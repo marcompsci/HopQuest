@@ -792,7 +792,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 24, "24 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 29, "29 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -809,7 +809,7 @@ test("Badges: earned from real progress, never lost") {
 }
 
 test("Español: the interface table, patterns and the narrator never mixing languages") {
-    check(L10n.patterns.count == L10n.rawPatterns.count, "every pattern compiles")
+    check(L10n.patterns.count == L10n.rawPatterns.count + L10n.moreRawPatterns.count, "every pattern compiles")
     check(L10n.spanish("Play") == "Jugar" && L10n.spanish("Hi, Mar!") == "¡Hola, Mar!", "words and patterns")
     check(L10n.spanish("12 of 15 stars") == "12 de 15 estrellas" && L10n.spanish("You did it! 3 new stars!") == "¡Lo lograste! ¡3 estrellas nuevas!", "numbers")
     check(L10n.spanishSpeech("Not quite. Try another one!") == "Casi. ¡Prueba otra!", "a whole line")
@@ -818,16 +818,197 @@ test("Español: the interface table, patterns and the narrator never mixing lang
     check(L10n.table.values.allSatisfy { !$0.isEmpty } && L10n.table.count > 150, "a full table")
     let titles = WritingGame.allCases.map(\.title) + ClockGame.allCases.map(\.title) + WorldGame.allCases.map(\.title)
         + SpellingBank.games.map(\.title) + FractionBank.games.map(\.title) + ShapeBank.games.map(\.title)
+        + RhymeBank.games.map(\.title) + NumberBank.games.map(\.title) + TimesBank.games.map(\.title) + MeasureBank.games.map(\.title) + FeelingsBank.games.map(\.title)
+        + HatKind.allCases.map(\.title)
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
         + SpellingBank.games.map(\.intro) + FractionBank.games.map(\.intro) + ShapeBank.games.map(\.intro)
+        + RhymeBank.games.map(\.intro) + NumberBank.games.map(\.intro) + TimesBank.games.map(\.intro) + MeasureBank.games.map(\.intro) + FeelingsBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
+    check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
+    check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
     UserDefaults.standard.set(AppLanguage.english.rawValue, forKey: L10n.key)
     check(L10n.tr("Play") == "Play", "English stays English")
     UserDefaults.standard.set(AppLanguage.spanish.rawValue, forKey: L10n.key)
     check(L10n.tr("Play") == "Jugar" && L10n.tr("Not in the table") == "Not in the table", "Spanish, with English for anything missing")
     UserDefaults.standard.removeObject(forKey: L10n.key)
+}
+
+test("Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner: every game, 300 seeds, answers really right") {
+    let places: [(String, [QuizGameInfo], (String, inout SeededRNG) -> [QuizRound])] = [
+        ("rhyme", RhymeBank.games, { RhymeBank.rounds(for: $0, using: &$1) }),
+        ("numbers", NumberBank.games, { NumberBank.rounds(for: $0, using: &$1) }),
+        ("times", TimesBank.games, { TimesBank.rounds(for: $0, using: &$1) }),
+        ("measure", MeasureBank.games, { MeasureBank.rounds(for: $0, using: &$1) }),
+        ("feelings", FeelingsBank.games, { FeelingsBank.rounds(for: $0, using: &$1) }),
+    ]
+    // rhyme families really are separate: no word sits in two families, and words in a family share an ending sound
+    let allWords = RhymeBank.families.flatMap { $0.map(\.word) }
+    check(Set(allWords).count == allWords.count, "no word is in two rhyme families")
+    func family(_ w: String) -> Int? { RhymeBank.families.firstIndex { $0.contains { $0.word == w } } }
+    check(RhymeBank.finish.allSatisfy { family($0.end) != nil }, "every rhyme ending is in a family")
+    check(RhymeBank.finish.allSatisfy { f in f.start.lowercased().split(separator: " ").contains { family(String($0)) == family(f.end) } },
+          "every silly sentence has a word that rhymes with its ending")
+    check(Set(RhymeBank.finish.map { family($0.end) }).count == RhymeBank.finish.count, "sentence endings are all from different families")
+    for (place, games, make) in places {
+        check(games.count == 4 && Set(games.map(\.id)).count == 4, "\(place): four games")
+        for g in games {
+            for seed in 0..<300 {
+                var rng = SeededRNG(state: UInt64(seed))
+                let rounds = make(g.id, &rng)
+                check(rounds.count == 5, "\(place)/\(g.id): five rounds")
+                for r in rounds {
+                    check(r.choices.contains(r.answer) && Set(r.choices).count == r.choices.count && r.choices.count >= 2, "\(place)/\(g.id): choices hold the answer once (\(r.choices))")
+                    check(r.choiceVisuals.isEmpty || r.choiceVisuals.count == r.choices.count, "\(place)/\(g.id): one picture per choice")
+                    switch (place, g.id) {
+                    case ("rhyme", "rhyme"):
+                        let target = r.say.split(separator: " ").last!.dropLast()
+                        check(family(r.answer) == family(String(target)) && r.answer != String(target), "rhyme: \(r.answer) rhymes with \(target)")
+                        check(r.choices.filter { family($0) == family(String(target)) }.count == 1, "rhyme: only one choice rhymes")
+                    case ("rhyme", "oddOne"):
+                        let others = r.choices.filter { $0 != r.answer }
+                        check(family(others[0]) == family(others[1]) && family(r.answer) != family(others[0]), "oddOne: \(r.answer) is the odd one")
+                    case ("rhyme", "beats"):
+                        let w = RhymeBank.beats.first { r.say.hasPrefix($0.word.capitalized + ".") }
+                        check(w != nil && r.answer == "\(w!.beats)", "beats: \(r.say) → \(r.answer)")
+                    case ("rhyme", "finish"):
+                        check(r.choices.filter { c in RhymeBank.finish.contains { r.say.hasPrefix($0.start) && family($0.end) == family(c) } }.count == 1, "finish: only one ending rhymes")
+                    case ("numbers", "count"):
+                        if case .blocks(let t, let o) = r.visual { check(r.answer == "\(t * 10 + o)" && o > 0 && o < 10, "count: blocks show \(r.answer)") } else { check(false, "count shows blocks") }
+                    case ("numbers", "tens"):
+                        if case .text(let v) = r.visual, let n = Int(v) {
+                            check(r.answer == (r.say.contains("tens") ? "\(n / 10)" : "\(n % 10)"), "tens: \(r.say) → \(r.answer)")
+                        }
+                    case ("numbers", "build"):
+                        if case .text(let v) = r.visual, let n = Int(v) {
+                            let ok = r.choiceVisuals.enumerated().filter { _, cv in if case .blocks(let t, let o) = cv { return t * 10 + o == n && o < 10 } else { return false } }
+                            check(ok.count == 1 && r.choices[ok[0].offset] == r.answer, "build: exactly one picture makes \(n)")
+                        }
+                    case ("numbers", "bigger"):
+                        check(Int(r.answer)! == r.choices.compactMap(Int.init).max()! && Set(r.choices).count == 2, "bigger: \(r.answer) is the bigger one")
+                        for (c, cv) in zip(r.choices, r.choiceVisuals) { if case .blocks(let t, let o) = cv { check("\(t * 10 + o)" == c, "bigger: pictures match their numbers") } }
+                    case ("times", "groups"), ("times", "arrays"):
+                        if case .groups(let c, let e, _, let rows) = r.visual { check(r.answer == "\(c * e)" && rows == (g.id == "arrays"), "\(g.id): \(c) × \(e) = \(r.answer)") }
+                    case ("times", "skip"):
+                        if case .text(let t) = r.visual {
+                            let nums = t.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+                            check(nums.count == 3 && Int(r.answer)! - nums[2] == nums[1] - nums[0], "skip: \(t) → \(r.answer)")
+                        }
+                    case ("times", "match"):
+                        let ok = r.choiceVisuals.enumerated().filter { _, cv in
+                            if case .groups(let c, let e, _, _) = cv { return r.say.contains("\(c) groups of \(e)?") } else { return false }
+                        }
+                        check(ok.count == 1 && r.choices[ok[0].offset] == r.answer, "match: exactly one picture is \(r.say)")
+                    case ("measure", "longer"):
+                        let lens = r.choiceVisuals.compactMap { cv -> Int? in if case .bar(let n, _, _) = cv { return n } else { return nil } }
+                        let target = r.say.contains("longest") ? lens.max()! : lens.min()!
+                        check(Set(lens).count == lens.count && r.choices[lens.firstIndex(of: target)!] == r.answer, "longer: the right ribbon")
+                    case ("measure", "units"):
+                        if case .bar(let n, _, let units) = r.visual { check(units && r.answer == "\(n)", "units: \(n) blocks") }
+                    case ("measure", "heavy"):
+                        let pair = MeasureBank.heavy.first { r.choices.contains($0.bigName) && r.choices.contains($0.smallName) }
+                        check(pair != nil && r.answer == (r.say.contains("heavier") ? pair!.bigName : pair!.smallName), "heavy: \(r.say) → \(r.answer)")
+                    case ("measure", "tools"):
+                        check(MeasureBank.tools.contains { r.say.contains($0.ask) && $0.tool == r.answer }, "tools: \(r.answer)")
+                    case ("feelings", "faces"):
+                        if case .picture(let f) = r.visual { check(FeelingsBank.faces.first { $0.face == f }?.feeling == r.answer, "faces: \(f) is \(r.answer)") }
+                    case ("feelings", "stories"):
+                        let st = FeelingsBank.stories.first { r.say.hasPrefix($0.text) }!
+                        check(r.answer == st.answer && r.choices.filter { st.fits.contains($0) }.count == 1, "stories: only one choice fits \(st.text)")
+                    case ("feelings", "helps"):
+                        check(FeelingsBank.helps.contains { $0.good == r.answer }, "helps: the helpful choice")
+                    default:
+                        check(FeelingsBank.kind.contains { $0.kind == r.answer }, "kind: the kind words")
+                    }
+                }
+            }
+        }
+    }
+    check(QuizVisual.blocks(tens: 3, ones: 1).spoken == "3 tens and 1 one" && QuizVisual.groups(count: 2, each: 4, item: "🍎", rows: false).spoken == "2 groups of 4",
+          "pictures are described for VoiceOver")
+}
+
+test("Breathe with Buddy, Surprise Me and buddy hats") {
+    let b = BreathPlan()
+    check(b.total == 55 && b.breathLength == 11, "five slow breaths, 11 seconds each (in 4, hold 2, out 5)")
+    check(b.state(at: 0).step == .breatheIn && b.state(at: 0).size == 0, "starts empty, breathing in")
+    check(b.state(at: 4.5).step == .hold && b.state(at: 4.5).size == 1, "full while holding")
+    check(b.state(at: 8.5).step == .breatheOut && abs(b.state(at: 8.5).size - 0.5) < 0.01, "halfway out, half full")
+    check(b.state(at: 11.2).breath == 2 && b.state(at: 11.2).step == .breatheIn, "then the next breath")
+    check(b.state(at: 60).step == .done && b.state(at: -3).step == .breatheIn, "done at the end, safe before the start")
+    var last = -1.0, smooth = true
+    for i in 0..<550 { let s = b.state(at: Double(i) / 10).size; if last >= 0 && abs(s - last) > 0.08 { smooth = false }; last = s }
+    check(smooth, "the balloon never jumps in size")
+
+    var rng = SeededRNG(state: 7)
+    let areas: [(id: String, bests: [Int])] = [("reading", [3, 3, 3]), ("rhyme", [0, 0, 0, 0]), ("clock", [2, 1, 3])]
+    var seen: [String: Int] = [:]
+    for _ in 0..<600 { if let p = SurpriseMe.pick(areas: areas, last: nil, using: &rng) { seen[p, default: 0] += 1 } }
+    check(seen["reading"] == nil && seen["rhyme"] != nil && seen["clock"] != nil, "only places with something left: \(seen)")
+    check((seen["rhyme"] ?? 0) > (seen["clock"] ?? 0), "places not started come up more often")
+    for _ in 0..<100 { check(SurpriseMe.pick(areas: areas, last: "rhyme", using: &rng) == "clock", "never the same place twice in a row") }
+    check(SurpriseMe.pick(areas: [("rhyme", [0])], last: "rhyme", using: &rng) == "rhyme", "unless it's the only one left")
+    check(SurpriseMe.pick(areas: [("reading", [2, 3])], last: nil, using: &rng) == nil, "nothing when everything is finished")
+
+    check(HatKind.allCases.filter { $0.unlocked(badges: 0) } == [.none, .party], "a hat from the start")
+    check(HatKind.allCases.allSatisfy { $0.badgesNeeded <= Badges.all.count }, "every hat can be unlocked")
+    check(HatKind.next(badges: 3)! == (.flower, 1) && HatKind.next(badges: 99) == nil, "the next hat and how far away")
+    check(zip(HatKind.allCases, HatKind.allCases.dropFirst()).allSatisfy { $0.badgesNeeded <= $1.badgesNeeded }, "hats in unlock order")
+}
+
+test("Play this week: minutes per day, two weeks kept") {
+    var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "UTC")!
+    let day0 = Date(timeIntervalSince1970: 1_790_000_000)
+    var h = PlayHistory()
+    h.add(600, on: day0, calendar: cal); h.add(50, on: day0, calendar: cal)
+    h.add(20 * 60, on: cal.date(byAdding: .day, value: -2, to: day0)!, calendar: cal)
+    let w = h.week(endingOn: day0, calendar: cal)
+    check(w.count == 7 && w.last!.minutes == 11 && w[4].minutes == 20 && w[0].minutes == 0, "today, two days ago, and empty days: \(w.map(\.minutes))")
+    check(h.weekTotal(endingOn: day0, calendar: cal) == 31, "week total")
+    check(cal.isDate(w.last!.day, inSameDayAs: day0) && w.first!.day < w.last!.day, "oldest first, ending today")
+    for back in 1...20 { h.add(60, on: cal.date(byAdding: .day, value: back, to: day0)!, calendar: cal) }
+    check(h.days.count <= PlayHistory.keep, "only two weeks kept (\(h.days.count) days)")
+    h.add(0, on: day0, calendar: cal); h.add(-5, on: day0, calendar: cal)
+    check(h.days.values.allSatisfy { $0 > 0 }, "nothing negative")
+    let back = try! JSONDecoder().decode(PlayHistory.self, from: try! JSONEncoder().encode(h))
+    check(back == h, "round trip")
+}
+
+test("Widgets in Spanish: every Star Hop message, level and button") {
+    check(StarHop.levels.allSatisfy { HopWords.tr($0.title, true) != $0.title && HopWords.tr($0.tip, true) != $0.tip }, "every level title and tip")
+    check(HopWords.tr("Jump!", false) == "Jump!", "English stays English")
+    var messages: Set<String> = []
+    for seed in 0..<30 {
+        for lv in 1...StarHop.levels.count {
+            var g = StarHop(); g.plays = seed; g.turn = seed; g.startLevel(lv)
+            messages.insert(g.message)
+            var x = UInt64(seed * 31 + lv)
+            for _ in 0..<120 {
+                x = x &* 6364136223846793005 &+ 1442695040888963407
+                if g.outOfHearts { g.retry() } else if g.levelDone { g.nextLevel() }
+                if (x >> 33) % 2 == 0 { g.right() } else { g.left() }
+                messages.insert(g.message)
+            }
+        }
+    }
+    var g = StarHop(); g.newGame(); messages.insert(g.message)
+    let missed = messages.filter { !$0.isEmpty && HopWords.tr($0, true) == $0 }
+    check(missed.isEmpty, "every message has Spanish (\(messages.count) seen), missing: \(missed.sorted().prefix(8))")
+    check(HopWords.tr("Next: Breezy Beach", true) == "Siguiente: Playa Ventosa", "level names inside a line")
+    check(HopWords.tr("2 + 3 = 5! ✓", true) == "¡2 + 3 = 5! ✓" && HopWords.tr("That's 4. Find 1 first!", true) == "Ese es 4. ¡Primero busca 1!", "messages with numbers")
+    for w in ["Practising", "Up next", "Got it", "Step", "Jump", "Double jump", "Next level", "Try again", "Play again", "Out of hearts!",
+              "✓ Finished", "✓ No bumps", "· No bumps", "✓ Quick feet", "· Quick feet", "Next", "Hi, Sam!", "Level 2 done!", "You beat all 12 levels! 🏆",
+              "30 of 36 stars", "Best on this level: 14 moves"] {
+        check(HopWords.tr(w, true) != w, "widget word: \(w)")
+    }
+    var snap = WidgetSnapshot.placeholder
+    check(snap.spanish == nil, "old snapshots have no language")
+    snap.spanish = true
+    let back = try! JSONDecoder().decode(WidgetSnapshot.self, from: try! JSONEncoder().encode(snap))
+    check(back.spanish == true, "the language travels to the widget")
+    let old = #"{"name":"A","buddyName":"B","buddyEmoji":"x","buddyID":"pip","stars":1,"lifetimeStars":1,"lessonTitle":"L","skill":"s","skillState":"Up next","skillsLearned":0,"skillsTotal":1,"quickBest":0}"#
+    check((try? JSONDecoder().decode(WidgetSnapshot.self, from: Data(old.utf8)))?.name == "A", "a snapshot from before still loads")
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

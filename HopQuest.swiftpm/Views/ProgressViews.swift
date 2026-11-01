@@ -36,6 +36,11 @@ extension GameStore {
             LearningArea(id: "spelling", title: "Spelling Bee", skills: SpellingBank.games.map { SkillProgress(skill: $0.skill, best: p.places["spelling"]?.best($0.id) ?? 0) }),
             LearningArea(id: "fractions", title: "Fraction Bakery", skills: FractionBank.games.map { SkillProgress(skill: $0.skill, best: p.places["fractions"]?.best($0.id) ?? 0) }),
             LearningArea(id: "shapes", title: "Shape Studio", skills: ShapeBank.games.map { SkillProgress(skill: $0.skill, best: p.places["shapes"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "rhyme", title: "Rhyme Pond", skills: RhymeBank.games.map { SkillProgress(skill: $0.skill, best: p.places["rhyme"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "numbers", title: "Number Builder", skills: NumberBank.games.map { SkillProgress(skill: $0.skill, best: p.places["numbers"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "times", title: "Times Treehouse", skills: TimesBank.games.map { SkillProgress(skill: $0.skill, best: p.places["times"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "measure", title: "Measure Meadow", skills: MeasureBank.games.map { SkillProgress(skill: $0.skill, best: p.places["measure"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "feelings", title: "Feelings Corner", skills: FeelingsBank.games.map { SkillProgress(skill: $0.skill, best: p.places["feelings"]?.best($0.id) ?? 0) }),
             LearningArea(id: "code", title: "Code Club", skills: CodeChallenge.all.map { SkillProgress(skill: "coding: \($0.topic.lowercased())", best: p.codeBest[$0.id] ?? 0) }),
         ]
     }
@@ -68,10 +73,12 @@ extension GameStore {
         let fresh = areas.lazy.compactMap { a in a.skills.first { $0.status == .notStarted }.map { (a.title, $0.skill, "Up next") } }.first
         let learned = areas.lazy.compactMap { a in a.learned.last.map { (a.title, $0.skill, "Got it") } }.first
         let pick = practising ?? fresh ?? learned ?? ("Hop Village", "exploring", "Up next")
+        let es = L10n.isSpanish
+        // in Spanish, the lesson name is translated; a skill with no translation is left off rather than shown in English
         return WidgetSnapshot(name: p.name, buddyName: c.name, buddyEmoji: c.emoji, buddyID: c.id, stars: p.stars, lifetimeStars: p.lifetimeStars,
-                              lessonTitle: pick.0, skill: pick.1, skillState: pick.2,
+                              lessonTitle: es ? L10n.tr(pick.0) : pick.0, skill: es ? (L10n.spanish(pick.1) ?? "") : pick.1, skillState: pick.2,
                               skillsLearned: areas.reduce(0) { $0 + $1.learned.count }, skillsTotal: areas.reduce(0) { $0 + $1.skills.count },
-                              quickBest: p.quick.best)
+                              quickBest: p.quick.best, spanish: es)
     }
 
     func publishWidget() {
@@ -111,6 +118,8 @@ struct ProgressPageView: View {
             } footer: {
                 Text("\"Practising\" means a game was played but earned 1 star. Playing it together is the best way to help.")
             }
+            PlayWeekSection()
+            CertificatesSection()
             ForEach(areas) { a in
                 Section {
                     ForEach(Array(a.skills.enumerated()), id: \.offset) { _, s in

@@ -310,7 +310,7 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - A sixth world after the Rainbow Bridge: Kelp Forest, Turtle Reef, Coral Castle, with bubble rafts to hop on. The story now ends at the Coral Castle.
 
 ### v6.3: Badges
-- 23 badges (24 from v6.6) for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
+- 23 badges (24 from v6.6, 29 from v7.2) for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
 
 ### v6.4: Code Club with VoiceOver
 - The puzzle board is described from the robot ("The star is 3 squares up and 2 to the right. A rock is just ahead."), so robot puzzles can be solved without seeing them.
@@ -332,6 +332,34 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - **Star ratings**: 1 star for finishing, +1 for no bumps, +1 for quick feet (at most a set number of moves; levels where order matters get more room). The large widget's level picker shows each level's stars.
 - **Stars in the app**: every rating star earned on the widget is added once to the player's stars (up to 36) the next time the menu opens, with a "You earned 3 stars in Star Hop!" note. A new player made later doesn't collect stars someone else already earned.
 - Older Star Hop saves keep their level, bests and levels reached; levels finished before ratings count as one star. The Star Hopper badge now means all 12 levels.
+
+### v6.8–v7.2: Five more learning places
+All on the shared quiz engine, four games each, tested on 300 seeds per game with the answers checked (not just "the answer is among the choices"):
+- **Rhyme Pond** (Fizz Frog): find the rhyme, odd one out, clap the syllables, finish a silly rhyme. Reading Nook already had one rhyming game; Rhyme Pond goes further. Rhyme families are kept apart so only one choice ever rhymes.
+- **Number Builder** (Ocho Octopus): count tens rods and ones, tens and ones in a number, pick the blocks that make a number (the swapped-digits picture is the trap), bigger number.
+- **Times Treehouse** (Iron Acorn): equal groups, skip counting by 2s, 3s, 5s and 10s, arrays, and reading "3 groups of 4" (the swapped picture is the trap).
+- **Measure Meadow** (Ellie Elephant): longest/shortest ribbon (lined up from the same edge), measuring with blocks, heavier/lighter, picking the right measuring tool.
+- **Feelings Corner** (Kip Koala): name the feeling, how someone in a little story might feel (every feeling that fairly fits is kept out of the wrong choices), what could help with a big feeling, and kind words.
+- New pictures: base-ten blocks, equal groups and arrays, and ribbons with block marks, all described for VoiceOver.
+
+### v7.3: Breathe with Buddy
+- A calm break: the balloon (with the buddy on it) grows for 4 seconds, holds for 2, shrinks for 5, five times. Spoken cues. With Reduce Motion the balloon stays the same size and fills and empties instead. No stars and no timer to beat.
+
+### v7.4: Star Hop in the app, and Surprise Me
+- Star Hop plays full screen in the app with the same save as the widget (so a game carries over both ways), with spoken goals for pre-readers, a level picker and VoiceOver descriptions of where each star and cloud is.
+- **Surprise me!** under the Play card opens a learning place with a game not finished yet, weighted toward places not started, never the same place twice in a row.
+
+### v7.5: Buddy hats
+- Eight hats drawn in SwiftUI (party hat, cap, flower crown, beanie, crown, wizard hat, top hat, space helmet), unlocked by badge count (0 to 20). The hat shelf is on the Badges screen; the buddy wears it on the menu. Purely for fun: no gameplay effect.
+
+### v7.6–v7.7: Lock Screen widgets, Spanish widgets, easy-read letters
+- My Buddy also comes in Lock Screen sizes: a star ring that fills as skills are learned, a rectangle with stars and the next lesson, and a one-line version.
+- The widgets follow the app's language. Their words live in `Shared/HopWords.swift`; a test plays thousands of Star Hop moves and checks every message has Spanish.
+- **Easy-read letters** (grown-ups' settings): plainer, slightly bigger letters, never extra-heavy, with more space between letters and lines, across the whole app.
+
+### v7.8–v7.9: Play this week and certificates (grown-ups)
+- The Progress page shows a bar chart of minutes played each day this week (counted only while the app is open; two weeks kept on the device).
+- A certificate for each place where every game has 2+ stars: name, place, skills, date, buddy, and a line for a grown-up to sign. Print or share behind the parental gate; nothing leaves the device otherwise.
 
 ## 7. Next engineering steps
 

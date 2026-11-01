@@ -40,7 +40,10 @@ Behind the parental gate, a grown-up can turn on **milestone notes**. When the c
 The note contains the child's first name or nickname, the milestone, the skills practised, and the number of stars. The phone number a grown-up may type is kept only on the device and is used only to fill in the "To:" line. HopQuest never sends anything itself, and nothing is ever sent to us.
 
 ## Home-screen widgets
-HopQuest's widgets show the child's buddy, stars and what to play next, and a small tap-to-play game. They read a summary that the app saves in a shared area on the same device (an "App Group"). Widgets never use the internet and nothing is sent anywhere.
+HopQuest's widgets show the child's buddy, stars and what to play next, and a small tap-to-play game. They read a summary that the app saves in a shared area on the same device (an "App Group"). Widgets never use the internet and nothing is sent anywhere. The same widgets can go on the Lock Screen, where anyone holding the phone can see the stars and the next lesson; grown-ups can leave them off.
+
+## Play time chart and certificates
+The grown-ups' Progress page shows minutes played each day this week. HopQuest keeps the last two weeks of daily minutes on the device, inside the player's save, and never sends them anywhere. Certificates are made on the device; a picture of one only leaves the device if a grown-up chooses Print or Share behind the parental gate.
 
 ## Coding Lab
 Web pages kids build in the Coding Lab are shown inside the app only. The preview can't load anything from the internet and can't open links. Nothing kids make is shared with anyone.

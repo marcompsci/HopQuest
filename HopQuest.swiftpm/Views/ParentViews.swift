@@ -70,6 +70,7 @@ struct ParentSettingsView: View {
     @EnvironmentObject var store: GameStore
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Handedness.key) private var leftHanded = false
+    @AppStorage(KidType.easyReadKey) private var easyRead = false
     @State private var confirmReset = false
     @State private var soundTick = false
     @State private var confirmStartOver = false
@@ -168,10 +169,11 @@ struct ParentSettingsView: View {
 
             Section {
                 Toggle("Left-handed controls", isOn: $leftHanded)
+                Toggle("Easy-read letters", isOn: $easyRead)
             } header: {
-                Text("Controls")
+                Text("Controls and reading")
             } footer: {
-                Text("Puts the joystick and arrows on the right and the action buttons on the left, in Hop Village and Pillow Bop. Text in HopQuest also grows with the iPhone's Text Size setting, and Reduce Motion calms the animations.")
+                Text("Left-handed controls put the joystick and arrows on the right and the action buttons on the left, in Hop Village and Pillow Bop. Easy-read letters use plainer, slightly bigger letters with more space between them, which many early and struggling readers (including kids with dyslexia) find easier. Text in HopQuest also grows with the iPhone's Text Size setting, and Reduce Motion calms the animations.")
             }
 
             Section("Play time") {

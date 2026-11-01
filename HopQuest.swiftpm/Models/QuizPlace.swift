@@ -1,6 +1,7 @@
 import Foundation
 
-// A shared engine for the newer learning places (v5.8+): Spelling Bee, Fraction Bakery and Shape Studio.
+// A shared engine for the newer learning places (v5.8+): Spelling Bee, Fraction Bakery and Shape Studio,
+// and from v6.8 Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow and Feelings Corner (Models/MorePlaces.swift).
 // Each place supplies games that build rounds; one screen plays them all. Plain Swift, tested in Tests/Learn.
 
 /// 2D and 3D shapes, drawn by the app.
@@ -36,6 +37,25 @@ enum QuizVisual: Equatable {
     case shapes([ShapeKind])
     /// A row of shapes ending in a "?" box.
     case pattern([ShapeKind])
+    /// Base-ten blocks: rods of ten and single cubes (v6.9).
+    case blocks(tens: Int, ones: Int)
+    /// Equal groups of a thing, in circles, or as an array of rows (v7.0).
+    case groups(count: Int, each: Int, item: String, rows: Bool)
+    /// A ribbon `length` blocks long in a named color, with the block marks shown when `units` is on (v7.1).
+    case bar(length: Int, color: String, units: Bool)
+}
+
+extension QuizVisual {
+    /// What VoiceOver says for pictures that aren't just words or emoji.
+    var spoken: String? {
+        switch self {
+        case .blocks(let t, let o): return "\(t) \(t == 1 ? "ten" : "tens") and \(o) \(o == 1 ? "one" : "ones")"
+        case .groups(let c, let e, _, let rows): return rows ? "\(c) rows of \(e)" : "\(c) groups of \(e)"
+        case .bar(let n, let color, let units): return units ? "a \(color) ribbon over \(n) blocks" : "\(color) ribbon, \(n) blocks long"
+        case .fraction(let p, let s, _): return "\(s) of \(p) parts colored"
+        default: return nil
+        }
+    }
 }
 
 struct QuizRound: Equatable {

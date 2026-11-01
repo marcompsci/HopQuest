@@ -57,6 +57,8 @@ struct WidgetSnapshot: Codable, Equatable {
     var skillsLearned: Int
     var skillsTotal: Int
     var quickBest: Int
+    /// The app is in Spanish (v8.1). Optional so snapshots from before still load.
+    var spanish: Bool? = nil
 
     static let placeholder = WidgetSnapshot(name: "Explorer", buddyName: "Pip Penguin", buddyEmoji: "🐧", buddyID: "pip", stars: 0, lifetimeStars: 0,
                                             lessonTitle: "Reading Nook", skill: "beginning letter sounds", skillState: "Up next",
