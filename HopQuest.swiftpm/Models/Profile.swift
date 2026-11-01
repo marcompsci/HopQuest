@@ -147,6 +147,9 @@ struct PlayerProfile: Codable, Equatable {
     var fortBest: [Int: Int] = [:]
     /// Builder's Island (Fort Friends free build): the pieces the child built, as "x,y,kind".
     var fortSandbox: [String] = []
+    /// Builder's Island 2: islands two and three, and which island is open (0, 1 or 2).
+    var fortMoreIslands: [[String]] = [[], []]
+    var fortIsland: Int = 0
     /// Best stars per Code Club puzzle.
     var codeBest: [Int: Int] = [:]
     /// Brain Gate questions answered, and answered on the first try, by subject.
@@ -183,17 +186,21 @@ struct PlayerProfile: Codable, Equatable {
     var writing = WritingSave()
     /// Clock Tower: best stars per clock game.
     var clock = ClockSave()
+    /// Around the World: best stars per game, and postcards from each continent.
+    var world = WorldTourSave()
     /// Story cutscenes already watched (they then live in the Story Book).
     var seenStories: Set<String> = []
+    /// Together mode: a grown-up, a brother or sister, or a friend.
+    var partner: PartnerKind = .grownUp
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
-        case stickers, packsOpened, lifetimeStars, bopBest, fortBest, fortSandbox
+        case stickers, packsOpened, lifetimeStars, bopBest, fortBest, fortSandbox, fortMoreIslands, fortIsland
         case codeBest, brainAnswered, brainFirstTry
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
         case village, codeLab, missions, reading, market, seenStories, science, music
-        case writing, clock
+        case writing, clock, world, partner
     }
 }
 
@@ -217,6 +224,9 @@ extension PlayerProfile {
         bopBest = try c.decodeIfPresent(Int.self, forKey: .bopBest) ?? 0
         fortBest = try c.decodeIfPresent([Int: Int].self, forKey: .fortBest) ?? [:]
         fortSandbox = (try? c.decodeIfPresent([String].self, forKey: .fortSandbox)) ?? []
+        let more = (try? c.decodeIfPresent([[String]].self, forKey: .fortMoreIslands)) ?? []
+        fortMoreIslands = Array((more + [[], []]).prefix(2))
+        fortIsland = min(2, max(0, (try? c.decodeIfPresent(Int.self, forKey: .fortIsland)) ?? 0))
         codeBest = try c.decodeIfPresent([Int: Int].self, forKey: .codeBest) ?? [:]
         brainAnswered = try c.decodeIfPresent([String: Int].self, forKey: .brainAnswered) ?? [:]
         brainFirstTry = try c.decodeIfPresent([String: Int].self, forKey: .brainFirstTry) ?? [:]
@@ -239,6 +249,8 @@ extension PlayerProfile {
         music = (try? c.decodeIfPresent(MusicSave.self, forKey: .music)) ?? MusicSave()
         writing = (try? c.decodeIfPresent(WritingSave.self, forKey: .writing)) ?? WritingSave()
         clock = (try? c.decodeIfPresent(ClockSave.self, forKey: .clock)) ?? ClockSave()
+        world = (try? c.decodeIfPresent(WorldTourSave.self, forKey: .world)) ?? WorldTourSave()
+        partner = (try? c.decodeIfPresent(PartnerKind.self, forKey: .partner)) ?? .grownUp
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -246,6 +258,48 @@ extension PlayerProfile {
 }
 
 enum ChapterState { case locked, open, done }
+
+/// Together mode: who is playing with the child. Changes only the words on screen (no names are typed).
+enum PartnerKind: String, Codable, CaseIterable, Identifiable {
+    case grownUp, sibling, friend
+    var id: String { rawValue }
+
+    /// On buttons and the player card.
+    var label: String {
+        switch self {
+        case .grownUp: return "Grown-up"
+        case .sibling: return "Brother or sister"
+        case .friend: return "Friend"
+        }
+    }
+
+    /// In a sentence: "the grown-up builds".
+    var the: String {
+        switch self {
+        case .grownUp: return "the grown-up"
+        case .sibling: return "your brother or sister"
+        case .friend: return "your friend"
+        }
+    }
+
+    /// At the start of a sentence: "The grown-up builds".
+    var The: String {
+        switch self {
+        case .grownUp: return "The grown-up"
+        case .sibling: return "Your brother or sister"
+        case .friend: return "Your friend"
+        }
+    }
+
+    /// Short name on the screen-half labels.
+    var short: String {
+        switch self {
+        case .grownUp: return "Grown-up"
+        case .sibling: return "Sibling"
+        case .friend: return "Friend"
+        }
+    }
+}
 
 /// Everything is saved on this device only (UserDefaults). No accounts, no network, no analytics.
 /// Only touched from the UI / SpriteKit main thread.
@@ -525,6 +579,18 @@ final class GameStore: ObservableObject {
         return given
     }
 
+    /// Records a finished Around the World game and sends postcards. Returns the new stars (best only) and new postcards.
+    @discardableResult
+    func recordWorld(_ game: WorldGame, stars: Int, places: [Continent]) -> (earned: Int, newCards: [Continent]) {
+        guard var p = profile else { return (0, []) }
+        let given = p.world.record(game, stars: stars)
+        let cards = p.world.collect(places)
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return (given, cards)
+    }
+
     /// Records a finished music game (and the song, for Learn a Song). Returns the new stars (best only).
     @discardableResult
     func recordMusic(_ game: MusicGame, stars: Int, tune: String? = nil) -> Int {
@@ -612,12 +678,43 @@ final class GameStore: ObservableObject {
         state(of: Chapters.chapter(chapterID)) != .locked
     }
 
-    /// Saves Builder's Island (capped so a save can never grow without limit).
+    /// Together mode: who's playing with the child.
+    var partner: PartnerKind { profile?.partner ?? .grownUp }
+
+    func setPartner(_ k: PartnerKind) {
+        guard var p = profile, p.partner != k else { return }
+        p.partner = k
+        profile = p
+    }
+
+    /// Builder's Island: the pieces on one of the three islands.
+    func fortIsland(_ i: Int) -> [String] {
+        guard let p = profile else { return [] }
+        return i == 0 ? p.fortSandbox : (p.fortMoreIslands.indices.contains(i - 1) ? p.fortMoreIslands[i - 1] : [])
+    }
+
+    /// The island that's open now.
+    var currentFortIsland: Int { profile?.fortIsland ?? 0 }
+
+    func openFortIsland(_ i: Int) {
+        guard var p = profile, (0...2).contains(i), p.fortIsland != i else { return }
+        p.fortIsland = i
+        profile = p
+    }
+
+    /// Saves the open island (capped so a save can never grow without limit).
     func setFortSandbox(_ pieces: [String]) {
         guard var p = profile else { return }
         let capped = Array(pieces.prefix(400))
-        guard capped != p.fortSandbox else { return }
-        p.fortSandbox = capped
+        let i = p.fortIsland
+        if i == 0 {
+            guard capped != p.fortSandbox else { return }
+            p.fortSandbox = capped
+        } else {
+            if p.fortMoreIslands.count < 2 { p.fortMoreIslands = Array((p.fortMoreIslands + [[], []]).prefix(2)) }
+            guard capped != p.fortMoreIslands[i - 1] else { return }
+            p.fortMoreIslands[i - 1] = capped
+        }
         profile = p
     }
 

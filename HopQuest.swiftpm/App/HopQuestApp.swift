@@ -38,6 +38,7 @@ enum Route: Equatable {
     case mathMarket
     case writingDesk
     case clockTower
+    case worldTour
     // two players on one phone
     case teamKartSelect
     case teamKart(Int)
@@ -45,6 +46,7 @@ enum Route: Equatable {
     case teamCode
     case teamFortSelect
     case teamFort(Int)
+    case teamRobot
     /// A story world from data (Snowy Peaks).
     case world(String)
     case balloon(next: Int?)
@@ -143,6 +145,7 @@ struct RootView: View {
                          onMusic: { route = .musicMaker },
                          onWriting: { route = .writingDesk },
                          onClock: { route = .clockTower },
+                         onWorldTour: { route = .worldTour },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
                 .onAppear { hub = .menu }
@@ -250,6 +253,9 @@ struct RootView: View {
         case .clockTower:
             ClockTowerView(onBack: goHome)
 
+        case .worldTour:
+            WorldTourView(onBack: goHome)
+
         case .castle:
             MyCastleView(onBack: goHome)
 
@@ -269,6 +275,7 @@ struct RootView: View {
                               case .bop: route = .teamBop
                               case .code: route = .teamCode
                               case .fort: route = .teamFortSelect
+                              case .robot: route = .teamRobot
                               }
                           })
 
@@ -298,6 +305,15 @@ struct RootView: View {
                 }
             }
             .id("teambop-\(raceNonce)")
+
+        case .teamRobot:
+            // building and coding together earns stars, but the Robot Lab chapter stays the kid's own
+            RobotLabView(onExit: { route = .teamSetup },
+                         onComplete: { stars in
+                             store.addStars(stars)
+                             route = .balloon(next: nil)
+                         },
+                         team: true, builderName: store.partner.short, coderName: store.profile?.name ?? "Kid")
 
         case .teamFortSelect:
             FortSelectView(onBack: { route = .teamSetup },

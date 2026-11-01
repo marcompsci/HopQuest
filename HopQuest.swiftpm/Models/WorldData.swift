@@ -11,9 +11,9 @@ import UIKit
 
 /// How a hop level looks and feels.
 struct HopStyle: Codable, Equatable {
-    /// "meadow", "snow", "sand" or "jungle".
+    /// "meadow", "snow", "sand", "jungle" or "sky".
     var ground: String = "meadow"
-    /// What floats in the rivers: "log", "lily", "ice" or "surfboard".
+    /// What floats in the rivers: "log", "lily", "ice", "surfboard" or "cloud".
     var floaters: String = "log"
     /// Little things on the grass (emoji).
     var decorations: [String] = ["🌼", "🌷", "🌸"]
@@ -41,6 +41,7 @@ struct HopStyle: Codable, Equatable {
     var isSnow: Bool { ground == "snow" }
     var isSand: Bool { ground == "sand" }
     var isJungle: Bool { ground == "jungle" }
+    var isSky: Bool { ground == "sky" }
 }
 
 struct WorldQuestion: Codable, Equatable {
@@ -87,8 +88,8 @@ struct WorldFile: Codable, Equatable {
 
 enum WorldData {
     static let supportedKinds: Set<String> = ["hop"]
-    static let groundKinds: Set<String> = ["meadow", "snow", "sand", "jungle"]
-    static let floaterKinds: Set<String> = ["log", "lily", "ice", "surfboard"]
+    static let groundKinds: Set<String> = ["meadow", "snow", "sand", "jungle", "sky"]
+    static let floaterKinds: Set<String> = ["log", "lily", "ice", "surfboard", "cloud"]
 
     static func decode(_ data: Data) throws -> WorldFile {
         try JSONDecoder().decode(WorldFile.self, from: data)

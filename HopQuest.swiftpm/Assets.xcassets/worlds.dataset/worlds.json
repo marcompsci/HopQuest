@@ -608,6 +608,220 @@
           }
         }
       ]
+    },
+    {
+      "id": "sky-islands",
+      "title": "Sky Islands",
+      "icon": "☁️",
+      "blurb": "Float up above the jungle to islands in the clouds. Hop across drifting clouds and find the Rainbow Bridge.",
+      "unlockAfter": 15,
+      "color": "7A6FE0",
+      "chapters": [
+        {
+          "id": 16,
+          "title": "Cloud Meadow",
+          "kind": "hop",
+          "icon": "☁️",
+          "rows": 32,
+          "gateEvery": 7,
+          "difficulty": 0.55,
+          "intro": "Welcome to the Sky Islands! Hop from cloud to cloud, and watch for the sky buses.",
+          "style": {
+            "ground": "sky",
+            "floaters": "cloud",
+            "decorations": [
+              "🌸",
+              "🪁",
+              "✨"
+            ],
+            "vehicleColors": [
+              "B983FF",
+              "FF8FAB",
+              "7FD8FF",
+              "FFC93C"
+            ],
+            "riverChance": 0.24,
+            "questions": [
+              {
+                "subject": "Science",
+                "prompt": "What are clouds made of?",
+                "choices": [
+                  "Tiny drops of water",
+                  "Cotton",
+                  "Marshmallows"
+                ],
+                "explain": "Clouds are made of tiny water drops or ice, floating in the air."
+              },
+              {
+                "subject": "Science",
+                "prompt": "What do we call water falling from clouds?",
+                "choices": [
+                  "Rain",
+                  "Steam",
+                  "Juice"
+                ],
+                "explain": "When cloud drops get big and heavy, they fall as rain."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "Which animal can fly?",
+                "choices": [
+                  "A bird",
+                  "A fish",
+                  "A turtle"
+                ],
+                "explain": "Birds have wings and hollow bones to help them fly."
+              },
+              {
+                "subject": "Math",
+                "prompt": "There are 5 clouds and 2 float away. How many are left?",
+                "choices": [
+                  "3",
+                  "7",
+                  "2"
+                ],
+                "explain": "5 take away 2 is 3."
+              }
+            ]
+          }
+        },
+        {
+          "id": 17,
+          "title": "Windmill Isle",
+          "kind": "hop",
+          "icon": "🎐",
+          "rows": 36,
+          "gateEvery": 7,
+          "difficulty": 0.75,
+          "intro": "The wind is strong up here! It turns the windmills and pushes the clouds along.",
+          "style": {
+            "ground": "sky",
+            "floaters": "cloud",
+            "decorations": [
+              "🎐",
+              "🪁",
+              "🌼"
+            ],
+            "vehicleColors": [
+              "B983FF",
+              "FF8FAB",
+              "7FD8FF",
+              "FFC93C"
+            ],
+            "riverChance": 0.28,
+            "questions": [
+              {
+                "subject": "Science",
+                "prompt": "What makes a windmill turn?",
+                "choices": [
+                  "The wind",
+                  "A battery",
+                  "Rain"
+                ],
+                "explain": "Moving air pushes the windmill's sails around."
+              },
+              {
+                "subject": "Science",
+                "prompt": "Can you see air?",
+                "choices": [
+                  "No, but you can feel it move",
+                  "Yes, it's blue",
+                  "Only at night"
+                ],
+                "explain": "Air is invisible, but you feel it when the wind blows."
+              },
+              {
+                "subject": "Road Safety",
+                "prompt": "A bus stops to let kids off. What should you do?",
+                "choices": [
+                  "Wait until it drives away",
+                  "Run in front of it",
+                  "Hide behind it"
+                ],
+                "explain": "Wait on the sidewalk until the bus leaves so drivers can see you."
+              },
+              {
+                "subject": "Math",
+                "prompt": "A windmill has 4 sails. How many sails do 2 windmills have?",
+                "choices": [
+                  "8",
+                  "6",
+                  "4"
+                ],
+                "explain": "4 + 4 = 8 sails."
+              }
+            ]
+          }
+        },
+        {
+          "id": 18,
+          "title": "Rainbow Bridge",
+          "kind": "hop",
+          "icon": "🌈",
+          "rows": 44,
+          "gateEvery": 6,
+          "difficulty": 0.9,
+          "intro": "Last island! Cross the clouds to the Rainbow Bridge at the very top of the sky.",
+          "style": {
+            "ground": "sky",
+            "floaters": "cloud",
+            "decorations": [
+              "🌈",
+              "✨",
+              "🦋"
+            ],
+            "vehicleColors": [
+              "B983FF",
+              "FF8FAB",
+              "7FD8FF",
+              "FFC93C"
+            ],
+            "riverChance": 0.32,
+            "questions": [
+              {
+                "subject": "Science",
+                "prompt": "When do we see a rainbow?",
+                "choices": [
+                  "When sun shines through rain",
+                  "Only at midnight",
+                  "When it snows"
+                ],
+                "explain": "Sunlight bends through raindrops and splits into colors."
+              },
+              {
+                "subject": "Science",
+                "prompt": "How many colors are in a rainbow?",
+                "choices": [
+                  "7",
+                  "3",
+                  "20"
+                ],
+                "explain": "Red, orange, yellow, green, blue, indigo and violet: 7 colors."
+              },
+              {
+                "subject": "Nature",
+                "prompt": "Which is NOT a kind of weather?",
+                "choices": [
+                  "Pancakes",
+                  "Snow",
+                  "Wind"
+                ],
+                "explain": "Rain, snow, wind and sunshine are weather. Pancakes are breakfast!"
+              },
+              {
+                "subject": "Math",
+                "prompt": "You hop 10 clouds, then 5 more. How many clouds?",
+                "choices": [
+                  "15",
+                  "14",
+                  "50"
+                ],
+                "explain": "10 + 5 = 15 clouds."
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

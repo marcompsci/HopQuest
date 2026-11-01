@@ -183,8 +183,8 @@ test("Math Market save") {
 test("Story Book: a cutscene after every story level and both new worlds, each one well formed") {
     check(Set(StoryBook.all.map(\.id)).count == StoryBook.all.count, "unique ids")
     check(StoryBook.intro.id == "intro" && StoryBook.all.first?.id == "intro", "the intro comes first")
-    for ch in [1, 2, 3, 4, 5, 6, 9, 12, 15] { check(StoryBook.after(chapter: ch) != nil, "a story after chapter \(ch)") }
-    for ch in [7, 8, 10, 11, 13, 14, 101, 201] { check(StoryBook.after(chapter: ch) == nil, "no story after chapter \(ch)") }
+    for ch in [1, 2, 3, 4, 5, 6, 9, 12, 15, 18] { check(StoryBook.after(chapter: ch) != nil, "a story after chapter \(ch)") }
+    for ch in [7, 8, 10, 11, 13, 14, 16, 17, 101, 201] { check(StoryBook.after(chapter: ch) == nil, "no story after chapter \(ch)") }
     for c in StoryBook.all {
         check(!c.title.isEmpty && (1...3).contains(c.panels.count), "\(c.id): 1 to 3 panels")
         for p in c.panels {
@@ -367,6 +367,59 @@ test("Clock Tower: every game, 300 seeds") {
     var c = ClockSave()
     check(c.record(.oclock, stars: 3) == 3 && c.record(.oclock, stars: 2) == 0 && ClockSave.maxStars == 15, "best only")
     check(try JSONDecoder().decode(ClockSave.self, from: JSONEncoder().encode(c)) == c, "round trip")
+}
+
+test("Around the World: the map puts real places on the right continent") {
+    let places: [(String, Double, Double, Continent?)] = [
+        ("Paris", 2.3, 48.9, .europe), ("Beijing", 116.4, 39.9, .asia), ("Cairo", 31.2, 30.0, .africa), ("Nairobi", 36.8, -1.3, .africa),
+        ("Sydney", 151.2, -33.9, .australia), ("Alice Springs", 133.9, -23.7, .australia), ("Brasília", -47.9, -15.8, .southAmerica),
+        ("Lima", -77.0, -12.0, .southAmerica), ("Chicago", -87.6, 41.9, .northAmerica), ("Mexico City", -99.1, 19.4, .northAmerica),
+        ("Delhi", 77.2, 28.6, .asia), ("Moscow", 37.6, 55.8, .europe), ("South Pole station", 0, -80, .antarctica),
+        ("Middle of the Pacific", -150, 0, nil), ("Middle of the Atlantic", -30, 10, nil), ("Indian Ocean", 80, -20, nil),
+    ]
+    for (name, lon, lat, want) in places {
+        let p = WorldMap.point(lon: lon, lat: lat)
+        check(WorldMap.continent(atX: p.x, y: p.y) == want, "\(name) → \(want?.name ?? "ocean")")
+    }
+    for c in Continent.allCases {
+        let center = WorldMap.center(c)
+        if c != .asia && c != .northAmerica { check(WorldMap.continent(atX: center.x, y: center.y) == c, "\(c.name)'s label sits on it") }
+        check(c.mapOutline.allSatisfy { $0.x >= 0 && $0.x <= 1 && $0.y >= 0 && $0.y <= 0.5 }, "\(c.name) fits the map")
+    }
+    var overlaps = 0
+    for xi in 0..<200 { for yi in 0..<100 {
+        let x = Double(xi) / 200 + 0.0025, y = Double(yi) / 200 + 0.0025
+        if Continent.allCases.filter({ WorldMap.contains($0.mapOutline, x: x, y: y) }).count > 1 { overlaps += 1 }
+    } }
+    check(overlaps < 20, "continents barely overlap (\(overlaps) of 20,000 points)")
+}
+
+test("Around the World: every game, 300 seeds, and wrong choices are really wrong") {
+    for seed in 0..<300 {
+        var rng = SeededRNG(state: UInt64(seed))
+        for game in WorldGame.allCases {
+            let rounds = WorldBank.rounds(for: game, using: &rng)
+            check(rounds.count == 5 && Set(rounds.map(\.say)).count == 5, "\(game): five different rounds")
+            for r in rounds {
+                if r.kind == .tapMap {
+                    check(Continent(rawValue: r.answer) != nil && r.continent?.rawValue == r.answer, "tap the named continent")
+                } else {
+                    check(r.choices.count == 3 && Set(r.choices).count == 3 && r.choices.contains(r.answer), "\(game): three choices with the answer")
+                }
+            }
+        }
+    }
+    for t in WorldBank.animals + WorldBank.landmarks {
+        var rng = SeededRNG(state: 1)
+        check(WorldBank.wrongContinents(for: t, using: &rng).allSatisfy { !t.places.contains($0) }, "\(t.name): wrong choices never include a real home")
+    }
+    check(Set(WorldBank.animals.map(\.emoji)).count == WorldBank.animals.count, "no repeated animal pictures")
+    check(Set((WorldBank.animals + WorldBank.landmarks).map(\.home)) == Set(Continent.allCases), "every continent has animals or places")
+    check(WorldBank.oceans.allSatisfy { !$0.wrong.contains($0.answer) && $0.wrong.count == 2 }, "ocean questions")
+    var w = WorldTourSave()
+    check(w.collect([.asia, .asia, .africa]) == [.asia, .africa] && w.collect([.asia]).isEmpty && w.postcards.count == 2, "postcards collect once")
+    check(w.record(.oceans, stars: 2) == 2 && WorldTourSave.maxStars == 12, "best only")
+    check(try JSONDecoder().decode(WorldTourSave.self, from: JSONEncoder().encode(w)) == w, "round trip")
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

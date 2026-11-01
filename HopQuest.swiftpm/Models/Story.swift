@@ -233,8 +233,18 @@ enum StoryBook {
                 L(voice: .narrator, text: "At the very top of the jungle, the old temple glowed in the sunset."),
                 L(voice: .ollie, text: "Hoo hoo! You crossed meadows, snow, beaches and jungles. What an explorer!"),
             ]),
+            StoryPanel(place: .sky, actors: [.buddy(0.3, .float), A(who: "☁️", x: 0.72, size: 1.3, entrance: .float)], lines: [
+                L(voice: .narrator, text: "Then a soft wind lifted a cloud right up to the temple steps."),
+                L(voice: .buddy, text: "Islands in the sky? Let's hop up and see!"),
+            ]),
+        ]),
+        Cutscene(id: "after18", title: "The Rainbow Bridge", panels: [
+            StoryPanel(place: .sky, actors: [.buddy(0.35, .pop), A(who: "🌈", x: 0.75, size: 1.5, entrance: .float), A(who: "🐧", x: 0.12, entrance: .fromLeft)], lines: [
+                L(voice: .narrator, text: "At the top of the sky, the Rainbow Bridge shimmered in every color."),
+                L(voice: .pip, text: "Meadows, snow, beaches, jungles and clouds. You've been everywhere!"),
+            ]),
             StoryPanel(place: .meadow, actors: [.buddy(0.4, .fromLeft), A(who: "🏡", x: 0.75, entrance: .pop)], lines: [
-                L(voice: .narrator, text: "And then it was time to head home to Hop Village, full of stories to tell."),
+                L(voice: .narrator, text: "And then the rainbow slid all the way down to Hop Village, full of stories to tell."),
                 L(voice: .buddy, text: "Thank you for playing with me! See you in the village!"),
             ]),
         ]),

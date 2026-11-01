@@ -97,15 +97,38 @@ struct FortLevel: Identifiable {
     static func level(_ id: Int) -> FortLevel { id == sandbox.id ? sandbox : (all.first { $0.id == id } ?? all[0]) }
 }
 
+/// Builder's Island decorations and block paints.
+enum FortDecor {
+    static let all = ["🚩", "🌳", "🪟", "🏮", "🌻", "⭐", "🎈", "🐈"]
+    static let names = ["flag", "tree", "window", "lantern", "sunflower", "star", "balloon", "cat"]
+    /// Paint colors for blocks (0 = the plain wooden block).
+    static let paints: [UInt32] = [0, 0xFF6B6B, 0x4D96FF, 0xFFD93D, 0x34C77B, 0xB983FF, 0xFFFFFF]
+    static let paintNames = ["wood", "red", "blue", "yellow", "green", "purple", "white"]
+}
+
 enum FortTool: String, CaseIterable, Identifiable {
-    case ramp, block, bridge, recycle
+    case ramp, block, bridge, decor, paint, recycle
     var id: String { rawValue }
+
+    /// Story levels build with ramps, blocks and bridges. Builder's Island adds decorations and paint.
+    static func tools(sandbox: Bool) -> [FortTool] {
+        sandbox ? allCases : [.ramp, .block, .bridge, .recycle]
+    }
+
+    /// The icon for tools without piece art.
+    var symbol: String {
+        switch self {
+        case .decor: return "sparkles"
+        case .paint: return "paintbrush.pointed.fill"
+        default: return "arrow.uturn.backward.circle.fill"
+        }
+    }
 
     var cost: Int {
         switch self {
         case .ramp: return 2
         case .block, .bridge: return 1
-        case .recycle: return 0
+        case .recycle, .decor, .paint: return 0
         }
     }
 
@@ -114,6 +137,8 @@ enum FortTool: String, CaseIterable, Identifiable {
         case .ramp: return "Ramp"
         case .block: return "Block"
         case .bridge: return "Bridge"
+        case .decor: return "Decorate"
+        case .paint: return "Paint"
         case .recycle: return "Take back"
         }
     }
@@ -123,7 +148,7 @@ enum FortTool: String, CaseIterable, Identifiable {
         case .ramp: return "piece_ramp"
         case .block: return "piece_block"
         case .bridge: return "piece_bridge"
-        case .recycle: return nil
+        case .recycle, .decor, .paint: return nil
         }
     }
 
@@ -134,6 +159,8 @@ enum FortTool: String, CaseIterable, Identifiable {
         case .block: return "Blocks hold things up. Engineers call that support!"
         case .bridge: return "Bridges have to hold on to something at the end, just like real bridges!"
         case .recycle: return "Taking a piece back gives you your bricks back. Reduce, reuse, recycle!"
+        case .decor: return "Decorations sit on top of a piece. Architects think about how a building looks, not just how it stands!"
+        case .paint: return "Tap a block to paint it. Tap again for the next color!"
         }
     }
 }
@@ -162,15 +189,17 @@ final class FortScene: SKScene {
 
     enum Tile: Equatable {
         case empty, ground, water, block, ramp(CGFloat), bridge
+        /// A decoration (Builder's Island): sits on a piece but holds nothing up.
+        case decor(Int)
         var solid: Bool {
             switch self {
             case .ground, .block, .ramp, .bridge: return true
-            case .empty, .water: return false
+            case .empty, .water, .decor: return false
             }
         }
         var built: Bool {
             switch self {
-            case .block, .ramp, .bridge: return true
+            case .block, .ramp, .bridge, .decor: return true
             default: return false
             }
         }
@@ -182,6 +211,10 @@ final class FortScene: SKScene {
 
     // Controls (set from SwiftUI)
     var moveInput: CGFloat = 0
+    /// Builder's Island: which decoration the Decorate tool places.
+    var decorKind = 0
+    /// Builder's Island: painted blocks (index into FortDecor.paints).
+    private var paint: [Cell: Int] = [:]
     var tool: FortTool? { didSet { refreshGhosts() } }
 
     let hud: FortHUD
@@ -343,6 +376,13 @@ final class FortScene: SKScene {
             let open = c.y + 1 < rows && !tiles[c.x][c.y + 1].solid
             name = open ? "fort_grass" : "fort_dirt"
         case .water: name = "fort_water"
+        case .decor(let k):
+            let d = SpriteFactory.emoji(FortDecor.all[min(max(0, k), FortDecor.all.count - 1)], size: cellSize * 0.72,
+                                        at: CGPoint(x: center(c).x, y: feet(c).y + cellSize * 0.4))
+            d.zPosition = 7
+            world.addChild(d)
+            tileNodes[c] = d
+            return
         case .block: name = "piece_block"
         case .bridge: name = "piece_bridge"
         case .ramp(let dir):
@@ -359,6 +399,10 @@ final class FortScene: SKScene {
         }
         sprite.position = center(c)
         sprite.zPosition = t == .water ? 0 : (t.built ? 6 : 2)
+        if t == .block, let k = paint[c], k > 0, k < FortDecor.paints.count, let s = sprite as? SKSpriteNode {
+            s.color = UIColor(hex: FortDecor.paints[k])
+            s.colorBlendFactor = FortDecor.paints[k] == 0xFFFFFF ? 0.55 : 0.5
+        }
         world.addChild(sprite)
         tileNodes[c] = sprite
         if t == .water {
@@ -728,6 +772,10 @@ final class FortScene: SKScene {
         guard c.x >= 0, c.x < cols, c.y >= 1, c.y < rows else { return false }
         guard abs(c.x - player.x) <= reach, abs(c.y - player.y) <= reach else { return false }
         let here = tile(c.x, c.y)
+        if t == .paint { return here == .block }
+        if t == .decor {
+            return here == .empty && items[c] == nil && c != player && tile(c.x, c.y - 1).solid
+        }
         if t == .recycle {
             // don't pull the floor out from under your buddy
             return here.built && !(c.x == player.x && c.y == player.y - 1)
@@ -787,6 +835,8 @@ final class FortScene: SKScene {
         }
         if tool == .recycle {
             remove(at: c)
+        } else if tool == .paint {
+            paintBlock(at: c)
         } else {
             place(tool, at: c)
         }
@@ -810,7 +860,8 @@ final class FortScene: SKScene {
         case .ramp: tiles[c.x][c.y] = .ramp(facing)
         case .block: tiles[c.x][c.y] = .block
         case .bridge: tiles[c.x][c.y] = .bridge
-        case .recycle: return
+        case .decor: tiles[c.x][c.y] = .decor(decorKind)
+        case .recycle, .paint: return
         }
         drawTile(c)
         // ground below loses its grass when covered
@@ -836,8 +887,10 @@ final class FortScene: SKScene {
         case .ramp: refund = FortTool.ramp.cost
         case .block: refund = FortTool.block.cost
         case .bridge: refund = FortTool.bridge.cost
+        case .decor: refund = 0
         default: return
         }
+        paint[c] = nil
         tiles[c.x][c.y] = c.y == 1 && level.rows[rows - 1 - c.y].dropFirst(c.x).first == "~" ? .water : .empty
         if let node = tileNodes.removeValue(forKey: c) {
             node.run(.sequence([.group([.scale(to: 0.1, duration: 0.15), .fadeOut(withDuration: 0.15)]), .removeFromParent()]))
@@ -858,6 +911,24 @@ final class FortScene: SKScene {
         refreshGhosts()
     }
 
+    /// Builder's Island: the next paint color on a block.
+    private func paintBlock(at c: Cell) {
+        guard tiles[c.x][c.y] == .block else { return }
+        let next = ((paint[c] ?? 0) + 1) % FortDecor.paints.count
+        paint[c] = next == 0 ? nil : next
+        drawTile(c)
+        if let node = tileNodes[c] {
+            node.run(.sequence([.scale(to: 1.1, duration: 0.08), .scale(to: 1, duration: 0.08)]))
+        }
+        SoundFX.shared.play(.pop)
+        Haptics.tap(nil)
+        if !usedTools.contains(.paint) {
+            usedTools.insert(.paint)
+            say(FortTool.paint.lesson)
+        }
+        onSandboxChange?(builtPieces())
+    }
+
     // MARK: Free build (saving the island)
 
     /// Every built piece as "x,y,kind": b block, g bridge, r1 / r-1 ramp facing right / left.
@@ -866,7 +937,8 @@ final class FortScene: SKScene {
         for x in 0..<cols {
             for y in 0..<rows {
                 switch tiles[x][y] {
-                case .block: out.append("\(x),\(y),b")
+                case .block: out.append("\(x),\(y),b\(paint[Cell(x: x, y: y)].map { $0 > 0 ? "\($0)" : "" } ?? "")")
+                case .decor(let k): out.append("\(x),\(y),d\(k)")
                 case .bridge: out.append("\(x),\(y),g")
                 case .ramp(let d): out.append("\(x),\(y),r\(d > 0 ? 1 : -1)")
                 default: break
@@ -881,7 +953,21 @@ final class FortScene: SKScene {
             let f = p.split(separator: ",").map(String.init)
             guard f.count == 3, let x = Int(f[0]), let y = Int(f[1]), (0..<cols).contains(x), (1..<rows).contains(y) else { continue }
             guard tiles[x][y] == .empty || tiles[x][y] == .water else { continue }
-            switch f[2] {
+            let kind = f[2]
+            if kind.count == 2, let n = Int(kind.dropFirst()) {
+                if kind.hasPrefix("b"), (1..<FortDecor.paints.count).contains(n) {
+                    tiles[x][y] = .block
+                    paint[Cell(x: x, y: y)] = n
+                } else if kind.hasPrefix("d"), FortDecor.all.indices.contains(n) {
+                    tiles[x][y] = .decor(n)
+                } else {
+                    continue
+                }
+                drawTile(Cell(x: x, y: y))
+                if tiles[x][y - 1] == .ground { drawTile(Cell(x: x, y: y - 1)) }
+                continue
+            }
+            switch kind {
             case "b": tiles[x][y] = .block
             case "g": tiles[x][y] = .bridge
             case "r1": tiles[x][y] = .ramp(1)
@@ -896,6 +982,7 @@ final class FortScene: SKScene {
     /// Free build: take every piece away and start a fresh island.
     func clearIsland() {
         guard level.sandbox else { return }
+        paint.removeAll()
         for x in 0..<cols {
             for y in 1..<rows where tiles[x][y].built && !(x == player.x && y == player.y - 1) {
                 tiles[x][y] = y == 1 && level.rows[rows - 1 - y].dropFirst(x).first == "~" ? .water : .empty

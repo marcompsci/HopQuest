@@ -8,6 +8,10 @@ struct RobotLabView: View {
     var onComplete: (Int) -> Void
     /// Finish the chapter and jump straight into Code Club.
     var onCodeClub: ((Int) -> Void)? = nil
+    /// Team Robot Lab: one player builds the robot, the other codes it.
+    var team = false
+    var builderName = "Grown-up"
+    var coderName = "Kid"
 
     enum Part: Int, CaseIterable, Identifiable {
         case chassis, battery, motors, wheels, sensors, brain
@@ -142,6 +146,7 @@ struct RobotLabView: View {
                 .ignoresSafeArea()
             VStack(spacing: 10) {
                 header
+                if team && phase != .done { roleBanner }
                 switch phase {
                 case .build: buildPhase
                 case .code: codePhase
@@ -158,7 +163,7 @@ struct RobotLabView: View {
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: lesson)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: phase)
-        .onAppear { Narrator.shared.say(Self.buildIntro) }
+        .onAppear { Narrator.shared.say(team ? "\(builderName), you're the builder! \(Self.buildIntro)" : Self.buildIntro) }
         .onDisappear { Narrator.shared.stop() }
         .onChange(of: lesson) { _, part in
             if let part { Narrator.shared.say("\(part.title)! \(part.lesson)") }
@@ -166,7 +171,7 @@ struct RobotLabView: View {
         .onChange(of: phase) { _, newPhase in
             switch newPhase {
             case .build: Narrator.shared.say(Self.buildIntro)
-            case .code: Narrator.shared.say(Self.codeIntro)
+            case .code: Narrator.shared.say(team ? "\(coderName), you're the coder now! \(Self.codeIntro)" : Self.codeIntro)
             case .done: Narrator.shared.say(Self.doneText)
             }
         }
@@ -188,6 +193,17 @@ struct RobotLabView: View {
             stepBadge
         }
         .padding(.horizontal, 14)
+    }
+
+    /// Team Robot Lab: whose job it is right now.
+    private var roleBanner: some View {
+        let building = phase == .build
+        return Label(building ? "💜 \(builderName) builds the robot" : "⭐ \(coderName) writes the code",
+                     systemImage: building ? "wrench.and.screwdriver.fill" : "chevron.left.forwardslash.chevron.right")
+            .font(.kid(14, .black)).foregroundStyle(.white)
+            .padding(.horizontal, 14).frame(minHeight: 36)
+            .background(Capsule().fill(building ? Palette.purple : Color(hex: 0xE0A800)))
+            .accessibilityLabel(building ? "\(builderName)'s turn: build the robot" : "\(coderName)'s turn: write the code")
     }
 
     /// 1 Build · 2 Code progress pill.

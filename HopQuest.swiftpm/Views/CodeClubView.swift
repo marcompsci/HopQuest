@@ -35,6 +35,8 @@ private enum ClubColors {
     static let sensor = Color(hex: 0xD6F5EF)
     static let sensorEdge = Color(hex: 0x1FA58A)
     static let active = Color(hex: 0xFFD93D)
+    static let myBlock = Color(hex: 0xFFE0F0)
+    static let myBlockEdge = Color(hex: 0xD6457F)
 }
 
 // MARK: - Picker
@@ -127,7 +129,7 @@ struct CodeClubView: View {
                 sectionTitle("🤖 Robot code")
                 ForEach(Array(CodeChallenge.all.enumerated()), id: \.element.id) { i, c in
                     let isOpen = i == 0 || store.profile?.codeBest[CodeChallenge.all[i - 1].id] != nil
-                    card(number: i + 1, title: c.title, topic: c.sensors ? "📡 " + c.topic : c.topic,
+                    card(number: i + 1, title: c.title, topic: c.myBlocks ? "★ " + c.topic : c.sensors ? "📡 " + c.topic : c.topic,
                          best: store.profile?.codeBest[c.id] ?? 0, open: isOpen, colorIndex: i) { open = .code(c) }
                 }
 
@@ -239,6 +241,9 @@ struct CodeChallengeView: View {
     @State private var runTask: Task<Void, Never>?
     /// The program before the last block was removed (for Undo).
     @State private var undoProgram: [RobotBlock]?
+    /// Robot Lab 3: the child's own block, and whether new steps go into it.
+    @State private var myBlock: [RobotBlock] = []
+    @State private var editingMyBlock = false
 
     private let maxPieces = 14
 
@@ -272,12 +277,13 @@ struct CodeChallengeView: View {
                         .animation(.easeInOut, value: message)
                     if challenge.maps.count > 1 { mapTabs }
                     grid
+                    if challenge.myBlocks { myBlockStrip }
                     programStrip
                     palette
                     HStack(spacing: 12) {
                         BigButton(title: "Clear", color: Color(hex: 0x9AA0AE)) {
                             guard !running else { return }
-                            withAnimation { program.removeAll(); cursor = []; inElse = false; owners = [:]; turn = 0 }
+                            withAnimation { program.removeAll(); cursor = []; inElse = false; owners = [:]; turn = 0; editingMyBlock = false }
                             reset(map: 0)
                             mapResults = Array(repeating: nil, count: challenge.maps.count)
                         }
@@ -453,6 +459,68 @@ struct CodeChallengeView: View {
 
     // MARK: Program
 
+    /// Robot Lab 3: the child's own block. Tap Edit, add steps, then use it in the program like any block.
+    private var myBlockStrip: some View {
+        HStack(spacing: 8) {
+            VStack(spacing: 0) {
+                Image(systemName: "star.fill").font(.system(size: 16, weight: .black))
+                Text("My Block").font(.kid(11, .black))
+            }
+            .foregroundStyle(ClubColors.myBlockEdge)
+            .frame(width: 56)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 5) {
+                    if myBlock.isEmpty && !editingMyBlock {
+                        Text("Empty: tap Edit").font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.45))
+                    }
+                    ForEach(myBlock) { b in
+                        RobotBlockChip(block: b, active: active, cursor: [], inElse: false, actions: myBlockActions, small: true)
+                    }
+                    if editingMyBlock {
+                        RoundedRectangle(cornerRadius: 9)
+                            .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                            .foregroundStyle(ClubColors.myBlockEdge)
+                            .frame(width: 30, height: 34)
+                            .accessibilityLabel("New steps go into My Block")
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            Button {
+                guard !running else { return }
+                Haptics.tap()
+                editingMyBlock.toggle()
+                if editingMyBlock { cursor = []; inElse = false }
+                say(editingMyBlock ? "Now the arrows add steps to My Block. Tap Done when it's ready." : "Now tap My Block to use it in your code!")
+            } label: {
+                Text(editingMyBlock ? "Done" : "Edit")
+                    .font(.kid(14, .black)).foregroundStyle(.white)
+                    .padding(.horizontal, 12).frame(minHeight: 44)
+                    .background(Capsule().fill(ClubColors.myBlockEdge))
+            }
+            .buttonStyle(BouncyButtonStyle())
+            .accessibilityLabel(editingMyBlock ? "Done editing My Block" : "Edit My Block")
+        }
+        .padding(.horizontal, 10).padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(ClubColors.myBlock))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .stroke(ClubColors.myBlockEdge, lineWidth: editingMyBlock ? 3 : 1.5))
+        .padding(.horizontal, 14)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("My Block, \(myBlock.count) steps")
+    }
+
+    private var myBlockActions: RobotBlockChip.Actions {
+        RobotBlockChip.Actions(
+            remove: { id in
+                guard !running else { return }
+                Haptics.tap()
+                withAnimation(Motion.snappy) { myBlock.removeAll { $0.id == id } }
+            },
+            cycleTimes: { _ in },
+            open: { _ in })
+    }
+
     private var programStrip: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
@@ -592,6 +660,20 @@ struct CodeChallengeView: View {
     private var controls: [Control] {
         var out: [Control] = []
         let loopFill = Color(hex: 0xFFD93D)
+        if editingMyBlock {
+            out.append(Control(title: "Done with My Block ✓", spoken: "Finish editing My Block",
+                               fill: ClubColors.myBlock, edge: ClubColors.myBlockEdge, outlined: true) {
+                editingMyBlock = false
+                say("Now tap My Block to use it in your code!")
+            })
+            return out
+        }
+        if challenge.myBlocks {
+            out.append(Control(title: "My Block ★", spoken: "Use My Block in the code", fill: ClubColors.myBlock, edge: ClubColors.myBlockEdge) {
+                if myBlock.isEmpty { say("My Block is empty. Tap Edit to teach it some steps first!") }
+                insert(RobotBlock(.callMyBlock))
+            })
+        }
         if let open = openBlock {
             if challenge.sensors && open.isLoop {
                 out.append(Control(title: "If blocked 🧱", spoken: "Add an If blocked block inside the loop",
@@ -634,6 +716,16 @@ struct CodeChallengeView: View {
 
     private func insert(_ block: RobotBlock) {
         guard !running else { return }
+        if editingMyBlock {
+            guard block.isStep else { return }
+            guard myBlock.count < CodeChallenge.myBlockMax else {
+                say("My Block is full! It holds \(CodeChallenge.myBlockMax) steps.")
+                return
+            }
+            Haptics.tap(.pop)
+            withAnimation(Motion.snappy) { myBlock.append(block) }
+            return
+        }
         guard pieces + block.pieces <= maxPieces else {
             say("That's a lot of blocks! Can a Repeat block make it shorter?")
             return
@@ -693,7 +785,13 @@ struct CodeChallengeView: View {
         program = program.withoutEmptyContainers()
         guard !program.isEmpty else { return }
         running = true
-        let traces = challenge.runAll(program)
+        if myBlock.isEmpty && Self.callsMyBlock(program) {
+            running = false
+            say("My Block is empty! Tap Edit and teach it some steps.")
+            return
+        }
+        let traces = challenge.runAll(program, myBlock: myBlock)
+        editingMyBlock = false
         mapResults = Array(repeating: nil, count: challenge.maps.count)
         undoProgram = nil
         runTask = Task { @MainActor in
@@ -744,6 +842,10 @@ struct CodeChallengeView: View {
             active = []
             finish(gears: traces.first?.gears ?? [])
         }
+    }
+
+    private static func callsMyBlock(_ blocks: [RobotBlock]) -> Bool {
+        blocks.contains { $0.kind == .callMyBlock || callsMyBlock($0.body) || callsMyBlock($0.elseBody) }
     }
 
     /// Waits; false if the child left the puzzle meanwhile.
@@ -876,6 +978,24 @@ struct RobotBlockChip: View {
                 loopHeader
                 children(block.body, openHere: isOpen)
             }
+        case .callMyBlock:
+            Button { actions.remove(block.id) } label: {
+                VStack(spacing: 0) {
+                    Image(systemName: "star.fill").font(.system(size: small ? 12 : 15, weight: .black))
+                    Text("My Block").font(.kid(small ? 9 : 10, .black)).lineLimit(1).minimumScaleFactor(0.7)
+                }
+                .foregroundStyle(.white)
+                .frame(width: small ? 44 : 52, height: small ? 40 : 46)
+                .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(ClubColors.myBlockEdge))
+                .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .stroke(ClubColors.active, lineWidth: isActive ? 4 : 0))
+                .scaleEffect(isActive ? 1.12 : 1)
+                .overlay(alignment: .topTrailing) { ownerBadge }
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .transition(.scale.combined(with: .opacity))
+            .accessibilityLabel("My Block\(ownerSpoken). Tap to remove.")
         case .ifBlocked:
             container(fill: ClubColors.sensor, edge: ClubColors.sensorEdge) {
                 Button { actions.open(block.id) } label: {

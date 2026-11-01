@@ -20,6 +20,7 @@ struct MainMenuView: View {
     var onMusic: () -> Void = {}
     var onWriting: () -> Void = {}
     var onClock: () -> Void = {}
+    var onWorldTour: () -> Void = {}
     var onMap: () -> Void
     /// Opens a story world from data (Snowy Peaks).
     var onWorld: (String) -> Void = { _ in }
@@ -80,6 +81,9 @@ struct MainMenuView: View {
                         gameTile(art: "icon_clock", title: "Clock Tower", color: Color(hex: 0x2E7D4F), shadow: Color(hex: 0x1D5434),
                                  badge: 0, detail: "\(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars",
                                  label: "Clock Tower, \(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars", action: onClock)
+                        gameTile(art: "icon_world", title: "Around the World", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
+                                 badge: 0, detail: "\(p?.world.postcards.count ?? 0) of 7 postcards",
+                                 label: "Around the World, \(p?.world.postcards.count ?? 0) of 7 postcards", action: onWorldTour)
                     }
                     section("Worlds")
                     ForEach(Worlds.all) { w in worldCard(w) }

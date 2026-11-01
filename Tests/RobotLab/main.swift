@@ -107,7 +107,7 @@ test("gears: needed gears and bonus gears") {
 }
 
 test("every puzzle can be solved within its block limit") {
-    for p in CodeChallenge.all {
+    for p in CodeChallenge.all where !p.myBlocks {
         let found = programs(maxPieces: p.blockLimit, sensors: p.sensors).first { solves($0, p) }
         check(found != nil, "\(p.id) \(p.title) has a solution in \(p.blockLimit) blocks")
     }
@@ -142,7 +142,7 @@ test("the intended sensor solutions") {
 
 test("puzzle data is sane") {
     check(Set(CodeChallenge.all.map(\.id)).count == CodeChallenge.all.count, "ids unique")
-    check(CodeChallenge.all.count == 9 && CodeChallenge.all.filter(\.sensors).count == 4, "9 puzzles, 4 with sensors")
+    check(CodeChallenge.all.count == 14 && CodeChallenge.all.filter(\.sensors).count == 4 && CodeChallenge.all.filter(\.myBlocks).count == 5, "14 puzzles, 4 with sensors, 5 with My Block")
     for p in CodeChallenge.all {
         for m in p.maps {
             check(m.inside(m.start) && m.inside(m.goal), "\(p.id) start and goal on the board")
@@ -192,6 +192,46 @@ test("simple machines: levers and pulleys") {
     check(piano.check(choice: 4) && !piano.check(choice: 3) && piano.isBest(choice: 4), "506: 4 ropes for 8 with strength 2")
     let pp = MachinePuzzle.all.first { $0.id == 505 }!
     check(pp.isBest(choice: 3) && pp.check(choice: 4) && !pp.isBest(choice: 4), "505: 3 is best, 4 works but pulls more rope")
+}
+
+// MARK: Robot Lab 3: My Block
+
+let CALL = RobotBlock(.callMyBlock)
+let myBlockSolutions: [Int: (main: [RobotBlock], block: [RobotBlock])] = [
+    410: ([CALL, F, CALL], [L, F, R, F, F, R, F, L]),
+    411: ([rep(4, CALL)], [F, L, F, R]),
+    412: ([CALL, CALL, F, CALL], [F, L, F, R]),
+    413: ([F, CALL, F, F, CALL, F, CALL, F], [L, F, F, R, R, F, F, L]),
+    414: ([rep(2, CALL), F], [L, F, R, F, F, R, F, L]),
+]
+
+test("My Block: running a block you made") {
+    let w = RobotWorld(start: RobotCell(x: 0, y: 5), dir: 0, goal: RobotCell(x: 0, y: 0))
+    let t = RobotRunner.run([CALL, CALL], myBlock: [F, F], in: w, needsGears: false)
+    check(t.robot == RobotCell(x: 0, y: 1) && t.outcome == .stoppedShort, "two calls of two steps")
+    check(t.steps.allSatisfy { $0.path.first == CALL.id && $0.path.count == 2 }, "highlights the call and the step inside it")
+    check(RobotRunner.run([CALL], myBlock: [], in: w, needsGears: false).steps.isEmpty, "an empty block does nothing")
+    let sneaky = RobotRunner.run([CALL], myBlock: [F, CALL, rep(9, F)], in: w, needsGears: false)
+    check(sneaky.steps.count == 1, "My Block only runs steps (it can't call itself or hold loops)")
+    check([CALL].withoutEmptyContainers() == [CALL] && !CALL.isContainer && CALL.pieces == 1, "a call is one plain block")
+}
+
+test("My Block puzzles: the intended solutions work, within the limit") {
+    for p in CodeChallenge.all where p.myBlocks {
+        guard let s = myBlockSolutions[p.id] else { check(false, "\(p.id) has a solution"); continue }
+        check(p.runAll(s.main, myBlock: s.block).allSatisfy(\.solved), "\(p.id) \(p.title) is solved by the intended program")
+        check(s.main.pieces <= p.blockLimit, "\(p.id) intended program fits the limit")
+        check(s.block.count <= CodeChallenge.myBlockMax, "\(p.id) My Block fits")
+    }
+    let gears = puzzle(413).runAll(myBlockSolutions[413]!.main, myBlock: myBlockSolutions[413]!.block)
+    check(gears[0].gears.count == 3, "413 collects all three gears")
+}
+
+test("My Block puzzles need My Block: no plain program reaches the limit") {
+    for p in CodeChallenge.all where p.myBlocks {
+        let plain = programs(maxPieces: p.blockLimit, sensors: false).first { solves($0, p) }
+        check(plain == nil, "\(p.id) \(p.title): the block-limit star needs My Block")
+    }
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

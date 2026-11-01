@@ -61,6 +61,17 @@ extension ClockGame {
     }
 }
 
+extension WorldGame {
+    var symbol: String {
+        switch self {
+        case .findIt: return "map.fill"
+        case .animals: return "pawprint.fill"
+        case .landmarks: return "building.columns.fill"
+        case .oceans: return "water.waves"
+        }
+    }
+}
+
 /// The buddy who runs each learning place (all from the Sticker Book roster, so they match the rest of the game).
 enum PlaceHost {
     static var reading: GameCharacter { Roster.character(id: "ollie") }
@@ -69,4 +80,5 @@ enum PlaceHost {
     static var music: GameCharacter { Roster.character(id: "fizz") }
     static var writing: GameCharacter { Roster.character(id: "polly") }
     static var clock: GameCharacter { Roster.character(id: "gemma") }
+    static var world: GameCharacter { Roster.character(id: "pip") }
 }

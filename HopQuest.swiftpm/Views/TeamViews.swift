@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Two-player modes that aren't story chapters.
-enum TeamMode: Equatable { case kart, bop, code, fort }
+enum TeamMode: Equatable { case kart, bop, code, fort, robot }
 
 /// Grown-up & Me: pick the grown-up's buddy and a team game. Everyone plays on one device.
 struct TeamSetupView: View {
@@ -28,25 +28,26 @@ struct TeamSetupView: View {
                         SpeakButton { Narrator.shared.say(intro) }
                     }
 
-                    Text("Grown-up & Me")
+                    Text("Play Together")
                         .font(.kid(34, .black))
                         .foregroundStyle(Palette.purple)
                     Text("Play together on one device!")
                         .font(.kid(18, .semibold))
                         .foregroundStyle(Palette.ink)
 
+                    partnerPicker
                     team
 
                     modeCard(chapter: Chapters.teamHop,
                              emoji: "🐾🐾",
                              title: "Team Hop",
-                             text: "Hop side by side to the castle. The left side of the screen moves \(kidName). The right side moves the grown-up. Stay within 5 hops of each other — teams stick together!",
+                             text: "Hop side by side to the castle. The left side of the screen moves \(kidName). The right side moves \(store.partner.the). Stay within 5 hops of each other — teams stick together!",
                              color: Color(hex: 0x34C77B))
 
                     modeCard(chapter: Chapters.teamDrive,
                              emoji: "🚙",
                              title: "Team Drive",
-                             text: "The grown-up turns the steering wheel. \(kidName) works the gas and brake pedals — and stops for every red light and stop sign!",
+                             text: "\(store.partner.The) turns the steering wheel. \(kidName) works the gas and brake pedals — and stops for every red light and stop sign!",
                              color: Color(hex: 0x4D96FF))
 
                     modeCard(emoji: "🏎️🏎️", title: "Two-Player Kart",
@@ -58,14 +59,18 @@ struct TeamSetupView: View {
                              color: Color(hex: 0xFF7FC4)) { onMode(.bop) }
 
                     modeCard(emoji: "🏰🧱", title: "Team Fort",
-                             text: "\(kidName) walks with the arrows while the grown-up builds ramps, blocks and bridges from farther away. Plan the path together!",
+                             text: "\(kidName) walks with the arrows while \(store.partner.the) builds ramps, blocks and bridges from farther away. Plan the path together!",
                              color: Color(hex: 0xFF9F45)) { onMode(.fort) }
 
                     modeCard(emoji: "🤖💻", title: "Team Robot Code",
                              text: "Code the robot together like real pair programmers: take turns adding one block each. Talk it over before you press Run!",
                              color: Color(hex: 0xB983FF)) { onMode(.code) }
 
-                    grownUpTips
+                    modeCard(emoji: "🔧🤖", title: "Team Robot Lab",
+                             text: "\(store.partner.The) builds the robot, part by part. Then \(kidName) writes the code that drives it to the star!",
+                             color: Color(hex: 0x4D96FF)) { onMode(.robot) }
+
+                    if store.partner == .grownUp { grownUpTips }
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
@@ -82,17 +87,40 @@ struct TeamSetupView: View {
     }
 
     private var intro: String {
-        "Grown-up and me! Play together on one device. Pick Team Hop, Team Drive, two-player kart, two-player pillow bop, or team robot code."
+        "Play together on one device! Pick who's playing with you, then pick a team game."
     }
 
     private var team: some View {
         HStack(spacing: 14) {
             player(store.character, name: kidName, tag: "⭐", side: "Left side", action: nil)
             Text("+").font(.kid(30, .black)).foregroundStyle(Palette.ink.opacity(0.5))
-            player(store.coopCharacter, name: "Grown-up", tag: "💜", side: "Right side") { pickingBuddy = true }
+            player(store.coopCharacter, name: store.partner.short, tag: "💜", side: "Right side") { pickingBuddy = true }
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 26).fill(.white.opacity(0.85)))
+    }
+
+    /// Who's playing with the child: only changes the words, so no names are typed or stored.
+    private var partnerPicker: some View {
+        VStack(spacing: 8) {
+            Text("Who's playing with you?").font(.kid(16, .black)).foregroundStyle(Palette.ink)
+            HStack(spacing: 8) {
+                ForEach(PartnerKind.allCases) { k in
+                    let on = store.partner == k
+                    Button {
+                        Haptics.tap()
+                        store.setPartner(k)
+                    } label: {
+                        Text(k.label).font(.kid(14, .black)).lineLimit(1).minimumScaleFactor(0.7)
+                            .foregroundStyle(on ? .white : Palette.ink)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(Capsule().fill(on ? Palette.purple : Color.white.opacity(0.9)))
+                    }
+                    .buttonStyle(BouncyButtonStyle())
+                    .accessibilityLabel("\(k.label)\(on ? ", selected" : "")")
+                }
+            }
+        }
     }
 
     private func player(_ c: GameCharacter, name: String, tag: String, side: String, action: (() -> Void)?) -> some View {
@@ -109,7 +137,7 @@ struct TeamSetupView: View {
                         .frame(minWidth: 64, minHeight: 44)
                         .contentShape(Rectangle())
                 }
-                    .accessibilityLabel("Change the grown-up's character")
+                    .accessibilityLabel("Change the second player's character")
             } else {
                 Text(" ").font(.kid(13, .bold))
             }

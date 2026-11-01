@@ -62,7 +62,7 @@ struct HopGameView: View {
 
                 if let quiz {
                     Color.black.opacity(0.35).ignoresSafeArea()
-                    QuizCard(question: quiz, teamNote: team ? "\(store.profile?.name ?? "Kid") answers — grown-ups can give a hint!" : nil) { firstTry in
+                    QuizCard(question: quiz, teamNote: team ? "\(store.profile?.name ?? "Kid") answers. \(store.partner.short) can give a hint!" : nil) { firstTry in
                         if firstTry { stars += 1 }
                         self.quiz = nil
                         scene?.clearGate(row: gateRow)
@@ -81,7 +81,7 @@ struct HopGameView: View {
         HStack {
             legendSide(store.character, name: store.profile?.name ?? "Kid", tag: "⭐", arrow: "←")
             Spacer()
-            legendSide(store.coopCharacter, name: "Grown-up", tag: "💜", arrow: "→")
+            legendSide(store.coopCharacter, name: store.partner.short, tag: "💜", arrow: "→")
         }
         .padding(.horizontal, 14)
         .allowsHitTesting(false)   // taps pass through to the game
@@ -141,7 +141,7 @@ struct HopGameView: View {
         if let intro = Worlds.intro(chapter.id) {
             showTip(intro)
         } else if team {
-            showTip("Team Hop! Left side moves \(store.profile?.name ?? "the kid"), right side moves the grown-up. Get to the castle together! 🤝")
+            showTip("Team Hop! Left side moves \(store.profile?.name ?? "the kid"), right side moves \(store.partner.the). Get to the castle together!")
         } else {
             showTip("Hop to the castle! Answer the Brain Gates on the way. 🏰")
         }
@@ -412,7 +412,7 @@ struct DriveGameView: View {
     private var dashboard: some View {
         HStack(alignment: .bottom, spacing: 12) {
             VStack(spacing: 8) {
-                if team { roleLabel("💜 Grown-up steers") }
+                if team { roleLabel("💜 \(store.partner.short) steers") }
                 HStack(spacing: 12) {
                     BlinkerButton(dir: -1, blinker: $hud.blinker)
                     BlinkerButton(dir: 1, blinker: $hud.blinker)

@@ -49,29 +49,41 @@ struct FortSelectView: View {
         .onAppear { Narrator.shared.say(intro) }
     }
 
-    /// Builder's Island: free build, always open.
+    /// Builder's Island: free build, always open, on three islands that each save.
     private var sandboxCard: some View {
-        let pieces = store.profile?.fortSandbox.count ?? 0
-        return Button {
-            Haptics.tap()
-            onStart(FortLevel.sandbox)
-        } label: {
-            HStack(spacing: 14) {
-                Text("🏗️").font(.system(size: 40)).frame(width: 52, height: 52)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Builder's Island").font(.kid(22, .black)).foregroundStyle(.white)
-                    Text(pieces == 0 ? "Free build: endless bricks, no rain" : "Your island: \(pieces) pieces")
-                        .font(.kid(14, .bold)).foregroundStyle(.white.opacity(0.9))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                ArtImage("icon_fort").frame(width: 44, height: 44).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Builder's Island").font(.kid(22, .black)).displayTracking(22).foregroundStyle(.white)
+                    Text("Free build: endless bricks, paint and decorations")
+                        .font(.kid(13, .semibold)).foregroundStyle(.white.opacity(0.9))
                 }
-                Spacer()
-                Image(systemName: "chevron.right.circle.fill").font(.system(size: 30)).foregroundStyle(.white)
             }
-            .padding(16)
-            .background(RoundedRectangle(cornerRadius: 24).fill(Color(hex: 0xFF9F45))
-                .shadow(color: Color(hex: 0xD9731C), radius: 0, x: 0, y: 5))
+            HStack(spacing: 8) {
+                ForEach(0..<3, id: \.self) { i in
+                    let pieces = store.fortIsland(i).count
+                    Button {
+                        Haptics.tap()
+                        store.openFortIsland(i)
+                        onStart(FortLevel.sandbox)
+                    } label: {
+                        VStack(spacing: 2) {
+                            Text("Island \(i + 1)").font(.kid(15, .black))
+                            Text(pieces == 0 ? "Empty" : "\(pieces) pieces").font(.kid(11, .semibold)).opacity(0.8).monospacedDigit()
+                        }
+                        .foregroundStyle(Palette.ink)
+                        .frame(maxWidth: .infinity, minHeight: 54)
+                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white.opacity(0.94)))
+                    }
+                    .buttonStyle(BouncyButtonStyle())
+                    .accessibilityLabel("Island \(i + 1), \(pieces == 0 ? "empty" : "\(pieces) pieces")")
+                }
+            }
         }
-        .buttonStyle(BouncyButtonStyle())
-        .accessibilityLabel("Builder's Island, free build")
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(hex: 0xFF9F45))
+            .shadow(color: Color(hex: 0xD9731C), radius: 0, x: 0, y: 5))
     }
 
     private func levelCard(_ level: FortLevel, index: Int) -> some View {
@@ -144,6 +156,7 @@ struct FortGameView: View {
     @StateObject private var hud = FortHUD()
     @State private var scene: FortScene?
     @State private var tool: FortTool?
+    @State private var decorKind = 0
     @State private var left = false
     @State private var right = false
     /// Builder's Island: the first tap on "Start over" asks to tap again.
@@ -189,7 +202,7 @@ struct FortGameView: View {
             .onAppear {
                 guard scene == nil, geo.size.width > 0 else { return }
                 let s = FortScene(size: geo.size, level: level, character: store.character, theme: store.theme, hud: hud,
-                                  team: team, saved: level.sandbox ? (store.profile?.fortSandbox ?? []) : [])
+                                  team: team, saved: level.sandbox ? store.fortIsland(store.currentFortIsland) : [])
                 s.onSandboxChange = { [store] pieces in store.setFortSandbox(pieces) }
                 scene = s
             }
@@ -267,16 +280,18 @@ struct FortGameView: View {
     private var controls: some View {
         VStack(spacing: 10) {
             HStack(spacing: 8) {
-                ForEach(FortTool.allCases) { t in
+                ForEach(FortTool.tools(sandbox: level.sandbox)) { t in
                     toolButton(t)
                 }
             }
+            if tool == .decor { decorPicker }
             HStack(spacing: 12) {
                 WalkButton(icon: "arrowtriangle.left.fill", label: "Walk left", pressed: $left)
                 WalkButton(icon: "arrowtriangle.right.fill", label: "Walk right", pressed: $right)
                 Spacer(minLength: 0)
                 Text(tool == nil ? "Pick a piece, then tap a glowing square!" :
-                        tool == .recycle ? "Tap a piece to take it back." : "Tap a glowing square to build.")
+                        tool == .recycle ? "Tap a piece to take it back." :
+                        tool == .paint ? "Tap a block to paint it." : "Tap a glowing square to build.")
                     .font(.kid(13, .bold))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.trailing)
@@ -295,6 +310,28 @@ struct FortGameView: View {
         .onChange(of: tool) { _, t in scene?.tool = t }
     }
 
+    /// Builder's Island: pick which decoration to place.
+    private var decorPicker: some View {
+        HStack(spacing: 6) {
+            ForEach(FortDecor.all.indices, id: \.self) { k in
+                let on = decorKind == k
+                Button {
+                    Haptics.tap()
+                    decorKind = k
+                    scene?.decorKind = k
+                } label: {
+                    Text(FortDecor.all[k]).font(.system(size: 24))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(on ? Color(hex: 0xFFF4C2) : Color.white.opacity(0.9)))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color(hex: 0xE0A800) : Color.clear, lineWidth: 3))
+                }
+                .buttonStyle(BouncyButtonStyle())
+                .accessibilityLabel("Decoration: \(FortDecor.names[k])\(on ? ", selected" : "")")
+            }
+        }
+        .transition(.opacity)
+    }
+
     private func updateMove() {
         scene?.moveInput = (right ? 1 : 0) - (left ? 1 : 0)
     }
@@ -310,9 +347,9 @@ struct FortGameView: View {
                     if let art = t.art {
                         ArtImage(art)
                     } else {
-                        Image(systemName: "arrow.uturn.backward.circle.fill")
+                        Image(systemName: t.symbol)
                             .resizable().scaledToFit()
-                            .foregroundStyle(Palette.red)
+                            .foregroundStyle(t == .recycle ? Palette.red : t == .paint ? Color(hex: 0x4D96FF) : Color(hex: 0xE0A800))
                     }
                 }
                 .frame(width: 34, height: 34)

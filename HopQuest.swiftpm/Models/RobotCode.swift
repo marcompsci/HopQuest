@@ -23,6 +23,8 @@ struct RobotBlock: Identifiable, Equatable {
         case repeatUntilGoal
         /// "If the square ahead is blocked" runs `body`, otherwise `elseBody`.
         case ifBlocked
+        /// Robot Lab 3: runs the child's own block (a function), defined once next to the program.
+        case callMyBlock
     }
 
     let id: UUID
@@ -42,8 +44,15 @@ struct RobotBlock: Identifiable, Equatable {
     static func step(_ c: RobotCmd) -> RobotBlock { RobotBlock(.step(c)) }
 
     var isContainer: Bool {
-        if case .step = kind { return false }
-        return true
+        switch kind {
+        case .step, .callMyBlock: return false
+        default: return true
+        }
+    }
+
+    var isStep: Bool {
+        if case .step = kind { return true }
+        return false
     }
 
     var isIf: Bool { kind == .ifBlocked }
@@ -99,7 +108,7 @@ extension Array where Element == RobotBlock {
             b.body = b.body.withoutEmptyContainers()
             b.elseBody = b.elseBody.withoutEmptyContainers()
             switch b.kind {
-            case .step: return b
+            case .step, .callMyBlock: return b
             case .repeatTimes, .repeatUntilGoal: return b.body.isEmpty ? nil : b
             case .ifBlocked: return b.body.isEmpty && b.elseBody.isEmpty ? nil : b
             }
@@ -182,7 +191,10 @@ enum RobotRunner {
 
     /// - Parameter stopAtGoal: true (the classic puzzles) ends the run as soon as the robot reaches the star.
     ///   Sensor puzzles pass false: the program has to finish on the star, so the robot must sense it.
-    static func run(_ program: [RobotBlock], in world: RobotWorld, needsGears: Bool, stopAtGoal: Bool = true) -> RobotTrace {
+    /// - Parameter myBlock: the child's own block (steps only), run wherever the program calls it.
+    static func run(_ program: [RobotBlock], myBlock: [RobotBlock] = [], in world: RobotWorld, needsGears: Bool, stopAtGoal: Bool = true) -> RobotTrace {
+        // a block can only hold steps, so it can never call itself
+        let myBlock = myBlock.filter(\.isStep)
         var t = RobotTrace(robot: world.start, dir: world.dir)
         var visitedGoal = false
 
@@ -246,6 +258,8 @@ enum RobotRunner {
                     let blocked = world.blocked(from: t.robot, facing: t.dir)
                     try record(.sensed(blocked: blocked), path)
                     try exec(blocked ? b.body : b.elseBody, path)
+                case .callMyBlock:
+                    try exec(myBlock, path)
                 }
             }
         }
@@ -267,8 +281,8 @@ enum RobotRunner {
     }
 
     /// Runs one program on every map of a puzzle. Solved only when it works on all of them.
-    static func runAll(_ program: [RobotBlock], maps: [RobotWorld], needsGears: Bool, stopAtGoal: Bool = true) -> [RobotTrace] {
-        maps.map { run(program, in: $0, needsGears: needsGears, stopAtGoal: stopAtGoal) }
+    static func runAll(_ program: [RobotBlock], myBlock: [RobotBlock] = [], maps: [RobotWorld], needsGears: Bool, stopAtGoal: Bool = true) -> [RobotTrace] {
+        maps.map { run(program, myBlock: myBlock, in: $0, needsGears: needsGears, stopAtGoal: stopAtGoal) }
     }
 }
 
@@ -408,14 +422,19 @@ struct CodeChallenge: Identifiable, Equatable {
     let blockLimit: Int
     /// Shows the sensor blocks: Repeat until ⭐ and If blocked.
     let sensors: Bool
+    /// Robot Lab 3: the child can build their own block. It lives in the toolbox, so only calls count toward the limit.
+    var myBlocks: Bool = false
+
+    /// The most steps My Block can hold.
+    static let myBlockMax = 8
 
     static let size = RobotWorld.size
 
     /// Sensor puzzles must finish on the star (no auto-stop), so the robot has to sense it.
     var stopAtGoal: Bool { !sensors }
 
-    func runAll(_ program: [RobotBlock]) -> [RobotTrace] {
-        RobotRunner.runAll(program, maps: maps, needsGears: needsGears, stopAtGoal: stopAtGoal)
+    func runAll(_ program: [RobotBlock], myBlock: [RobotBlock] = []) -> [RobotTrace] {
+        RobotRunner.runAll(program, myBlock: myBlock, maps: maps, needsGears: needsGears, stopAtGoal: stopAtGoal)
     }
 
     private static func c(_ x: Int, _ y: Int) -> RobotCell { RobotCell(x: x, y: y) }
@@ -479,5 +498,33 @@ struct CodeChallenge: Identifiable, Equatable {
                       maps: [RobotWorld(start: c(0, 5), dir: 0, goal: c(3, 3),
                                         rocks: [c(5, 4), c(2, 2), c(1, 4), c(3, 5)], gears: [c(0, 2), c(3, 0), c(5, 2)])],
                       needsGears: false, blockLimit: 4, sensors: true),
+
+        // Robot Lab 3: My Block (functions)
+        CodeChallenge(id: 410, title: "Hop Over",
+                      lesson: "Two rocks, and the same way around each one. Build it once as My Block, then use My Block twice! Coders call a block you make yourself a function.",
+                      topic: "My Block",
+                      maps: [RobotWorld(start: c(0, 4), dir: 1, goal: c(5, 4), rocks: [c(1, 4), c(4, 4)])],
+                      needsGears: false, blockLimit: 3, sensors: false, myBlocks: true),
+        CodeChallenge(id: 411, title: "Loop Your Block",
+                      lesson: "Climb the stairs! Teach My Block one stair, then put My Block inside a Repeat. Two blocks can climb them all!",
+                      topic: "My Block + loops",
+                      maps: [RobotWorld(start: c(0, 5), dir: 1, goal: c(4, 1), rocks: [c(2, 5), c(3, 4), c(4, 3), c(5, 2)])],
+                      needsGears: false, blockLimit: 2, sensors: false, myBlocks: true),
+        CodeChallenge(id: 412, title: "Zigzag Path",
+                      lesson: "The path zigzags, with a flat bit in the middle. Use My Block for each zig, and a plain step for the flat bit.",
+                      topic: "My Block + steps",
+                      maps: [RobotWorld(start: c(0, 5), dir: 1, goal: c(4, 2), rocks: [c(2, 5), c(3, 4), c(5, 2), c(0, 3)])],
+                      needsGears: false, blockLimit: 4, sensors: false, myBlocks: true),
+        CodeChallenge(id: 413, title: "Gear Towers",
+                      lesson: "Three gears sit up on towers. My Block can climb up, grab a gear, and come back down. Collect all three, then reach the star!",
+                      topic: "Reusing code",
+                      maps: [RobotWorld(start: c(0, 5), dir: 1, goal: c(5, 5), rocks: [c(2, 3), c(0, 3), c(5, 3)],
+                                        gears: [c(1, 3), c(3, 3), c(4, 3)])],
+                      needsGears: true, blockLimit: 8, sensors: false, myBlocks: true),
+        CodeChallenge(id: 414, title: "Hop Hop Hop",
+                      lesson: "Put everything together: a Repeat, My Block, and one last step. Can you do it in three blocks?",
+                      topic: "Functions + loops",
+                      maps: [RobotWorld(start: c(0, 1), dir: 1, goal: c(5, 1), rocks: [c(1, 1), c(3, 1), c(5, 3)])],
+                      needsGears: false, blockLimit: 3, sensors: false, myBlocks: true),
     ]
 }
