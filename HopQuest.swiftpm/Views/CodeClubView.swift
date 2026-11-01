@@ -474,7 +474,7 @@ struct CodeChallengeView: View {
                         Text("Empty: tap Edit").font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.45))
                     }
                     ForEach(myBlock) { b in
-                        RobotBlockChip(block: b, active: active, cursor: [], inElse: false, actions: myBlockActions, small: true)
+                        RobotBlockChip(block: b, active: active, cursor: [], inElse: false, actions: myBlockActions, owners: owners, small: true)
                     }
                     if editingMyBlock {
                         RoundedRectangle(cornerRadius: 9)
@@ -723,6 +723,10 @@ struct CodeChallengeView: View {
                 return
             }
             Haptics.tap(.pop)
+            if team {
+                owners[block.id] = turn
+                turn = 1 - turn
+            }
             withAnimation(Motion.snappy) { myBlock.append(block) }
             return
         }

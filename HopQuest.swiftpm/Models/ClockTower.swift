@@ -31,6 +31,14 @@ struct ClockTime: Equatable, Hashable {
         }
     }
 
+    /// For VoiceOver: where the hands point, without saying the time (that's the question).
+    var handsDescription: String {
+        let longOn = minute % 5 == 0 ? (minute == 0 ? 12 : minute / 5) : 0
+        let shortNear = minute >= 30 ? "between \(hour) and \(ClockTime(hour + 1).hour)" : "on \(hour)"
+        let long = longOn > 0 ? "points to \(longOn)" : "is between numbers"
+        return "The short hand is \(shortNear). The long hand \(long)."
+    }
+
     /// Hands, in degrees clockwise from 12. The hour hand creeps forward as the minutes go by, like a real clock.
     var hourAngle: Double { (Double(hour % 12) + Double(minute) / 60) * 30 }
     var minuteAngle: Double { Double(minute) * 6 }

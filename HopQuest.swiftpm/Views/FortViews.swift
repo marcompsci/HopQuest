@@ -173,6 +173,7 @@ struct FortGameView: View {
 
                 VStack(spacing: 8) {
                     topBar
+                    if tool == .decor { decorPicker }
                     if let message = hud.message {
                         MessageBubble(text: message)
                     }
@@ -284,7 +285,6 @@ struct FortGameView: View {
                     toolButton(t)
                 }
             }
-            if tool == .decor { decorPicker }
             HStack(spacing: 12) {
                 WalkButton(icon: "arrowtriangle.left.fill", label: "Walk left", pressed: $left)
                 WalkButton(icon: "arrowtriangle.right.fill", label: "Walk right", pressed: $right)
@@ -312,6 +312,7 @@ struct FortGameView: View {
 
     /// Builder's Island: pick which decoration to place.
     private var decorPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 6) {
             ForEach(FortDecor.all.indices, id: \.self) { k in
                 let on = decorKind == k
@@ -321,13 +322,15 @@ struct FortGameView: View {
                     scene?.decorKind = k
                 } label: {
                     Text(FortDecor.all[k]).font(.system(size: 24))
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .frame(width: 48, height: 48)
                         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(on ? Color(hex: 0xFFF4C2) : Color.white.opacity(0.9)))
                         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color(hex: 0xE0A800) : Color.clear, lineWidth: 3))
                 }
                 .buttonStyle(BouncyButtonStyle())
                 .accessibilityLabel("Decoration: \(FortDecor.names[k])\(on ? ", selected" : "")")
             }
+        }
+        .padding(.horizontal, 14)
         }
         .transition(.opacity)
     }

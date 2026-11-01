@@ -192,6 +192,8 @@ struct PlayerProfile: Codable, Equatable {
     var seenStories: Set<String> = []
     /// Together mode: a grown-up, a brother or sister, or a friend.
     var partner: PartnerKind = .grownUp
+    /// Milestone notes for grown-ups (off by default; kept on this device).
+    var milestones = MilestoneSettings()
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -200,7 +202,7 @@ struct PlayerProfile: Codable, Equatable {
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
         case village, codeLab, missions, reading, market, seenStories, science, music
-        case writing, clock, world, partner
+        case writing, clock, world, partner, milestones
     }
 }
 
@@ -251,6 +253,7 @@ extension PlayerProfile {
         clock = (try? c.decodeIfPresent(ClockSave.self, forKey: .clock)) ?? ClockSave()
         world = (try? c.decodeIfPresent(WorldTourSave.self, forKey: .world)) ?? WorldTourSave()
         partner = (try? c.decodeIfPresent(PartnerKind.self, forKey: .partner)) ?? .grownUp
+        milestones = (try? c.decodeIfPresent(MilestoneSettings.self, forKey: .milestones)) ?? MilestoneSettings()
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -305,7 +308,7 @@ enum PartnerKind: String, Codable, CaseIterable, Identifiable {
 /// Only touched from the UI / SpriteKit main thread.
 final class GameStore: ObservableObject {
     @Published var profile: PlayerProfile? {
-        didSet { persist() }
+        didSet { persist(); refreshSeason() }
     }
 
     private let key = "hopquest.profile.v1"
@@ -317,6 +320,13 @@ final class GameStore: ObservableObject {
         }
         Narrator.shared.enabled = profile?.narration ?? true
         QuestionBank.tier = effectiveTier
+        refreshSeason()
+    }
+
+    /// Seasons beyond the village follow the same grown-up switch as the village.
+    private func refreshSeason() {
+        let on = profile?.village.seasons ?? true
+        Season.shown = on ? Season.of(month: Calendar.current.component(.month, from: Date()), southern: Season.deviceIsSouthern) : nil
     }
 
     var theme: CastleTheme { profile?.theme ?? .rainbow }

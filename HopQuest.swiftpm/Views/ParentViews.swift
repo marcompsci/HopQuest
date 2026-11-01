@@ -89,6 +89,8 @@ struct ParentSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            ProgressAndMilestonesSection()
+
             Section("Reading help") {
                 Toggle("Read everything out loud", isOn: binding(\.narration, true))
                 Text("Reads questions, tips, and lessons aloud for kids who are still learning to read. Uses the built-in iPhone voice; no recordings are made.")
@@ -103,6 +105,8 @@ struct ParentSettingsView: View {
                 Toggle("Sound effects", isOn: Binding(
                     get: { SoundFX.shared.sfxOn },
                     set: { UserDefaults.standard.set($0, forKey: SoundFX.sfxKey); SoundFX.shared.applySettings(); soundTick.toggle() }))
+                volumeSlider("Music volume", key: SoundFX.musicLevelKey, icon: "music.note", sample: nil)
+                volumeSlider("Effects volume", key: SoundFX.sfxLevelKey, icon: "speaker.wave.2.fill", sample: .star)
 
             }
 
@@ -206,6 +210,20 @@ struct ParentSettingsView: View {
                 dismiss()
                 store.startOver()
             }
+        }
+    }
+
+    /// A 0…100% slider saved on this device. Effects play a sample when you let go.
+    private func volumeSlider(_ title: String, key: String, icon: String, sample: Sfx?) -> some View {
+        let value = Binding<Double>(
+            get: { _ = soundTick; return UserDefaults.standard.object(forKey: key) as? Double ?? 1 },
+            set: { UserDefaults.standard.set($0, forKey: key); SoundFX.shared.applySettings(); soundTick.toggle() })
+        return VStack(alignment: .leading, spacing: 4) {
+            Label(title, systemImage: icon)
+            Slider(value: value, in: 0...1, step: 0.1) { editing in
+                if !editing, let sample { SoundFX.shared.play(sample) }
+            }
+            .accessibilityValue("\(Int(value.wrappedValue * 100)) percent")
         }
     }
 

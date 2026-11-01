@@ -38,6 +38,10 @@ struct MainMenuView: View {
             if let land = ArtLibrary.image("map_bg") {
                 Image(uiImage: land).resizable().scaledToFill().ignoresSafeArea().opacity(0.55).allowsHitTesting(false)
             }
+            if let hex = Season.shown?.driftTintHex {
+                // the season drifts by: spring petals, autumn leaves, winter snow
+                SnowfallView(tint: Color(hex: hex)).ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
+            }
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
@@ -142,7 +146,15 @@ struct MainMenuView: View {
                 .foregroundStyle(Palette.purple)
             }
             Spacer()
-            CircleIconButton(systemName: "gearshape.fill", label: "Grown-ups") { showParent = true }
+            CircleIconButton(systemName: "gearshape.fill", label: store.pendingMilestones.isEmpty ? "Grown-ups" : "Grown-ups, a milestone note is ready") { showParent = true }
+                .overlay(alignment: .topTrailing) {
+                    // a quiet dot for grown-ups: a milestone note is waiting behind the gate
+                    if !store.pendingMilestones.isEmpty {
+                        Circle().fill(Palette.red).frame(width: 12, height: 12)
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                            .accessibilityHidden(true)
+                    }
+                }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

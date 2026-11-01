@@ -705,5 +705,17 @@ test("pet: follows behind along the buddy's own footsteps, catches up after a ju
     check(!pet.isMoving, "and stands still")
 }
 
+test("seasons beyond the village: menu drift, meadow decorations, trees and castle toppers") {
+    check(Season.summer.driftTintHex == nil && Season.allCases.filter { $0.driftTintHex != nil }.count == 3, "petals, leaves and snow; clear summer skies")
+    for s in Season.allCases {
+        check(s.meadowDecorations.count == 3 && Set(s.meadowDecorations).count == 3, "\(s) has three decorations")
+        check(!s.castleTopper.isEmpty, "\(s) has a castle topper")
+    }
+    check(Season.spring.treeTintHex == nil && Season.autumn.treeTintHex != nil && Season.winter.treeTintHex == 0xFFFFFF, "autumn and winter trees")
+    check(Set(Season.allCases.map(\.castleTopper)).count == 4, "a different topper each season")
+    check(Season.of(month: 7, southern: true) == .winter && Season.of(month: 12, southern: true) == .summer && Season.of(month: 4, southern: true) == .autumn, "south of the equator, seasons flip")
+    check(Season.southernRegions.contains("AU") && !Season.southernRegions.contains("US"), "southern regions")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

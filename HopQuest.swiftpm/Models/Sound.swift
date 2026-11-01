@@ -33,6 +33,12 @@ final class SoundFX {
     var sfxOn: Bool { UserDefaults.standard.object(forKey: Self.sfxKey) as? Bool ?? true }
     var musicOn: Bool { UserDefaults.standard.object(forKey: Self.musicKey) as? Bool ?? true }
 
+    static let musicLevelKey = "hopquest.musicLevel"
+    static let sfxLevelKey = "hopquest.sfxLevel"
+    /// Grown-up volume sliders, 0…1 (full by default).
+    var musicLevel: Float { Float(UserDefaults.standard.object(forKey: Self.musicLevelKey) as? Double ?? 1) }
+    var sfxLevel: Float { Float(UserDefaults.standard.object(forKey: Self.sfxLevelKey) as? Double ?? 1) }
+
     private let engine = AVAudioEngine()
     private var players: [AVAudioPlayerNode] = []
     private var nextPlayer = 0
@@ -88,6 +94,13 @@ final class SoundFX {
         NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main) { [weak self] _ in
             self?.restart()
         }
+        // Starting a player while the app is in the background (launched from Xcode on a locked phone, say) can throw
+        // "player did not see an IO cycle". So music only starts while the app is active, and picks up when it becomes active.
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            guard let self else { return }
+            self.restart()
+            if self.wantMusic { self.startMusic() }
+        }
         NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
             guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   AVAudioSession.InterruptionType(rawValue: raw) == .ended else { return }
@@ -133,11 +146,26 @@ final class SoundFX {
         trackBuffers[track] ?? trackBuffers[.adventure] ?? musicBuffer
     }
 
+    /// Players may only start while the app is in the foreground with a live audio route.
+    private var canPlay: Bool {
+        UIApplication.shared.applicationState == .active && engine.isRunning
+            && engine.outputNode.outputFormat(forBus: 0).sampleRate > 0
+    }
+
     private func restart() {
-        guard !engine.isRunning else { return }
-        do { try engine.start() } catch { return }
-        players.forEach { $0.play() }
-        if wantMusic, let song = currentSong(), musicOn {
+        guard UIApplication.shared.applicationState == .active else { return }
+        if !engine.isRunning {
+            try? AVAudioSession.sharedInstance().setActive(true)
+            do { try engine.start() } catch { return }
+        }
+        guard canPlay else { return }
+        players.forEach { if !$0.isPlaying { $0.play() } }
+        if humming && !humPlayer.isPlaying {
+            // an interruption (a phone call, say) stopped the engine hum: start it again
+            humming = false
+            startEngineHum()
+        }
+        if wantMusic, let song = currentSong(), musicOn, !musicPlayer.isPlaying {
             musicPlayer.stop()
             musicPlayer.scheduleBuffer(song, at: nil, options: .loops)
             musicPlayer.play()
@@ -149,10 +177,10 @@ final class SoundFX {
     func play(_ s: Sfx, volume: Float = 1) {
         guard sfxOn else { return }
         start()
-        guard engine.isRunning, let buf = buffers[s], !players.isEmpty else { return }
+        guard canPlay, let buf = buffers[s], !players.isEmpty else { return }
         let p = players[nextPlayer]
         nextPlayer = (nextPlayer + 1) % players.count
-        p.volume = volume
+        p.volume = volume * sfxLevel
         p.scheduleBuffer(buf, at: nil, options: .interrupts)
         if !p.isPlaying { p.play() }
     }
@@ -167,10 +195,10 @@ final class SoundFX {
         start()
         let id = "\(instrument.rawValue)\(key)"
         if noteBuffers[id] == nil { noteBuffers[id] = Synth.instrumentNote(instrument, key: key, format: format) }
-        guard engine.isRunning, let buf = noteBuffers[id], !players.isEmpty else { return }
+        guard canPlay, let buf = noteBuffers[id], !players.isEmpty else { return }
         let p = players[nextPlayer]
         nextPlayer = (nextPlayer + 1) % players.count
-        p.volume = volume
+        p.volume = volume * sfxLevel
         p.scheduleBuffer(buf, at: nil, options: .interrupts)
         if !p.isPlaying { p.play() }
     }
@@ -180,10 +208,10 @@ final class SoundFX {
     func startMusic() {
         wantMusic = true
         start()
-        guard musicOn, engine.isRunning, let song = currentSong() else { return }
+        guard musicOn, canPlay, let song = currentSong() else { return }
         if musicPlayer.isPlaying && playingTrack == track { return }
         musicPlayer.stop()
-        musicPlayer.volume = ducked ? musicVolume * 0.4 : musicVolume
+        musicPlayer.volume = (ducked ? musicVolume * 0.4 : musicVolume) * musicLevel
         musicPlayer.scheduleBuffer(song, at: nil, options: .loops)
         musicPlayer.play()
         playingTrack = trackBuffers[track] != nil ? track : nil
@@ -204,11 +232,12 @@ final class SoundFX {
     /// Quieter music while the narrator is talking.
     func duckMusic(_ on: Bool) {
         ducked = on
-        musicPlayer.volume = on ? musicVolume * 0.4 : musicVolume
+        musicPlayer.volume = (on ? musicVolume * 0.4 : musicVolume) * musicLevel
     }
 
     /// Re-reads the grown-up toggles.
     func applySettings() {
+        musicPlayer.volume = (ducked ? musicVolume * 0.4 : musicVolume) * musicLevel
         if musicOn && wantMusic {
             startMusic()
         } else {
@@ -223,9 +252,9 @@ final class SoundFX {
     func startEngineHum() {
         guard sfxOn else { return }
         start()
-        guard engine.isRunning, let humBuffer, !humming else { return }
+        guard canPlay, let humBuffer, !humming else { return }
         humming = true
-        humPlayer.volume = 0.18
+        humPlayer.volume = 0.18 * sfxLevel
         varispeed.rate = 0.7
         humPlayer.scheduleBuffer(humBuffer, at: nil, options: .loops)
         humPlayer.play()
@@ -235,7 +264,7 @@ final class SoundFX {
     func setEngine(_ level: Float) {
         guard humming else { return }
         varispeed.rate = 0.7 + max(0, min(1, level)) * 1.5
-        humPlayer.volume = 0.12 + max(0, min(1, level)) * 0.14
+        humPlayer.volume = (0.12 + max(0, min(1, level)) * 0.14) * sfxLevel
     }
 
     func stopEngineHum() {

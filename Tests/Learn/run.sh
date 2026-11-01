@@ -13,5 +13,6 @@ FILES=("$PKG/Models/Reading.swift")
 [ -f "$PKG/Models/Writing.swift" ] && FILES+=("$PKG/Models/Writing.swift")
 [ -f "$PKG/Models/ClockTower.swift" ] && FILES+=("$PKG/Models/ClockTower.swift")
 [ -f "$PKG/Models/WorldTour.swift" ] && FILES+=("$PKG/Models/WorldTour.swift")
+[ -f "$PKG/Models/Milestones.swift" ] && FILES+=("$PKG/Models/Milestones.swift")
 swiftc -O "${FILES[@]}" "$HERE/main.swift" -o "$OUT"
 "$OUT"

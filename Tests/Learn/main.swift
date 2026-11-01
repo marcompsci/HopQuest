@@ -338,6 +338,9 @@ test("Clock Tower: times, hands and words") {
     check(abs(ClockHands.angle(dx: 1, dy: 0) - 90) < 0.001 && abs(ClockHands.angle(dx: 0, dy: 1) - 180) < 0.001 && ClockHands.angle(dx: 0, dy: -1) < 0.001, "screen angles")
     check(ClockHands.wind(ClockTime(3, 55), toMinute: 0) == ClockTime(4) && ClockHands.wind(ClockTime(4, 5), toMinute: 50) == ClockTime(3, 50), "winding past 12 moves the hour")
     check(ClockHands.wind(ClockTime(4, 20), toMinute: 30) == ClockTime(4, 30), "winding within the hour")
+    check(ClockTime(3, 30).handsDescription == "The short hand is between 3 and 4. The long hand points to 6.", "VoiceOver hands, half past")
+    check(ClockTime(12).handsDescription == "The short hand is on 12. The long hand points to 12.", "VoiceOver hands, o'clock")
+    check(!ClockTime(3, 15).handsDescription.contains("quarter"), "VoiceOver describes the hands, not the answer")
 }
 
 test("Clock Tower: every game, 300 seeds") {
@@ -374,7 +377,7 @@ test("Around the World: the map puts real places on the right continent") {
         ("Paris", 2.3, 48.9, .europe), ("Beijing", 116.4, 39.9, .asia), ("Cairo", 31.2, 30.0, .africa), ("Nairobi", 36.8, -1.3, .africa),
         ("Sydney", 151.2, -33.9, .australia), ("Alice Springs", 133.9, -23.7, .australia), ("Brasília", -47.9, -15.8, .southAmerica),
         ("Lima", -77.0, -12.0, .southAmerica), ("Chicago", -87.6, 41.9, .northAmerica), ("Mexico City", -99.1, 19.4, .northAmerica),
-        ("Delhi", 77.2, 28.6, .asia), ("Moscow", 37.6, 55.8, .europe), ("South Pole station", 0, -80, .antarctica),
+        ("Delhi", 77.2, 28.6, .asia), ("Riyadh", 46.7, 24.7, .asia), ("Sanaa", 44.2, 15.4, .asia), ("Moscow", 37.6, 55.8, .europe), ("South Pole station", 0, -80, .antarctica),
         ("Middle of the Pacific", -150, 0, nil), ("Middle of the Atlantic", -30, 10, nil), ("Indian Ocean", 80, -20, nil),
     ]
     for (name, lon, lat, want) in places {
@@ -420,6 +423,35 @@ test("Around the World: every game, 300 seeds, and wrong choices are really wron
     check(w.collect([.asia, .asia, .africa]) == [.asia, .africa] && w.collect([.asia]).isEmpty && w.postcards.count == 2, "postcards collect once")
     check(w.record(.oceans, stars: 2) == 2 && WorldTourSave.maxStars == 12, "best only")
     check(try JSONDecoder().decode(WorldTourSave.self, from: JSONEncoder().encode(w)) == w, "round trip")
+}
+
+test("Grown-ups progress: skills, areas and milestones") {
+    func area(_ id: String, _ bests: [Int]) -> LearningArea {
+        LearningArea(id: id, title: id.capitalized + " Place", skills: bests.enumerated().map { SkillProgress(skill: "\(id) skill \($0.offset)", best: $0.element) })
+    }
+    check(SkillProgress(skill: "x", best: 0).status == .notStarted && SkillProgress(skill: "x", best: 1).status == .practising
+          && SkillProgress(skill: "x", best: 3).status == .gotIt, "status from stars")
+    let done = area("reading", [2, 3, 3]), half = area("clock", [1, 0, 3])
+    check(done.finished && !half.finished && half.started && half.needsPractice.count == 1 && half.stars == 4 && half.maxStars == 9, "area sums")
+    check(!area("empty", []).finished, "an empty area is never finished")
+    var input = MilestoneInput(lifetimeStars: 60, areas: [done, half], postcards: 7, lettersWritten: 10, storyFinished: false)
+    let ids = Milestones.reached(input).map(\.id)
+    check(ids == ["stars25", "stars50", "area-reading", "postcards7"], "reached: \(ids)")
+    check(Milestones.pending(input, shared: ["stars25", "area-reading"]).map(\.id) == ["stars50", "postcards7"], "pending skips shared ones")
+    input.lettersWritten = 62; input.storyFinished = true; input.lifetimeStars = 600
+    check(Milestones.reached(input).count == 9, "every milestone at once")
+    let note = Milestones.note(name: "Sam", milestone: Milestones.reached(input).first, input: input)
+    check(note.hasPrefix("HopQuest news: Sam just earned 25 stars"), "note opens with the news")
+    check(note.contains("Skills practised: reading skill 0") && note.contains("Working on next: clock skill 0.") && note.contains("600"), "note lists skills and stars")
+    check(!note.contains("@") && !note.contains("http"), "no links or addresses in the note")
+    check(Milestones.note(name: "  ", milestone: nil, input: input).hasPrefix("HopQuest update for Your child"), "no name, no problem")
+    check(Milestones.list(["a"]) == "a" && Milestones.list(["a", "b"]) == "a and b" && Milestones.list(["a", "b", "c"]) == "a, b and c", "lists read naturally")
+    check(Milestones.cleanPhone(" (555) 123-4567 ") == "5551234567" && Milestones.cleanPhone("+44 20 7946 0958") == "+442079460958", "phone numbers")
+    check(Milestones.cleanPhone("123") == "" && Milestones.cleanPhone("call me") == "", "not a phone number")
+    var m = MilestoneSettings(); m.enabled = true; m.phone = "5551234567"; m.shared = ["stars25"]
+    check(try JSONDecoder().decode(MilestoneSettings.self, from: JSONEncoder().encode(m)) == m, "round trip")
+    check(try JSONDecoder().decode(MilestoneSettings.self, from: Data("{}".utf8)) == MilestoneSettings(), "off by default")
+    check(try JSONDecoder().decode(MilestoneSettings.self, from: Data(#"{"enabled":true,"phone":"hi"}"#.utf8)).phone == "", "junk numbers are dropped")
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

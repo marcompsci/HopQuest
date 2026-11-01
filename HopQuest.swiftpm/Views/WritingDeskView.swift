@@ -98,8 +98,8 @@ struct WritingGameView: View {
                 if r.glyphs.count > 1 { wordStrip(r) }
                 TracePad(glyph: g, stroke: roundDone ? g.strokes.count : stroke, ink: ink, color: color,
                          demoStart: demoStart, reduceMotion: reduceMotion,
-                         onDraw: { ink.append($0) }, onLift: lift)
-                    .modifier(Shake(animatableData: CGFloat(shakes)))
+                         onBegin: { ink = [] }, onDraw: { ink.append($0) }, onLift: lift)
+                    .modifier(Shake(animatableData: reduceMotion ? 0 : CGFloat(shakes)))
                     .accessibilityElement()
                     .accessibilityLabel("Tracing \(g.character). Stroke \(min(stroke + 1, g.strokes.count)) of \(g.strokes.count).")
                     .accessibilityAction(named: "Trace this stroke for me") { finishStroke() }
@@ -241,8 +241,12 @@ struct TracePad: View {
     let color: Color
     let demoStart: Date?
     let reduceMotion: Bool
+    /// A new finger stroke started (clears anything left over from a touch the system cancelled).
+    var onBegin: () -> Void
     var onDraw: (PenPoint) -> Void
     var onLift: () -> Void
+
+    @State private var strokeStart: CGPoint?
 
     var body: some View {
         GeometryReader { geo in
@@ -255,8 +259,14 @@ struct TracePad: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .local)
-                    .onChanged { v in onDraw(map.unit(v.location)) }
-                    .onEnded { _ in onLift() }
+                    .onChanged { v in
+                        if strokeStart != v.startLocation {
+                            strokeStart = v.startLocation
+                            onBegin()
+                        }
+                        onDraw(map.unit(v.location))
+                    }
+                    .onEnded { _ in strokeStart = nil; onLift() }
             )
         }
         .aspectRatio(0.9, contentMode: .fit)

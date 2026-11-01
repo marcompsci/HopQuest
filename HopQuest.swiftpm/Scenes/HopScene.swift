@@ -291,7 +291,7 @@ final class HopScene: SKScene {
             if decorate {
                 for _ in 0..<Int.random(in: 0...2) {
                     let x = (CGFloat(Int.random(in: 0..<columns)) + 0.5) * cell
-                    let f = SpriteFactory.emoji((style?.decorations.randomElement()) ?? ["🌼", "🌷", "🌸"].randomElement()!, size: cell * 0.3,
+                    let f = SpriteFactory.emoji((style?.decorations.randomElement()) ?? (Season.shown?.meadowDecorations ?? ["🌼", "🌷", "🌸"]).randomElement()!, size: cell * 0.3,
                                                 at: CGPoint(x: x + CGFloat.random(in: -8...8), y: mid - cell * 0.18))
                     f.alpha = 0.95
                     node.addChild(f)
@@ -308,7 +308,12 @@ final class HopScene: SKScene {
                     let tree = SKSpriteNode(texture: DriveArt.tree, size: CGSize(width: cell * 1.1, height: cell * 1.1))
                     tree.position = CGPoint(x: CGFloat.random(in: 0...size.width), y: mid)
                     tree.zPosition = 5
-                    if snowy { tree.color = .white; tree.colorBlendFactor = 0.35 }
+                    if snowy {
+                        tree.color = .white; tree.colorBlendFactor = 0.35
+                    } else if (style?.ground ?? "meadow") == "meadow", let hex = Season.shown?.treeTintHex {
+                        // autumn leaves and wintry trees in the meadow levels
+                        tree.color = UIColor(hex: hex); tree.colorBlendFactor = hex == 0xFFFFFF ? 0.4 : 0.45
+                    }
                     node.addChild(tree)
                 }
             }
@@ -447,6 +452,12 @@ final class HopScene: SKScene {
             castle.position = CGPoint(x: size.width * 0.4, y: cell * 0.8)
             castle.zPosition = 20
             node.addChild(castle)
+            if let topper = Season.shown?.castleTopper {
+                let t = SpriteFactory.emoji(topper, size: cell * 0.55,
+                                            at: CGPoint(x: castle.position.x, y: castle.calculateAccumulatedFrame().maxY + cell * 0.1))
+                t.zPosition = 21
+                node.addChild(t)
+            }
 
             let b = SpriteFactory.balloon(theme: theme, scale: cell)
             b.position = CGPoint(x: size.width * 0.84, y: mid)

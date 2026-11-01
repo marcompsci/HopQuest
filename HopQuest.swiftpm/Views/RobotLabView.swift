@@ -134,6 +134,7 @@ struct RobotLabView: View {
     @State private var codeMessage: String?
     @State private var codeMistakes = 0
     @State private var starBounce = false
+    @State private var runTask: Task<Void, Never>?
 
     private let gridSize = 5
     private let start = Cell(x: 0, y: 4)
@@ -164,7 +165,7 @@ struct RobotLabView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: lesson)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: phase)
         .onAppear { Narrator.shared.say(team ? "\(builderName), you're the builder! \(Self.buildIntro)" : Self.buildIntro) }
-        .onDisappear { Narrator.shared.stop() }
+        .onDisappear { runTask?.cancel(); Narrator.shared.stop() }
         .onChange(of: lesson) { _, part in
             if let part { Narrator.shared.say("\(part.title)! \(part.lesson)") }
         }
@@ -522,10 +523,12 @@ struct RobotLabView: View {
         resetRobot()
         running = true
         let steps = program
-        Task { @MainActor in
+        runTask?.cancel()
+        runTask = Task { @MainActor in
             for (i, cmd) in steps.enumerated() {
                 activeStep = i
                 try? await Task.sleep(nanoseconds: 480_000_000)
+                guard !Task.isCancelled else { return }
                 switch cmd {
                 case .forward:
                     let moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
@@ -553,6 +556,7 @@ struct RobotLabView: View {
                 if robot == goal { break }
             }
             try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled else { return }
             running = false
             activeStep = nil
             if robot == goal {

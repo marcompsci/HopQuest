@@ -262,6 +262,35 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 ### v4.3: Jungle Journey
 - A fourth world after Lighthouse Point: Vine Valley, Hippo River, Temple Top. New "jungle" ground in `worlds.json`; the lighthouse story now points to the jungle and a new finale plays at Temple Top.
 
+### v4.4: Writing Desk
+- Polly Panda's desk: trace big letters, small letters, numbers 0–9 and three-letter words, stroke by stroke, on lined paper. A green dot shows where to start, an arrow shows the way, and "Show me" draws the stroke first. 62 hand-checked letter shapes and a tested tracing checker that gives kind hints (start at the dot, stay near the line, keep going).
+
+### v4.5: Clock Tower
+- Gemma Giraffe's tower: O'Clock, Half Past, Quarter Hours, Set the Clock (drag real hands; the long hand winds the hour on, like a real clock) and One Hour Later. Wrong choices are the classic mix-ups (hands swapped, hour off by one).
+
+### v4.6: Around the World
+- Pip Penguin's trip to all seven continents: tap continents on a real-shaped map, match animals and famous places to where they are, and learn the five oceans. Every continent gets a postcard with a true fact. Wrong choices are never a place the animal really lives.
+
+### v4.7: Robot Lab 3: My Block
+- Kids build their own block (a function) from up to 8 steps and use it like any block. Five puzzles; a test proves the 2-star block limit can't be reached without My Block.
+
+### v4.8: Sky Islands
+- A fifth world after Temple Top: Cloud Meadow, Windmill Isle, Rainbow Bridge. Lilac cloud ground, drifting clouds to hop on, weather questions. The story now ends at the Rainbow Bridge.
+
+### v4.9: Builder's Island 2
+- Decorations (flags, trees, windows, lanterns and more) that sit on top of pieces, block paint in six colors, and three islands that each save.
+
+### v5.0: Play Together
+- Grown-up & Me becomes Play Together: pick a grown-up, a brother or sister, or a friend (this only changes the words on screen; nothing is typed). New Team Robot Lab: one player builds the robot, the other codes it.
+
+### v5.1: Grown-ups progress page and milestone notes
+- Behind the parental gate: every learning place game by game (Got it / Practising / Not yet), and "good ones to practise together".
+- Milestone notes (off by default): when a child reaches a milestone, a note waits for the grown-up, who taps Text it; Messages opens with the note filled in, and the grown-up presses Send. iPhones don't let apps text by themselves, and the app never sends anything on its own or uses a server.
+
+### v5.2: Sound and seasons
+- Music and effects volume sliders. Audio only starts while the app is in the foreground (fixes a launch crash when started from Xcode on a locked phone).
+- The season now reaches beyond the village: petals, leaves or snow drift past the menu and map, meadow levels get seasonal flowers and trees, and castles wear a seasonal topper. The grown-ups' seasons switch turns it all off.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

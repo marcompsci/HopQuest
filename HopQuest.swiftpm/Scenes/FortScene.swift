@@ -892,6 +892,12 @@ final class FortScene: SKScene {
         }
         paint[c] = nil
         tiles[c.x][c.y] = c.y == 1 && level.rows[rows - 1 - c.y].dropFirst(c.x).first == "~" ? .water : .empty
+        // a decoration sitting on this piece comes away with it
+        let above = Cell(x: c.x, y: c.y + 1)
+        if above.y < rows, case .decor = tiles[above.x][above.y] {
+            tiles[above.x][above.y] = .empty
+            tileNodes.removeValue(forKey: above)?.removeFromParent()
+        }
         if let node = tileNodes.removeValue(forKey: c) {
             node.run(.sequence([.group([.scale(to: 0.1, duration: 0.15), .fadeOut(withDuration: 0.15)]), .removeFromParent()]))
         }
@@ -954,7 +960,7 @@ final class FortScene: SKScene {
             guard f.count == 3, let x = Int(f[0]), let y = Int(f[1]), (0..<cols).contains(x), (1..<rows).contains(y) else { continue }
             guard tiles[x][y] == .empty || tiles[x][y] == .water else { continue }
             let kind = f[2]
-            if kind.count == 2, let n = Int(kind.dropFirst()) {
+            if kind.count == 2, kind.hasPrefix("b") || kind.hasPrefix("d"), let n = Int(kind.dropFirst()) {
                 if kind.hasPrefix("b"), (1..<FortDecor.paints.count).contains(n) {
                     tiles[x][y] = .block
                     paint[Cell(x: x, y: y)] = n
@@ -990,6 +996,8 @@ final class FortScene: SKScene {
                 if tiles[x][y - 1] == .ground { drawTile(Cell(x: x, y: y - 1)) }
             }
         }
+        // the block under the buddy stays, now unpainted
+        for x in 0..<cols { for y in 1..<rows where tiles[x][y] == .block { drawTile(Cell(x: x, y: y)) } }
         refreshGhosts()
         onSandboxChange?(builtPieces())
         say("A fresh island! What will you build?")

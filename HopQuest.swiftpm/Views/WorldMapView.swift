@@ -26,6 +26,9 @@ struct WorldMapView: View {
                 LinearGradient(colors: store.theme.sky, startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea()
                 clouds(size)
+                if let hex = Season.shown?.driftTintHex {
+                    SnowfallView(tint: Color(hex: hex)).ignoresSafeArea().allowsHitTesting(false).accessibilityHidden(true)
+                }
 
                 // painted landscape (sky stays the castle theme's colors)
                 if let land = ArtLibrary.image("map_bg") {

@@ -1,6 +1,6 @@
 # HopQuest Privacy Policy
 
-_Last updated: October 17, 2026 (version 2.0)_
+_Last updated: November 1, 2026 (version 2.0)_
 
 HopQuest is a game for children made by **Phoronomics**. We built it so that **no personal information ever leaves your device**, and nothing is ever sent to us.
 
@@ -23,6 +23,7 @@ To save a child's progress, HopQuest keeps a small save file **only on the devic
 - Game progress: stars, finished levels, stickers, castle decorations, and best scores
 - Learning progress shown to grown-ups in the Learning Report (how many questions were answered in each subject)
 - Grown-up settings (narration, sound, break reminders, daily play limit, question level)
+- If a grown-up turns on milestone notes: the phone number they type (optional) and which milestones they have already shared
 
 This information never leaves the device and is never sent to us or anyone else. Deleting the app deletes all of it. A grown-up can also erase it at any time in **Grown-up settings → Start over with a new player**.
 
@@ -32,6 +33,11 @@ In Hop Village, kids can see friends' buddies walking around and play Brain Duel
 - **Nearby only:** phones in the same room connect directly over Wi-Fi or Bluetooth using Apple's Multipeer Connectivity. No internet is used. iOS will ask for permission to use the local network.
 
 While playing with others, the device shares only: a random code for this play session, the buddy's name and look (for example "Pip"), where the buddy is standing in the village, and duel answers. It **never** shares the child's name, and there is no way to send words, pictures, or voice. This goes directly to the other players' devices in the same room and is never sent to us or anyone else. Turning the setting back to Off stops it straight away.
+
+## Milestone notes (optional, off until a grown-up turns it on)
+Behind the parental gate, a grown-up can turn on **milestone notes**. When the child reaches a milestone (for example, finishing every game in the Reading Nook, or earning 100 stars), a note waits in the Grown-ups area. Nothing is sent automatically: when the grown-up taps **Text it**, Apple's Messages app (or the share sheet) opens with the note filled in, and the grown-up decides whether to press Send and who receives it.
+
+The note contains the child's first name or nickname, the milestone, the skills practised, and the number of stars. The phone number a grown-up may type is kept only on the device and is used only to fill in the "To:" line. HopQuest never sends anything itself, and nothing is ever sent to us.
 
 ## Coding Lab
 Web pages kids build in the Coding Lab are shown inside the app only. The preview can't load anything from the internet and can't open links. Nothing kids make is shared with anyone.

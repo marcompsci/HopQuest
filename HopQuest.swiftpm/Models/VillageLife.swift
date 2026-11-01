@@ -8,14 +8,33 @@ import Foundation
 enum Season: String, CaseIterable, Codable {
     case spring, summer, autumn, winter
 
-    /// Northern-hemisphere months (the device date decides).
-    static func of(month: Int) -> Season {
+    /// Months to seasons (the device date decides). South of the equator the seasons are flipped.
+    static func of(month: Int, southern: Bool = false) -> Season {
+        let north: Season
         switch month {
-        case 3...5: return .spring
-        case 6...8: return .summer
-        case 9...11: return .autumn
-        default: return .winter
+        case 3...5: north = .spring
+        case 6...8: north = .summer
+        case 9...11: north = .autumn
+        default: north = .winter
         }
+        guard southern else { return north }
+        switch north {
+        case .spring: return .autumn
+        case .summer: return .winter
+        case .autumn: return .spring
+        case .winter: return .summer
+        }
+    }
+
+    /// Regions mostly south of the equator, from the device's region setting (nothing is looked up online).
+    static let southernRegions: Set<String> = ["AU", "NZ", "AR", "CL", "UY", "PY", "ZA", "NA", "BW", "LS", "SZ", "MZ", "ZW", "ZM", "MG", "MU", "FJ"]
+    static var deviceIsSouthern: Bool {
+        #if os(Linux)
+        let code = Locale.current.regionCode ?? ""
+        #else
+        let code = Locale.current.region?.identifier ?? ""
+        #endif
+        return southernRegions.contains(code)
     }
 
     var title: String { rawValue.capitalized }
@@ -28,6 +47,50 @@ enum Season: String, CaseIterable, Codable {
         case .winter: return "❄️"
         }
     }
+
+    // MARK: Seasons beyond the village (v5.2)
+
+    /// Little things that drift past the menu and map: petals, (none in summer), leaves, snow.
+    var driftTintHex: UInt32? {
+        switch self {
+        case .spring: return 0xFFB7D5
+        case .summer: return nil
+        case .autumn: return 0xE8833A
+        case .winter: return 0xFFFFFF
+        }
+    }
+
+    /// Flowers and bits on the grass of the meadow hop levels.
+    var meadowDecorations: [String] {
+        switch self {
+        case .spring: return ["🌷", "🌸", "🌱"]
+        case .summer: return ["🌻", "🦋", "🌼"]
+        case .autumn: return ["🍂", "🍁", "🍄"]
+        case .winter: return ["❄️", "⛄", "🌨️"]
+        }
+    }
+
+    /// Tint for the meadow trees (nil = their own green).
+    var treeTintHex: UInt32? {
+        switch self {
+        case .spring, .summer: return nil
+        case .autumn: return 0xE8833A
+        case .winter: return 0xFFFFFF
+        }
+    }
+
+    /// A topper for the castle at the finish line.
+    var castleTopper: String {
+        switch self {
+        case .spring: return "🌸"
+        case .summer: return "☀️"
+        case .autumn: return "🍁"
+        case .winter: return "❄️"
+        }
+    }
+
+    /// The season the rest of the game shows (nil when grown-ups turned seasons off). Set by GameStore.
+    static var shown: Season?
 
     /// A one-line fact about the season.
     var fact: String {
@@ -69,7 +132,7 @@ enum Weather: String, CaseIterable, Codable {
     static func on(year: Int, month: Int, day: Int) -> Weather {
         var rng = VillageRandom(seed: UInt64(year * 10_000 + month * 100 + day))
         let roll = rng.unit()
-        switch Season.of(month: month) {
+        switch Season.of(month: month, southern: Season.deviceIsSouthern) {
         case .winter: return roll < 0.4 ? .snowy : roll < 0.7 ? .cloudy : .sunny
         case .spring: return roll < 0.4 ? .sunny : roll < 0.6 ? .rainy : roll < 0.8 ? .cloudy : .windy
         case .summer: return roll < 0.65 ? .sunny : roll < 0.8 ? .cloudy : roll < 0.9 ? .rainy : .windy
@@ -158,7 +221,7 @@ struct VillageDay: Equatable {
 
     init(date: Date, calendar: Calendar = Calendar(identifier: .gregorian)) {
         let c = calendar.dateComponents([.year, .month, .day, .weekOfYear], from: date)
-        let season = Season.of(month: c.month ?? 1)
+        let season = Season.of(month: c.month ?? 1, southern: Season.deviceIsSouthern)
         self.season = season
         weather = Weather.on(year: c.year ?? 2026, month: c.month ?? 1, day: c.day ?? 1)
         weekFestival = Festival.ofWeek(c.weekOfYear ?? 1, season: season)

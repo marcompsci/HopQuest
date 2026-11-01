@@ -134,7 +134,6 @@ struct ClockGameView: View {
             } else {
                 ClockFace(time: r.time, accent: color, onChange: nil)
                     .frame(maxWidth: 300)
-                    .accessibilityLabel(game == .hourLater ? "The clock shows \(r.time.spoken)" : "A clock. What time does it show?")
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     ForEach(r.choices, id: \.self) { c in
                         AnswerButton(text: c, font: .kid(28, .black),
@@ -273,7 +272,7 @@ struct ClockFace: View {
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Clock showing \(time.spoken)")
+        .accessibilityLabel(onChange == nil ? "A clock. \(time.handsDescription)" : "Your clock. \(time.handsDescription)")
         .accessibilityAdjustableAction { dir in
             guard let onChange else { return }
             onChange(time.adding(minutes: dir == .increment ? 30 : -30))
@@ -293,7 +292,7 @@ struct ClockFace: View {
             .onChanged { v in
                 let dx = Double(v.location.x - center.x), dy = Double(v.location.y - center.y)
                 if draggingHour == nil {
-                    draggingHour = (dx * dx + dy * dy).squareRoot() < Double(radius) * 0.45
+                    draggingHour = (dx * dx + dy * dy).squareRoot() < Double(radius) * 0.56
                 }
                 let a = ClockHands.angle(dx: dx, dy: dy)
                 let next: ClockTime
