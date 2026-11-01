@@ -300,7 +300,7 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 
 ### v5.6–v5.7: Home-screen widgets
 - **My Buddy** (small/medium): buddy, stars, what's up next and the skill being practised, and how many skills are learned. The app writes a small snapshot to the App Group; the widget never uses the network.
-- **Star Hop** (medium/large): a tap-to-play game. Widgets can't sense holding or double taps, so each tap is a move: left half = step left, right half = jump, right half again in the air = double jump. Catch 10 stars; "Play Star Dash" opens the full-speed game.
+- **Star Hop** (medium/large; small too and six levels from v6.6): a tap-to-play game. Widgets can't sense holding or double taps, so each tap is a move: left half = step left, right half = jump, right half again in the air = double jump. Catch 10 stars; "Play Star Dash" opens the full-speed game.
 
 ### v5.8–v6.1: Spelling Bee, Fraction Bakery, Shape Studio, Story Maker
 - One shared quiz engine (`Models/QuizPlace.swift`) with tested word lists, fractions (pies, bars, fair shares, comparing slices) and shapes (2D, sides, 3D, patterns).
@@ -310,13 +310,20 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - A sixth world after the Rainbow Bridge: Kelp Forest, Turtle Reef, Coral Castle, with bubble rafts to hop on. The story now ends at the Coral Castle.
 
 ### v6.3: Badges
-- 23 badges for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
+- 23 badges (24 from v6.6) for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
 
 ### v6.4: Code Club with VoiceOver
 - The puzzle board is described from the robot ("The star is 3 squares up and 2 to the right. A rock is just ahead."), so robot puzzles can be solved without seeing them.
 
 ### v6.5: Español (interface)
 - A Language setting (Automatic / English / Español). Menus, buttons, place and game names, intros and cheers are in Spanish, spoken with a Spanish voice when a whole line is translated. Questions, word games and stories stay in English for now; the reading and spelling games teach English.
+
+### v6.6: Star Hop 2 (widget game)
+- Six levels, each its own little world with its own sky and ground: Sunny Meadow, Breezy Beach, Counting Hill (catch 1–6 in order), Snowy Peaks, Spelling Sky (catch the letters of a short word in order; a new word each try) and Starry Night (count by twos to 12).
+- Puff clouds float along the sky rows from level 2. Bumping one costs a heart and drops the buddy to the ground, which is always safe. Three hearts per try; "Try again" restarts the level. A wrong number or letter costs nothing: it just pops somewhere else.
+- Golden stars (from level 2) count twice. Sparkles when a star is caught, the buddy faces the way it moves, and moves animate between taps.
+- Now in all three sizes. The small widget follows the buddy with a four-column view (the board wraps around) and points toward the star you need when it's out of view. The large widget adds a level picker (levels already reached) and the best moves per level.
+- Finishing all six levels earns the **Star Hopper** badge in the app (24 badges). A tested look-ahead player finishes every level on 12 seeds without being bumped (about 10–25 taps a level).
 
 ## 7. Next engineering steps
 

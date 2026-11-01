@@ -65,36 +65,136 @@ struct WidgetSnapshot: Codable, Equatable {
     var progress: Double { skillsTotal > 0 ? min(1, Double(skillsLearned) / Double(skillsTotal)) : 0 }
 }
 
+// MARK: - Star Hop 2 (v6.6)
+
+/// One star on the board. On counting and spelling levels it carries a number or a letter.
+struct HopStar: Codable, Equatable, Identifiable {
+    var id: Int
+    var cell: Int
+    var label: String? = nil
+    var golden = false
+}
+
+/// What a level asks for.
+enum HopGoal: Equatable {
+    /// Catch this many stars (golden ones count twice).
+    case stars(Int)
+    /// Catch numbered stars in order, counting by `step` up to `to`.
+    case count(step: Int, to: Int)
+    /// Catch the letters of a word in order.
+    case spell
+}
+
+struct HopLevel: Equatable {
+    let number: Int
+    let title: String
+    let tip: String
+    let goal: HopGoal
+    let clouds: Int
+    /// Sky top and bottom, grass and soil colors.
+    let skyTop: UInt32
+    let skyBottom: UInt32
+    let grass: UInt32
+    let soil: UInt32
+    var night = false
+}
+
 /// Star Hop, the widget's tap-to-play game. Widgets can only be tapped (no holding, no double taps), so every tap is one move:
 /// tap the left half to step left; tap the right half to jump up and to the right; tap the right half again while in the air
-/// to double jump even higher. Catch the stars before they drift away. The board wraps around at the edges.
+/// to double jump even higher, then glide down. The board wraps around at the edges.
+///
+/// Six levels, each its own little world: plain star levels, a counting level, a spelling level and a count-by-twos level.
+/// Puff clouds float along the sky rows from level 2; bumping one costs a heart (the ground is always safe).
+/// Catching a wrong number or letter never costs anything: the star just pops somewhere else.
 struct StarHop: Codable, Equatable {
     static let columns = 6
     static let rows = 3
-    static let goal = 10
+    static let maxHearts = 3
+    static let startCol = 1
 
+    static let levels: [HopLevel] = [
+        HopLevel(number: 1, title: "Sunny Meadow", tip: "Catch 8 stars!", goal: .stars(8), clouds: 0,
+                 skyTop: 0xBFE3FF, skyBottom: 0xEEF8FF, grass: 0x59C46B, soil: 0xB57A45),
+        HopLevel(number: 2, title: "Breezy Beach", tip: "Hop over the puff cloud!", goal: .stars(8), clouds: 1,
+                 skyTop: 0x9FDCF5, skyBottom: 0xFFF3D6, grass: 0xF2D58A, soil: 0xD9A95B),
+        HopLevel(number: 3, title: "Counting Hill", tip: "Catch the stars in order: 1, 2, 3…", goal: .count(step: 1, to: 6), clouds: 1,
+                 skyTop: 0xC9E7C2, skyBottom: 0xF4FBEF, grass: 0x3FA55B, soil: 0x8C6239),
+        HopLevel(number: 4, title: "Snowy Peaks", tip: "Two puff clouds now. Catch 10 stars!", goal: .stars(10), clouds: 2,
+                 skyTop: 0xD6E4F5, skyBottom: 0xFFFFFF, grass: 0xF4F8FF, soil: 0xA9B8CC),
+        HopLevel(number: 5, title: "Spelling Sky", tip: "Catch the letters to spell the word!", goal: .spell, clouds: 1,
+                 skyTop: 0xF9C9E0, skyBottom: 0xFFF0E5, grass: 0x8FD18B, soil: 0xB07A52),
+        HopLevel(number: 6, title: "Starry Night", tip: "Count by twos: 2, 4, 6…", goal: .count(step: 2, to: 12), clouds: 2,
+                 skyTop: 0x1E2457, skyBottom: 0x4B3F8F, grass: 0x3E7D5A, soil: 0x5B4033, night: true),
+    ]
+
+    /// Short words with no repeated letters, so every letter star is different.
+    static let words = ["SUN", "CAT", "HOP", "DOG", "STAR", "FROG", "FISH", "KITE", "CAKE", "BIRD"]
+
+    var level = 1
     /// Buddy position: column 0…5, row 0 (ground) … 2 (top).
-    var col = 1
+    var col = StarHop.startCol
     var row = 0
     /// Jumps since leaving the ground (2 = double jump used).
     var jumps = 0
-    /// Where the stars are, as column + row × columns.
-    var stars: [Int] = [4, 3 + 6 * 2]
+    var facingLeft = false
+    var stars: [HopStar] = []
+    /// Puff clouds, as cells. They only float in the sky rows.
+    var clouds: [Int] = []
+    /// Stars caught (star levels) or numbers/letters caught in order.
     var collected = 0
+    /// The numbers or letters to catch in order ("1"…"6", or "C","A","T"). Empty on star levels.
+    var sequence: [String] = []
+    var hearts = StarHop.maxHearts
     var moves = 0
-    var best = 0
     /// Increases with every move, for repeatable star placement.
     var turn = 0
+    var nextStarID = 0
+    /// How many levels have been started, so the spelling word changes each time.
+    var plays = 0
+    /// Fewest moves for each level (0 = not finished yet), indexed by level − 1.
+    var best: [Int] = Array(repeating: 0, count: StarHop.levels.count)
+    /// The highest level finished.
+    var levelsCleared = 0
     /// A word for the last move ("Jump!", "Double jump!", "Got it!").
     var message = "Tap to play!"
+    /// The cell where a star was just caught (for the sparkle), and whether a cloud just bumped the buddy.
+    var lastCatch: Int? = nil
+    var bumped = false
 
-    var won: Bool { collected >= Self.goal }
+    init() { startLevel(1) }
+
+    // MARK: Reading the state
+
+    var info: HopLevel { Self.levels[max(0, min(Self.levels.count - 1, level - 1))] }
+    var isFinalLevel: Bool { level == Self.levels.count }
+
+    var goal: Int {
+        if case .stars(let n) = info.goal { return n }
+        return sequence.count
+    }
+
+    var levelDone: Bool { collected >= goal }
+    var outOfHearts: Bool { hearts <= 0 && !levelDone }
+    var playing: Bool { !levelDone && !outOfHearts }
+    /// Every level finished.
+    var champion: Bool { levelDone && isFinalLevel }
+
+    /// The number or letter to catch next, on counting and spelling levels.
+    var needed: String? { sequence.indices.contains(collected) ? sequence[collected] : nil }
+    /// The spelling word, on the spelling level.
+    var word: String? { info.goal == .spell ? sequence.joined() : nil }
+    /// A level can be picked once the one before it is finished.
+    func canPick(_ n: Int) -> Bool { n >= 1 && n <= min(Self.levels.count, levelsCleared + 1) }
 
     func cell(_ c: Int, _ r: Int) -> Int { c + r * Self.columns }
+    var buddyCell: Int { cell(col, row) }
+
+    // MARK: Moves
 
     /// Tap on the left half: one step left (falling one row if in the air).
     mutating func left() {
-        guard !won else { return }
+        guard playing else { return }
+        facingLeft = true
         col = (col + Self.columns - 1) % Self.columns
         if row > 0 { row -= 1 }
         if row == 0 { jumps = 0 }
@@ -104,7 +204,8 @@ struct StarHop: Codable, Equatable {
 
     /// Tap on the right half: jump up and right; in the air, a second tap is a double jump; after that you glide down.
     mutating func right() {
-        guard !won else { return }
+        guard playing else { return }
+        facingLeft = false
         col = (col + 1) % Self.columns
         if row == 0 {
             row = 1; jumps = 1; message = "Jump!"
@@ -118,37 +219,158 @@ struct StarHop: Codable, Equatable {
         afterMove()
     }
 
-    /// Start a fresh round (keeps the best).
-    mutating func newGame() {
-        let keep = best
-        self = StarHop()
-        best = keep
-        message = "New game! Catch \(Self.goal) stars."
+    /// Start (or restart) a level. Keeps the bests and how far the player has got.
+    mutating func startLevel(_ n: Int) {
+        level = max(1, min(Self.levels.count, n))
+        col = Self.startCol; row = 0; jumps = 0; facingLeft = false
+        collected = 0; hearts = Self.maxHearts; moves = 0
+        lastCatch = nil; bumped = false
+        stars = []
+        plays += 1
+        switch info.goal {
+        case .stars:
+            sequence = []
+        case .count(let step, let to):
+            sequence = stride(from: step, through: to, by: step).map(String.init)
+        case .spell:
+            sequence = Self.words[(plays - 1) % Self.words.count].map(String.init)
+        }
+        // clouds start in the sky away from the buddy, one per sky row, then doubled up
+        clouds = (0..<info.clouds).map { k in cell((Self.startCol + 3 + 2 * k) % Self.columns, 2 - (k % 2)) }
+        message = info.tip
+        refill()
     }
+
+    /// Picks a level from the level list (only ones already reached).
+    mutating func pick(_ n: Int) {
+        guard canPick(n) else { return }
+        startLevel(n)
+    }
+
+    /// After a level is finished: on to the next one (or back to the first after the last).
+    mutating func nextLevel() {
+        guard levelDone else { return }
+        startLevel(isFinalLevel ? 1 : level + 1)
+    }
+
+    /// Try the same level again (after running out of hearts, or any time).
+    mutating func retry() { startLevel(level) }
+
+    /// Back to level 1 (keeps the bests and the levels reached).
+    mutating func newGame() {
+        startLevel(1)
+        message = "New game! " + info.tip
+    }
+
+    // MARK: Rules
 
     private mutating func afterMove() {
         moves += 1
         turn += 1
-        let here = cell(col, row)
-        if let i = stars.firstIndex(of: here) {
-            stars.remove(at: i)
-            collected += 1
-            message = won ? "You caught \(Self.goal) stars!" : "Got it! ⭐"
-            if won && (best == 0 || moves < best) { best = moves }
-        }
-        // stars drift down one row every third move, and wrap back to the top when they reach the ground
-        if turn % 3 == 0 {
-            stars = stars.map { s in
-                let r = s / Self.columns, c = s % Self.columns
-                return r == 0 ? cell(c, Self.rows - 1) : cell(c, r - 1)
+        lastCatch = nil
+        bumped = false
+
+        // 1. catch whatever star the buddy landed on
+        if let i = stars.firstIndex(where: { $0.cell == buddyCell }) {
+            let star = stars[i]
+            if let label = star.label {
+                if label == needed {
+                    stars.remove(at: i)
+                    collected += 1
+                    lastCatch = star.cell
+                    message = levelDone ? "" : "\(label)! Now find \(needed ?? "")."
+                } else {
+                    // a wrong number or letter just pops somewhere else, no harm done
+                    stars.remove(at: i)
+                    message = "That's \(label). Find \(needed ?? "") first!"
+                }
+            } else {
+                stars.remove(at: i)
+                collected = min(goal, collected + (star.golden ? 2 : 1))
+                lastCatch = star.cell
+                message = star.golden ? "Golden star! +2" : "Got it! ⭐"
             }
         }
-        // keep two stars on the board, never on the buddy
-        var seed = UInt64(truncatingIfNeeded: turn &* 2_654_435_761 &+ collected &* 97)
-        while !won && stars.count < 2 {
+
+        if levelDone {
+            let i = level - 1
+            if best.count < Self.levels.count { best += Array(repeating: 0, count: Self.levels.count - best.count) }
+            if best[i] == 0 || moves < best[i] { best[i] = moves }
+            levelsCleared = max(levelsCleared, level)
+            message = isFinalLevel ? "You finished every level!" : "Level \(level) done!"
+            stars = []
+            return
+        }
+
+        // 2. puff clouds: bumping one costs a heart and drops the buddy to the safe ground
+        if clouds.contains(buddyCell) {
+            bump()
+        } else {
+            if turn % 2 == 0 { driftClouds() }
+            if clouds.contains(buddyCell) { bump() }
+        }
+        if outOfHearts { message = "Out of hearts!"; return }
+
+        // 3. stars drift down one row every third move, and wrap back to the top when they reach the ground
+        if turn % 3 == 0 {
+            for i in stars.indices {
+                let r = stars[i].cell / Self.columns, c = stars[i].cell % Self.columns
+                stars[i].cell = r == 0 ? cell(c, Self.rows - 1) : cell(c, r - 1)
+            }
+        }
+        refill()
+    }
+
+    private mutating func bump() {
+        hearts -= 1
+        bumped = true
+        row = 0; jumps = 0
+        message = hearts > 0 ? "Bonk! A puff cloud. 💨" : "Out of hearts!"
+    }
+
+    /// Even clouds float left, odd clouds float right, each staying in its own sky row.
+    private mutating func driftClouds() {
+        for k in clouds.indices {
+            let r = clouds[k] / Self.columns, c = clouds[k] % Self.columns
+            let dc = k % 2 == 0 ? Self.columns - 1 : 1
+            clouds[k] = cell((c + dc) % Self.columns, r)
+        }
+    }
+
+    /// Keeps two stars on the board, never on the buddy or a cloud.
+    /// On counting and spelling levels one of them is always the one needed next, the other a different one.
+    private mutating func refill() {
+        guard !levelDone else { return }
+        var seed = UInt64(truncatingIfNeeded: turn &* 2_654_435_761 &+ collected &* 97 &+ level &* 7919 &+ nextStarID &* 31)
+        func roll(_ n: Int) -> Int {
             seed = seed &* 6364136223846793005 &+ 1442695040888963407
-            let pick = Int((seed >> 33) % UInt64(Self.columns * Self.rows))
-            if pick != cell(col, row) && !stars.contains(pick) { stars.append(pick) }
+            return Int((seed >> 33) % UInt64(n))
+        }
+        let size = Self.columns * Self.rows
+        func freeCell() -> Int {
+            for _ in 0..<64 {
+                let pick = roll(size)
+                if pick != buddyCell && !clouds.contains(pick) && !stars.contains(where: { $0.cell == pick }) { return pick }
+            }
+            // fall back to the first free cell
+            return (0..<size).first { c in c != buddyCell && !clouds.contains(c) && !stars.contains(where: { $0.cell == c }) } ?? 0
+        }
+
+        if let want = needed {
+            if !stars.contains(where: { $0.label == want }) {
+                stars.append(HopStar(id: nextStarID, cell: freeCell(), label: want)); nextStarID += 1
+            }
+            while stars.count < 2 {
+                let others = sequence.filter { $0 != want && !stars.map(\.label).contains($0) }
+                guard !others.isEmpty else { break }
+                stars.append(HopStar(id: nextStarID, cell: freeCell(), label: others[roll(others.count)])); nextStarID += 1
+            }
+        } else {
+            while stars.count < 2 {
+                // from level 2 every fourth star is golden
+                let golden = level >= 2 && nextStarID % 4 == 3
+                stars.append(HopStar(id: nextStarID, cell: freeCell(), golden: golden)); nextStarID += 1
+            }
         }
     }
 }

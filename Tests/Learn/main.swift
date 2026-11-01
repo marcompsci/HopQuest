@@ -519,39 +519,118 @@ test("Widget: snapshot saving and the Star Hop game") {
                          skillState: "", skillsLearned: 5, skillsTotal: 0, quickBest: 0).progress == 0, "no divide by zero")
 
     var h = StarHop()
+    check(h.level == 1 && h.hearts == 3 && h.clouds.isEmpty && h.stars.count == 2 && h.goal == 8, "a new game starts on level 1")
     h.stars = []
     h.right()
-    check(h.row == 1 && h.col == 2 && h.jumps == 1 && h.message == "Jump!", "tap right jumps up and right")
+    check(h.row == 1 && h.col == 2 && h.jumps == 1 && h.message == "Jump!" && !h.facingLeft, "tap right jumps up and right")
+    h.stars = []
     h.right()
     check(h.row == 2 && h.col == 3 && h.jumps == 2 && h.message == "Double jump!", "tap right again in the air double jumps")
+    h.stars = []
     h.right()
     check(h.row == 1 && h.col == 4, "a third tap glides down")
+    h.stars = []
     h.left()
-    check(h.row == 0 && h.col == 3 && h.jumps == 0, "tap left steps left and comes down")
+    check(h.row == 0 && h.col == 3 && h.jumps == 0 && h.facingLeft, "tap left steps left, comes down and faces left")
     h.left(); h.left(); h.left(); h.left()
     check(h.col == 5, "the board wraps around")
-    check(h.stars.count == 2 && !h.stars.contains(h.cell(h.col, h.row)), "always two stars, never on the buddy")
-    check(h.stars.allSatisfy { (0..<(StarHop.columns * StarHop.rows)).contains($0) }, "stars stay on the board")
+    check(h.stars.count == 2 && !h.stars.contains { $0.cell == h.buddyCell }, "always two stars, never on the buddy")
+    check(h.stars.allSatisfy { (0..<(StarHop.columns * StarHop.rows)).contains($0.cell) }, "stars stay on the board")
+    check(Set(h.stars.map(\.id)).count == h.stars.count, "every star has its own id (so the widget can animate it)")
 
-    // a simple player can always win: chase the nearest star
-    for seed in 0..<50 {
-        var g = StarHop(); g.turn = seed
-        var taps = 0
-        while !g.won && taps < 400 {
-            let target = g.stars.first ?? 0
-            let tc = target % StarHop.columns, tr = target / StarHop.columns
-            if g.row < tr && g.jumps < 2 { g.right() }
-            else if (tc - g.col + StarHop.columns) % StarHop.columns <= StarHop.columns / 2 && tc != g.col { g.right() }
-            else { g.left() }
+    // catching
+    var c = StarHop()
+    c.stars = [HopStar(id: 90, cell: c.cell(2, 1))]
+    c.right()
+    check(c.collected == 1 && c.lastCatch == c.cell(2, 1) && c.message.hasPrefix("Got it"), "landing on a star catches it")
+    c.startLevel(2)
+    c.clouds = []
+    c.stars = [HopStar(id: 91, cell: c.cell(2, 1), golden: true)]
+    c.right()
+    check(c.collected == 2 && c.message == "Golden star! +2", "golden stars count twice")
+
+    // clouds
+    var b = StarHop(); b.startLevel(2)
+    check(b.clouds.count == 1 && b.clouds.allSatisfy { $0 / StarHop.columns > 0 }, "level 2 has one puff cloud, up in the sky")
+    b.clouds = [b.cell(2, 1)]; b.stars = []
+    b.right()
+    check(b.hearts == 2 && b.bumped && b.row == 0 && b.jumps == 0, "bumping a cloud costs a heart and drops you to the ground")
+    b.stars = []
+    b.left()
+    check(!b.bumped && b.hearts == 2, "the ground is always safe")
+    b.hearts = 1; b.clouds = [b.cell((b.col + 1) % StarHop.columns, 1)]; b.stars = []
+    b.right()
+    check(b.outOfHearts && !b.playing && b.message == "Out of hearts!", "no hearts left ends the try")
+    let stuck = b
+    b.right(); b.left()
+    check(b == stuck, "no moves while out of hearts")
+    b.retry()
+    check(b.level == 2 && b.hearts == 3 && b.collected == 0 && b.playing, "try again restarts the same level")
+
+    // counting, spelling and counting by twos
+    var n = StarHop(); n.startLevel(3)
+    check(n.sequence == ["1", "2", "3", "4", "5", "6"] && n.needed == "1" && n.goal == 6, "level 3 counts 1 to 6")
+    check(n.stars.contains { $0.label == "1" } && n.stars.count == 2 && Set(n.stars.compactMap(\.label)).count == 2,
+          "the number needed is always on the board, with one other number")
+    n.clouds = []
+    n.stars = [HopStar(id: 80, cell: n.cell(2, 1), label: "4")]
+    n.right()
+    check(n.collected == 0 && n.hearts == 3 && n.message == "That's 4. Find 1 first!", "a wrong number does no harm")
+    check(n.stars.contains { $0.label == "1" }, "and the right one is still there")
+    n.stars = [HopStar(id: 81, cell: n.cell(3, 2), label: "1")]
+    n.right()
+    check(n.collected == 1 && n.needed == "2", "the right number counts")
+    var w = StarHop(); w.startLevel(5)
+    check(w.word != nil && w.sequence.joined() == w.word && Set(w.sequence).count == w.sequence.count, "level 5 spells a word with no repeated letters")
+    let firstWord = w.word
+    w.retry()
+    check(w.word != firstWord, "trying again gives a new word")
+    var t = StarHop(); t.startLevel(6)
+    check(t.sequence == ["2", "4", "6", "8", "10", "12"] && t.info.night && t.clouds.count == 2, "level 6 counts by twos at night")
+    check(StarHop.words.allSatisfy { Set($0).count == $0.count }, "no spelling word repeats a letter")
+
+    // picking levels
+    var p = StarHop()
+    p.pick(3)
+    check(p.level == 1, "levels not reached yet can't be picked")
+    p.levelsCleared = 2; p.pick(3)
+    check(p.level == 3, "the next level after the ones finished can be picked")
+
+    // a careful player can finish every level: look a few taps ahead for a catch that doesn't bump a cloud
+    func plan(_ g: StarHop) -> Bool {
+        var frontier: [(StarHop, Bool)] = [(g, true), (g, false)].map { s, r in var s = s; if r { s.right() } else { s.left() }; return (s, r) }
+        for _ in 0..<7 {
+            if let hit = frontier.first(where: { $0.0.collected > g.collected && $0.0.hearts == g.hearts }) { return hit.1 }
+            var next: [(StarHop, Bool)] = []
+            for (s, first) in frontier where s.hearts == g.hearts {
+                var a = s; a.right(); next.append((a, first))
+                var l = s; l.left(); next.append((l, first))
+            }
+            frontier = next
+        }
+        // nothing in reach yet: take a safe step
+        var r = g; r.right()
+        if r.hearts == g.hearts { return true }
+        return false
+    }
+    for seed in 0..<12 {
+        var g = StarHop(); g.turn = seed * 7; g.plays = seed
+        g.startLevel(1)
+        var taps = 0, tries = 0
+        while taps < 3000 {
+            if g.champion { break }
+            if g.levelDone { g.nextLevel(); continue }
+            if g.outOfHearts { g.retry(); tries += 1; continue }
+            if plan(g) { g.right() } else { g.left() }
             taps += 1
         }
-        check(g.won && g.collected == StarHop.goal, "seed \(seed): the game can be won (\(taps) taps)")
-        check(g.best == g.moves, "best is the fewest moves")
-        let best = g.best
+        check(g.champion && g.levelsCleared == StarHop.levels.count, "seed \(seed): every level can be finished (\(taps) taps, \(tries) retries)")
+        check(g.best.allSatisfy { $0 > 0 }, "seed \(seed): a best for every level")
+        let snap = g
         g.right()
-        check(g.moves == best, "no moves after winning")
-        g.newGame()
-        check(g.collected == 0 && g.best == best && !g.won, "new game keeps the best")
+        check(g == snap, "no moves after finishing a level")
+        g.nextLevel()
+        check(g.level == 1 && g.best == snap.best && g.levelsCleared == StarHop.levels.count, "after the last level it starts over, keeping the bests")
     }
     SharedStore.save(h, d)
     check(SharedStore.loadHop(d) == h, "game round trip")
@@ -644,7 +723,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 23, "23 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 24, "24 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -652,6 +731,8 @@ test("Badges: earned from real progress, never lost") {
     check(ids == ["firstHop", "stars50", "stars150", "area-reading", "area-clock"], "earned: \(ids.sorted())")
     b.chaptersDone.insert(21); b.postcards = 7; b.lettersWritten = 62; b.storiesMade = 3; b.biggestIsland = 40; b.dashFinished = true
     b.codePuzzles = 10; b.stickers = 20; b.lifetimeStars = 300
+    check(!Badges.earned(b).contains { $0.id == "hopper" }, "Star Hopper needs the widget levels")
+    b.hopLevels = 6
     b.finishedAreas = Set(Badges.areaBadges.map(\.0))
     check(Badges.earned(b).count == Badges.all.count, "every badge can be earned")
     check(Badges.all.allSatisfy { !$0.how.isEmpty && !$0.title.isEmpty }, "every badge says how to earn it")

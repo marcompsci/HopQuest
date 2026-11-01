@@ -175,3 +175,5 @@ The project is generated from `project.yml` with [XcodeGen](https://github.com/y
 The first build needs Xcode to register the App Group `group.com.phoronomics.hopquest` for both targets (automatic signing does this).
 `HopQuest.swiftpm` still opens in Swift Playgrounds, without the widgets.
 
+
+The widgets are **My Buddy** (small, medium) and **Star Hop** (small, medium, large): a six-level tap-to-play game whose rules live in `HopQuest.swiftpm/Shared/WidgetShared.swift` and are tested in `Tests/Learn`.

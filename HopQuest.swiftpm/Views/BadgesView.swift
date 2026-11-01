@@ -12,7 +12,8 @@ extension GameStore {
                           biggestIsland: (0...2).map { fortIsland($0).count }.max() ?? 0,
                           dashFinished: p.quick.bestStars > 0,
                           codePuzzles: CodeChallenge.all.filter { p.codeBest[$0.id] != nil }.count,
-                          stickers: ownedStickers.count)
+                          stickers: ownedStickers.count,
+                          hopLevels: SharedStore.loadHop().levelsCleared)
     }
 }
 
