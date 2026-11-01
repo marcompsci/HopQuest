@@ -34,7 +34,7 @@ extension L10n {
         "Which blocks make the number?": "¿Qué bloques forman el número?",
         "Which number is bigger? Look at the tens first!": "¿Qué número es mayor? ¡Mira primero las decenas!",
         "Count the groups, then how many in each. How many in all?": "Cuenta los grupos y cuántos hay en cada uno. ¿Cuántos hay en total?",
-        "Count by 2s, 5s and 10s. What comes next?": "Cuenta de 2 en 2, de 5 en 5 y de 10 en 10. ¿Qué sigue?",
+        "Count by 2s, 3s, 5s and 10s. What comes next?": "Cuenta de 2 en 2, de 3 en 3, de 5 en 5 y de 10 en 10. ¿Qué sigue?",
         "Things in neat rows! How many rows? How many in each row? How many in all?": "¡Cosas en filas ordenadas! ¿Cuántas filas? ¿Cuántos en cada fila? ¿Cuántos en total?",
         "Find the picture that matches the words.": "Encuentra el dibujo que va con las palabras.",
         "Line them up! Which ribbon is the longest? Which is the shortest?": "¡Alinéalos! ¿Qué listón es el más largo? ¿Cuál es el más corto?",

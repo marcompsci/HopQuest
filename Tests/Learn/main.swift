@@ -874,6 +874,12 @@ test("Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corn
                         check(w != nil && r.answer == "\(w!.beats)", "beats: \(r.say) → \(r.answer)")
                     case ("rhyme", "finish"):
                         check(r.choices.filter { c in RhymeBank.finish.contains { r.say.hasPrefix($0.start) && family($0.end) == family(c) } }.count == 1, "finish: only one ending rhymes")
+                        // no wrong choice rhymes with any word in the sentence either ("sat" would make "hat" right too)
+                        let words = Set(r.say.lowercased().split { !$0.isLetter }.map(String.init))
+                        for c in r.choices where c != r.answer {
+                            check(!words.contains { family($0) != nil && family($0) == family(c) } && !words.contains("sat"),
+                                  "finish: \(c) doesn't also rhyme with \(r.say)")
+                        }
                     case ("numbers", "count"):
                         if case .blocks(let t, let o) = r.visual { check(r.answer == "\(t * 10 + o)" && o > 0 && o < 10, "count: blocks show \(r.answer)") } else { check(false, "count shows blocks") }
                     case ("numbers", "tens"):
@@ -913,6 +919,8 @@ test("Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corn
                         check(MeasureBank.tools.contains { r.say.contains($0.ask) && $0.tool == r.answer }, "tools: \(r.answer)")
                     case ("feelings", "faces"):
                         if case .picture(let f) = r.visual { check(FeelingsBank.faces.first { $0.face == f }?.feeling == r.answer, "faces: \(f) is \(r.answer)") }
+                        check(r.choices.allSatisfy { !(FeelingsBank.lookAlikes[r.answer] ?? []).contains($0) }, "faces: no look-alike feeling offered as wrong")
+                        if case .picture(let f) = r.visual { check(r.visual.spoken != nil && !r.visual.spoken!.lowercased().contains(r.answer), "faces: described for VoiceOver without giving the answer (\(f))") }
                     case ("feelings", "stories"):
                         let st = FeelingsBank.stories.first { r.say.hasPrefix($0.text) }!
                         check(r.answer == st.answer && r.choices.filter { st.fits.contains($0) }.count == 1, "stories: only one choice fits \(st.text)")

@@ -98,7 +98,8 @@ struct BuddyWidgetView: View {
             HStack(spacing: 4) {
                 Image(systemName: "star.fill").font(.system(size: 11, weight: .black)).widgetAccentable()
                 Text("\(s.stars)").font(.system(size: 14, weight: .black, design: .rounded))
-                Text("· \(s.name)").font(.system(size: 14, weight: .semibold, design: .rounded)).lineLimit(1)
+                // no child's name on the Lock Screen, where anyone holding the phone can see it
+                Text(entry.snapshot.spanish == true ? "estrellas" : "stars").font(.system(size: 14, weight: .semibold, design: .rounded)).lineLimit(1)
             }
             Text("\(t(s.skillState)): \(s.lessonTitle)").font(.system(size: 13, weight: .bold, design: .rounded)).lineLimit(1).minimumScaleFactor(0.8)
             ProgressView(value: s.progress).widgetAccentable()

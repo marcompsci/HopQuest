@@ -203,13 +203,21 @@ struct QuizGameView: View {
                 .fixedSize(horizontal: false, vertical: true)
             if r.kind == .spell {
                 spellArea(r)
-            } else if !r.choiceVisuals.isEmpty, r.choiceVisuals.allSatisfy({ if case .bar = $0 { return true }; return false }) {
-                // ribbons line up one under another, so their lengths can be compared from the same starting edge
+            } else if !r.choiceVisuals.isEmpty, r.choiceVisuals.allSatisfy({ v in
+                switch v { case .bar, .blocks, .groups: return true; default: return false }
+            }) {
+                // ribbons, blocks and groups line up one under another: ribbons can be compared from the same edge,
+                // and wide block pictures get the whole width instead of spilling into each other
                 VStack(spacing: 10) {
                     ForEach(Array(r.choices.enumerated()), id: \.offset) { i, c in
                         Button { pick(c, in: r) } label: {
                             HStack(spacing: 10) {
-                                Text(c.capitalized).font(.kid(17, .black)).foregroundStyle(Palette.ink).frame(width: 74, alignment: .leading)
+                                if case .bar = r.choiceVisuals[i] {
+                                    Text(c.capitalized).font(.kid(17, .black)).foregroundStyle(Palette.ink).frame(width: 74, alignment: .leading)
+                                } else {
+                                    Text(c).font(.kid(17, .black)).foregroundStyle(.white).frame(width: 30, height: 30)
+                                        .background(Circle().fill(place.accent))
+                                }
                                 QuizVisualView(visual: r.choiceVisuals[i], accent: place.accent, large: false)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -221,7 +229,7 @@ struct QuizGameView: View {
                             .opacity(wrong.contains(c) ? 0.5 : 1)
                         }
                         .buttonStyle(BouncyButtonStyle())
-                        .accessibilityLabel("\(c) ribbon\(r.choiceVisuals[i].spoken.map { ", \($0)" } ?? "")\(wrong.contains(c) ? ", not this one" : "")")
+                        .accessibilityLabel(choiceLabel(c, r.choiceVisuals[i]) + (wrong.contains(c) ? ", not this one" : ""))
                     }
                 }
             } else if !r.choiceVisuals.isEmpty {
@@ -286,6 +294,11 @@ struct QuizGameView: View {
     }
 
     // MARK: Play
+
+    private func choiceLabel(_ c: String, _ v: QuizVisual) -> String {
+        if case .bar = v { return "\(c) ribbon" + (v.spoken.map { ", \($0)" } ?? "") }
+        return "Picture \(c)" + (v.spoken.map { ": \($0)" } ?? "")
+    }
 
     private func start() {
         advanceTask?.cancel()

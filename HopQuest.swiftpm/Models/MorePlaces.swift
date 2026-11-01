@@ -34,9 +34,9 @@ enum RhymeBank {
 
     /// Silly rhyming sentences to finish. The last word rhymes with a word in the sentence.
     static let finish: [(start: String, end: String, picture: String)] = [
-        ("The cat has a funny", "hat", "🐱"), ("A bug sat on a", "rug", "🐞"), ("The frog jumped on a", "log", "🐸"),
+        ("The cat has a funny", "hat", "🐱"), ("A bug napped on a", "rug", "🐞"), ("The frog jumped on a", "log", "🐸"),
         ("A bee lives in a", "tree", "🐝"), ("The fox hid in a", "box", "🦊"), ("A goat sailed a", "boat", "🐐"),
-        ("A mouse built a", "house", "🐭"), ("The snake baked a", "cake", "🐍"), ("A bear sat on a", "chair", "🐻"),
+        ("A mouse built a", "house", "🐭"), ("The snake baked a", "cake", "🐍"), ("A bear rests on a", "chair", "🐻"),
         ("The king found a", "ring", "🤴"),
     ]
 
@@ -166,7 +166,7 @@ enum NumberBank {
 enum TimesBank {
     static let games: [QuizGameInfo] = [
         QuizGameInfo(id: "groups", title: "Equal Groups", symbol: "circle.grid.2x2.fill", intro: "Count the groups, then how many in each. How many in all?", skill: "adding equal groups"),
-        QuizGameInfo(id: "skip", title: "Skip Counting", symbol: "forward.fill", intro: "Count by 2s, 5s and 10s. What comes next?", skill: "skip counting by 2s, 5s and 10s"),
+        QuizGameInfo(id: "skip", title: "Skip Counting", symbol: "forward.fill", intro: "Count by 2s, 3s, 5s and 10s. What comes next?", skill: "skip counting by 2s, 3s, 5s and 10s"),
         QuizGameInfo(id: "arrays", title: "Rows and Rows", symbol: "square.grid.3x3.fill", intro: "Things in neat rows! How many rows? How many in each row? How many in all?", skill: "arrays (rows and columns)"),
         QuizGameInfo(id: "match", title: "Groups Of", symbol: "rectangle.3.group.fill", intro: "Find the picture that matches the words.", skill: "reading \"groups of\""),
     ]
@@ -303,6 +303,20 @@ enum FeelingsBank {
     ]
     static var feelings: [String] { faces.map(\.feeling) }
 
+    /// Feelings that a face could fairly be read as too, kept out of its wrong choices.
+    static let lookAlikes: [String: Set<String>] = [
+        "worried": ["scared", "sad"], "scared": ["worried", "surprised"], "excited": ["happy", "surprised"], "happy": ["excited"],
+        "surprised": ["scared", "excited"], "sad": ["worried"], "angry": [], "sleepy": [],
+    ]
+
+    /// What each face looks like, for VoiceOver (it describes the face without naming the feeling).
+    static let faceDescriptions: [String: String] = [
+        "😄": "A face with a big open smile and squinty eyes", "😢": "A face with a frown and a tear rolling down",
+        "😠": "A red face with lowered eyebrows and a tight frown", "😨": "A pale face with wide eyes and an open mouth, hands up",
+        "😲": "A face with very wide eyes, raised eyebrows and a round open mouth", "😴": "A face with closed eyes, a yawn and little Zs",
+        "😟": "A face with tilted-up eyebrows and a small frown", "🤩": "A face with star eyes and a huge grin",
+    ]
+
     /// Little stories. `fits` is every feeling that makes sense, so a fair-but-different answer is never marked wrong.
     static let stories: [(text: String, picture: String, answer: String, fits: Set<String>)] = [
         ("Mia's ice cream fell on the ground.", "🍦", "sad", ["sad", "angry", "surprised"]),
@@ -310,8 +324,8 @@ enum FeelingsBank {
         ("A loud thunderstorm wakes Sam up at night.", "⛈️", "scared", ["scared", "surprised", "worried", "sleepy"]),
         ("Ava stayed up very late and it's morning now.", "🌅", "sleepy", ["sleepy"]),
         ("Someone knocked down Kai's block tower on purpose.", "🧱", "angry", ["angry", "sad", "surprised"]),
-        ("Zoe's friends jump out and shout \"Happy birthday!\"", "🎉", "surprised", ["surprised", "happy", "excited"]),
-        ("It's Noah's first day at a new school.", "🏫", "worried", ["worried", "scared", "excited"]),
+        ("Zoe's friends jump out and shout \"Happy birthday!\"", "🎉", "surprised", ["surprised", "happy", "excited", "scared"]),
+        ("It's Noah's first day at a new school.", "🏫", "worried", ["worried", "scared", "excited", "happy"]),
         ("Lily finished her puzzle all by herself.", "🧩", "happy", ["happy", "excited"]),
     ]
 
@@ -350,7 +364,7 @@ enum FeelingsBank {
         case "faces":
             return Array(faces.shuffled(using: &rng).prefix(count)).enumerated().map { i, f in
                 QuizRound(visual: .picture(f.face), say: "How does this face feel?",
-                          choices: QuizShuffle.choices(f.feeling, feelings, using: &rng), answer: f.feeling,
+                          choices: QuizShuffle.choices(f.feeling, feelings.filter { !(lookAlikes[f.feeling] ?? []).contains($0) }, using: &rng), answer: f.feeling,
                           cheer: "That face looks \(f.feeling). \(cheer(i))")
             }
         case "stories":

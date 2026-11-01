@@ -10,6 +10,7 @@ struct StarHopPlayView: View {
     var onBack: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var h = SharedStore.loadHop()
     @State private var showLevels = false
 
@@ -55,11 +56,15 @@ struct StarHopPlayView: View {
             Narrator.shared.say(spokenGoal)
         }
         .onDisappear { Narrator.shared.stop() }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { h = SharedStore.loadHop() } }
     }
 
     // MARK: Playing
 
     private func act(_ change: (inout StarHop) -> Void) {
+        // the widget may have moved on while the app was in the background: always play on from the latest save
+        let latest = SharedStore.loadHop()
+        if latest != h { h = latest }
         let before = h
         change(&h)
         SharedStore.save(h)

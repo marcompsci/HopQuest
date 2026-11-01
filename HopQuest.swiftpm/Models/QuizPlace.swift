@@ -53,6 +53,7 @@ extension QuizVisual {
         case .groups(let c, let e, _, let rows): return rows ? "\(c) rows of \(e)" : "\(c) groups of \(e)"
         case .bar(let n, let color, let units): return units ? "a \(color) ribbon over \(n) blocks" : "\(color) ribbon, \(n) blocks long"
         case .fraction(let p, let s, _): return "\(s) of \(p) parts colored"
+        case .picture(let p): return FeelingsBank.faceDescriptions[p]
         default: return nil
         }
     }

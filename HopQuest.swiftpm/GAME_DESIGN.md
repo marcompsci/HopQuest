@@ -357,6 +357,9 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 - The widgets follow the app's language. Their words live in `Shared/HopWords.swift`; a test plays thousands of Star Hop moves and checks every message has Spanish.
 - **Easy-read letters** (grown-ups' settings): plainer, slightly bigger letters, never extra-heavy, with more space between letters and lines, across the whole app.
 
+### v8.0: Review fixes
+- An independent review found and these were fixed: Feelings faces are now described for VoiceOver (without naming the feeling); faces never offer a look-alike feeling as "wrong" (worried/scared, excited/happy…); two silly sentences used "sat", which made "hat" a second right answer; "Build the Number" pictures now stack vertically instead of spilling into each other on small iPhones; in-app Star Hop reloads the shared save so it can't overwrite widget progress; the child's name is no longer on the Lock Screen widget; the skip-counting intro now says 3s too; two story answers that fairly fit ("happy" on a first school day, "scared" at a surprise party) are no longer marked wrong.
+
 ### v7.8–v7.9: Play this week and certificates (grown-ups)
 - The Progress page shows a bar chart of minutes played each day this week (counted only while the app is open; two weeks kept on the device).
 - A certificate for each place where every game has 2+ stars: name, place, skills, date, buddy, and a line for a grown-up to sign. Print or share behind the parental gate; nothing leaves the device otherwise.
