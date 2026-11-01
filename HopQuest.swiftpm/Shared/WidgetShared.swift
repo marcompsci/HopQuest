@@ -65,7 +65,7 @@ struct WidgetSnapshot: Codable, Equatable {
     var progress: Double { skillsTotal > 0 ? min(1, Double(skillsLearned) / Double(skillsTotal)) : 0 }
 }
 
-// MARK: - Star Hop 2 (v6.6)
+// MARK: - Star Hop 3 (v6.6–v6.7)
 
 /// One star on the board. On counting and spelling levels it carries a number or a letter.
 struct HopStar: Codable, Equatable, Identifiable {
@@ -79,10 +79,14 @@ struct HopStar: Codable, Equatable, Identifiable {
 enum HopGoal: Equatable {
     /// Catch this many stars (golden ones count twice).
     case stars(Int)
-    /// Catch numbered stars in order, counting by `step` up to `to`.
-    case count(step: Int, to: Int)
-    /// Catch the letters of a word in order.
+    /// Catch numbered stars in order, from `from` by `step` up to (or down to) `to`.
+    case count(from: Int, step: Int, to: Int)
+    /// Catch the letters of a word in order (a new word each try).
     case spell
+    /// Catch these in order (the alphabet, say).
+    case inOrder([String])
+    /// Answer sums (or take-aways): catch the star with the answer. `rounds` questions.
+    case math(add: Bool, rounds: Int)
 }
 
 struct HopLevel: Equatable {
@@ -97,15 +101,21 @@ struct HopLevel: Equatable {
     let grass: UInt32
     let soil: UInt32
     var night = false
+    /// Column of a spring pad on the ground: landing on it bounces the buddy to the top row.
+    var spring: Int? = nil
+    /// Bubble shields show up now and then; one bubble saves you from one cloud bump.
+    var bubbles = false
 }
 
 /// Star Hop, the widget's tap-to-play game. Widgets can only be tapped (no holding, no double taps), so every tap is one move:
 /// tap the left half to step left; tap the right half to jump up and to the right; tap the right half again while in the air
 /// to double jump even higher, then glide down. The board wraps around at the edges.
 ///
-/// Six levels, each its own little world: plain star levels, a counting level, a spelling level and a count-by-twos level.
-/// Puff clouds float along the sky rows from level 2; bumping one costs a heart (the ground is always safe).
-/// Catching a wrong number or letter never costs anything: the star just pops somewhere else.
+/// Twelve levels, each its own little world: plain star levels, counting (up, down, by twos and tens), spelling, the
+/// alphabet, adding and taking away. Puff clouds float along the sky rows from level 2; bumping one costs a heart
+/// (the ground is always safe). Catching a wrong number or letter never costs anything: the star just pops somewhere else.
+/// Spring pads bounce you up high; bubble shields save you from one bump. Each level is rated 1–3 stars:
+/// one for finishing, one for no bumps, one for quick feet (at most `par` moves).
 struct StarHop: Codable, Equatable {
     static let columns = 6
     static let rows = 3
@@ -117,15 +127,30 @@ struct StarHop: Codable, Equatable {
                  skyTop: 0xBFE3FF, skyBottom: 0xEEF8FF, grass: 0x59C46B, soil: 0xB57A45),
         HopLevel(number: 2, title: "Breezy Beach", tip: "Hop over the puff cloud!", goal: .stars(8), clouds: 1,
                  skyTop: 0x9FDCF5, skyBottom: 0xFFF3D6, grass: 0xF2D58A, soil: 0xD9A95B),
-        HopLevel(number: 3, title: "Counting Hill", tip: "Catch the stars in order: 1, 2, 3…", goal: .count(step: 1, to: 6), clouds: 1,
+        HopLevel(number: 3, title: "Counting Hill", tip: "Catch the stars in order: 1, 2, 3…", goal: .count(from: 1, step: 1, to: 6), clouds: 1,
                  skyTop: 0xC9E7C2, skyBottom: 0xF4FBEF, grass: 0x3FA55B, soil: 0x8C6239),
-        HopLevel(number: 4, title: "Snowy Peaks", tip: "Two puff clouds now. Catch 10 stars!", goal: .stars(10), clouds: 2,
-                 skyTop: 0xD6E4F5, skyBottom: 0xFFFFFF, grass: 0xF4F8FF, soil: 0xA9B8CC),
+        HopLevel(number: 4, title: "Snowy Peaks", tip: "Two clouds! Grab a bubble to stay safe.", goal: .stars(10), clouds: 2,
+                 skyTop: 0xD6E4F5, skyBottom: 0xFFFFFF, grass: 0xF4F8FF, soil: 0xA9B8CC, bubbles: true),
         HopLevel(number: 5, title: "Spelling Sky", tip: "Catch the letters to spell the word!", goal: .spell, clouds: 1,
                  skyTop: 0xF9C9E0, skyBottom: 0xFFF0E5, grass: 0x8FD18B, soil: 0xB07A52),
-        HopLevel(number: 6, title: "Starry Night", tip: "Count by twos: 2, 4, 6…", goal: .count(step: 2, to: 12), clouds: 2,
-                 skyTop: 0x1E2457, skyBottom: 0x4B3F8F, grass: 0x3E7D5A, soil: 0x5B4033, night: true),
+        HopLevel(number: 6, title: "Starry Night", tip: "Count by twos: 2, 4, 6…", goal: .count(from: 2, step: 2, to: 12), clouds: 2,
+                 skyTop: 0x1E2457, skyBottom: 0x4B3F8F, grass: 0x3E7D5A, soil: 0x5B4033, night: true, spring: 4),
+        HopLevel(number: 7, title: "ABC Garden", tip: "Catch the letters in ABC order!", goal: .inOrder(["A", "B", "C", "D", "E", "F"]), clouds: 1,
+                 skyTop: 0xFFE3A3, skyBottom: 0xFFF8E6, grass: 0x6CC36A, soil: 0x9C6B3F, spring: 3),
+        HopLevel(number: 8, title: "Rocket Launch", tip: "Count down to blast off: 6, 5, 4…", goal: .count(from: 6, step: -1, to: 1), clouds: 1,
+                 skyTop: 0x2B3A67, skyBottom: 0x7A8CC9, grass: 0x8A93A6, soil: 0x5C6273, night: true, spring: 0, bubbles: true),
+        HopLevel(number: 9, title: "Adding Bay", tip: "Catch the answer to each sum!", goal: .math(add: true, rounds: 5), clouds: 1,
+                 skyTop: 0x8FE0E8, skyBottom: 0xE9FBFF, grass: 0xF0D98C, soil: 0xCFA35E, bubbles: true),
+        HopLevel(number: 10, title: "Tens Tower", tip: "Count by tens: 10, 20, 30…", goal: .count(from: 10, step: 10, to: 60), clouds: 2,
+                 skyTop: 0xC7B8F5, skyBottom: 0xF3EEFF, grass: 0x7FBF7A, soil: 0x8B6A55, spring: 2, bubbles: true),
+        HopLevel(number: 11, title: "Take-Away Tundra", tip: "Catch the answer to each take-away!", goal: .math(add: false, rounds: 5), clouds: 2,
+                 skyTop: 0xBFDDF0, skyBottom: 0xFAFDFF, grass: 0xFFFFFF, soil: 0x9FB3C8, bubbles: true),
+        HopLevel(number: 12, title: "Rainbow Castle", tip: "The last level! Catch 12 stars.", goal: .stars(12), clouds: 3,
+                 skyTop: 0xFFB3C7, skyBottom: 0xC9F0FF, grass: 0x6FD08C, soil: 0xA77B5B, spring: 5, bubbles: true),
     ]
+
+    /// Moves allowed for the "quick feet" star. In-order levels need a particular star, so they get more room.
+    var par: Int { sequence.isEmpty ? goal * 3 + 2 : goal * 5 + 2 }
 
     /// Short words with no repeated letters, so every letter star is different.
     static let words = ["SUN", "CAT", "HOP", "DOG", "STAR", "FROG", "FISH", "KITE", "CAKE", "BIRD"]
@@ -144,6 +169,8 @@ struct StarHop: Codable, Equatable {
     var collected = 0
     /// The numbers or letters to catch in order ("1"…"6", or "C","A","T"). Empty on star levels.
     var sequence: [String] = []
+    /// On adding and take-away levels, the question for each answer in `sequence` ("2 + 3").
+    var prompts: [String] = []
     var hearts = StarHop.maxHearts
     var moves = 0
     /// Increases with every move, for repeatable star placement.
@@ -160,8 +187,67 @@ struct StarHop: Codable, Equatable {
     /// The cell where a star was just caught (for the sparkle), and whether a cloud just bumped the buddy.
     var lastCatch: Int? = nil
     var bumped = false
+    /// A bubble shield waiting on the board, whether the buddy has one on, and whether one just popped.
+    var bubble: Int? = nil
+    var shield = false
+    var popped = false
+    /// The spring just bounced the buddy up.
+    var bounced = false
+    /// Cloud bumps on this try (a bubble pop doesn't count).
+    var bumps = 0
+    /// Best rating for each level (0 = not finished), indexed by level − 1.
+    var rating: [Int] = Array(repeating: 0, count: StarHop.levels.count)
+    /// The rating just earned, shown on the "level done" card.
+    var lastRating = 0
 
     init() { startLevel(1) }
+
+    enum CodingKeys: String, CodingKey {
+        case level, col, row, jumps, facingLeft, stars, clouds, collected, sequence, prompts, hearts, moves, turn, nextStarID, plays, best, levelsCleared, message, lastCatch, bumped, bubble, shield, popped, bounced, bumps, rating, lastRating
+    }
+
+    /// Older saves (from before a field existed) keep everything they have; new fields start at their defaults.
+    init(from decoder: Decoder) throws {
+        startLevel(1)
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .level) { level = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .col) { col = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .row) { row = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .jumps) { jumps = v }
+        if let v = try? c.decodeIfPresent(Bool.self, forKey: .facingLeft) { facingLeft = v }
+        if let v = try? c.decodeIfPresent([HopStar].self, forKey: .stars) { stars = v }
+        if let v = try? c.decodeIfPresent([Int].self, forKey: .clouds) { clouds = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .collected) { collected = v }
+        if let v = try? c.decodeIfPresent([String].self, forKey: .sequence) { sequence = v }
+        if let v = try? c.decodeIfPresent([String].self, forKey: .prompts) { prompts = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .hearts) { hearts = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .moves) { moves = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .turn) { turn = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .nextStarID) { nextStarID = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .plays) { plays = v }
+        if let v = try? c.decodeIfPresent([Int].self, forKey: .best) { best = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .levelsCleared) { levelsCleared = v }
+        if let v = try? c.decodeIfPresent(String.self, forKey: .message) { message = v }
+        lastCatch = (try? c.decodeIfPresent(Int.self, forKey: .lastCatch)) ?? nil
+        if let v = try? c.decodeIfPresent(Bool.self, forKey: .bumped) { bumped = v }
+        bubble = (try? c.decodeIfPresent(Int.self, forKey: .bubble)) ?? nil
+        if let v = try? c.decodeIfPresent(Bool.self, forKey: .shield) { shield = v }
+        if let v = try? c.decodeIfPresent(Bool.self, forKey: .popped) { popped = v }
+        if let v = try? c.decodeIfPresent(Bool.self, forKey: .bounced) { bounced = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .bumps) { bumps = v }
+        if let v = try? c.decodeIfPresent([Int].self, forKey: .rating) { rating = v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .lastRating) { lastRating = v }
+        // the level list grew: pad the per-level lists, then rebuild a level that was saved under older rules
+        if best.count < Self.levels.count { best += Array(repeating: 0, count: Self.levels.count - best.count) }
+        if rating.count < Self.levels.count { rating += Array(repeating: 0, count: Self.levels.count - rating.count) }
+        if (try? c.decodeIfPresent([Int].self, forKey: .rating)) == nil {
+            let keepBest = best, keepCleared = levelsCleared, keepPlays = plays, keepLevel = level, keepTurn = turn, keepID = nextStarID
+            startLevel(keepLevel)
+            best = keepBest; levelsCleared = keepCleared; plays = keepPlays; turn = keepTurn; nextStarID = max(nextStarID, keepID)
+            // levels finished before ratings existed count as one star each
+            for i in 0..<min(keepCleared, rating.count) { rating[i] = max(rating[i], 1) }
+        }
+    }
 
     // MARK: Reading the state
 
@@ -183,6 +269,10 @@ struct StarHop: Codable, Equatable {
     var needed: String? { sequence.indices.contains(collected) ? sequence[collected] : nil }
     /// The spelling word, on the spelling level.
     var word: String? { info.goal == .spell ? sequence.joined() : nil }
+    /// The question on adding and take-away levels.
+    var prompt: String? { prompts.indices.contains(collected) ? prompts[collected] : nil }
+    /// All the rating stars earned across levels (what the app turns into real stars).
+    var totalRating: Int { rating.reduce(0, +) }
     /// A level can be picked once the one before it is finished.
     func canPick(_ n: Int) -> Bool { n >= 1 && n <= min(Self.levels.count, levelsCleared + 1) }
 
@@ -223,17 +313,37 @@ struct StarHop: Codable, Equatable {
     mutating func startLevel(_ n: Int) {
         level = max(1, min(Self.levels.count, n))
         col = Self.startCol; row = 0; jumps = 0; facingLeft = false
-        collected = 0; hearts = Self.maxHearts; moves = 0
-        lastCatch = nil; bumped = false
+        collected = 0; hearts = Self.maxHearts; moves = 0; bumps = 0
+        lastCatch = nil; bumped = false; popped = false; bounced = false
+        bubble = nil; shield = false; lastRating = 0
         stars = []
+        prompts = []
         plays += 1
         switch info.goal {
         case .stars:
             sequence = []
-        case .count(let step, let to):
-            sequence = stride(from: step, through: to, by: step).map(String.init)
+        case .count(let from, let step, let to):
+            sequence = stride(from: from, through: to, by: step).map(String.init)
         case .spell:
             sequence = Self.words[(plays - 1) % Self.words.count].map(String.init)
+        case .inOrder(let list):
+            sequence = list
+        case .math(let add, let rounds):
+            // a fresh, repeatable set of questions each try; answers 1…10, no answer twice in a row
+            var seed = UInt64(truncatingIfNeeded: plays &* 40_503 &+ level &* 977)
+            func roll(_ n: Int) -> Int {
+                seed = seed &* 6364136223846793005 &+ 1442695040888963407
+                return Int((seed >> 33) % UInt64(n))
+            }
+            sequence = []
+            while sequence.count < rounds {
+                let a: Int, b: Int, answer: Int
+                if add { a = 1 + roll(5); b = 1 + roll(5); answer = a + b }
+                else { a = 3 + roll(8); b = 1 + roll(a - 1); answer = a - b }
+                if sequence.last == String(answer) { continue }
+                sequence.append(String(answer))
+                prompts.append(add ? "\(a) + \(b)" : "\(a) − \(b)")
+            }
         }
         // clouds start in the sky away from the buddy, one per sky row, then doubled up
         clouds = (0..<info.clouds).map { k in cell((Self.startCol + 3 + 2 * k) % Self.columns, 2 - (k % 2)) }
@@ -253,6 +363,12 @@ struct StarHop: Codable, Equatable {
         startLevel(isFinalLevel ? 1 : level + 1)
     }
 
+    /// The wrong answers that can show up next to the right one.
+    private var decoyPool: [String] {
+        if case .math = info.goal { return (1...10).map(String.init) }
+        return sequence
+    }
+
     /// Try the same level again (after running out of hearts, or any time).
     mutating func retry() { startLevel(level) }
 
@@ -269,20 +385,43 @@ struct StarHop: Codable, Equatable {
         turn += 1
         lastCatch = nil
         bumped = false
+        popped = false
+        bounced = false
+
+        // 0. a spring pad bounces the buddy up to the top row
+        if row == 0, let sp = info.spring, col == sp {
+            row = Self.rows - 1; jumps = 2; bounced = true
+            message = "Boing!"
+        }
+
+        // a bubble shield
+        if bubble == buddyCell {
+            bubble = nil; shield = true
+            message = "Bubble shield! 🫧"
+        }
 
         // 1. catch whatever star the buddy landed on
         if let i = stars.firstIndex(where: { $0.cell == buddyCell }) {
             let star = stars[i]
             if let label = star.label {
                 if label == needed {
+                    let asked = prompt
                     stars.remove(at: i)
                     collected += 1
                     lastCatch = star.cell
-                    message = levelDone ? "" : "\(label)! Now find \(needed ?? "")."
+                    if let q = asked {
+                        message = "\(q) = \(label)! ✓"
+                    } else {
+                        message = levelDone ? "" : "\(label)! Now find \(needed ?? "")."
+                    }
                 } else {
                     // a wrong number or letter just pops somewhere else, no harm done
                     stars.remove(at: i)
-                    message = "That's \(label). Find \(needed ?? "") first!"
+                    if let q = prompt {
+                        message = "Not \(label). \(q) = ?"
+                    } else {
+                        message = "That's \(label). Find \(needed ?? "") first!"
+                    }
                 }
             } else {
                 stars.remove(at: i)
@@ -296,7 +435,11 @@ struct StarHop: Codable, Equatable {
             let i = level - 1
             if best.count < Self.levels.count { best += Array(repeating: 0, count: Self.levels.count - best.count) }
             if best[i] == 0 || moves < best[i] { best[i] = moves }
+            if rating.count < Self.levels.count { rating += Array(repeating: 0, count: Self.levels.count - rating.count) }
+            lastRating = 1 + (bumps == 0 ? 1 : 0) + (moves <= par ? 1 : 0)
+            rating[i] = max(rating[i], lastRating)
             levelsCleared = max(levelsCleared, level)
+            bubble = nil
             message = isFinalLevel ? "You finished every level!" : "Level \(level) done!"
             stars = []
             return
@@ -322,7 +465,14 @@ struct StarHop: Codable, Equatable {
     }
 
     private mutating func bump() {
+        if shield {
+            // the bubble takes the bump instead
+            shield = false; popped = true
+            message = "Pop! Your bubble saved you."
+            return
+        }
         hearts -= 1
+        bumps += 1
         bumped = true
         row = 0; jumps = 0
         message = hearts > 0 ? "Bonk! A puff cloud. 💨" : "Out of hearts!"
@@ -347,13 +497,18 @@ struct StarHop: Codable, Equatable {
             return Int((seed >> 33) % UInt64(n))
         }
         let size = Self.columns * Self.rows
+        // never on the buddy, a cloud, another star, the bubble, or the spring pad (it would bounce you away)
+        let springCell = info.spring.map { cell($0, 0) }
+        func isFree(_ c: Int) -> Bool {
+            c != buddyCell && !clouds.contains(c) && !stars.contains(where: { $0.cell == c }) && c != bubble && c != springCell
+        }
         func freeCell() -> Int {
             for _ in 0..<64 {
                 let pick = roll(size)
-                if pick != buddyCell && !clouds.contains(pick) && !stars.contains(where: { $0.cell == pick }) { return pick }
+                    if isFree(pick) { return pick }
             }
             // fall back to the first free cell
-            return (0..<size).first { c in c != buddyCell && !clouds.contains(c) && !stars.contains(where: { $0.cell == c }) } ?? 0
+            return (0..<size).first { isFree($0) } ?? 0
         }
 
         if let want = needed {
@@ -361,7 +516,7 @@ struct StarHop: Codable, Equatable {
                 stars.append(HopStar(id: nextStarID, cell: freeCell(), label: want)); nextStarID += 1
             }
             while stars.count < 2 {
-                let others = sequence.filter { $0 != want && !stars.map(\.label).contains($0) }
+                let others = decoyPool.filter { $0 != want && !stars.map(\.label).contains($0) }
                 guard !others.isEmpty else { break }
                 stars.append(HopStar(id: nextStarID, cell: freeCell(), label: others[roll(others.count)])); nextStarID += 1
             }
@@ -371,6 +526,10 @@ struct StarHop: Codable, Equatable {
                 let golden = level >= 2 && nextStarID % 4 == 3
                 stars.append(HopStar(id: nextStarID, cell: freeCell(), golden: golden)); nextStarID += 1
             }
+        }
+        // now and then a bubble shield floats in (one at a time, and not while wearing one)
+        if info.bubbles && bubble == nil && !shield && turn % 7 == 6 {
+            bubble = freeCell()
         }
     }
 }

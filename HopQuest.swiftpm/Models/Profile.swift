@@ -200,6 +200,8 @@ struct PlayerProfile: Codable, Equatable {
     var places: [String: PlaceSave] = [:]
     /// Story Maker: the stories a child made.
     var storyMaker = StoryMakerSave()
+    /// Star Hop (the widget game): how many of its rating stars have already been added to this player's stars.
+    var hopStarsClaimed = 0
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -208,7 +210,7 @@ struct PlayerProfile: Codable, Equatable {
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
         case village, codeLab, missions, reading, market, seenStories, science, music
-        case writing, clock, world, partner, milestones, quick, places, storyMaker
+        case writing, clock, world, partner, milestones, quick, places, storyMaker, hopStarsClaimed
     }
 }
 
@@ -263,6 +265,7 @@ extension PlayerProfile {
         quick = (try? c.decodeIfPresent(QuickSave.self, forKey: .quick)) ?? QuickSave()
         places = (try? c.decodeIfPresent([String: PlaceSave].self, forKey: .places)) ?? [:]
         storyMaker = (try? c.decodeIfPresent(StoryMakerSave.self, forKey: .storyMaker)) ?? StoryMakerSave()
+        hopStarsClaimed = (try? c.decodeIfPresent(Int.self, forKey: .hopStarsClaimed)) ?? 0
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -366,6 +369,20 @@ final class GameStore: ObservableObject {
         if let best = p.kartBest[cup], best <= place { return }
         p.kartBest[cup] = place
         profile = p
+    }
+
+    /// Turns new Star Hop rating stars (earned on the home-screen widget) into real stars. Returns how many were added.
+    /// Each rating star counts once per player, so replaying a level for the same rating gives nothing more.
+    @discardableResult
+    func collectHopStars(total: Int = SharedStore.loadHop().totalRating) -> Int {
+        guard var p = profile else { return 0 }
+        let new = max(0, total - p.hopStarsClaimed)
+        guard new > 0 else { return 0 }
+        p.hopStarsClaimed = total
+        p.stars += new
+        p.lifetimeStars += new
+        profile = p
+        return new
     }
 
     func addStars(_ n: Int) {

@@ -4,7 +4,7 @@ import AppIntents
 
 // HopQuest home-screen widgets (v5.6–v5.7).
 // • My Buddy: the buddy, stars, what's up next and the skill being practised. Tapping opens HopQuest.
-// • Star Hop: a tap-to-play game with six levels (v6.6). Tap the left half to step left, the right half to jump, and the
+// • Star Hop: a tap-to-play game with twelve levels (v6.6–v6.7). Tap the left half to step left, the right half to jump, and the
 //   right half again in the air to double jump. Counting and spelling levels, puff clouds and hearts. Small, medium and large.
 //   "Star Dash" (large size) opens the full-speed game in the app.
 // Everything is read from the shared App Group on this device; widgets never use the network.
@@ -134,7 +134,7 @@ struct BuddyWidget: Widget {
     }
 }
 
-// MARK: - Star Hop 2 (tap-to-play, v6.6)
+// MARK: - Star Hop (tap-to-play, v6.6–v6.7)
 
 struct HopLeftIntent: AppIntent {
     static var title: LocalizedStringResource = "Step left"
@@ -232,13 +232,15 @@ struct StarHopWidgetView: View {
                 board
                     .overlay(alignment: .top) { messageLine }
                 if h.champion {
-                    card(title: "You beat every level! 🏆", detail: "Star Hop champion", button: "Play again", icon: "arrow.clockwise",
-                         intent: HopNewGameIntent())
+                    card(title: "You beat all \(StarHop.levels.count) levels! 🏆",
+                         detail: "\(h.totalRating) of \(StarHop.levels.count * 3) stars", rating: h.lastRating,
+                         button: "Play again", icon: "arrow.clockwise", intent: HopNewGameIntent())
                 } else if h.levelDone {
-                    card(title: "Level \(h.level) done! ⭐", detail: "\(h.moves) moves · Next: \(StarHop.levels[h.level].title)",
+                    card(title: "Level \(h.level) done!",
+                         detail: "Next: \(StarHop.levels[min(h.level, StarHop.levels.count - 1)].title)", rating: h.lastRating,
                          button: "Next level", icon: "arrow.right", intent: HopNextLevelIntent())
                 } else if h.outOfHearts {
-                    card(title: "Out of hearts!", detail: "The puff clouds got you. You can do it!", button: "Try again",
+                    card(title: "Out of hearts!", detail: "The puff clouds got you. You can do it!", rating: nil, button: "Try again",
                          icon: "arrow.clockwise", intent: HopRetryIntent())
                 } else {
                     // the two tap halves sit on top of the board
@@ -287,7 +289,22 @@ struct StarHopWidgetView: View {
 
     /// Star levels: caught / goal. Counting and spelling levels: the sequence, with the caught ones filled in.
     @ViewBuilder private var progress: some View {
-        if h.sequence.isEmpty {
+        if let q = h.prompt {
+            // adding and take-away levels: the question, big and clear, with how many are done
+            HStack(spacing: 4) {
+                Text("\(q) = ?").font(WidgetTheme.round(small ? 13 : 15, .black)).monospacedDigit().foregroundStyle(.white)
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(Capsule().fill(accent))
+                    .id("q\(h.collected)")
+                    .transition(.push(from: .trailing))
+                if !small {
+                    Text("\(h.collected)/\(h.goal)").font(WidgetTheme.round(12, .black)).monospacedDigit()
+                        .foregroundStyle(ink.opacity(0.6))
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("What is \(q.replacingOccurrences(of: "−", with: "minus"))? \(h.collected) of \(h.goal) done.")
+        } else if h.sequence.isEmpty {
             HStack(spacing: 3) {
                 Image("goal_star").resizable().frame(width: 14, height: 14)
                 Text("\(h.collected)/\(h.goal)").font(WidgetTheme.round(13, .black)).monospacedDigit()
@@ -354,6 +371,16 @@ struct StarHopWidgetView: View {
                     Rectangle().fill(Color(hop: h.info.grass)).frame(height: 5)
                     Rectangle().fill(Color(hop: h.info.soil)).frame(height: ground - 5)
                 }
+                if let sp = h.info.spring, let sx = x(sp) {
+                    SpringPad(squashed: h.bounced)
+                        .frame(width: unit * 0.7, height: unit * 0.36)
+                        .position(x: sx, y: geo.size.height - ground - unit * 0.16)
+                }
+                if let b = h.bubble, let bx = x(b % StarHop.columns) {
+                    Bubble().frame(width: unit * 0.62, height: unit * 0.62)
+                        .position(x: bx, y: y(b / StarHop.columns))
+                        .transition(.scale.combined(with: .opacity))
+                }
                 ForEach(Array(h.clouds.enumerated()), id: \.offset) { _, cell in
                     if let cx = x(cell % StarHop.columns) {
                         PuffCloud(night: h.info.night).frame(width: unit * 1.05, height: unit * 0.75)
@@ -383,6 +410,16 @@ struct StarHopWidgetView: View {
                             if h.bumped {
                                 Image(systemName: "star.circle.fill").font(.system(size: unit * 0.3)).foregroundStyle(.yellow)
                                     .offset(y: -unit * 0.2)
+                            }
+                        }
+                        .overlay {
+                            if h.shield {
+                                Bubble().frame(width: unit * 1.25, height: unit * 1.25).opacity(0.85)
+                                    .transition(.scale.combined(with: .opacity))
+                            } else if h.popped {
+                                Image(systemName: "burst").font(.system(size: unit * 0.9, weight: .light))
+                                    .foregroundStyle(Color(hop: 0x8FD3FF))
+                                    .transition(.scale(scale: 1.4).combined(with: .opacity))
                             }
                         }
                         .position(x: bx, y: y(h.row) - 2)
@@ -428,7 +465,10 @@ struct StarHopWidgetView: View {
     private var boardDescription: String {
         var parts = ["Star Hop, level \(h.level), \(h.info.title).", "\(h.hearts) hearts."]
         if let need = h.needed { parts.append("Find \(need) next.") } else { parts.append("\(h.collected) of \(h.goal) stars caught.") }
+        if let q = h.prompt { parts.append("What is \(q.replacingOccurrences(of: "−", with: "minus"))?") }
         if !h.clouds.isEmpty { parts.append(h.clouds.count == 1 ? "One puff cloud in the sky." : "\(h.clouds.count) puff clouds in the sky.") }
+        if h.shield { parts.append("You have a bubble shield.") } else if h.bubble != nil { parts.append("A bubble shield is on the board.") }
+        if h.info.spring != nil { parts.append("A spring pad on the ground bounces you up high.") }
         return parts.joined(separator: " ")
     }
 
@@ -445,11 +485,12 @@ struct StarHopWidgetView: View {
             .accessibilityLabel(label)
     }
 
-    private func card<I: AppIntent>(title: String, detail: String, button: String, icon: String, intent: I) -> some View {
-        VStack(spacing: small ? 4 : 6) {
+    private func card<I: AppIntent>(title: String, detail: String, rating: Int?, button: String, icon: String, intent: I) -> some View {
+        VStack(spacing: small ? 3 : 5) {
             Text(title).font(WidgetTheme.round(small ? 13 : 16, .black)).multilineTextAlignment(.center)
                 .lineLimit(2).minimumScaleFactor(0.8)
-            if !small {
+            if let rating { ratingRow(rating, size: small ? 16 : 22, labels: !small) }
+            if !small && (family == .systemLarge || rating == nil) {
                 Text(detail).font(WidgetTheme.round(12, .bold)).foregroundStyle(WidgetTheme.ink.opacity(0.6))
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
@@ -467,17 +508,43 @@ struct StarHopWidgetView: View {
         .transition(.scale(scale: 0.85).combined(with: .opacity))
     }
 
+    /// 1–3 stars: finishing, no bumps, quick feet.
+    private func ratingRow(_ n: Int, size: CGFloat, labels: Bool) -> some View {
+        VStack(spacing: 2) {
+            HStack(spacing: 3) {
+                ForEach(0..<3, id: \.self) { i in
+                    Image(systemName: "star.fill").font(.system(size: size, weight: .black))
+                        .foregroundStyle(i < n ? Color(hop: 0xFFC83D) : Color(hop: 0xDCD6E6))
+                        .shadow(color: i < n ? Color(hop: 0xE59A00).opacity(0.6) : .clear, radius: 0, x: 0, y: 1.5)
+                }
+            }
+            if labels {
+                HStack(spacing: 8) {
+                    Text("✓ Finished")
+                    Text(h.bumps == 0 ? "✓ No bumps" : "· No bumps").opacity(h.bumps == 0 ? 1 : 0.45)
+                    Text(h.moves <= h.par ? "✓ Quick feet" : "· Quick feet").opacity(h.moves <= h.par ? 1 : 0.45)
+                }
+                .font(WidgetTheme.round(10, .bold)).foregroundStyle(WidgetTheme.ink.opacity(0.7))
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(n) of 3 stars")
+    }
+
     // MARK: Large widget footer: level picker, best, Star Dash
 
     private var footer: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 6) {
-                ForEach(StarHop.levels, id: \.number) { lv in
-                    Button(intent: HopPickLevelIntent(level: lv.number)) {
-                        levelDot(lv)
+            // two rows of six: tap a level you've reached to play it
+            ForEach(0..<2, id: \.self) { rowIndex in
+                HStack(spacing: 4) {
+                    ForEach(StarHop.levels[(rowIndex * 6)..<min(StarHop.levels.count, rowIndex * 6 + 6)], id: \.number) { lv in
+                        Button(intent: HopPickLevelIntent(level: lv.number)) {
+                            levelDot(lv)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!h.canPick(lv.number))
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!h.canPick(lv.number))
                 }
             }
             HStack {
@@ -503,18 +570,72 @@ struct StarHopWidgetView: View {
             Circle().fill(LinearGradient(colors: [Color(hop: lv.skyTop), Color(hop: lv.grass)], startPoint: .top, endPoint: .bottom))
                 .opacity(open ? 1 : 0.35)
             if open {
-                Text("\(lv.number)").font(WidgetTheme.round(14, .black)).foregroundStyle(lv.night ? .white : WidgetTheme.ink)
+                Text("\(lv.number)").font(WidgetTheme.round(13, .black)).foregroundStyle(lv.night ? .white : WidgetTheme.ink)
             } else {
                 Image(systemName: "lock.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(WidgetTheme.ink.opacity(0.5))
             }
+        }
+        .frame(width: 30, height: 30)
+        .overlay(Circle().stroke(here ? accent : .white.opacity(0.8), lineWidth: here ? 3 : 1.5))
+        .overlay(alignment: .bottom) {
             if done {
-                Image("goal_star").resizable().frame(width: 13, height: 13).offset(x: 13, y: -13)
+                let r = h.rating.indices.contains(lv.number - 1) ? h.rating[lv.number - 1] : 1
+                HStack(spacing: 0) {
+                    ForEach(0..<3, id: \.self) { i in
+                        Image(systemName: "star.fill").font(.system(size: 7, weight: .black))
+                            .foregroundStyle(i < r ? Color(hop: 0xFFC83D) : Color(hop: 0xCFC8DC))
+                    }
+                }
+                .padding(.horizontal, 2).padding(.vertical, 1)
+                .background(Capsule().fill(.white))
+                .offset(y: 6)
             }
         }
-        .frame(width: 34, height: 34)
-        .overlay(Circle().stroke(here ? accent : .white.opacity(0.8), lineWidth: here ? 3 : 1.5))
         .frame(maxWidth: .infinity)
-        .accessibilityLabel("Level \(lv.number), \(lv.title)\(done ? ", done" : "")\(open ? "" : ", locked")")
+        .accessibilityLabel("Level \(lv.number), \(lv.title)\(done ? ", \(h.rating.indices.contains(lv.number - 1) ? h.rating[lv.number - 1] : 1) stars" : "")\(open ? "" : ", locked")")
+    }
+}
+
+/// A shiny soap bubble: the shield pickup, and the shield around the buddy.
+struct Bubble: View {
+    var body: some View {
+        ZStack {
+            Circle().fill(RadialGradient(colors: [.white.opacity(0.05), Color(hop: 0x9FDFFF).opacity(0.45)],
+                                         center: .center, startRadius: 0, endRadius: 30))
+            Circle().stroke(LinearGradient(colors: [Color(hop: 0xFF9DE2), Color(hop: 0x7FD6FF), Color(hop: 0xB6F5A8)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2)
+            GeometryReader { g in
+                Capsule().fill(.white.opacity(0.9))
+                    .frame(width: g.size.width * 0.18, height: g.size.width * 0.32)
+                    .rotationEffect(.degrees(35))
+                    .position(x: g.size.width * 0.3, y: g.size.height * 0.3)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// A red spring pad set into the ground.
+struct SpringPad: View {
+    let squashed: Bool
+    var body: some View {
+        GeometryReader { g in
+            let w = g.size.width, hgt = g.size.height
+            VStack(spacing: 0) {
+                Capsule().fill(Color(hop: 0xFF5A5F)).frame(width: w, height: hgt * 0.32)
+                    .overlay(Capsule().stroke(.white.opacity(0.6), lineWidth: 1))
+                ZStack {
+                    ForEach(0..<3, id: \.self) { i in
+                        Capsule().stroke(Color(hop: 0x6B6F80), lineWidth: 1.6)
+                            .frame(width: w * 0.55, height: hgt * 0.16)
+                            .offset(y: CGFloat(i - 1) * hgt * (squashed ? 0.08 : 0.16))
+                    }
+                }
+                .frame(height: hgt * 0.68)
+            }
+            .frame(width: w, height: hgt, alignment: .bottom)
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -557,7 +678,7 @@ struct StarHopWidget: Widget {
                 .containerBackground(for: .widget) { HopSky(level: entry.hop.info) }
         }
         .configurationDisplayName("Star Hop")
-        .description("Six little worlds to hop through. Tap left to step, tap right to jump, tap right again to double jump!")
+        .description("Twelve little worlds to hop through: count, spell, add and dodge puff clouds. Tap left to step, tap right to jump!")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

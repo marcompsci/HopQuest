@@ -176,4 +176,4 @@ The first build needs Xcode to register the App Group `group.com.phoronomics.hop
 `HopQuest.swiftpm` still opens in Swift Playgrounds, without the widgets.
 
 
-The widgets are **My Buddy** (small, medium) and **Star Hop** (small, medium, large): a six-level tap-to-play game whose rules live in `HopQuest.swiftpm/Shared/WidgetShared.swift` and are tested in `Tests/Learn`.
+The widgets are **My Buddy** (small, medium) and **Star Hop** (small, medium, large): a twelve-level tap-to-play game whose rules live in `HopQuest.swiftpm/Shared/WidgetShared.swift` and are tested in `Tests/Learn`.

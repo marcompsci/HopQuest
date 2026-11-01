@@ -28,10 +28,13 @@ struct OnboardingView: View {
             case .castle: castleStep
             case .character:
                 CharacterSelectView(theme: theme, initialID: nil, buttonTitle: "Start my adventure! 🎈") { picked in
-                    store.profile = PlayerProfile(name: trimmedName.isEmpty ? "Explorer" : trimmedName,
-                                                  identity: identity,
-                                                  theme: theme,
-                                                  characterID: picked.id)
+                    var fresh = PlayerProfile(name: trimmedName.isEmpty ? "Explorer" : trimmedName,
+                                              identity: identity,
+                                              theme: theme,
+                                              characterID: picked.id)
+                    // Star Hop stars already earned on this device belong to whoever earned them, not to a new player
+                    fresh.hopStarsClaimed = SharedStore.loadHop().totalRating
+                    store.profile = fresh
                 }
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }

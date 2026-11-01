@@ -34,6 +34,7 @@ struct MainMenuView: View {
     @State private var bounce = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var note: String?
+    @Environment(\.scenePhase) private var scenePhase
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -122,6 +123,9 @@ struct MainMenuView: View {
                 .animation(.spring(), value: note)
             }
         }
+        // stars earned in Star Hop on the home-screen widget arrive here
+        .onAppear { collectHopStars() }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { collectHopStars() } }
         // The sky, land and season drift sit behind the content, so the big land picture
         // can never stretch the layout past the screen and push the header under the clock.
         .background {
@@ -528,6 +532,13 @@ struct MainMenuView: View {
             .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.9)))
         }
         .buttonStyle(BouncyButtonStyle())
+    }
+
+    private func collectHopStars() {
+        let n = store.collectHopStars()
+        guard n > 0 else { return }
+        Haptics.success()
+        showNote(n == 1 ? "You earned 1 star in Star Hop!" : "You earned \(n) stars in Star Hop!")
     }
 
     private func showNote(_ text: String) {

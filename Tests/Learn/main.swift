@@ -589,6 +589,75 @@ test("Widget: snapshot saving and the Star Hop game") {
     check(t.sequence == ["2", "4", "6", "8", "10", "12"] && t.info.night && t.clouds.count == 2, "level 6 counts by twos at night")
     check(StarHop.words.allSatisfy { Set($0).count == $0.count }, "no spelling word repeats a letter")
 
+    // Star Hop 3: new levels, springs, bubbles, ratings
+    check(StarHop.levels.count == 12 && StarHop.levels.map(\.number) == Array(1...12), "twelve levels, numbered in order")
+    var abc = StarHop(); abc.startLevel(7)
+    check(abc.sequence == ["A", "B", "C", "D", "E", "F"] && abc.needed == "A", "ABC Garden is the alphabet in order")
+    var down = StarHop(); down.startLevel(8)
+    check(down.sequence == ["6", "5", "4", "3", "2", "1"], "Rocket Launch counts down")
+    var tens = StarHop(); tens.startLevel(10)
+    check(tens.sequence == ["10", "20", "30", "40", "50", "60"], "Tens Tower counts by tens")
+    for lv in [9, 11] {
+        for plays in 0..<60 {
+            var m = StarHop(); m.plays = plays; m.startLevel(lv)
+            check(m.prompts.count == 5 && m.sequence.count == 5, "level \(lv): five questions")
+            for (q, a) in zip(m.prompts, m.sequence) {
+                let parts = q.split(separator: " ")
+                let x = Int(parts[0])!, y = Int(parts[2])!, ans = Int(a)!
+                check((lv == 9 ? x + y : x - y) == ans && (1...10).contains(ans), "level \(lv): \(q) = \(a) is right and between 1 and 10")
+            }
+            check(zip(m.sequence, m.sequence.dropFirst()).allSatisfy { $0 != $1 }, "level \(lv): no answer twice in a row")
+            check(m.stars.contains { $0.label == m.needed } && m.stars.filter { $0.label != m.needed }.allSatisfy { $0.label.flatMap(Int.init).map { (1...10).contains($0) } ?? false },
+                  "level \(lv): the answer is on the board, next to a different number")
+        }
+    }
+    var mq = StarHop(); mq.startLevel(9); mq.clouds = []
+    let q0 = mq.prompt!, a0 = mq.needed!
+    mq.stars = [HopStar(id: 70, cell: mq.cell(2, 1), label: a0)]
+    mq.right()
+    check(mq.collected == 1 && mq.message == "\(q0) = \(a0)! ✓", "catching the answer says the whole sum")
+
+    var sp = StarHop(); sp.startLevel(7); sp.clouds = []; sp.stars = []
+    sp.col = 4; sp.row = 0
+    sp.left()
+    check(sp.col == 3 && sp.row == StarHop.rows - 1 && sp.jumps == 2 && sp.bounced && sp.message == "Boing!", "a spring pad bounces you to the top")
+    check(!sp.stars.contains { $0.cell == sp.cell(3, 0) }, "stars never sit on the spring")
+
+    var bu = StarHop(); bu.startLevel(4); bu.stars = []
+    bu.bubble = bu.cell(2, 1); bu.clouds = [bu.cell(4, 2), bu.cell(5, 1)]
+    bu.right()
+    check(bu.shield && bu.bubble == nil && bu.message.hasPrefix("Bubble shield"), "catching a bubble gives a shield")
+    bu.clouds = [bu.cell(3, 2)]; bu.stars = []
+    bu.right()
+    check(!bu.shield && bu.popped && bu.hearts == 3 && bu.bumps == 0 && bu.row == 2, "the bubble takes the bump, no heart lost")
+    var sawBubble = false
+    var bg = StarHop(); bg.startLevel(4)
+    for _ in 0..<40 where bg.playing { bg.left(); if bg.bubble != nil { sawBubble = true } }
+    check(sawBubble, "bubbles do show up on bubble levels")
+    var nb = StarHop()
+    for _ in 0..<40 where nb.playing { nb.left(); check(nb.bubble == nil, "no bubbles on level 1") }
+
+    var r = StarHop(); r.clouds = []
+    r.collected = r.goal - 1; r.stars = [HopStar(id: 60, cell: r.cell(2, 1))]
+    r.right()
+    check(r.levelDone && r.lastRating == 3 && r.rating[0] == 3 && r.totalRating == 3, "no bumps and quick feet: three stars")
+    var r2 = StarHop(); r2.startLevel(2); r2.bumps = 1; r2.moves = r2.par + 5; r2.clouds = []
+    r2.collected = r2.goal - 1; r2.stars = [HopStar(id: 61, cell: r2.cell(2, 1))]
+    r2.right()
+    check(r2.lastRating == 1 && r2.rating[1] == 1, "bumped and slow: one star for finishing")
+    r2.rating[1] = 3; r2.retry(); r2.bumps = 1; r2.clouds = []; r2.collected = r2.goal - 1; r2.stars = [HopStar(id: 62, cell: r2.cell(2, 1))]
+    r2.right()
+    check(r2.rating[1] == 3, "a level keeps its best rating")
+
+    // saves from before Star Hop 3 keep their progress
+    let old = #"{"level":4,"col":1,"row":0,"jumps":0,"facingLeft":false,"stars":[],"clouds":[],"collected":3,"sequence":[],"hearts":2,"moves":9,"turn":40,"nextStarID":30,"plays":5,"best":[20,18,25,0,0,0],"levelsCleared":3,"message":"Hi","bumped":false}"#
+    let up = try! JSONDecoder().decode(StarHop.self, from: Data(old.utf8))
+    check(up.level == 4 && up.levelsCleared == 3 && up.best.count == 12 && Array(up.best.prefix(3)) == [20, 18, 25], "an old save keeps its level and bests")
+    check(Array(up.rating.prefix(4)) == [1, 1, 1, 0] && up.rating.count == 12, "levels finished before ratings count as one star")
+    check(up.playing && up.hearts == 3 && up.stars.count == 2, "and the level starts fresh under the new rules")
+    let rt = try! JSONDecoder().decode(StarHop.self, from: try! JSONEncoder().encode(r2))
+    check(rt == r2, "a new save round-trips exactly")
+
     // picking levels
     var p = StarHop()
     p.pick(3)
@@ -732,7 +801,7 @@ test("Badges: earned from real progress, never lost") {
     b.chaptersDone.insert(21); b.postcards = 7; b.lettersWritten = 62; b.storiesMade = 3; b.biggestIsland = 40; b.dashFinished = true
     b.codePuzzles = 10; b.stickers = 20; b.lifetimeStars = 300
     check(!Badges.earned(b).contains { $0.id == "hopper" }, "Star Hopper needs the widget levels")
-    b.hopLevels = 6
+    b.hopLevels = 12
     b.finishedAreas = Set(Badges.areaBadges.map(\.0))
     check(Badges.earned(b).count == Badges.all.count, "every badge can be earned")
     check(Badges.all.allSatisfy { !$0.how.isEmpty && !$0.title.isEmpty }, "every badge says how to earn it")

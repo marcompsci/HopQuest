@@ -325,6 +325,14 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - Now in all three sizes. The small widget follows the buddy with a four-column view (the board wraps around) and points toward the star you need when it's out of view. The large widget adds a level picker (levels already reached) and the best moves per level.
 - Finishing all six levels earns the **Star Hopper** badge in the app (24 badges). A tested look-ahead player finishes every level on 12 seeds without being bumped (about 10–25 taps a level).
 
+### v6.7: Star Hop 3
+- Six more levels (12 in all): ABC Garden (A–F in order), Rocket Launch (count down 6 to 1), Adding Bay (five sums, catch the answer), Tens Tower (count by tens), Take-Away Tundra (five take-aways) and Rainbow Castle (12 stars, three clouds). Sums and take-aways change every try and their answers stay between 1 and 10; the wrong-answer star is always a different number.
+- **Spring pads** on the ground bounce the buddy straight to the top row. Stars never sit on a spring.
+- **Bubble shields** float in on later levels; a bubble takes the next cloud bump instead of a heart.
+- **Star ratings**: 1 star for finishing, +1 for no bumps, +1 for quick feet (at most a set number of moves; levels where order matters get more room). The large widget's level picker shows each level's stars.
+- **Stars in the app**: every rating star earned on the widget is added once to the player's stars (up to 36) the next time the menu opens, with a "You earned 3 stars in Star Hop!" note. A new player made later doesn't collect stars someone else already earned.
+- Older Star Hop saves keep their level, bests and levels reached; levels finished before ratings count as one star. The Star Hopper badge now means all 12 levels.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.
