@@ -260,5 +260,114 @@ test("Music Maker: keys, tunes, patterns, checking taps, and the song builder") 
     check(ms.record(.echo, stars: 3) == 3 && ms.record(.echo, stars: 3) == 0 && MusicSave.maxStars == 9, "best only")
 }
 
+test("Writing Desk: every letter and number is well formed") {
+    check(Alphabet.capitals.count == 26 && Alphabet.lowercase.count == 26 && Alphabet.digits.count == 10, "26 + 26 + 10 glyphs")
+    let all = Alphabet.capitals + Alphabet.lowercase + Alphabet.digits
+    check(Set(all.map(\.character)).count == all.count, "no repeats")
+    for g in all {
+        check(!g.strokes.isEmpty && g.strokes.allSatisfy { $0.count >= 2 }, "\(g.character) has strokes")
+        let pts = g.strokes.flatMap { $0 }
+        check(pts.allSatisfy { $0.x >= -0.01 && $0.x <= 0.66 && $0.y >= -0.01 && $0.y <= 1.01 }, "\(g.character) stays in its box")
+        let tall = Alphabet.lowercase.contains(g) ? ["b", "d", "f", "h", "k", "l", "t"].contains(g.character) : true
+        check(!tall || pts.map(\.y).min()! < 0.15, "\(g.character) reaches the top line")
+        check(tall || pts.map(\.y).min()! > 0.15, "\(g.character) stays below the top line (dots aside)")
+        for s in g.strokes where TraceChecker.length(s) > 0.1 {
+            check(zip(s, s.dropFirst()).allSatisfy { $0.0.distance(to: $0.1) < 0.09 }, "\(g.character): no jumps inside a stroke")
+        }
+    }
+    for c in ["g", "j", "p", "q", "y"] { check(Alphabet.glyph(c)!.maxY > 0.9, "\(c) has a tail") }
+    for c in ["a", "c", "e", "m", "n", "o", "r", "s", "u", "v", "w", "x", "z"] { check(Alphabet.glyph(c)!.maxY < 0.85, "\(c) sits on the baseline") }
+}
+
+test("Writing Desk: the tracing checker") {
+    var rng = SeededRNG(state: 7)
+    let all = Alphabet.capitals + Alphabet.lowercase + Alphabet.digits
+    for g in all {
+        for s in g.strokes {
+            check(TraceChecker.check(drawn: s, against: s) == .good, "\(g.character): an exact trace is good")
+            let wobbly = s.map { PenPoint($0.x + Double.random(in: -0.05...0.05, using: &rng), $0.y + Double.random(in: -0.05...0.05, using: &rng)) }
+            check(TraceChecker.check(drawn: wobbly, against: s) == .good, "\(g.character): a wobbly trace is still good")
+            guard TraceChecker.length(s) > 0.3 else { continue }
+            let closed = s.first!.distance(to: s.last!) < TraceChecker.startTolerance
+            if !closed {
+                check(TraceChecker.check(drawn: s.reversed(), against: s) == .wrongStart, "\(g.character): starting at the wrong end gets a hint")
+            }
+            check(TraceChecker.check(drawn: Array(s.prefix(s.count / 3)), against: s) == .notFinished, "\(g.character): stopping early isn't finished")
+            let shifted = s.enumerated().map { $0.offset < 2 ? $0.element : PenPoint($0.element.x + 0.35, $0.element.y) }
+            check(TraceChecker.check(drawn: shifted, against: s) != .good, "\(g.character): drawing off the line isn't good")
+        }
+    }
+    let i = Alphabet.glyph("i")!
+    check(TraceChecker.check(drawn: [PenPoint(0.31, 0.23)], against: i.strokes[1]) == .good, "a tap makes the dot")
+    check(TraceChecker.check(drawn: [PenPoint(0.31, 0.7)], against: i.strokes[1]) == .wrongStart, "a tap far away doesn't")
+    check(TraceChecker.check(drawn: [], against: i.strokes[0]) == .notFinished, "nothing drawn")
+}
+
+test("Writing Desk: rounds and saves") {
+    for seed in 0..<200 {
+        var rng = SeededRNG(state: UInt64(seed))
+        for game in WritingGame.allCases {
+            let r = WritingBank.rounds(for: game, using: &rng)
+            check(r.count == (game == .words ? 3 : 5), "\(game) round count")
+            check(Set(r.map(\.text)).count == r.count, "\(game) no repeats")
+            check(r.allSatisfy { !$0.glyphs.isEmpty && !$0.say.isEmpty }, "\(game) rounds have letters and words")
+            if game == .words { check(r.allSatisfy { $0.glyphs.count == 3 && !$0.picture.isEmpty }, "words: three letters and a picture") }
+            if game == .numbers { check(r.allSatisfy { Int($0.text) != nil }, "numbers are digits") }
+        }
+    }
+    check(Set(WritingBank.letterWords.keys).count == 26, "a word for every letter")
+    var w = WritingSave()
+    check(w.record(.capitals, stars: 2) == 2 && w.record(.capitals, stars: 1) == 0 && w.record(.capitals, stars: 3) == 1, "best only")
+    w.written = ["A", "b"]
+    check(try JSONDecoder().decode(WritingSave.self, from: JSONEncoder().encode(w)) == w, "round trip")
+    check(try JSONDecoder().decode(WritingSave.self, from: Data("{}".utf8)) == WritingSave(), "empty save")
+    check(WritingSave.maxStars == 12, "12 stars")
+}
+
+test("Clock Tower: times, hands and words") {
+    check(ClockTime(3).digital == "3:00" && ClockTime(3, 5).digital == "3:05" && ClockTime(12, 45).digital == "12:45", "digital")
+    check(ClockTime(13).hour == 1 && ClockTime(0).hour == 12 && ClockTime(-1).hour == 11, "hours wrap")
+    check(ClockTime(3).spoken == "3 o'clock" && ClockTime(3, 30).spoken == "half past 3" && ClockTime(3, 15).spoken == "quarter past 3", "spoken")
+    check(ClockTime(3, 45).spoken == "quarter to 4" && ClockTime(12, 45).spoken == "quarter to 1" && ClockTime(3, 50).spoken == "10 to 4", "to the next hour")
+    check(ClockTime(3).hourAngle == 90 && ClockTime(3, 30).hourAngle == 105 && ClockTime(12).hourAngle == 0, "hour hand creeps")
+    check(ClockTime(9, 45).minuteAngle == 270, "minute hand")
+    check(ClockTime(11, 30).adding(minutes: 60) == ClockTime(12, 30) && ClockTime(12, 30).adding(minutes: 60) == ClockTime(1, 30), "an hour later wraps")
+    check(ClockTime(2).adding(minutes: -60) == ClockTime(1), "an hour earlier")
+    check(ClockHands.minute(fromAngle: 92) == 15 && ClockHands.minute(fromAngle: 358) == 0 && ClockHands.minute(fromAngle: 182) == 30, "snap minutes")
+    check(ClockHands.hour(fromAngle: 2) == 12 && ClockHands.hour(fromAngle: 88) == 3 && ClockHands.hour(fromAngle: -30) == 11, "snap hours")
+    check(abs(ClockHands.angle(dx: 1, dy: 0) - 90) < 0.001 && abs(ClockHands.angle(dx: 0, dy: 1) - 180) < 0.001 && ClockHands.angle(dx: 0, dy: -1) < 0.001, "screen angles")
+    check(ClockHands.wind(ClockTime(3, 55), toMinute: 0) == ClockTime(4) && ClockHands.wind(ClockTime(4, 5), toMinute: 50) == ClockTime(3, 50), "winding past 12 moves the hour")
+    check(ClockHands.wind(ClockTime(4, 20), toMinute: 30) == ClockTime(4, 30), "winding within the hour")
+}
+
+test("Clock Tower: every game, 300 seeds") {
+    for seed in 0..<300 {
+        var rng = SeededRNG(state: UInt64(seed))
+        for game in ClockGame.allCases {
+            let rounds = ClockBank.rounds(for: game, using: &rng)
+            check(rounds.count == 5 && Set(rounds.map(\.time)).count == 5, "\(game): five different times")
+            for r in rounds {
+                switch game {
+                case .oclock: check(r.time.minute == 0, "o'clock")
+                case .halfPast: check([0, 30].contains(r.time.minute), "half past")
+                case .quarters: check([15, 30, 45].contains(r.time.minute), "quarters")
+                case .setClock, .hourLater: check([0, 30].contains(r.time.minute), "simple times")
+                }
+                if r.kind == .choose {
+                    check(r.choices.count == 3 && Set(r.choices).count == 3 && r.choices.contains(r.answer), "\(game): three choices with the answer")
+                } else {
+                    check(r.choices.isEmpty && r.answer == r.time.digital, "set: no choices")
+                }
+                if game == .hourLater { check(r.answer == r.time.adding(minutes: 60).digital, "one hour later") }
+                else { check(r.answer == r.time.digital, "the answer is the time shown") }
+            }
+        }
+    }
+    check(ClockBank.isSet(ClockTime(4, 30), to: ClockTime(4, 30)) && !ClockBank.isSet(ClockTime(5, 30), to: ClockTime(4, 30)), "set check")
+    var c = ClockSave()
+    check(c.record(.oclock, stars: 3) == 3 && c.record(.oclock, stars: 2) == 0 && ClockSave.maxStars == 15, "best only")
+    check(try JSONDecoder().decode(ClockSave.self, from: JSONEncoder().encode(c)) == c, "round trip")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

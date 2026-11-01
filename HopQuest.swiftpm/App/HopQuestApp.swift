@@ -36,6 +36,8 @@ enum Route: Equatable {
     case scienceLab
     case musicMaker
     case mathMarket
+    case writingDesk
+    case clockTower
     // two players on one phone
     case teamKartSelect
     case teamKart(Int)
@@ -139,6 +141,8 @@ struct RootView: View {
                          onStories: { route = .storyBook },
                          onScience: { route = .scienceLab },
                          onMusic: { route = .musicMaker },
+                         onWriting: { route = .writingDesk },
+                         onClock: { route = .clockTower },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
                 .onAppear { hub = .menu }
@@ -239,6 +243,12 @@ struct RootView: View {
 
         case .mathMarket:
             MathMarketView(onBack: goHome)
+
+        case .writingDesk:
+            WritingDeskView(onBack: goHome)
+
+        case .clockTower:
+            ClockTowerView(onBack: goHome)
 
         case .castle:
             MyCastleView(onBack: goHome)

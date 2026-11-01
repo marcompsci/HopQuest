@@ -179,6 +179,10 @@ struct PlayerProfile: Codable, Equatable {
     var music = MusicSave()
     /// Science Lab: best stars per experiment.
     var science = ScienceSave()
+    /// Writing Desk: best stars per writing game, and every letter written.
+    var writing = WritingSave()
+    /// Clock Tower: best stars per clock game.
+    var clock = ClockSave()
     /// Story cutscenes already watched (they then live in the Story Book).
     var seenStories: Set<String> = []
 
@@ -189,6 +193,7 @@ struct PlayerProfile: Codable, Equatable {
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
         case village, codeLab, missions, reading, market, seenStories, science, music
+        case writing, clock
     }
 }
 
@@ -232,6 +237,8 @@ extension PlayerProfile {
         market = (try? c.decodeIfPresent(MarketSave.self, forKey: .market)) ?? MarketSave()
         science = (try? c.decodeIfPresent(ScienceSave.self, forKey: .science)) ?? ScienceSave()
         music = (try? c.decodeIfPresent(MusicSave.self, forKey: .music)) ?? MusicSave()
+        writing = (try? c.decodeIfPresent(WritingSave.self, forKey: .writing)) ?? WritingSave()
+        clock = (try? c.decodeIfPresent(ClockSave.self, forKey: .clock)) ?? ClockSave()
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -489,6 +496,29 @@ final class GameStore: ObservableObject {
     func recordScience(_ e: Experiment, stars: Int) -> Int {
         guard var p = profile else { return 0 }
         let given = p.science.record(e, stars: stars)
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return given
+    }
+
+    /// Records a finished Writing Desk game and the letters written. Returns the new stars (best only).
+    @discardableResult
+    func recordWriting(_ game: WritingGame, stars: Int, letters: [String]) -> Int {
+        guard var p = profile else { return 0 }
+        let given = p.writing.record(game, stars: stars)
+        p.writing.written.formUnion(letters)
+        p.stars += given
+        p.lifetimeStars += given
+        profile = p
+        return given
+    }
+
+    /// Records a finished Clock Tower game. Returns the new stars (best only).
+    @discardableResult
+    func recordClock(_ game: ClockGame, stars: Int) -> Int {
+        guard var p = profile else { return 0 }
+        let given = p.clock.record(game, stars: stars)
         p.stars += given
         p.lifetimeStars += given
         profile = p

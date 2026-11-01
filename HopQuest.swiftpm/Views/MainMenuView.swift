@@ -18,6 +18,8 @@ struct MainMenuView: View {
     var onStories: () -> Void = {}
     var onScience: () -> Void = {}
     var onMusic: () -> Void = {}
+    var onWriting: () -> Void = {}
+    var onClock: () -> Void = {}
     var onMap: () -> Void
     /// Opens a story world from data (Snowy Peaks).
     var onWorld: (String) -> Void = { _ in }
@@ -72,6 +74,12 @@ struct MainMenuView: View {
                         gameTile(art: "icon_music", title: "Music Maker", color: Color(hex: 0xB0459C), shadow: Color(hex: 0x7E2C6F),
                                  badge: 0, detail: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars",
                                  label: "Music Maker, \(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars", action: onMusic)
+                        gameTile(art: "icon_writing", title: "Writing Desk", color: Color(hex: 0x2F6FD1), shadow: Color(hex: 0x1D4A96),
+                                 badge: 0, detail: "\(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars",
+                                 label: "Writing Desk, \(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars", action: onWriting)
+                        gameTile(art: "icon_clock", title: "Clock Tower", color: Color(hex: 0x2E7D4F), shadow: Color(hex: 0x1D5434),
+                                 badge: 0, detail: "\(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars",
+                                 label: "Clock Tower, \(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars", action: onClock)
                     }
                     section("Worlds")
                     ForEach(Worlds.all) { w in worldCard(w) }

@@ -258,6 +258,8 @@ struct LearningReportSection: View {
             LabeledContent("Math Market", value: "\(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars")
             LabeledContent("Music Maker", value: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars, \(p?.music.tunesLearned.count ?? 0) of \(MusicBank.tunes.count) songs")
             LabeledContent("Science Lab", value: "\(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars")
+            LabeledContent("Writing Desk", value: "\(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars, \(p?.writing.written.count ?? 0) of 62 letters and numbers")
+            LabeledContent("Clock Tower", value: "\(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars")
             LabeledContent("Garden plants grown", value: "\(PlantKind.allCases.filter { (p?.village.garden.harvested[$0.rawValue] ?? 0) > 0 }.count) of \(PlantKind.allCases.count)")
             LabeledContent("Village missions", value: "\(MissionCatalog.base.filter { p?.missions.done.contains($0.id) == true }.count) of \(MissionCatalog.base.count)")
             LabeledContent("Festivals celebrated", value: "\(FestivalMissions.all.filter { p?.missions.done.contains($0.id) == true }.count) of \(FestivalMissions.all.count)")
