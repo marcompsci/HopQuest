@@ -90,7 +90,7 @@ extension L10n {
         "Put your buddies in a picture": "Pon a tus amigos en un dibujo",
         "Time for bed": "Hora de dormir", "Goodnight!": "¡Buenas noches!", "See you tomorrow!": "¡Hasta mañana!",
         "Bedtime": "Hora de dormir", "Practice sheets": "Hojas de práctica",
-        "Save": "Guardar", "Make a new level": "Hacer un nivel nuevo", "Play it!": "¡Juégalo!", "Make a new picture": "Hacer un dibujo nuevo",
+        "Home": "Inicio", "Save": "Guardar", "Make a new level": "Hacer un nivel nuevo", "Play it!": "¡Juégalo!", "Make a new picture": "Hacer un dibujo nuevo",
         "Make your own Star Hop level": "Haz tu propio nivel de Salto Estelar", "Tap a buddy to add it": "Toca un amigo para ponerlo",
         "That's a full picture!": "¡El dibujo está lleno!", "Your levels show up here. You can keep six.": "Tus niveles aparecen aquí. Puedes guardar seis.",
         "Your pictures show up here. You can keep six.": "Tus dibujos aparecen aquí. Puedes guardar seis.",

@@ -428,6 +428,9 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v9.9: Places on the menu (grown-ups)
 - Behind the parental gate, grown-ups can turn learning places off and on (Learning level → Places on the menu), for places that are too easy, too hard or not right for now. A place that's off leaves the menu, Surprise Me and the widget's "up next"; its stars and progress are kept and come back when it's turned on again. At least one place always stays on. The Reading Nook and Math Market doors in Hop Village stay open. Saved with the player on the device; older saves load with every place on.
 
+### v9.10: Menu pages with a bar at the bottom
+- The menu is now five pages picked from a bar at the bottom: **Home** (Play, Surprise me!, Badges, My Castle, Together, Stories), **Adventures** (the hop levels and the Adventure Map), **Games**, **Learn** and **Worlds**. The buddy, stars and grown-ups button stay at the top of every page. The chosen page is filled in its own color, its name is spoken, each page opens at the top, and coming back from a game lands on the same page.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

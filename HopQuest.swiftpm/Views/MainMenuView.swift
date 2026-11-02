@@ -44,6 +44,8 @@ struct MainMenuView: View {
     private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @State private var note: String?
     @Environment(\.scenePhase) private var scenePhase
+    @State private var tab: MenuTab = MainMenuView.lastTab
+    @Namespace private var tabSpace
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -52,124 +54,26 @@ struct MainMenuView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     header
-                    playButton
-                        .padding(.top, 6)
-                    surpriseButton
-                    section("Adventures")
-                        .padding(.top, 10)
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(Chapters.all) { chapter in chapterTile(chapter) }
-                    }
-                    section("Games")
-                        .padding(.top, 10)
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                        let packs = store.packsAvailable
-                        gameTile(art: "icon_stickers", title: "Stickers", color: Color(hex: 0xFF9F45), shadow: Color(hex: 0xD9731C),
-                                 badge: packs, label: packs > 0 ? "Sticker Book, \(packs) new packs" : "Sticker Book", action: onStickers)
-                        gameTile(art: "icon_fort", title: "Fort Friends", color: Color(hex: 0x34C77B), shadow: Color(hex: 0x239A5C),
-                                 badge: 0, label: "Fort Friends building game", action: onFort)
-                        gameTile(art: "icon_bop", title: "Pillow Bop", color: Color(hex: 0xB983FF), shadow: Palette.purple,
-                                 badge: 0, label: "Pillow Bop party game", action: onBop)
-                        gameTile(art: "icon_kart", title: "Bubble Kart", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
-                                 badge: 0, label: "Bubble Kart racing", action: onKart)
-                        gameTile(art: "icon_dash", title: "Star Dash", color: Color(hex: 0x4D7CFF), shadow: Color(hex: 0x2F55C7),
-                                 badge: 0, detail: (store.profile?.quick.best ?? 0) > 0 ? "Best \(store.profile?.quick.best ?? 0)" : "1-minute quick game",
-                                 label: "Star Dash, a one-minute quick game", action: onQuickGame)
-                        gameTile(art: "icon_starhop", title: "Star Hop", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
-                                 badge: 0, detail: "\(SharedStore.loadHop().levelsCleared) of \(StarHop.levels.count) levels",
-                                 label: "Star Hop, \(SharedStore.loadHop().levelsCleared) of \(StarHop.levels.count) levels", action: onStarHop)
-                        gameTile(art: "icon_breathe", title: "Breathe", color: Color(hex: 0x4A9EDB), shadow: Color(hex: 0x2F74A8),
-                                 badge: 0, detail: "Calm breaths with your buddy",
-                                 label: "Breathe with Buddy, a calm break", action: onBreathe)
-                        gameTile(art: "icon_levelmaker", title: "Level Maker", color: Color(hex: 0x7C4DFF), shadow: Color(hex: 0x5631C7),
-                                 badge: 0, detail: "Make your own Star Hop level",
-                                 label: "Level Maker: make your own Star Hop level", action: onLevelMaker)
-                        gameTile(art: "icon_scenes", title: "Sticker Scenes", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
-                                 badge: 0, detail: "Put your buddies in a picture",
-                                 label: "Sticker Scenes: put your buddies in a picture", action: onScenes)
-                        let made = fridgeCount
-                        gameTile(art: "icon_fridge", title: "Fridge Door", color: Color(hex: 0x2F8F83), shadow: Color(hex: 0x1E6359),
-                                 badge: 0, detail: made == 0 ? "Show a grown-up what you made!" : "\(made) things you made",
-                                 label: "Fridge Door: show a grown-up what you made, \(made) things", action: onFridge)
-                    }
-                    section("Learn")
-                        .padding(.top, 10)
-                    codingLabCard
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                        let p = store.profile
-                        if store.placeShown("reading") {
-                            gameTile(art: "icon_reading", title: "Reading Nook", color: Color(hex: 0xD94A57), shadow: Color(hex: 0x9E2A3A),
-                                     badge: 0, detail: "\(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars",
-                                     label: "Reading Nook, \(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars", action: onReading)
-                        }
-                        if store.placeShown("market") {
-                            gameTile(art: "icon_market", title: "Math Market", color: Color(hex: 0xE07B00), shadow: Color(hex: 0xA35A00),
-                                     badge: 0, detail: "\(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars",
-                                     label: "Math Market, \(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars", action: onMarket)
-                        }
-                        if store.placeShown("science") {
-                            gameTile(art: "icon_science", title: "Science Lab", color: Color(hex: 0x1F7A8C), shadow: Color(hex: 0x135563),
-                                     badge: 0, detail: "\(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars",
-                                     label: "Science Lab, \(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars", action: onScience)
-                        }
-                        if store.placeShown("music") {
-                            gameTile(art: "icon_music", title: "Music Maker", color: Color(hex: 0xB0459C), shadow: Color(hex: 0x7E2C6F),
-                                     badge: 0, detail: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars",
-                                     label: "Music Maker, \(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars", action: onMusic)
-                        }
-                        if store.placeShown("writing") {
-                            gameTile(art: "icon_writing", title: "Writing Desk", color: Color(hex: 0x2F6FD1), shadow: Color(hex: 0x1D4A96),
-                                     badge: 0, detail: "\(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars",
-                                     label: "Writing Desk, \(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars", action: onWriting)
-                        }
-                        if store.placeShown("clock") {
-                            gameTile(art: "icon_clock", title: "Clock Tower", color: Color(hex: 0x2E7D4F), shadow: Color(hex: 0x1D5434),
-                                     badge: 0, detail: "\(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars",
-                                     label: "Clock Tower, \(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars", action: onClock)
-                        }
-                        if store.placeShown("world") {
-                            gameTile(art: "icon_world", title: "Around the World", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
-                                     badge: 0, detail: "\(p?.world.postcards.count ?? 0) of 7 postcards",
-                                     label: "Around the World, \(p?.world.postcards.count ?? 0) of 7 postcards", action: onWorldTour)
-                        }
-                        placeTile("spelling", art: "icon_spelling", title: "Spelling Bee", color: 0xB7791F, shadow: 0x8A5A12)
-                        placeTile("fractions", art: "icon_fractions", title: "Fraction Bakery", color: 0xC2185B, shadow: 0x8E1243)
-                        placeTile("shapes", art: "icon_shapes", title: "Shape Studio", color: 0x00796B, shadow: 0x00564C)
-                        placeTile("rhyme", art: "icon_rhyme", title: "Rhyme Pond", color: 0x2E8B3E, shadow: 0x1E5E29)
-                        placeTile("numbers", art: "icon_numbers", title: "Number Builder", color: 0x6A3FB5, shadow: 0x482A7D)
-                        placeTile("times", art: "icon_times", title: "Times Treehouse", color: 0x8A5A2B, shadow: 0x5E3D1D)
-                        placeTile("measure", art: "icon_measure", title: "Measure Meadow", color: 0x2F6F9F, shadow: 0x1F4B6C)
-                        placeTile("feelings", art: "icon_feelings", title: "Feelings Corner", color: 0xC2185B, shadow: 0x8E1243)
-                        placeTile("nature", art: "icon_nature", title: "Nature Trail", color: 0x2E7D32, shadow: 0x1B5E20)
-                        placeTile("calendar", art: "icon_calendar", title: "Calendar Corner", color: 0xD35400, shadow: 0x9A3D00)
-                        placeTile("compass", art: "icon_compass", title: "Compass Camp", color: 0x1565C0, shadow: 0x0D47A1)
-                        placeTile("healthy", art: "icon_healthy", title: "Healthy Hut", color: 0x558B2F, shadow: 0x33691E)
-                        placeTile("planet", art: "icon_planet", title: "Earth Helpers", color: 0x00897B, shadow: 0x00695C)
-                        placeTile("graphs", art: "icon_graphs", title: "Graph Garden", color: 0x7B1FA2, shadow: 0x4A148C)
-                        gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
-                                 badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
-                                 label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)
-                    }
-                    section("Worlds")
-                        .padding(.top, 10)
-                    ForEach(Worlds.all) { w in worldCard(w) }
-                    badgesCard
-                    castleCard
-                    HStack(spacing: 12) {
-                        smallButton(icon: "map.fill", title: "Adventure Map", action: onMap)
-                        smallButton(icon: "person.2.fill", title: "Together", action: onTeam)
-                        smallButton(icon: "book.fill", title: "Stories", action: onStories)
+                    switch tab {
+                    case .home: homePage
+                    case .adventures: adventuresPage
+                    case .games: gamesPage
+                    case .learn: learnPage
+                    case .worlds: worldsPage
                     }
                     Spacer(minLength: 20)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
             }
+            // a fresh page starts at the top
+            .id(tab)
+            .safeAreaInset(edge: .bottom) { tabBar }
 
             if let note {
                 VStack {
                     Spacer()
-                    MessageBubble(text: note).padding(.bottom, 30)
+                    MessageBubble(text: note).padding(.bottom, 110)
                 }
                 .animation(.spring(), value: note)
             }
@@ -206,6 +110,209 @@ struct MainMenuView: View {
             }
             .background(LinearGradient(colors: store.theme.sky, startPoint: .top, endPoint: .bottom).ignoresSafeArea())
         }
+    }
+
+    // MARK: Pages (v9.1): Home, Adventures, Games, Learn and Worlds each get their own page, picked from the bar at the bottom.
+
+    enum MenuTab: String, CaseIterable {
+        case home, adventures, games, learn, worlds
+
+        var title: String {
+            switch self {
+            case .home: return "Home"
+            case .adventures: return "Adventures"
+            case .games: return "Games"
+            case .learn: return "Learn"
+            case .worlds: return "Worlds"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .home: return "house.fill"
+            case .adventures: return "flag.checkered"
+            case .games: return "gamecontroller.fill"
+            case .learn: return "book.fill"
+            case .worlds: return "globe.americas.fill"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .home: return Palette.purple
+            case .adventures: return Color(hex: 0x2FA35B)
+            case .games: return Color(hex: 0xFF7A59)
+            case .learn: return Color(hex: 0x2F6FD1)
+            case .worlds: return Color(hex: 0x1E88A8)
+            }
+        }
+    }
+
+    /// The page shown, kept while the app is open so coming back from a game lands on the same page.
+    static var lastTab: MenuTab = .home
+
+    @ViewBuilder private var homePage: some View {
+        playButton
+            .padding(.top, 6)
+        surpriseButton
+        badgesCard
+            .padding(.top, 6)
+        castleCard
+        HStack(spacing: 12) {
+            smallButton(icon: "person.2.fill", title: "Together", action: onTeam)
+            smallButton(icon: "book.fill", title: "Stories", action: onStories)
+        }
+    }
+
+    @ViewBuilder private var adventuresPage: some View {
+        section("Adventures")
+            .padding(.top, 4)
+        LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(Chapters.all) { chapter in chapterTile(chapter) }
+        }
+        smallButton(icon: "map.fill", title: "Adventure Map", action: onMap)
+            .padding(.top, 4)
+    }
+
+    @ViewBuilder private var gamesPage: some View {
+        section("Games")
+            .padding(.top, 4)
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+            let packs = store.packsAvailable
+            gameTile(art: "icon_stickers", title: "Stickers", color: Color(hex: 0xFF9F45), shadow: Color(hex: 0xD9731C),
+                     badge: packs, label: packs > 0 ? "Sticker Book, \(packs) new packs" : "Sticker Book", action: onStickers)
+            gameTile(art: "icon_fort", title: "Fort Friends", color: Color(hex: 0x34C77B), shadow: Color(hex: 0x239A5C),
+                     badge: 0, label: "Fort Friends building game", action: onFort)
+            gameTile(art: "icon_bop", title: "Pillow Bop", color: Color(hex: 0xB983FF), shadow: Palette.purple,
+                     badge: 0, label: "Pillow Bop party game", action: onBop)
+            gameTile(art: "icon_kart", title: "Bubble Kart", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
+                     badge: 0, label: "Bubble Kart racing", action: onKart)
+            gameTile(art: "icon_dash", title: "Star Dash", color: Color(hex: 0x4D7CFF), shadow: Color(hex: 0x2F55C7),
+                     badge: 0, detail: (store.profile?.quick.best ?? 0) > 0 ? "Best \(store.profile?.quick.best ?? 0)" : "1-minute quick game",
+                     label: "Star Dash, a one-minute quick game", action: onQuickGame)
+            gameTile(art: "icon_starhop", title: "Star Hop", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
+                     badge: 0, detail: "\(SharedStore.loadHop().levelsCleared) of \(StarHop.levels.count) levels",
+                     label: "Star Hop, \(SharedStore.loadHop().levelsCleared) of \(StarHop.levels.count) levels", action: onStarHop)
+            gameTile(art: "icon_breathe", title: "Breathe", color: Color(hex: 0x4A9EDB), shadow: Color(hex: 0x2F74A8),
+                     badge: 0, detail: "Calm breaths with your buddy",
+                     label: "Breathe with Buddy, a calm break", action: onBreathe)
+            gameTile(art: "icon_levelmaker", title: "Level Maker", color: Color(hex: 0x7C4DFF), shadow: Color(hex: 0x5631C7),
+                     badge: 0, detail: "Make your own Star Hop level",
+                     label: "Level Maker: make your own Star Hop level", action: onLevelMaker)
+            gameTile(art: "icon_scenes", title: "Sticker Scenes", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
+                     badge: 0, detail: "Put your buddies in a picture",
+                     label: "Sticker Scenes: put your buddies in a picture", action: onScenes)
+            let made = fridgeCount
+            gameTile(art: "icon_fridge", title: "Fridge Door", color: Color(hex: 0x2F8F83), shadow: Color(hex: 0x1E6359),
+                     badge: 0, detail: made == 0 ? "Show a grown-up what you made!" : "\(made) things you made",
+                     label: "Fridge Door: show a grown-up what you made, \(made) things", action: onFridge)
+        }
+    }
+
+    @ViewBuilder private var learnPage: some View {
+        section("Learn")
+            .padding(.top, 4)
+        codingLabCard
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+            let p = store.profile
+            if store.placeShown("reading") {
+                gameTile(art: "icon_reading", title: "Reading Nook", color: Color(hex: 0xD94A57), shadow: Color(hex: 0x9E2A3A),
+                         badge: 0, detail: "\(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars",
+                         label: "Reading Nook, \(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars", action: onReading)
+            }
+            if store.placeShown("market") {
+                gameTile(art: "icon_market", title: "Math Market", color: Color(hex: 0xE07B00), shadow: Color(hex: 0xA35A00),
+                         badge: 0, detail: "\(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars",
+                         label: "Math Market, \(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars", action: onMarket)
+            }
+            if store.placeShown("science") {
+                gameTile(art: "icon_science", title: "Science Lab", color: Color(hex: 0x1F7A8C), shadow: Color(hex: 0x135563),
+                         badge: 0, detail: "\(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars",
+                         label: "Science Lab, \(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars", action: onScience)
+            }
+            if store.placeShown("music") {
+                gameTile(art: "icon_music", title: "Music Maker", color: Color(hex: 0xB0459C), shadow: Color(hex: 0x7E2C6F),
+                         badge: 0, detail: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars",
+                         label: "Music Maker, \(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars", action: onMusic)
+            }
+            if store.placeShown("writing") {
+                gameTile(art: "icon_writing", title: "Writing Desk", color: Color(hex: 0x2F6FD1), shadow: Color(hex: 0x1D4A96),
+                         badge: 0, detail: "\(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars",
+                         label: "Writing Desk, \(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars", action: onWriting)
+            }
+            if store.placeShown("clock") {
+                gameTile(art: "icon_clock", title: "Clock Tower", color: Color(hex: 0x2E7D4F), shadow: Color(hex: 0x1D5434),
+                         badge: 0, detail: "\(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars",
+                         label: "Clock Tower, \(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars", action: onClock)
+            }
+            if store.placeShown("world") {
+                gameTile(art: "icon_world", title: "Around the World", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
+                         badge: 0, detail: "\(p?.world.postcards.count ?? 0) of 7 postcards",
+                         label: "Around the World, \(p?.world.postcards.count ?? 0) of 7 postcards", action: onWorldTour)
+            }
+            placeTile("spelling", art: "icon_spelling", title: "Spelling Bee", color: 0xB7791F, shadow: 0x8A5A12)
+            placeTile("fractions", art: "icon_fractions", title: "Fraction Bakery", color: 0xC2185B, shadow: 0x8E1243)
+            placeTile("shapes", art: "icon_shapes", title: "Shape Studio", color: 0x00796B, shadow: 0x00564C)
+            placeTile("rhyme", art: "icon_rhyme", title: "Rhyme Pond", color: 0x2E8B3E, shadow: 0x1E5E29)
+            placeTile("numbers", art: "icon_numbers", title: "Number Builder", color: 0x6A3FB5, shadow: 0x482A7D)
+            placeTile("times", art: "icon_times", title: "Times Treehouse", color: 0x8A5A2B, shadow: 0x5E3D1D)
+            placeTile("measure", art: "icon_measure", title: "Measure Meadow", color: 0x2F6F9F, shadow: 0x1F4B6C)
+            placeTile("feelings", art: "icon_feelings", title: "Feelings Corner", color: 0xC2185B, shadow: 0x8E1243)
+            placeTile("nature", art: "icon_nature", title: "Nature Trail", color: 0x2E7D32, shadow: 0x1B5E20)
+            placeTile("calendar", art: "icon_calendar", title: "Calendar Corner", color: 0xD35400, shadow: 0x9A3D00)
+            placeTile("compass", art: "icon_compass", title: "Compass Camp", color: 0x1565C0, shadow: 0x0D47A1)
+            placeTile("healthy", art: "icon_healthy", title: "Healthy Hut", color: 0x558B2F, shadow: 0x33691E)
+            placeTile("planet", art: "icon_planet", title: "Earth Helpers", color: 0x00897B, shadow: 0x00695C)
+            placeTile("graphs", art: "icon_graphs", title: "Graph Garden", color: 0x7B1FA2, shadow: 0x4A148C)
+            gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
+                     badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
+                     label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)
+        }
+    }
+
+    @ViewBuilder private var worldsPage: some View {
+        section("Worlds")
+            .padding(.top, 4)
+        ForEach(Worlds.all) { w in worldCard(w) }
+    }
+
+    /// The bar at the bottom: big, labeled buttons, the chosen one filled in its page's color.
+    private var tabBar: some View {
+        HStack(spacing: 4) {
+            ForEach(MenuTab.allCases, id: \.self) { t in
+                let chosen = tab == t
+                Button {
+                    guard tab != t else { return }
+                    Haptics.tap()
+                    withAnimation(reduceMotion ? nil : Motion.present) { tab = t }
+                    Self.lastTab = t
+                    Narrator.shared.say(L10n.tr(t.title))
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: t.icon).font(.system(size: 20, weight: .bold))
+                        Text(L10n.tr(t.title)).font(.kid(11, .black)).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .foregroundStyle(chosen ? .white : Palette.ink.opacity(0.6))
+                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .background {
+                        if chosen {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous).fill(t.color)
+                                .shadow(color: t.color.opacity(0.4), radius: 0, x: 0, y: 3)
+                                .matchedGeometryEffect(id: "tabPill", in: tabSpace)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(BouncyButtonStyle())
+                .accessibilityLabel(L10n.tr(t.title))
+                .accessibilityAddTraits(chosen ? [.isSelected, .isButton] : .isButton)
+            }
+        }
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(.regularMaterial)
+            .shadow(color: .black.opacity(0.12), radius: 10, y: 2))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 6)
     }
 
     // MARK: Pieces
