@@ -163,7 +163,7 @@ struct CertificateCard: View {
 /// Printable practice for any game in the quiz-engine places: ten questions on a page, and the answers on the next.
 struct PracticeSheetsSection: View {
     @EnvironmentObject var store: GameStore
-    static let places = ["spelling", "fractions", "shapes", "rhyme", "numbers", "times", "measure", "feelings", "nature", "calendar", "compass"]
+    static let places = ["spelling", "fractions", "shapes", "rhyme", "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy"]
 
     var body: some View {
         Section {

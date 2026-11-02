@@ -283,3 +283,92 @@ enum CompassBank {
         }
     }
 }
+
+// MARK: - Healthy Hut (v9.1)
+
+/// Sir Broccoli's place: what body parts do, food groups, healthy habits, and everyday and sometimes foods.
+/// No food is ever called "bad": sometimes foods are treats for once in a while.
+enum HealthyBank {
+    /// Body parts and their jobs. Each job fits one part only.
+    static let parts: [(part: String, picture: String, job: String)] = [
+        ("brain", "🧠", "think and remember"), ("heart", "🫀", "pump blood all around the body"),
+        ("lungs", "🫁", "breathe air in and out"), ("bones", "🦴", "hold the body up like a frame"),
+        ("muscles", "💪", "pull on the bones to move the body"), ("teeth", "🦷", "bite and chew food"),
+    ]
+
+    /// Foods with one clear food group (no tomatoes, beans, corn or potatoes, which people sort different ways).
+    static let foods: [(food: String, picture: String, group: String)] = [
+        ("apple", "🍎", "fruit"), ("banana", "🍌", "fruit"), ("strawberry", "🍓", "fruit"), ("pear", "🍐", "fruit"), ("watermelon", "🍉", "fruit"),
+        ("carrot", "🥕", "vegetable"), ("broccoli", "🥦", "vegetable"), ("lettuce", "🥬", "vegetable"), ("onion", "🧅", "vegetable"), ("pepper", "🫑", "vegetable"),
+        ("bread", "🍞", "grain"), ("rice", "🍚", "grain"), ("bagel", "🥯", "grain"), ("spaghetti", "🍝", "grain"),
+        ("egg", "🥚", "protein"), ("fish", "🐟", "protein"), ("chicken", "🍗", "protein"), ("peanuts", "🥜", "protein"),
+        ("milk", "🥛", "dairy"), ("cheese", "🧀", "dairy"),
+    ]
+    static let groups = ["fruit", "vegetable", "grain", "protein", "dairy"]
+
+    /// Little moments with one healthy choice; the other two are clearly not it (and a bit silly).
+    static let habits: [(picture: String, question: String, right: String, wrong: [String], why: String)] = [
+        ("🧼", "Before you eat, what should you do?", "Wash your hands", ["Take off your socks", "Spin around three times"], "Clean hands keep germs out of your food."),
+        ("🪥", "What keeps your teeth healthy?", "Brush them twice a day", ["Brush them once a year", "Eat candy in bed"], "Brushing morning and night keeps teeth strong."),
+        ("🤧", "You need to sneeze. What should you do?", "Sneeze into your elbow", ["Sneeze on a friend", "Sneeze on the food"], "Your elbow catches the germs."),
+        ("💧", "You're thirsty after running around. What's the best drink?", "Water", ["Soda pop", "Maple syrup"], "Water is the best drink for a busy body."),
+        ("😴", "It's bedtime. What helps your body grow and rest?", "A good night's sleep", ["Staying up all night", "Jumping on the bed all night"], "Your body grows and rests while you sleep."),
+        ("⏱️", "How long should you scrub your hands with soap?", "About 20 seconds", ["One second", "One whole hour"], "Twenty seconds of scrubbing washes germs away."),
+        ("☀️", "It's a very sunny day. What protects your skin?", "Sunscreen and a hat", ["A bowl of soup", "Nothing at all"], "Sunscreen and a hat stop sunburn."),
+        ("🏃", "What makes your heart and muscles strong?", "Running and playing", ["Sitting all day", "Staying in bed all day"], "Moving your body makes it strong."),
+    ]
+
+    /// Everyday foods help you grow; sometimes foods are treats for once in a while.
+    static let treats: [(food: String, picture: String, everyday: Bool)] = [
+        ("apples", "🍎", true), ("bananas", "🍌", true), ("carrots", "🥕", true), ("broccoli", "🥦", true), ("strawberries", "🍓", true),
+        ("milk", "🥛", true), ("eggs", "🥚", true), ("grapes", "🍇", true),
+        ("cake", "🎂", false), ("candy", "🍬", false), ("lollipops", "🍭", false), ("donuts", "🍩", false), ("cookies", "🍪", false),
+        ("ice cream", "🍦", false), ("french fries", "🍟", false), ("cupcakes", "🧁", false),
+    ]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "body", title: "Body Jobs", symbol: "figure.stand", intro: "Every part of your body has a job. Which part does it?", skill: "body parts and what they do"),
+        QuizGameInfo(id: "foods", title: "Food Groups", symbol: "carrot.fill", intro: "Fruits, vegetables, grains, protein and dairy. Which group is it in?", skill: "the food groups"),
+        QuizGameInfo(id: "habits", title: "Healthy Habits", symbol: "hands.sparkles.fill", intro: "Healthy habits keep you strong. What's the healthy choice?", skill: "healthy habits"),
+        QuizGameInfo(id: "everyday", title: "Everyday or Sometimes?", symbol: "fork.knife", intro: "Everyday foods help you grow. Sometimes foods are treats. Which is it?", skill: "everyday and sometimes foods"),
+    ]
+
+    static let cheers = ["Healthy and smart!", "Strong thinking!", "That's right!", "You're a health hero!", "Crunchy good!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "body":
+            return Array(parts.shuffled(using: &rng).prefix(count)).enumerated().map { i, p in
+                let done = "To \(p.job) is the job of your \(p.part). \(cheer(i))"
+                if i % 2 == 0 {
+                    return QuizRound(visual: .none, say: "Which part of your body has this job: \(p.job)?",
+                                     choices: QuizShuffle.choices(p.part, parts.map(\.part), using: &rng), answer: p.part, cheer: done)
+                }
+                return QuizRound(visual: .picture(p.picture), say: "What is the job of your \(p.part)?",
+                                 choices: QuizShuffle.choices(p.job, parts.map(\.job), using: &rng), answer: p.job, cheer: done)
+            }
+        case "foods":
+            return Array(foods.shuffled(using: &rng).prefix(count)).enumerated().map { i, f in
+                QuizRound(visual: .picture(f.picture), say: "Which food group is \(f.food) in?",
+                          choices: QuizShuffle.choices(f.group, groups, using: &rng), answer: f.group,
+                          cheer: "\(f.food.prefix(1).uppercased() + f.food.dropFirst()) is in the \(f.group) group. \(cheer(i))")
+            }
+        case "habits":
+            return Array(habits.shuffled(using: &rng).prefix(count)).enumerated().map { i, h in
+                QuizRound(visual: .picture(h.picture), say: h.question,
+                          choices: QuizShuffle.choices(h.right, h.wrong, using: &rng), answer: h.right,
+                          cheer: "\(h.why) \(cheer(i))")
+            }
+        default: // everyday
+            return Array(treats.shuffled(using: &rng).prefix(count)).enumerated().map { i, t in
+                let answer = t.everyday ? "everyday" : "sometimes"
+                let name = t.food.prefix(1).uppercased() + t.food.dropFirst()
+                return QuizRound(visual: .picture(t.picture), say: "Is \(t.food) an everyday food or a sometimes food?",
+                                 choices: ["everyday", "sometimes"], answer: answer,
+                                 cheer: t.everyday ? "\(name): an everyday food that helps you grow! \(cheer(i))"
+                                                   : "\(name): a sometimes food, a yummy treat for once in a while! \(cheer(i))")
+            }
+        }
+    }
+}

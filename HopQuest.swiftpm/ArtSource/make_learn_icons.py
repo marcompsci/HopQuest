@@ -386,6 +386,18 @@ def icon_scenes():
     return s
 
 
+def icon_healthy():
+    s = ground()
+    # a red apple with a leaf, a little heart and a water drop
+    s += P("M100 64 C70 44 30 60 34 104 C38 150 74 176 100 162 C126 176 162 150 166 104 C170 60 130 44 100 64 Z", "#FF6B6B")
+    s += shine(66, 92, 12, 20)
+    s += P("M100 66 Q98 46 108 32", "none", 6)
+    s += P("M106 44 Q130 26 146 40 Q126 58 106 44 Z", "#5FC86A")
+    s += P("M100 104 C88 90 72 100 80 114 C86 124 100 132 100 132 C100 132 114 124 120 114 C128 100 112 90 100 104 Z", "#FFFFFF", 4)
+    s += P("M44 22 Q58 42 44 54 Q30 42 44 22 Z", "#8FD3FF", 4)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
@@ -393,7 +405,8 @@ ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science
          "icon_rhyme": icon_rhyme, "icon_numbers": icon_numbers, "icon_times": icon_times, "icon_measure": icon_measure,
          "icon_feelings": icon_feelings, "icon_breathe": icon_breathe, "icon_starhop": icon_starhop, "icon_surprise": icon_surprise,
          "icon_nature": icon_nature, "icon_calendar": icon_calendar, "icon_compass": icon_compass,
-         "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes}
+         "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes,
+         "icon_healthy": icon_healthy}
 
 
 if __name__ == "__main__":

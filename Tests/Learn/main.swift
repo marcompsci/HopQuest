@@ -792,7 +792,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 32, "32 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 33, "33 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -821,12 +821,14 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + RhymeBank.games.map(\.title) + NumberBank.games.map(\.title) + TimesBank.games.map(\.title) + MeasureBank.games.map(\.title) + FeelingsBank.games.map(\.title)
         + HatKind.allCases.map(\.title)
         + NatureBank.games.map(\.title) + CalendarBank.games.map(\.title) + CompassBank.games.map(\.title)
+        + HealthyBank.games.map(\.title)
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
         + SpellingBank.games.map(\.intro) + FractionBank.games.map(\.intro) + ShapeBank.games.map(\.intro)
         + RhymeBank.games.map(\.intro) + NumberBank.games.map(\.intro) + TimesBank.games.map(\.intro) + MeasureBank.games.map(\.intro) + FeelingsBank.games.map(\.intro)
         + NatureBank.games.map(\.intro) + CalendarBank.games.map(\.intro) + CompassBank.games.map(\.intro)
+        + HealthyBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
     check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
     check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
@@ -1143,6 +1145,48 @@ test("Nature Trail, Calendar Corner, Compass Camp: every game, 300 seeds, answer
     }
 }
 
+test("Healthy Hut: every game, 300 seeds, answers really right") {
+    check(Set(HealthyBank.parts.map(\.part)).count == HealthyBank.parts.count && Set(HealthyBank.parts.map(\.job)).count == HealthyBank.parts.count, "one job per body part")
+    check(HealthyBank.foods.allSatisfy { HealthyBank.groups.contains($0.group) }, "every food is in a group")
+    check(Set(HealthyBank.foods.map(\.food)).count == HealthyBank.foods.count, "no food twice")
+    check(HealthyBank.groups.allSatisfy { g in HealthyBank.foods.contains { $0.group == g } }, "every group has foods")
+    check(HealthyBank.habits.allSatisfy { $0.wrong.count == 2 && !$0.wrong.contains($0.right) }, "each habit: one right, two wrong")
+    check(HealthyBank.treats.contains { $0.everyday } && HealthyBank.treats.contains { !$0.everyday }, "everyday and sometimes foods")
+    check(!HealthyBank.games.contains { $0.intro.lowercased().contains("bad") }, "no food is called bad")
+    let games = HealthyBank.games
+    check(games.count == 4 && Set(games.map(\.id)).count == 4, "healthy: four games")
+    for g in games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            let rounds = HealthyBank.rounds(for: g.id, using: &rng)
+            check(rounds.count == 5, "healthy/\(g.id): five rounds")
+            check(Set(rounds.map(\.say)).count == rounds.count, "healthy/\(g.id): no question twice in a game")
+            for r in rounds {
+                check(r.choices.contains(r.answer) && Set(r.choices).count == r.choices.count && r.choices.count >= 2, "healthy/\(g.id): choices hold the answer once (\(r.choices))")
+                switch g.id {
+                case "body":
+                    if r.say.hasPrefix("Which part") {
+                        let p = HealthyBank.parts.first { r.say == "Which part of your body has this job: \($0.job)?" }!
+                        check(r.answer == p.part && r.choices.allSatisfy { c in HealthyBank.parts.contains { $0.part == c } }, "body: \(p.job) → \(p.part)")
+                    } else {
+                        let p = HealthyBank.parts.first { r.say == "What is the job of your \($0.part)?" }!
+                        check(r.answer == p.job && r.visual == .picture(p.picture), "body: \(p.part) → \(p.job)")
+                    }
+                case "foods":
+                    let f = HealthyBank.foods.first { r.say == "Which food group is \($0.food) in?" }!
+                    check(r.answer == f.group && r.choices.count == 3 && r.choices.allSatisfy { HealthyBank.groups.contains($0) }, "foods: \(f.food) → \(f.group)")
+                case "habits":
+                    let h = HealthyBank.habits.first { $0.question == r.say }!
+                    check(r.answer == h.right && Set(r.choices) == Set([h.right] + h.wrong), "habits: \(h.question)")
+                default: // everyday
+                    let t = HealthyBank.treats.first { r.say == "Is \($0.food) an everyday food or a sometimes food?" }!
+                    check(r.answer == (t.everyday ? "everyday" : "sometimes") && r.choices == ["everyday", "sometimes"], "everyday: \(t.food)")
+                }
+            }
+        }
+    }
+}
+
 test("Brain Bubble widget: questions, one try each, every question before any repeat") {
     let all = BubbleBank.all
     check(all.count == 41, "41 questions (prime, so stepping by 7 visits them all)")
@@ -1314,7 +1358,7 @@ test("Bedtime: goodnight from bedtime until 6 in the morning, a grown-up can add
 
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {
     let ids = ["reading", "writing", "market", "clock", "science", "world", "music", "spelling", "fractions", "shapes", "rhyme",
-               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "code"]
+               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "code"]
     for id in ids {
         let a = AtHome.byPlace[id]
         check(a != nil, "\(id) has at-home ideas")

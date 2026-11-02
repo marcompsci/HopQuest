@@ -105,6 +105,14 @@ extension L10n {
         "Keep a song and it shows up here. You can keep six.": "Guarda una canción y aparecerá aquí. Puedes guardar seis.",
         "A new song! Tap the boxes to make it.": "¡Una canción nueva! Toca los cuadros para hacerla.",
         "Your shelf is full. Delete a song first, or change one of them.": "Tu estante está lleno. Borra una canción primero, o cambia una de ellas.",
+        // v9.1 Healthy Hut
+        "Healthy Hut": "Cabaña Saludable", "Strong bodies and healthy habits. Let's grow!": "Cuerpos fuertes y hábitos sanos. ¡A crecer!",
+        "Hello, I'm Sir Broccoli! Welcome to the Healthy Hut. Let's learn how to keep our bodies strong.": "¡Hola, soy Sir Brócoli! Bienvenido a la Cabaña Saludable. Aprendamos a mantener nuestro cuerpo fuerte.",
+        "Body Jobs": "Trabajos del Cuerpo", "Food Groups": "Grupos de Alimentos", "Healthy Habits": "Hábitos Sanos", "Everyday or Sometimes?": "¿De Todos los Días o de Vez en Cuando?",
+        "Every part of your body has a job. Which part does it?": "Cada parte de tu cuerpo tiene un trabajo. ¿Qué parte lo hace?",
+        "Fruits, vegetables, grains, protein and dairy. Which group is it in?": "Frutas, verduras, granos, proteínas y lácteos. ¿En qué grupo está?",
+        "Healthy habits keep you strong. What's the healthy choice?": "Los hábitos sanos te mantienen fuerte. ¿Cuál es la opción sana?",
+        "Everyday foods help you grow. Sometimes foods are treats. Which is it?": "Los alimentos de todos los días te ayudan a crecer. Los de vez en cuando son premios. ¿Cuál es?",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
         "Certificate": "Diploma", "Text size and spacing": "Tamaño y espacio del texto",

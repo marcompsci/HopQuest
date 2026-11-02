@@ -82,6 +82,13 @@ struct QuizPlace {
                   rounds: { id in var g = SystemRandomNumberGenerator(); return CompassBank.rounds(for: id, using: &g) })
     }
 
+    static var healthy: QuizPlace {
+        QuizPlace(id: "healthy", title: "Healthy Hut", line: "Strong bodies and healthy habits. Let's grow!",
+                  greeting: "Hello, I'm Sir Broccoli! Welcome to the Healthy Hut. Let's learn how to keep our bodies strong.", host: Roster.character(id: "broccoli"),
+                  accent: Color(hex: 0x558B2F), background: [Color(hex: 0xF1F8E9), Color(hex: 0xD7EDC0)], games: HealthyBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return HealthyBank.rounds(for: id, using: &g) })
+    }
+
     /// Every place, by id.
     static func named(_ id: String) -> QuizPlace {
         switch id {
@@ -95,6 +102,7 @@ struct QuizPlace {
         case "nature": return .nature
         case "calendar": return .calendar
         case "compass": return .compass
+        case "healthy": return .healthy
         default: return .shapes
         }
     }
