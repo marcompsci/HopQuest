@@ -431,6 +431,9 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v9.10: Menu pages with a bar at the bottom
 - The menu is now five pages picked from a bar at the bottom: **Home** (Play, Surprise me!, Badges, My Castle, Together, Stories), **Adventures** (the hop levels and the Adventure Map), **Games**, **Learn** and **Worlds**. The buddy, stars and grown-ups button stay at the top of every page. The chosen page is filled in its own color, its name is spoken, each page opens at the top, and coming back from a game lands on the same page.
 
+### v9.11: Original art for the story worlds
+- The five world cards (Snowy Peaks, Sunny Shores, Jungle Journey, Sky Islands, Ocean Deep) and their fifteen level buttons now show original pictures in HopQuest's ink-outline style instead of emoji (`ArtSource/make_world_icons.py`). Locked levels show their picture greyed with the padlock. If a picture were ever missing, the old emoji shows instead.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

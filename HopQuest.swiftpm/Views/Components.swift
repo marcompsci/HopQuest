@@ -359,6 +359,21 @@ enum HQBundle {
     }
 }
 
+/// Original art when there is some (v9.11: worlds and their levels), else the emoji it replaces.
+struct ArtOrEmoji: View {
+    let art: String
+    let emoji: String
+    var size: CGFloat
+
+    var body: some View {
+        if ArtLibrary.image(art) != nil {
+            ArtImage(art).frame(width: size, height: size)
+        } else {
+            Text(emoji).font(.system(size: size * 0.72))
+        }
+    }
+}
+
 struct ArtImage: View {
     let name: String
     init(_ name: String) { self.name = name }

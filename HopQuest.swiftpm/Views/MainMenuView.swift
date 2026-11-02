@@ -628,7 +628,7 @@ struct MainMenuView: View {
             }
         } label: {
             HStack(spacing: 14) {
-                Text(w.icon).font(.system(size: 50))
+                ArtOrEmoji(art: "world_\(w.id)", emoji: w.icon, size: 76)
                     .frame(width: 90, height: 70)
                     .saturation(open ? 1 : 0.2)
                     .overlay(alignment: .bottomTrailing) {

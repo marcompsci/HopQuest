@@ -27,7 +27,7 @@ struct WorldView: View {
                         Spacer()
                         SpeakButton { Narrator.shared.say(world.blurb) }
                     }
-                    Text(world.icon).font(.system(size: 64))
+                    ArtOrEmoji(art: "world_\(world.id)", emoji: world.icon, size: 88)
                         .accessibilityHidden(true)
                     Text(world.title)
                         .font(.kid(36, .black))
@@ -68,9 +68,13 @@ struct WorldView: View {
             onPlay(Chapters.chapter(c.id))
         } label: {
             HStack(spacing: 14) {
-                Text(state == .locked ? "🔒" : c.icon).font(.system(size: 34))
+                ArtOrEmoji(art: "chapter_\(c.id)", emoji: c.icon, size: 50)
+                    .saturation(state == .locked ? 0.2 : 1)
                     .frame(width: 56, height: 56)
                     .background(Circle().fill(.white.opacity(0.3)))
+                    .overlay(alignment: .bottomTrailing) {
+                        if state == .locked { ArtImage("level_lock").frame(width: 24, height: 24).offset(x: 4, y: 4) }
+                    }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("\(number). \(c.title)").font(.kid(21, .black))
                         .lineLimit(1).minimumScaleFactor(0.7)
