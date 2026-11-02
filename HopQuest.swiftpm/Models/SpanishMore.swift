@@ -99,6 +99,12 @@ extension L10n {
         "Springs go on the ground.": "Los resortes van en el suelo.", "Your buddy can't reach there. Try another square!": "Tu amigo no llega ahí. ¡Prueba otro cuadro!",
         "Boing! A star was out of reach, so it floated away.": "¡Boing! Una estrella quedó lejos y se fue flotando.",
         "That's the most stars: 10.": "Ese es el máximo de estrellas: 10.", "That's the most clouds: 3.": "Ese es el máximo de nubes: 3.",
+        // song shelf (v9.4)
+        "Keep on my shelf": "Guardar en mi estante", "Keep changes": "Guardar cambios", "My songs": "Mis canciones", "New song": "Canción nueva",
+        "Open now": "Abierta ahora", "Slow": "Lento", "Walk": "Paseo", "Quick": "Rápido", "▶ Play": "▶ Tocar", "■ Stop": "■ Parar",
+        "Keep a song and it shows up here. You can keep six.": "Guarda una canción y aparecerá aquí. Puedes guardar seis.",
+        "A new song! Tap the boxes to make it.": "¡Una canción nueva! Toca los cuadros para hacerla.",
+        "Your shelf is full. Delete a song first, or change one of them.": "Tu estante está lleno. Borra una canción primero, o cambia una de ellas.",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
         "Certificate": "Diploma", "Text size and spacing": "Tamaño y espacio del texto",
@@ -112,5 +118,9 @@ extension L10n {
         ("^You earned (\\d+) stars? in Star Hop!$", "¡Ganaste $1 estrellas en Salto Estelar!"),
         ("^(\\d+) more badges? for the (.+)$", "$1 insignias más para: $2"),
         ("^Best (\\d+)$", "Récord $1"),
+        ("^Song (\\d+)$", "Canción $1"),
+        ("^Song (\\d+) is on your shelf!$", "¡La canción $1 está en tu estante!"),
+        ("^Song (\\d+) is saved!$", "¡La canción $1 está guardada!"),
+        ("^Song (\\d+) is open\\. Change it, then keep the changes\\.$", "La canción $1 está abierta. Cámbiala y luego guarda los cambios."),
     ]
 }

@@ -45,6 +45,9 @@ struct MusicMakerView: View {
     @State private var tune: Tune?
     @State private var result: (stars: Int, earned: Int, firstTry: Int, total: Int)?
     @State private var stepPlaying: Int?
+    /// Which song is playing: "builder" for the one being built, or a shelf song's id (v9.4).
+    @State private var playingSongID: String?
+    @State private var songToDelete: ShelfSong?
 
     private var gameInstrument: Instrument { mode == .rhythm ? .drums : (instrument == .drums ? .xylophone : instrument) }
 
@@ -365,17 +368,19 @@ struct MusicMakerView: View {
     // MARK: Song builder
 
     private var builder: some View {
-        let song = store.profile?.music.song ?? SongSteps()
+        let music = store.profile?.music ?? MusicSave()
+        let song = music.song
+        let playingHere = playingSongID == "builder"
         return VStack(spacing: 12) {
             instrumentPicker
-            Text("Tap a box to put a note in each step, then press Play.")
+            Text("Tap a box to put a note in each step. Tap the drum boxes for a beat. Then press Play.")
                 .font(.kid(14, .bold)).foregroundStyle(Palette.ink.opacity(0.75))
                 .multilineTextAlignment(.center)
             // rows: high notes on top
             VStack(spacing: 4) {
                 ForEach((0..<MusicKeys.count).reversed(), id: \.self) { k in
                     HStack(spacing: 4) {
-                        Text(MusicKeys.names[k]).font(.kid(12, .black)).foregroundStyle(Palette.ink).frame(width: 18)
+                        Text(MusicKeys.names[k]).font(.kid(12, .black)).foregroundStyle(Palette.ink).frame(width: 22)
                         ForEach(0..<SongSteps.length, id: \.self) { s in
                             let on = song.steps[s] == k
                             Button {
@@ -386,8 +391,8 @@ struct MusicMakerView: View {
                                 if !on { SoundFX.shared.playNote(instrument == .drums ? .xylophone : instrument, key: k) }
                             } label: {
                                 RoundedRectangle(cornerRadius: 6)
-                                    .fill(on ? Color(hex: MusicKeys.colors[k]) : Color.white.opacity(stepPlaying == s ? 0.95 : 0.6))
-                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(stepPlaying == s ? Palette.purple : .clear, lineWidth: 2))
+                                    .fill(on ? Color(hex: MusicKeys.colors[k]) : Color.white.opacity(playingHere && stepPlaying == s ? 0.95 : 0.6))
+                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(playingHere && stepPlaying == s ? Palette.purple : .clear, lineWidth: 2))
                                     .frame(minWidth: 28, maxWidth: .infinity, minHeight: 30)
                             }
                             .buttonStyle(.plain)
@@ -395,36 +400,195 @@ struct MusicMakerView: View {
                         }
                     }
                 }
+                // the beat row (v9.4): tap to go Boom, Tap, Tss, Clap, then quiet again
+                HStack(spacing: 4) {
+                    Text("🥁").font(.system(size: 14)).frame(width: 22).accessibilityHidden(true)
+                    ForEach(0..<SongSteps.length, id: \.self) { s in
+                        let d = song.beats[s]
+                        let boxColor: Color = d.map { Color(hex: MusicKeys.colors[$0 * 2]) } ?? Color.white.opacity(playingHere && stepPlaying == s ? 0.95 : 0.6)
+                        Button {
+                            var next = song
+                            next.cycleBeat(step: s)
+                            next.instrument = instrument
+                            store.updateMusic { $0.song = next }
+                            if let nd = next.beats[s] { SoundFX.shared.playNote(.drums, key: nd) }
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(boxColor)
+                                if let d { Text(MusicKeys.drumEmoji[d]).font(.system(size: 15)) }
+                            }
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(playingHere && stepPlaying == s ? Palette.purple : .clear, lineWidth: 2))
+                            .frame(minWidth: 28, maxWidth: .infinity, minHeight: 34)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Step \(s + 1), drum: \(d.map { MusicKeys.drumNames[$0] } ?? "none")")
+                        .accessibilityHint("Tap to change the drum")
+                    }
+                }
+                .padding(.top, 4)
             }
             .padding(8)
             .background(RoundedRectangle(cornerRadius: 16).fill(.white.opacity(0.5)))
-            HStack(spacing: 12) {
+            tempoPicker(song)
+            HStack(spacing: 10) {
                 BigButton(title: "Clear", color: Color(hex: 0x9AA6B8)) {
                     stopAll()
                     store.updateMusic { $0.song = SongSteps() }
                 }
-                BigButton(title: stepPlaying == nil ? "▶ Play" : "■ Stop", color: Palette.green) {
-                    if stepPlaying == nil { playSong(song) } else { stopAll() }
+                BigButton(title: playingHere ? "■ Stop" : "▶ Play", color: Palette.green) {
+                    if playingHere { stopAll() } else {
+                        var now = song
+                        now.instrument = instrument
+                        playSong(now, id: "builder")
+                    }
                 }
+            }
+            BigButton(title: music.openSongID == nil ? "Keep on my shelf" : "Keep changes", color: accent) { keepSong() }
+            shelf(music)
+        }
+    }
+
+    private func tempoPicker(_ song: SongSteps) -> some View {
+        HStack(spacing: 8) {
+            ForEach(0..<SongSteps.tempos.count, id: \.self) { t in
+                Button {
+                    Haptics.tap(.pop)
+                    store.updateMusic { $0.song.tempo = t }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(SongSteps.tempoEmoji[t]).font(.system(size: 20))
+                        Text(L10n.tr(SongSteps.tempoNames[t])).font(.kid(14, .black)).foregroundStyle(Palette.ink)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(song.tempo == t ? Color(hex: 0xDDF7E5) : .white.opacity(0.85)))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(song.tempo == t ? Palette.green : .clear, lineWidth: 3))
+                }
+                .buttonStyle(BouncyButtonStyle())
+                .accessibilityLabel("Speed: \(L10n.tr(SongSteps.tempoNames[t]))\(song.tempo == t ? ", chosen" : "")")
             }
         }
     }
 
-    private func playSong(_ song: SongSteps) {
+    // MARK: Song shelf (v9.4)
+
+    private func shelf(_ music: MusicSave) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("\(L10n.tr("My songs")) (\(music.shelf.count)/\(MusicSave.shelfSize))").font(.kid(20, .black)).foregroundStyle(Palette.ink)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                Button {
+                    Haptics.tap()
+                    stopAll()
+                    store.updateMusic { $0.newSong() }
+                    Narrator.shared.say("A new song! Tap the boxes to make it.")
+                } label: {
+                    Label(L10n.tr("New song"), systemImage: "plus").font(.kid(14, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 12).frame(minHeight: 44)
+                        .background(Capsule().fill(accent))
+                }
+                .buttonStyle(BouncyButtonStyle())
+            }
+            if music.shelf.isEmpty {
+                Text("Keep a song and it shows up here. You can keep six.")
+                    .font(.kid(14, .semibold)).foregroundStyle(Palette.ink.opacity(0.6))
+            }
+            ForEach(music.shelf) { item in
+                let open = music.openSongID == item.id
+                let playing = playingSongID == item.id
+                HStack(spacing: 10) {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 22, weight: .black)).foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                        .background(Circle().fill(Color(hex: MusicKeys.colors[item.color])))
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.tr(item.title)).font(.kid(17, .black)).foregroundStyle(Palette.ink)
+                        Text(open ? L10n.tr("Open now") : "\(item.song.noteCount) ♪ · \(item.song.beatCount) 🥁 · \(SongSteps.tempoEmoji[item.song.tempo])")
+                            .font(.kid(12, .bold)).foregroundStyle(Palette.ink.opacity(0.65))
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(item.title), \(item.song.noteCount) notes, \(item.song.beatCount) drums\(open ? ", open now" : "")")
+                    Spacer(minLength: 4)
+                    shelfButton(playing ? "stop.fill" : "play.fill", playing ? "Stop \(item.title)" : "Play \(item.title)") {
+                        if playing { stopAll() } else { playSong(item.song, id: item.id) }
+                    }
+                    shelfButton("pencil", "Change \(item.title)") {
+                        stopAll()
+                        store.updateMusic { $0.openSong(item.id) }
+                        instrument = item.song.instrument
+                        Narrator.shared.say("\(item.title) is open. Change it, then keep the changes.")
+                    }
+                    shelfButton("trash", "Delete \(item.title)") { songToDelete = item }
+                }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(open ? 1 : 0.85)))
+                .overlay(RoundedRectangle(cornerRadius: 18).stroke(open ? accent : .clear, lineWidth: 3))
+            }
+        }
+        .padding(.top, 6)
+        .confirmationDialog("Delete this song?", isPresented: Binding(get: { songToDelete != nil }, set: { if !$0 { songToDelete = nil } }),
+                            titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if let s = songToDelete {
+                    if playingSongID == s.id { stopAll() }
+                    store.updateMusic { $0.deleteSong(s.id) }
+                }
+                songToDelete = nil
+            }
+        }
+    }
+
+    private func shelfButton(_ icon: String, _ label: String, _ action: @escaping () -> Void) -> some View {
+        Button { Haptics.tap(); action() } label: {
+            Image(systemName: icon).font(.system(size: 17, weight: .bold)).foregroundStyle(Palette.ink)
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(Color(hex: 0xF2EAF7)))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel(label)
+    }
+
+    private func keepSong() {
+        var result = MusicSave.KeepResult.empty
+        store.updateMusic { m in
+            m.song.instrument = instrument
+            result = m.keepSong()
+        }
+        switch result {
+        case .kept(let n):
+            Haptics.success()
+            Narrator.shared.say("Song \(n) is on your shelf!")
+        case .updated(let n):
+            Haptics.success()
+            Narrator.shared.say("Song \(n) is saved!")
+        case .empty:
+            Narrator.shared.say("Tap some boxes to add notes first!")
+        case .full:
+            Narrator.shared.say("Your shelf is full. Delete a song first, or change one of them.")
+        }
+    }
+
+    /// Plays a song twice through, notes and drums together, at the song's speed.
+    private func playSong(_ song: SongSteps, id: String) {
         guard !song.isEmpty else { Narrator.shared.say("Tap some boxes to add notes first!"); return }
-        playTask?.cancel()
-        let inst = instrument == .drums ? Instrument.xylophone : instrument
+        stopAll()
+        let inst = song.instrument == .drums ? Instrument.xylophone : song.instrument
+        let nanos = UInt64(song.stepSeconds * 1_000_000_000)
+        playingSongID = id
         playTask = Task { @MainActor in
-            // twice through, then stop
             for _ in 0..<2 {
                 for s in 0..<SongSteps.length {
                     guard !Task.isCancelled else { return }
                     stepPlaying = s
+                    if let d = song.beats[s] { SoundFX.shared.playNote(.drums, key: d, volume: 0.8) }
                     if let k = song.steps[s] { SoundFX.shared.playNote(inst, key: k) }
-                    try? await Task.sleep(nanoseconds: 330_000_000)
+                    try? await Task.sleep(nanoseconds: nanos)
                 }
             }
             stepPlaying = nil
+            playingSongID = nil
         }
     }
 
@@ -456,5 +620,6 @@ struct MusicMakerView: View {
         playTask = nil
         listening = false
         stepPlaying = nil
+        playingSongID = nil
     }
 }

@@ -1341,5 +1341,61 @@ test("Try at home (v9.7): every place has a plain summary and short ideas, pract
     check(AtHome.suggested([area("fresh", [0])]).isEmpty, "nothing to suggest before playing")
 }
 
+test("Song shelf (v9.4): beats, speeds, and up to six kept songs") {
+    var song = SongSteps()
+    check(song.isEmpty && song.tempo == 1 && song.stepSeconds == 0.33, "starts empty at walking speed (the old speed)")
+    song.cycleBeat(step: 2)
+    check(song.beats[2] == 0 && !song.isEmpty, "a drum alone is a song")
+    for _ in 0..<3 { song.cycleBeat(step: 2) }
+    check(song.beats[2] == 3, "Boom, Tap, Tss, Clap")
+    song.cycleBeat(step: 2)
+    check(song.beats[2] == nil && song.isEmpty, "then quiet again")
+    song.cycleBeat(step: 99)
+    check(song.beatCount == 0, "a bad step is ignored")
+    check(SongSteps.tempos.count == SongSteps.tempoNames.count && SongSteps.tempos.count == SongSteps.tempoEmoji.count, "every speed has a name and a picture")
+    check(zip(SongSteps.tempos, SongSteps.tempos.dropFirst()).allSatisfy { $0 > $1 }, "slow to quick")
+    song.toggle(step: 0, key: 0); song.toggle(step: 4, key: 4); song.cycleBeat(step: 0)
+    check(song.spoken == "Notes: C, rest, rest, rest, G, rest, rest, rest. Drums: Boom, quiet, quiet, quiet, quiet, quiet, quiet, quiet.", "VoiceOver reads the song: \(song.spoken)")
+
+    // an older save (before v9.4) still loads: no beats, walking speed, empty shelf
+    let old = try JSONDecoder().decode(MusicSave.self, from: Data(#"{"best":{"echo":2},"tunesLearned":[],"song":{"steps":[1,null,3],"instrument":"flute"}}"#.utf8))
+    check(old.song.steps[0] == 1 && old.song.beats.allSatisfy { $0 == nil } && old.song.tempo == 1 && old.song.instrument == .flute, "old song loads")
+    check(old.shelf.isEmpty && old.openSongID == nil && old.best(.echo) == 2, "old save loads with an empty shelf")
+    let bad = try JSONDecoder().decode(SongSteps.self, from: Data(#"{"steps":[],"beats":[7,2,-1],"tempo":9}"#.utf8))
+    check(bad.beats.count == 8 && bad.beats[0] == nil && bad.beats[1] == 2 && bad.beats[2] == nil && bad.tempo == 1, "bad beats and speeds are cleaned up")
+
+    var m = MusicSave()
+    check(m.keepSong() == .empty && m.shelf.isEmpty, "an empty song isn't kept")
+    m.song.toggle(step: 0, key: 2)
+    check(m.keepSong() == .kept(1) && m.shelf.count == 1 && m.openSongID == m.shelf[0].id, "keep song 1, and it stays open")
+    m.song.toggle(step: 1, key: 5)
+    check(m.keepSong() == .updated(1) && m.shelf.count == 1 && m.shelf[0].song.steps[1] == 5, "keeping again updates it, no copy")
+    m.newSong()
+    check(m.song.isEmpty && m.openSongID == nil && m.shelf.count == 1, "a new song leaves the shelf alone")
+    for k in 0..<7 {
+        m.newSong(); m.song.toggle(step: 0, key: k)
+        let r = m.keepSong()
+        if k < 5 { check(r == .kept(k + 2), "song \(k + 2) kept") } else { check(r == .full, "the shelf holds six") }
+    }
+    check(m.shelf.count == MusicSave.shelfSize && m.shelf.first?.number == 6 && m.shelf.last?.number == 1, "newest first")
+    check(Set(m.shelf.map(\.id)).count == m.shelf.count, "every song has its own id")
+    let second = m.shelf[4]
+    m.openSong(second.id)
+    check(m.song == second.song && m.openSongID == second.id, "open a song from the shelf")
+    m.song.cycleBeat(step: 3)
+    check(m.keepSong() == .updated(second.number) && m.shelf.count == 6, "a full shelf can still keep changes")
+    m.deleteSong(second.id)
+    check(m.shelf.count == 5 && m.openSongID == nil, "delete it")
+    m.song = SongSteps(); m.song.toggle(step: 0, key: 7)
+    check(m.keepSong() == .kept(7), "numbers keep counting up after a delete")
+    let back = try JSONDecoder().decode(MusicSave.self, from: JSONEncoder().encode(m))
+    check(back == m, "the shelf round-trips")
+    check(m.shelf.allSatisfy { (0..<MusicKeys.colors.count).contains($0.color) }, "every song has a color")
+    for w in ["Keep on my shelf", "Keep changes", "My songs", "New song", "Open now", "▶ Play", "■ Stop"] + SongSteps.tempoNames {
+        check(L10n.spanish(w) != nil, "\(w) has Spanish")
+    }
+    check(L10n.spanish("Song 4") == "Canción 4" && L10n.spanishSpeech("Song 2 is on your shelf!") == "¡La canción 2 está en tu estante!", "song names and cheers in Spanish")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)
