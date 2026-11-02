@@ -83,7 +83,9 @@ struct BrainBubble: Codable, Equatable {
         if i == question.answer { right += 1 }
     }
 
-    mutating func next() {
+    /// `asked` is the question the tapped widget was showing: a second tap from an out-of-date widget doesn't skip a question.
+    mutating func next(asked: Int? = nil) {
+        if let asked, asked != index { return }
         turn += 1
         picked = nil
     }

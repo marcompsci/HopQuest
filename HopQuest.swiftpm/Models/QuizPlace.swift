@@ -61,11 +61,18 @@ extension QuizVisual {
             let letters = Array("ABCDEFGH")
             func name(_ cell: Int) -> String { "\(letters[cell % cols])\(cell / cols + 1)" }
             var parts = items.sorted { $0.key < $1.key }.map { "\(GridWords.name($0.value)) at \(name($0.key))" }
-            if let m = marker { parts.insert("You are at \(name(m))", at: 0) }
+            if let m = marker { parts.insert("The flag is at \(name(m))", at: 0) }   // the questions say "start at the flag"
             return "A map. " + parts.joined(separator: ", ")
         case .compass(let n, let e, let s, let w):
             return "A compass. North: \(GridWords.name(n)). East: \(GridWords.name(e)). South: \(GridWords.name(s)). West: \(GridWords.name(w))"
-        case .picture(let p): return FeelingsBank.faceDescriptions[p]
+        case .picture(let p):
+            // a row of map pictures (Left or Right?): read them in order with the names the questions use,
+            // not VoiceOver's own emoji names (it calls the squirrel a chipmunk and the lake a water wave)
+            let row = p.split(separator: " ").map(String.init)
+            if row.count > 1, row.allSatisfy({ GridWords.names[$0] != nil }) {
+                return "From left to right: " + row.map(GridWords.name).joined(separator: ", ")
+            }
+            return FeelingsBank.faceDescriptions[p]
         default: return nil
         }
     }

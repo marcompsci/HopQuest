@@ -1079,6 +1079,7 @@ test("Nature Trail, Calendar Corner, Compass Camp: every game, 300 seeds, answer
                     case ("nature", "babies"):
                         let b = NatureBank.babies.first { r.say == "What is a baby \($0.animal) called?" }!
                         check(r.answer == b.baby, "babies: \(b.animal)")
+                        check(r.choices.allSatisfy { !(NatureBank.babyAlsoFits[b.animal] ?? []).contains($0) }, "babies: no other fair name offered as wrong")
                     case ("calendar", "days"):
                         if case .text(let d) = r.visual, let i = days.firstIndex(of: d) {
                             check(r.answer == days[(i + (r.say.contains("before") ? 6 : 1)) % 7], "days: \(r.say) → \(r.answer)")
@@ -1096,6 +1097,8 @@ test("Nature Trail, Calendar Corner, Compass Camp: every game, 300 seeds, answer
                             let target = r.say.components(separatedBy: "of the ")[1].dropLast()
                             let k = items.firstIndex(of: String(target))!
                             check(items[k + (r.say.contains("left") ? -1 : 1)] == r.answer, "leftRight: \(r.say) → \(r.answer)")
+                            // VoiceOver reads the row with the same names the question uses
+                            check(r.visual.spoken == "From left to right: " + items.joined(separator: ", "), "leftRight: VoiceOver row \(r.visual.spoken ?? "nil")")
                         }
                     case ("compass", "compass"):
                         if case .compass(let n, let e, let s, let w) = r.visual {
@@ -1131,6 +1134,7 @@ test("Nature Trail, Calendar Corner, Compass Camp: every game, 300 seeds, answer
                                 check(c >= 0 && c < cols && rr >= 0 && rr < rows, "follow: stays on the map")
                             }
                             check(items[rr * cols + c].map(GridWords.name) == r.answer && items[start] == nil, "follow: the walk ends at \(r.answer)")
+                            check(r.visual.spoken?.hasPrefix("A map. The flag is at \(CompassBank.cellName(start, cols: cols))") == true, "follow: VoiceOver names the flag")
                         }
                     }
                 }
@@ -1171,6 +1175,10 @@ test("Brain Bubble widget: questions, one try each, every question before any re
     check(!stale.isAnswered, "a tap from an out-of-date widget is ignored")
     stale.pick(stale.question.answer, asked: stale.index)
     check(stale.gotIt, "a tap on the question shown counts")
+    let shown = stale.index
+    stale.next(asked: shown)
+    stale.next(asked: shown)   // a second tap on the same old "Next question"
+    check(stale.turn == 1 && !stale.isAnswered && stale.index != shown, "two taps on one Next button move on once")
     let d = UserDefaults(suiteName: "hopquest.tests.bubble")!
     d.removePersistentDomain(forName: "hopquest.tests.bubble")
     let first = SharedStore.loadBubble(d)
@@ -1178,6 +1186,7 @@ test("Brain Bubble widget: questions, one try each, every question before any re
     SharedStore.save(c, d)
     check(SharedStore.loadBubble(d) == c, "saved")
     check(HopWords.tr("It's 7.", true) == "Es 7." && HopWords.tr("3 right", true) == "3 correctas" && HopWords.tr("Next question", true) == "Otra pregunta", "widget words in Spanish")
+    check(L10n.spanish("That's the most stars: \(CustomHopLevel.maxStars).") != nil && L10n.spanish("That's the most clouds: \(CustomHopLevel.maxClouds).") != nil, "Level Maker limits in Spanish")
     d.removePersistentDomain(forName: "hopquest.tests.bubble")
 }
 

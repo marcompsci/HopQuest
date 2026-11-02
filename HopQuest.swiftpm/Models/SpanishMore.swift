@@ -98,6 +98,7 @@ extension L10n {
         "Something is already there.": "Ya hay algo ahí.", "Clouds float in the sky, not on the ground.": "Las nubes flotan en el cielo, no en el suelo.",
         "Springs go on the ground.": "Los resortes van en el suelo.", "Your buddy can't reach there. Try another square!": "Tu amigo no llega ahí. ¡Prueba otro cuadro!",
         "Boing! A star was out of reach, so it floated away.": "¡Boing! Una estrella quedó lejos y se fue flotando.",
+        "That's the most stars: 10.": "Ese es el máximo de estrellas: 10.", "That's the most clouds: 3.": "Ese es el máximo de nubes: 3.",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
         "Certificate": "Diploma", "Text size and spacing": "Tamaño y espacio del texto",

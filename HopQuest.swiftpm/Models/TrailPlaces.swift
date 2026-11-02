@@ -53,6 +53,8 @@ enum NatureBank {
         ("kangaroo", "🦘", "joey"), ("duck", "🦆", "duckling"), ("bear", "🐻", "cub"), ("deer", "🦌", "fawn"), ("pig", "🐖", "piglet"),
         ("chicken", "🐔", "chick"), ("goat", "🐐", "kid"),
     ]
+    /// Other baby names that would also be fair answers, kept out of the wrong choices (baby ducks are called chicks too).
+    static let babyAlsoFits: [String: Set<String>] = ["duck": ["chick"]]
 
     static let games: [QuizGameInfo] = [
         QuizGameInfo(id: "homes", title: "Where Animals Live", symbol: "house.fill", intro: "Every animal has a home that suits it. Where does this one live?", skill: "animal habitats"),
@@ -101,7 +103,7 @@ enum NatureBank {
         default: // babies
             return Array(babies.shuffled(using: &rng).prefix(count)).enumerated().map { i, b in
                 QuizRound(visual: .picture(b.picture), say: "What is a baby \(b.animal) called?",
-                          choices: QuizShuffle.choices(b.baby, babies.map(\.baby).filter { $0 != b.baby }, using: &rng), answer: b.baby,
+                          choices: QuizShuffle.choices(b.baby, babies.map(\.baby).filter { $0 != b.baby && !(babyAlsoFits[b.animal] ?? []).contains($0) }, using: &rng), answer: b.baby,
                           cheer: "A baby \(b.animal) is a \(b.baby). \(cheer(i))")
             }
         }

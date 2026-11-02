@@ -654,8 +654,12 @@ struct BubblePickIntent: AppIntent {
 
 struct BubbleNextIntent: AppIntent {
     static var title: LocalizedStringResource = "Next Brain Bubble question"
+    /// The question the widget was showing when it was tapped.
+    @Parameter(title: "Question") var question: Int
+    init() {}
+    init(question: Int) { self.question = question }
     func perform() async throws -> some IntentResult {
-        var b = SharedStore.loadBubble(); b.next(); SharedStore.save(b)
+        var b = SharedStore.loadBubble(); b.next(asked: question); SharedStore.save(b)
         return .result()
     }
 }
@@ -695,7 +699,7 @@ struct BrainBubbleView: View {
                 }
                 Text(q.fact).font(WidgetTheme.round(12, .semibold)).foregroundStyle(WidgetTheme.ink.opacity(0.7)).lineLimit(large ? 3 : 2)
                 Spacer(minLength: 0)
-                Button(intent: BubbleNextIntent()) {
+                Button(intent: BubbleNextIntent(question: b.index)) {
                     Label(t("Next question"), systemImage: "arrow.right")
                         .font(WidgetTheme.round(13, .black)).foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 6)
