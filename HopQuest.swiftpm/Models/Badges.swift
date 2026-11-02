@@ -45,6 +45,7 @@ enum Badges {
         ("nature", "Nature Explorer", "leaf.fill", 0x2E7D32), ("calendar", "Day Keeper", "calendar", 0xD35400),
         ("compass", "Pathfinder", "safari.fill", 0x1565C0),
         ("healthy", "Health Hero", "figure.run", 0x558B2F), ("planet", "Planet Protector", "arrow.3.trianglepath", 0x00897B),
+        ("graphs", "Data Detective", "chart.bar.fill", 0x7B1FA2),
     ]
 
     static let all: [Badge] = {
@@ -92,6 +93,7 @@ enum Badges {
         case "compass": return "Compass Camp"
         case "healthy": return "Healthy Hut"
         case "planet": return "Earth Helpers club"
+        case "graphs": return "Graph Garden"
         default: return "Code Club"
         }
     }

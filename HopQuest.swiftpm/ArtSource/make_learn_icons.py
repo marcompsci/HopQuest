@@ -430,6 +430,19 @@ def icon_planet():
     return s
 
 
+def icon_graphs():
+    s = ground()
+    # a bar graph on a card with tally marks and a flower
+    s += R(28, 40, 144, 128, 12, "#FFFFFF")
+    s += P("M46 150 L156 150", "none", 4)
+    s += R(54, 110, 24, 40, 4, "#B983FF") + R(88, 76, 24, 74, 4, "#FF9DE2") + R(122, 96, 24, 54, 4, "#7FD6C2")
+    for k in range(4):
+        s += P(f"M{50 + k * 9} 52 L{50 + k * 9} 70", "none", 4)
+    s += P("M44 66 L84 56", "none", 4)
+    s += C(146, 56, 6, "#FF9DE2") + C(158, 66, 6, "#FF9DE2") + C(134, 66, 6, "#FF9DE2") + C(146, 76, 6, "#FF9DE2") + C(146, 66, 6, "#FFD93D")
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
@@ -438,7 +451,8 @@ ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science
          "icon_feelings": icon_feelings, "icon_breathe": icon_breathe, "icon_starhop": icon_starhop, "icon_surprise": icon_surprise,
          "icon_nature": icon_nature, "icon_calendar": icon_calendar, "icon_compass": icon_compass,
          "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes,
-         "icon_healthy": icon_healthy, "icon_fridge": icon_fridge, "icon_planet": icon_planet}
+         "icon_healthy": icon_healthy, "icon_fridge": icon_fridge, "icon_planet": icon_planet,
+         "icon_graphs": icon_graphs}
 
 
 if __name__ == "__main__":

@@ -163,7 +163,7 @@ struct CertificateCard: View {
 /// Printable practice for any game in the quiz-engine places: ten questions on a page, and the answers on the next.
 struct PracticeSheetsSection: View {
     @EnvironmentObject var store: GameStore
-    static let places = ["spelling", "fractions", "shapes", "rhyme", "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet"]
+    static let places = ["spelling", "fractions", "shapes", "rhyme", "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs"]
 
     var body: some View {
         Section {
@@ -314,6 +314,10 @@ struct PracticePage: View {
         case .compass:
             QuizVisualView(visual: v, accent: place.accent, large: false)
                 .frame(width: 240, height: 230).scaleEffect(0.45).frame(width: 108, height: 104)
+                .frame(maxWidth: .infinity)
+        case .graph, .jumble:
+            QuizVisualView(visual: v, accent: place.accent, large: false)
+                .frame(width: 210, height: 130).scaleEffect(0.6).frame(width: 126, height: 78)
                 .frame(maxWidth: .infinity)
         default:
             QuizVisualView(visual: v, accent: place.accent, large: false)

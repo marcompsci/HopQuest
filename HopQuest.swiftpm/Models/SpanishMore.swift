@@ -128,6 +128,14 @@ extension L10n {
         "Small choices help our planet. Which one helps?": "Las decisiones pequeñas ayudan a nuestro planeta. ¿Cuál ayuda?",
         "Things are made of paper, metal, glass, wood or plastic. Which one is it?": "Las cosas están hechas de papel, metal, vidrio, madera o plástico. ¿De cuál es?",
         "Some things need electricity. Turn them off when you're done to save energy!": "Algunas cosas necesitan electricidad. ¡Apágalas cuando termines para ahorrar energía!",
+        // v9.3 Graph Garden
+        "Graph Garden": "Jardín de Gráficas", "Tally, sort and count. Let's read some graphs!": "Marca, ordena y cuenta. ¡Leamos gráficas!",
+        "Hi, I'm Zara! I love stripes, and graphs have stripes too. Welcome to Graph Garden!": "¡Hola, soy Zara! Me encantan las rayas, y las gráficas también tienen rayas. ¡Bienvenido al Jardín de Gráficas!",
+        "Tally Marks": "Marcas de Conteo", "Picture Graph": "Pictograma", "Bar Graph": "Gráfica de Barras", "Sort and Count": "Ordena y Cuenta",
+        "Each line is one. Four lines with one across make five! How many?": "Cada línea es uno. ¡Cuatro líneas con una cruzada son cinco! ¿Cuántas hay?",
+        "Each picture is one. Count the rows and compare them.": "Cada dibujo es uno. Cuenta las filas y compáralas.",
+        "Kids picked their favorite pet. Read the bars with the numbers at the bottom.": "Unos niños eligieron su mascota favorita. Lee las barras con los números de abajo.",
+        "Sort the jumble in your head, then count each kind.": "Ordena el revoltijo en tu cabeza y luego cuenta cada tipo.",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
         "Certificate": "Diploma", "Text size and spacing": "Tamaño y espacio del texto",

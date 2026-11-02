@@ -96,6 +96,13 @@ struct QuizPlace {
                   rounds: { id in var g = SystemRandomNumberGenerator(); return PlanetBank.rounds(for: id, using: &g) })
     }
 
+    static var graphs: QuizPlace {
+        QuizPlace(id: "graphs", title: "Graph Garden", line: "Tally, sort and count. Let's read some graphs!",
+                  greeting: "Hi, I'm Zara! I love stripes, and graphs have stripes too. Welcome to Graph Garden!", host: Roster.character(id: "zara"),
+                  accent: Color(hex: 0x7B1FA2), background: [Color(hex: 0xF7EEFB), Color(hex: 0xE6D2F0)], games: GraphBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return GraphBank.rounds(for: id, using: &g) })
+    }
+
     /// Every place, by id.
     static func named(_ id: String) -> QuizPlace {
         switch id {
@@ -111,6 +118,7 @@ struct QuizPlace {
         case "compass": return .compass
         case "healthy": return .healthy
         case "planet": return .planet
+        case "graphs": return .graphs
         default: return .shapes
         }
     }
@@ -442,6 +450,12 @@ struct QuizVisualView: View {
             GridMapDrawing(cols: cols, rows: rows, items: items, marker: marker, accent: accent)
         case .compass(let n, let e, let s, let w):
             CompassDrawing(north: n, east: e, south: s, west: w, accent: accent)
+        case .tally(let n):
+            TallyDrawing(count: n, color: accent, large: large)
+        case .graph(let labels, let counts, let bars):
+            GraphDrawing(labels: labels, counts: counts, bars: bars, accent: accent, large: large)
+        case .jumble(let items):
+            JumbleDrawing(items: items, large: large)
         case .pattern(let s):
             HStack(spacing: 6) {
                 ForEach(Array(s.enumerated()), id: \.offset) { _, k in ShapeDrawing(kind: k, color: accent).frame(width: 40, height: 40) }
@@ -482,6 +496,111 @@ struct GridMapDrawing: View {
                             if let t = items[i] { Text(t).font(.system(size: 26)) }
                         }
                         .frame(width: cell, height: cell)
+                    }
+                }
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Tally marks: four lines and one across for each five, then the lines left over (v9.3).
+struct TallyDrawing: View {
+    let count: Int
+    let color: Color
+    let large: Bool
+
+    var body: some View {
+        let height: CGFloat = large ? 54 : 30
+        let gap: CGFloat = large ? 10 : 6
+        let width = gap * 3 + 8
+        HStack(spacing: large ? 18 : 10) {
+            ForEach(0..<((count + 4) / 5), id: \.self) { g in
+                let lines = min(5, count - g * 5)
+                Canvas { ctx, size in
+                    var p = Path()
+                    for k in 0..<min(lines, 4) {
+                        let x = 4 + CGFloat(k) * gap
+                        p.move(to: CGPoint(x: x, y: 2))
+                        p.addLine(to: CGPoint(x: x, y: size.height - 2))
+                    }
+                    if lines == 5 {
+                        p.move(to: CGPoint(x: 0, y: size.height * 0.72))
+                        p.addLine(to: CGPoint(x: size.width, y: size.height * 0.28))
+                    }
+                    ctx.stroke(p, with: .color(color), style: StrokeStyle(lineWidth: large ? 4 : 3, lineCap: .round))
+                }
+                .frame(width: width, height: height)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// A picture graph (one picture for each thing) or a bar graph against a number line (v9.3).
+struct GraphDrawing: View {
+    let labels: [String]
+    let counts: [Int]
+    let bars: Bool
+    let accent: Color
+    let large: Bool
+
+    var body: some View {
+        let unit: CGFloat = large ? 26 : 18
+        let labelWidth = unit * 1.4
+        let top = max(GraphBank.scaleTop, counts.max() ?? 0)
+        VStack(alignment: .leading, spacing: large ? 6 : 4) {
+            ForEach(Array(zip(labels, counts).enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 0) {
+                    Text(row.0).font(.system(size: unit * 0.9)).frame(width: labelWidth)
+                    if bars {
+                        ZStack(alignment: .leading) {
+                            HStack(spacing: 0) {
+                                ForEach(0..<top, id: \.self) { _ in
+                                    Rectangle().stroke(Palette.ink.opacity(0.15), lineWidth: 1).frame(width: unit, height: unit * 0.8)
+                                }
+                            }
+                            RoundedRectangle(cornerRadius: 4).fill(accent)
+                                .frame(width: unit * CGFloat(row.1), height: unit * 0.8)
+                        }
+                    } else {
+                        HStack(spacing: 0) {
+                            ForEach(0..<row.1, id: \.self) { _ in
+                                Text(row.0).font(.system(size: unit * 0.75)).frame(width: unit, height: unit)
+                            }
+                        }
+                    }
+                }
+            }
+            if bars {
+                // the number line: each number sits under the line where a bar of that length stops
+                HStack(spacing: 0) {
+                    Color.clear.frame(width: labelWidth - unit / 2, height: 1)
+                    ForEach(0..<(top + 1), id: \.self) { k in
+                        Text("\(k)").font(.kid(large ? 13 : 10, .bold)).foregroundStyle(Palette.ink.opacity(0.7))
+                            .frame(width: unit)
+                    }
+                }
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// A jumble of pictures, a little tilted, five to a row (v9.3).
+struct JumbleDrawing: View {
+    let items: [String]
+    let large: Bool
+
+    var body: some View {
+        let size: CGFloat = large ? 34 : 20
+        let cols = 5
+        VStack(spacing: 2) {
+            ForEach(0..<((items.count + cols - 1) / cols), id: \.self) { r in
+                HStack(spacing: large ? 8 : 4) {
+                    ForEach(Array(items[(r * cols)..<min(items.count, r * cols + cols)].enumerated()), id: \.offset) { k, e in
+                        Text(e).font(.system(size: size))
+                            .rotationEffect(.degrees(Double((r * cols + k) % 3 - 1) * 12.0))
                     }
                 }
             }

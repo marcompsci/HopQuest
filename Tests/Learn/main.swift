@@ -792,7 +792,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 34, "34 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 35, "35 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -821,14 +821,14 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + RhymeBank.games.map(\.title) + NumberBank.games.map(\.title) + TimesBank.games.map(\.title) + MeasureBank.games.map(\.title) + FeelingsBank.games.map(\.title)
         + HatKind.allCases.map(\.title)
         + NatureBank.games.map(\.title) + CalendarBank.games.map(\.title) + CompassBank.games.map(\.title)
-        + HealthyBank.games.map(\.title) + PlanetBank.games.map(\.title)
+        + HealthyBank.games.map(\.title) + PlanetBank.games.map(\.title) + GraphBank.games.map(\.title)
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
         + SpellingBank.games.map(\.intro) + FractionBank.games.map(\.intro) + ShapeBank.games.map(\.intro)
         + RhymeBank.games.map(\.intro) + NumberBank.games.map(\.intro) + TimesBank.games.map(\.intro) + MeasureBank.games.map(\.intro) + FeelingsBank.games.map(\.intro)
         + NatureBank.games.map(\.intro) + CalendarBank.games.map(\.intro) + CompassBank.games.map(\.intro)
-        + HealthyBank.games.map(\.intro) + PlanetBank.games.map(\.intro)
+        + HealthyBank.games.map(\.intro) + PlanetBank.games.map(\.intro) + GraphBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
     check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
     check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
@@ -1229,6 +1229,68 @@ test("Earth Helpers: every game, 300 seeds, answers really right") {
     }
 }
 
+test("Graph Garden: every game, 300 seeds, answers worked out from the picture") {
+    let all = GraphBank.fruits + GraphBank.pets + GraphBank.garden
+    check(all.allSatisfy { GraphBank.words[$0] != nil } && Set(all).count == all.count, "every picture has a name")
+    check(Set(all.map(GraphBank.many)).count == all.count, "no two pictures share a name")
+    check(GraphBank.tallyWords(17) == "3 fives and 2 more make 17" && GraphBank.tallyWords(10) == "2 fives make 10" && GraphBank.tallyWords(4) == "4 lines", "tally words")
+    check(QuizVisual.tally(7).spoken == "Tally marks: 1 bundle of five and 2 more lines", "tally for VoiceOver")
+    check(QuizVisual.graph(labels: ["🐶", "🐟"], counts: [3, 1], bars: true).spoken == "A bar graph. dogs: 3, fish: 1", "graph for VoiceOver")
+    check(QuizVisual.jumble(["🐝", "🌸"]).spoken == "A jumble of pictures: bee, flower", "jumble for VoiceOver")
+    func name(_ e: String) -> String { GraphBank.many(e) }
+    let games = GraphBank.games
+    check(games.count == 4 && Set(games.map(\.id)).count == 4, "graphs: four games")
+    for g in games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            let rounds = GraphBank.rounds(for: g.id, using: &rng)
+            check(rounds.count == 5, "graphs/\(g.id): five rounds")
+            for r in rounds {
+                check(r.choices.contains(r.answer) && Set(r.choices).count == r.choices.count && r.choices.count == 3, "graphs/\(g.id): three choices hold the answer once (\(r.choices))")
+                let numbers = r.choices.compactMap { Int($0) }
+                check(numbers.isEmpty || (numbers.count == 3 && numbers.allSatisfy { $0 >= 1 }), "graphs/\(g.id): numbers are counting numbers (\(r.choices))")
+                switch r.visual {
+                case .tally(let n):
+                    check(g.id == "tally" && (3...18).contains(n) && r.answer == "\(n)", "tally: \(n)")
+                case .graph(let labels, let counts, let bars):
+                    check(Set(counts).count == counts.count && Set(labels).count == labels.count && labels.count == counts.count, "graph: different counts and pictures")
+                    check(counts.allSatisfy { $0 >= 1 && $0 <= (bars ? GraphBank.scaleTop : 7) }, "graph: counts fit the graph")
+                    check(bars == (g.id == "bars"), "graph: bars only in Bar Graph")
+                    let names = labels.map(name)
+                    if r.say == "Which row has the most?" || r.say == "Which pet got the most votes?" {
+                        check(r.answer == names[counts.firstIndex(of: counts.max()!)!], "graph: most → \(r.answer)")
+                    } else if r.say == "Which row has the fewest?" {
+                        check(r.answer == names[counts.firstIndex(of: counts.min()!)!], "graph: fewest → \(r.answer)")
+                    } else if r.say.hasPrefix("How many more kids picked ") {
+                        let rest = r.say.dropFirst("How many more kids picked ".count).dropLast()
+                        let two = rest.components(separatedBy: " than ")
+                        let a = names.firstIndex(of: two[0])!, b = names.firstIndex(of: two[1])!
+                        check(counts[a] > counts[b] && r.answer == "\(counts[a] - counts[b])", "graph: \(r.say) → \(r.answer)")
+                    } else {
+                        let k = names.firstIndex { r.say == "How many \($0) are there?" || r.say == "How many kids picked \($0)?" }
+                        check(k != nil && r.answer == "\(counts[k!])", "graph: \(r.say) → \(r.answer)")
+                    }
+                    if Int(r.answer) == nil { check(r.choices.allSatisfy { names.contains($0) }, "graph: choices are on the graph") }
+                case .jumble(let items):
+                    check(g.id == "sort" && items.count >= 6 && items.count <= 12, "sort: a jumble of \(items.count)")
+                    var tally: [String: Int] = [:]
+                    for e in items { tally[name(e), default: 0] += 1 }
+                    check(Set(tally.values).count == tally.count && tally.count == 3, "sort: three kinds, different counts")
+                    if r.say == "Which kind is there the most of?" {
+                        check(tally[r.answer] == tally.values.max(), "sort: most → \(r.answer)")
+                        check(Set(r.choices) == Set(tally.keys), "sort: the choices are the kinds")
+                    } else {
+                        let kind = tally.keys.first { r.say == "Sort them in your head. How many \($0)?" }
+                        check(kind != nil && r.answer == "\(tally[kind!]!)", "sort: \(r.say) → \(r.answer)")
+                    }
+                default:
+                    check(false, "graphs/\(g.id): a graph picture")
+                }
+            }
+        }
+    }
+}
+
 test("Brain Bubble widget: questions, one try each, every question before any repeat") {
     let all = BubbleBank.all
     check(all.count == 41, "41 questions (prime, so stepping by 7 visits them all)")
@@ -1400,7 +1462,7 @@ test("Bedtime: goodnight from bedtime until 6 in the morning, a grown-up can add
 
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {
     let ids = ["reading", "writing", "market", "clock", "science", "world", "music", "spelling", "fractions", "shapes", "rhyme",
-               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "code"]
+               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "code"]
     for id in ids {
         let a = AtHome.byPlace[id]
         check(a != nil, "\(id) has at-home ideas")

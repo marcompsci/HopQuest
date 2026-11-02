@@ -460,3 +460,128 @@ enum PlanetBank {
         }
     }
 }
+
+// MARK: - Graph Garden (v9.3)
+
+/// Zara Zebra's place: tally marks, picture graphs, bar graphs, and sorting a jumble to count it.
+/// Counts in one question are always different, so "the most" and "the fewest" have one answer.
+enum GraphBank {
+    /// Picture names, one and many.
+    static let words: [String: (one: String, many: String)] = [
+        "🍎": ("apple", "apples"), "🍌": ("banana", "bananas"), "🍓": ("strawberry", "strawberries"), "🍊": ("orange", "oranges"), "🍐": ("pear", "pears"),
+        "🐶": ("dog", "dogs"), "🐱": ("cat", "cats"), "🐟": ("fish", "fish"), "🐰": ("bunny", "bunnies"), "🐢": ("turtle", "turtles"),
+        "🌸": ("flower", "flowers"), "🐞": ("ladybug", "ladybugs"), "🦋": ("butterfly", "butterflies"), "🐝": ("bee", "bees"), "🍄": ("mushroom", "mushrooms"),
+    ]
+    static func one(_ e: String) -> String { words[e]?.one ?? e }
+    static func many(_ e: String) -> String { words[e]?.many ?? e }
+
+    static let fruits = ["🍎", "🍌", "🍓", "🍊", "🍐"]
+    static let pets = ["🐶", "🐱", "🐟", "🐰", "🐢"]
+    static let garden = ["🌸", "🐞", "🦋", "🐝", "🍄"]
+    /// Bar graphs count up to this number.
+    static let scaleTop = 8
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "tally", title: "Tally Marks", symbol: "line.3.horizontal", intro: "Each line is one. Four lines with one across make five! How many?", skill: "reading tally marks"),
+        QuizGameInfo(id: "picture", title: "Picture Graph", symbol: "square.grid.3x2.fill", intro: "Each picture is one. Count the rows and compare them.", skill: "reading picture graphs"),
+        QuizGameInfo(id: "bars", title: "Bar Graph", symbol: "chart.bar.fill", intro: "Kids picked their favorite pet. Read the bars with the numbers at the bottom.", skill: "reading bar graphs"),
+        QuizGameInfo(id: "sort", title: "Sort and Count", symbol: "square.stack.fill", intro: "Sort the jumble in your head, then count each kind.", skill: "sorting and counting"),
+    ]
+
+    static let cheers = ["Graph star!", "Stripe-tacular!", "That's right!", "You read it right!", "Super sorting!"]
+
+    /// `n` different counts from `range`, in a random order.
+    static func counts<G: RandomNumberGenerator>(_ n: Int, in range: ClosedRange<Int>, using rng: inout G) -> [Int] {
+        Array(Array(range).shuffled(using: &rng).prefix(n))
+    }
+
+    /// The right number and nearby wrong ones (never below 1).
+    static func numberChoices<G: RandomNumberGenerator>(_ answer: Int, others: [Int], using rng: inout G) -> [String] {
+        let wrong = (others + [answer + 1, answer - 1, answer + 2]).filter { $0 >= 1 && $0 != answer }.map(String.init)
+        return QuizShuffle.choices("\(answer)", wrong, using: &rng)
+    }
+
+    /// "3 fives and 2 more make 17".
+    static func tallyWords(_ n: Int) -> String {
+        let fives = n / 5, ones = n % 5
+        if fives == 0 { return "\(n) lines" }
+        let lead = "\(fives) \(fives == 1 ? "five" : "fives")"
+        return ones == 0 ? "\(lead) make \(n)" : "\(lead) and \(ones) more make \(n)"
+    }
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "tally":
+            let ns = counts(count, in: 3...18, using: &rng)
+            return ns.enumerated().map { i, n in
+                QuizRound(visual: .tally(n), say: "How many tally marks?",
+                          choices: numberChoices(n, others: [n + 5, n - 5], using: &rng), answer: "\(n)",
+                          cheer: "\(tallyWords(n)). \(cheer(i))")
+            }
+        case "picture":
+            return (0..<count).map { i -> QuizRound in
+                let kinds = Array([fruits, garden][i % 2].shuffled(using: &rng).prefix(3))
+                let n = counts(3, in: 1...7, using: &rng)
+                let visual = QuizVisual.graph(labels: kinds, counts: n, bars: false)
+                switch i % 3 {
+                case 0, 1:
+                    let most = i % 3 == 0
+                    let k = n.firstIndex(of: most ? n.max()! : n.min()!)!
+                    return QuizRound(visual: visual, say: most ? "Which row has the most?" : "Which row has the fewest?",
+                                     choices: kinds.map { many($0) }.shuffled(using: &rng), answer: many(kinds[k]),
+                                     cheer: "\(n[k]) \(n[k] == 1 ? one(kinds[k]) : many(kinds[k])): the \(most ? "most" : "fewest"). \(cheer(i))")
+                default:
+                    let k = Int.random(in: 0..<3, using: &rng)
+                    return QuizRound(visual: visual, say: "How many \(many(kinds[k])) are there?",
+                                     choices: numberChoices(n[k], others: n, using: &rng), answer: "\(n[k])",
+                                     cheer: "There are \(n[k]). \(cheer(i))")
+                }
+            }
+        case "bars":
+            return (0..<count).map { i -> QuizRound in
+                let kinds = Array(pets.shuffled(using: &rng).prefix(4))
+                let n = counts(4, in: 1...scaleTop, using: &rng)
+                let visual = QuizVisual.graph(labels: kinds, counts: n, bars: true)
+                switch i % 3 {
+                case 0:
+                    let k = Int.random(in: 0..<4, using: &rng)
+                    return QuizRound(visual: visual, say: "How many kids picked \(many(kinds[k]))?",
+                                     choices: numberChoices(n[k], others: n, using: &rng), answer: "\(n[k])",
+                                     cheer: "The \(many(kinds[k])) bar stops at \(n[k]). \(cheer(i))")
+                case 1:
+                    let k = n.firstIndex(of: n.max()!)!
+                    let others = kinds.filter { $0 != kinds[k] }.map { many($0) }
+                    return QuizRound(visual: visual, say: "Which pet got the most votes?",
+                                     choices: QuizShuffle.choices(many(kinds[k]), others, using: &rng), answer: many(kinds[k]),
+                                     cheer: "\(many(kinds[k]).prefix(1).uppercased() + many(kinds[k]).dropFirst()) has the longest bar. \(cheer(i))")
+                default:
+                    // two pets: the one with more votes first
+                    let pair = Array((0..<4).shuffled(using: &rng).prefix(2)).sorted { n[$0] > n[$1] }
+                    let a = pair[0], b = pair[1], diff = n[a] - n[b]
+                    return QuizRound(visual: visual, say: "How many more kids picked \(many(kinds[a])) than \(many(kinds[b]))?",
+                                     choices: numberChoices(diff, others: [n[a], n[b]], using: &rng), answer: "\(diff)",
+                                     cheer: "\(n[a]) take away \(n[b]) is \(diff). \(cheer(i))")
+                }
+            }
+        default: // sort
+            return (0..<count).map { i -> QuizRound in
+                let kinds = Array(garden.shuffled(using: &rng).prefix(3))
+                let n = counts(3, in: 1...5, using: &rng)
+                var items: [String] = []
+                for (k, c) in zip(kinds, n) { items += Array(repeating: k, count: c) }
+                items.shuffle(using: &rng)
+                if i % 2 == 0 {
+                    let k = Int.random(in: 0..<3, using: &rng)
+                    return QuizRound(visual: .jumble(items), say: "Sort them in your head. How many \(many(kinds[k]))?",
+                                     choices: numberChoices(n[k], others: n, using: &rng), answer: "\(n[k])",
+                                     cheer: "\(n[k]) \(n[k] == 1 ? one(kinds[k]) : many(kinds[k])). \(cheer(i))")
+                }
+                let k = n.firstIndex(of: n.max()!)!
+                return QuizRound(visual: .jumble(items), say: "Which kind is there the most of?",
+                                 choices: kinds.map { many($0) }.shuffled(using: &rng), answer: many(kinds[k]),
+                                 cheer: "There are \(n[k]) \(many(kinds[k])), the most. \(cheer(i))")
+            }
+        }
+    }
+}

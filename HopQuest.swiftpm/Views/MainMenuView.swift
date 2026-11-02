@@ -145,6 +145,7 @@ struct MainMenuView: View {
                         placeTile("compass", art: "icon_compass", title: "Compass Camp", color: 0x1565C0, shadow: 0x0D47A1)
                         placeTile("healthy", art: "icon_healthy", title: "Healthy Hut", color: 0x558B2F, shadow: 0x33691E)
                         placeTile("planet", art: "icon_planet", title: "Earth Helpers", color: 0x00897B, shadow: 0x00695C)
+                        placeTile("graphs", art: "icon_graphs", title: "Graph Garden", color: 0x7B1FA2, shadow: 0x4A148C)
                         gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
                                  badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
                                  label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)

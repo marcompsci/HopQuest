@@ -47,6 +47,12 @@ enum QuizVisual: Equatable {
     case gridMap(cols: Int, rows: Int, items: [Int: String], marker: Int?)
     /// A compass rose with a picture at north, east, south and west (v8.4).
     case compass(north: String, east: String, south: String, west: String)
+    /// Tally marks: four lines and one across for each five, then single lines (v9.3).
+    case tally(Int)
+    /// A graph with one row per picture: that many pictures in a row, or a bar against a number line (v9.3).
+    case graph(labels: [String], counts: [Int], bars: Bool)
+    /// A jumble of pictures to sort and count (v9.3).
+    case jumble([String])
 }
 
 extension QuizVisual {
@@ -73,6 +79,13 @@ extension QuizVisual {
                 return "From left to right: " + row.map(GridWords.name).joined(separator: ", ")
             }
             return FeelingsBank.faceDescriptions[p]
+        case .tally(let n):
+            let fives = n / 5, ones = n % 5
+            return "Tally marks: \(fives) \(fives == 1 ? "bundle" : "bundles") of five and \(ones) more \(ones == 1 ? "line" : "lines")"
+        case .graph(let labels, let counts, let bars):
+            let rows = zip(labels, counts).map { "\(GraphBank.many($0.0)): \($0.1)" }
+            return (bars ? "A bar graph. " : "A picture graph. ") + rows.joined(separator: ", ")
+        case .jumble(let items): return "A jumble of pictures: " + items.map { GraphBank.one($0) }.joined(separator: ", ")
         default: return nil
         }
     }
