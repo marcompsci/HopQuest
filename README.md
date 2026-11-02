@@ -83,8 +83,10 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 | **Story Book** 📖 | Picture-book cutscenes with character voices between levels (once, skippable), replayable from the menu | Listening, sequencing a story |
 | **Together mode** | A grown-up and a kid play on one device: Team Hop, Team Drive, **two-player Bubble Kart**, **two-player Pillow Bop**, **Team Robot Code** (take turns adding blocks, like pair programmers) and **Team Fort** (two builders, longer reach) | Co-op play, fair play, and talking it through |
 | **Hot air balloon finish** | Your buddy rides a balloon from big to little and lands on the next level | |
-| **More learning places** (v6.8+) | **Spelling Bee, Fraction Bakery, Shape Studio, Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner**: four games each on one shared quiz engine | Spelling, fractions, shapes, rhymes and syllables, place value, equal groups and skip counting, measuring, naming feelings and kindness |
+| **More learning places** (v6.8+) | **Spelling Bee, Fraction Bakery, Shape Studio, Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail, Calendar Corner, Compass Camp**: four games each on one shared quiz engine | Spelling, fractions, shapes, rhymes and syllables, place value, equal groups and skip counting, measuring, feelings and kindness, habitats and life cycles, the calendar, maps and directions |
 | **Star Hop** | A 12-level tap-to-play game on the home-screen widget and in the app (same save): counting, spelling, adding and taking away, puff clouds, springs and bubble shields | Counting, skip counting, the alphabet, sums |
+| **Level Maker and Sticker Scenes** | Design your own Star Hop level and play it; put your buddy stickers into pictures | Planning, creativity |
+| **Brain Bubble widget** | A question with three answers to tap right on the home screen | Quick recall across subjects |
 | **Breathe with Buddy** | A balloon breathing break: in for 4, hold for 2, out for 5 | Calming down |
 | **Surprise me! and buddy hats** | One tap to something not finished yet; hats for your buddy unlocked by badges | |
 
@@ -96,7 +98,8 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 - **Grown-ups area** behind a parent gate, with break reminders, narration and sound settings, plus a **Learning Report**: Brain Gate questions solved per subject (with first-try rates) and progress in every mode.
 - **Learning level:** questions fit the child's age: picture counting for 4–5, the classic mix for 6–7, times tables and harder science and words for 8–10. Automatic mode adapts to how the child is doing.
 - **Daily play limit** with a gentle "time to rest" goodbye. HopQuest has **no streaks, no daily-login rewards and no notifications**.
-- **Grown-ups' Progress page:** every skill by place, a chart of minutes played this week, and printable certificates.
+- **Grown-ups' Progress page:** every skill by place, a chart of minutes played this week, printable certificates and practice sheets. An optional **bedtime** goodnight screen.
+- **Read with Me:** story words light up as they're read aloud.
 - **Accessibility:** **easy-read letters** setting, text grows with the Text Size setting, right/wrong answers use a shape as well as a color, left-handed controls, Reduce Motion respected, VoiceOver labels.
 - **iPad:** runs in any orientation, with the game in a tall play area in the middle.
 - Saves only on the device, with no data collection. Live play is off until a grown-up turns it on, and shares only the buddy's name.

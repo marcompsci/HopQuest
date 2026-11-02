@@ -310,7 +310,7 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - A sixth world after the Rainbow Bridge: Kelp Forest, Turtle Reef, Coral Castle, with bubble rafts to hop on. The story now ends at the Coral Castle.
 
 ### v6.3: Badges
-- 23 badges (24 from v6.6, 29 from v7.2) for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
+- 23 badges (24 from v6.6, 29 from v7.2, 32 from v8.4) for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
 
 ### v6.4: Code Club with VoiceOver
 - The puzzle board is described from the robot ("The star is 3 squares up and 2 to the right. A rock is just ahead."), so robot puzzles can be solved without seeing them.
@@ -363,6 +363,29 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v7.8–v7.9: Play this week and certificates (grown-ups)
 - The Progress page shows a bar chart of minutes played each day this week (counted only while the app is open; two weeks kept on the device).
 - A certificate for each place where every game has 2+ stars: name, place, skills, date, buddy, and a line for a grown-up to sign. Print or share behind the parental gate; nothing leaves the device otherwise.
+
+### v8.1: Read with Me
+- As the narrator reads Story Maker pages and Story Book lines, each word lights up on screen in time with the voice (from the speech engine's word timing). The story title read before page one, and emoji, are skipped; a line read in Spanish isn't highlighted because the words on screen are English.
+
+### v8.2–v8.4: Nature Trail, Calendar Corner, Compass Camp
+- **Nature Trail** (Flora Flamingo): where animals live, life cycles (frog, butterfly, chicken, plant), the five senses (sense or body part), baby animal names.
+- **Calendar Corner** (Sunny Chick): days of the week, yesterday and tomorrow, months of the year, the four seasons by what you see (not by month, which differs north and south of the equator).
+- **Compass Camp** (Captain Comet): left and right along a row, a compass rose, grid maps (A–D, 1–4; the swapped coordinates are the trap), and following a two-step path from a flag (every step stays on the map).
+- Tests check every answer on 300 seeds per game, including walking each path.
+
+### v8.5: Brain Bubble widget
+- A medium or large home-screen widget with a question and three answers you tap on the widget itself; then a fun fact and "Next question". 41 questions (math, science, nature, words, road safety, time and money); stepping through them by 7 shows every one before any repeats. One try per question. No streaks.
+
+### v8.6: Star Hop Level Maker
+- Kids place up to 10 stars, 3 puff clouds and a spring on the 6×3 board, pick one of six skies, then play their level in the app. Stars stay put. Made levels never change the widget's Star Hop game or its records. Six levels are kept.
+- A spring bounces the buddy past one square, so that square can't hold a star (the editor says so); a test plays 60 random made levels to the end.
+
+### v8.7: Sticker Scenes
+- Put collected buddy stickers into a picture on six backdrops (meadow, beach, space, castle, ocean, city): drag to move, then bigger, smaller, flip, to the front or away. VoiceOver users get move-left/right/up/down actions. Six pictures are kept.
+
+### v8.8–v8.9: Practice sheets and Bedtime (grown-ups)
+- **Practice sheets**: for any game in the quiz places, a printable page of ten questions (with the pictures) and an answer page, made as a PDF on the device. Games at 1 star are marked "practising".
+- **Bedtime**: an optional time (7:00–9:00 PM) after which HopQuest shows a gentle goodnight screen until 6 AM. A grown-up can add 15 minutes behind the parental gate.
 
 ## 7. Next engineering steps
 
