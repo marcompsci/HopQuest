@@ -113,6 +113,8 @@ extension L10n {
         "Fruits, vegetables, grains, protein and dairy. Which group is it in?": "Frutas, verduras, granos, proteínas y lácteos. ¿En qué grupo está?",
         "Healthy habits keep you strong. What's the healthy choice?": "Los hábitos sanos te mantienen fuerte. ¿Cuál es la opción sana?",
         "Everyday foods help you grow. Sometimes foods are treats. Which is it?": "Los alimentos de todos los días te ayudan a crecer. Los de vez en cuando son premios. ¿Cuál es?",
+        // Fort Friends 3 (v9.5)
+        "This bridge holds on from the side, like a diving board. Engineers call that a cantilever!": "Este puente se sostiene de un lado, como un trampolín. ¡Los ingenieros lo llaman voladizo!",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
         "Certificate": "Diploma", "Text size and spacing": "Tamaño y espacio del texto",

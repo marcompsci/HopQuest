@@ -143,6 +143,17 @@ ROUTES = {
     # Moat Castle: up the little hill, across the moat (taking the bridge back), then up the castle wall
     306: "R 6; ramp 7 2; block 8 2; ramp 8 3; R 5; bridge 12 1; bridge 13 1; bridge 14 1; R 2; bridge 15 1; bridge 16 1; R 4;"
          "take 14 1; take 15 1; take 16 1; R 1; ramp 19 2; block 20 2; ramp 20 3; block 21 2; block 21 3; ramp 21 4; R 3; R 6",
+    # Canyon Bridge: stairs up the cliff, then bridges that hold on from the side, high over the canyon
+    307: "R 6; ramp 7 2; block 8 2; ramp 8 3; R 6; bridge 13 3; bridge 14 3; bridge 15 3; R 3; bridge 16 3; bridge 17 3; bridge 18 3; R 4;"
+         "ramp 20 4; R 1; R 1; R 8",
+    # Rocky Ledges: a high bridge for the balloon, down to low bridges and a ramp, then stairs and a side bridge to the fort
+    308: "R 5; bridge 6 4; bridge 7 4; bridge 8 4; R 4; take 6 4; take 7 4; take 8 4; R 4;"
+         "bridge 14 1; bridge 15 1; bridge 16 1; ramp 16 2; R 1; R 1; R 1; R 5;"
+         "block 22 2; ramp 22 3; block 23 2; block 23 3; ramp 23 4; bridge 24 4; R 8",
+    # Lighthouse Hill: take every bridge back, so there are enough bricks for the tall stairs at the end
+    309: "R 6; bridge 7 1; bridge 8 1; bridge 9 1; R 3; bridge 10 1; bridge 11 1; R 1; take 7 1; take 8 1; R 2; take 9 1; take 10 1; take 11 1;"
+         "R 1; ramp 14 2; R 3; take 14 2; R 1; bridge 18 1; bridge 19 1; R 3; take 18 1; take 19 1;"
+         "ramp 21 2; block 22 2; ramp 22 3; block 23 2; block 23 3; R 1; ramp 23 4; bridge 24 4; ramp 24 5; R 8",
 }
 
 def main():

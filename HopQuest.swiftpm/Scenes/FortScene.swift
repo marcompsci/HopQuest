@@ -79,6 +79,37 @@ struct FortLevel: Identifiable {
             "S..C.....#....B..G....########",
             "############~~~~~#############",
             "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        ]),
+        // Fort Friends 3 (v9.5)
+        FortLevel(id: 307, title: "Canyon Bridge", blurb: "Bridges can hold on from the side", startBricks: 6, rainSpeed: 0.20, rows: [
+            "..............................",
+            "..............................",
+            ".....................B........",
+            "...........G..B..B............",
+            ".........####......####.......",
+            "S..C.....####......####....F..",
+            "#############~~~~~~###########",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        ]),
+        FortLevel(id: 308, title: "Rocky Ledges", blurb: "Down the ledges, then build up", startBricks: 3, rainSpeed: 0.22, rows: [
+            "................................",
+            "................................",
+            "S..C...B.....................F..",
+            "######.....C.............#######",
+            "######...#####....G.B....#######",
+            "######...#####.B.#####...#######",
+            "######~~~#####~~~###############",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        ]),
+        FortLevel(id: 309, title: "Lighthouse Hill", blurb: "Save bricks for the tall tower", startBricks: 4, rainSpeed: 0.24, rows: [
+            "..............................",
+            "........................B...F.",
+            ".........................#####",
+            ".........................#####",
+            "...............B.........#####",
+            "S.C......B...G.#.........#####",
+            "#######~~~~~######~~##########",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         ])
     ]
 
@@ -163,6 +194,9 @@ enum FortTool: String, CaseIterable, Identifiable {
         case .paint: return "Tap a block to paint it. Tap again for the next color!"
         }
     }
+
+    /// Read the first time a bridge high up holds on only from the side (v9.5).
+    static let sideBridgeLesson = "This bridge holds on from the side, like a diving board. Engineers call that a cantilever!"
 }
 
 /// Live numbers for the SwiftUI HUD.
@@ -261,6 +295,7 @@ final class FortScene: SKScene {
     private var now: TimeInterval = 0
     private var camX: CGFloat = 0
     private var usedTools: Set<FortTool> = []
+    private var saidSideBridge = false
     private var tipsGiven: Set<String> = []
     private let questions: [Question]
     private var questionIndex = 0
@@ -875,6 +910,10 @@ final class FortScene: SKScene {
         if !usedTools.contains(t) {
             usedTools.insert(t)
             say(t.lesson)
+        } else if t == .bridge, !saidSideBridge, c.y > 1, !tile(c.x, c.y - 1).solid {
+            // v9.5: a bridge high up with nothing under it holds on from the side
+            saidSideBridge = true
+            say(FortTool.sideBridgeLesson)
         }
         refreshGhosts()
         if level.sandbox { onSandboxChange?(builtPieces()) }
