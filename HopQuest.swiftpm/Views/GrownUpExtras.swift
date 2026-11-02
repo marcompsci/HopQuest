@@ -349,3 +349,60 @@ struct PracticePage: View {
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.black.opacity(0.15), lineWidth: 1))
     }
 }
+
+/// Try at home (v9.7): what a place teaches and a few things to do together away from the screen.
+/// Places being practised come first. Written ideas only: nothing is looked up or sent.
+struct AtHomeSection: View {
+    let areas: [LearningArea]
+
+    var body: some View {
+        let picks = AtHome.suggested(areas)
+        Section {
+            if picks.isEmpty {
+                Text("Once your child has played a learning place, ideas to try together show up here. Every place below also has its own under \"Try at home\".")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else {
+                ForEach(picks) { a in
+                    AtHomeIdeasView(title: a.title, ideas: AtHome.ideas(for: a.id), practising: !a.needsPractice.isEmpty)
+                }
+            }
+        } header: {
+            Text("Try at home")
+        } footer: {
+            Text("A few minutes of talking and playing together helps more than extra screen time. No shopping needed.")
+        }
+    }
+}
+
+/// One place's summary and ideas, as a list row.
+struct AtHomeIdeasView: View {
+    let title: String?
+    let ideas: AtHomeIdeas
+    var practising = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                HStack(spacing: 6) {
+                    Text(title).font(.headline)
+                    if practising {
+                        Text("Practising").font(.caption.weight(.semibold)).foregroundStyle(.orange)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Capsule().fill(Color.orange.opacity(0.15)))
+                    }
+                }
+            }
+            Text(ideas.learning).font(.subheadline).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(Array(ideas.ideas.enumerated()), id: \.offset) { _, idea in
+                Label {
+                    Text(idea).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "house.fill").foregroundStyle(Palette.purple)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+    }
+}

@@ -1303,5 +1303,34 @@ test("Bedtime: goodnight from bedtime until 6 in the morning, a grown-up can add
     check(Bedtime.choices.allSatisfy { $0 == 0 || $0 > Bedtime.wakeMinutes }, "every choice is in the evening")
 }
 
+test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {
+    let ids = ["reading", "writing", "market", "clock", "science", "world", "music", "spelling", "fractions", "shapes", "rhyme",
+               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "code"]
+    for id in ids {
+        let a = AtHome.byPlace[id]
+        check(a != nil, "\(id) has at-home ideas")
+        guard let a else { continue }
+        check(!a.learning.isEmpty && a.learning.count <= 140, "\(id): summary is one short line (\(a.learning.count))")
+        check((2...3).contains(a.ideas.count), "\(id): two or three ideas")
+        for i in a.ideas {
+            check(!i.isEmpty && i.count <= 110, "\(id): idea is short: \(i)")
+            let lower = i.lowercased()
+            let words = Set(lower.split { !$0.isLetter }.map(String.init))
+            for word in ["buy", "app", "download", "website", "online", "screen", "streak"] {
+                check(!words.contains(word), "\(id): no '\(word)' in an idea: \(i)")
+            }
+        }
+    }
+    check(AtHome.ideas(for: "not-a-place") == AtHome.general, "unknown places get the general ideas")
+    func area(_ id: String, _ bests: [Int]) -> LearningArea {
+        LearningArea(id: id, title: id, skills: bests.map { SkillProgress(skill: "s", best: $0) })
+    }
+    let areas = [area("fresh", [0, 0]), area("half", [3, 0]), area("done", [3, 2]), area("stuck", [1, 3]), area("stuck2", [2, 1])]
+    let s = AtHome.suggested(areas)
+    check(s.map(\.id) == ["stuck", "stuck2", "half"], "practising first, then started; not-started and finished left out (\(s.map(\.id)))")
+    check(AtHome.suggested(areas, limit: 1).map(\.id) == ["stuck"], "limit")
+    check(AtHome.suggested([area("fresh", [0])]).isEmpty, "nothing to suggest before playing")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

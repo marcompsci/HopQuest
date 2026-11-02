@@ -121,6 +121,7 @@ struct ProgressPageView: View {
             } footer: {
                 Text("\"Practising\" means a game was played but earned 1 star. Playing it together is the best way to help.")
             }
+            AtHomeSection(areas: areas)
             PlayWeekSection()
             CertificatesSection()
             PracticeSheetsSection()
@@ -134,6 +135,10 @@ struct ProgressPageView: View {
                         }
                         .accessibilityElement(children: .combine)
                     }
+                    DisclosureGroup("Try at home") {
+                        AtHomeIdeasView(title: nil, ideas: AtHome.ideas(for: a.id))
+                    }
+                    .tint(Palette.purple)
                 } header: {
                     HStack {
                         Text(a.title)

@@ -390,6 +390,9 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v9.0: Review fixes
 - An independent review found these, now fixed: the Brain Bubble's first question is saved when it's shown and each tap carries the question it answered, so a tap is never scored against a different question; compass and map pictures are scaled to fit on practice sheets (and sheets no longer repeat a question); the goodnight screen goes away by itself in the morning; trying out a made level no longer saves it (which could push out the oldest one), and kids can delete a level or picture when all six spots are full; a made level's finish is announced correctly; animal homes never offer another fair home as "wrong" (seal/ocean, duck/farm…); a seasons clue no longer gives the answer away; the touch picture matches its words; selected sky and sticker buttons are announced to VoiceOver.
 
+### v9.7: Try at home (grown-ups)
+- Each learning place on the Progress page has a "Try at home" line: what the child is learning there in one plain sentence, and two or three short things to do together away from the screen (I Spy with sounds, a pretend shop with real coins, a shape hunt, "be the robot"). No shopping and no homework. A "Try at home" section at the top suggests the places being practised first, then places started but not finished. All written into the app; nothing is looked up or sent.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

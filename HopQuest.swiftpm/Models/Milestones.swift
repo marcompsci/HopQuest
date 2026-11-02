@@ -128,3 +128,111 @@ struct MilestoneSettings: Codable, Equatable {
         shared = (try? c.decodeIfPresent(Set<String>.self, forKey: .shared)) ?? []
     }
 }
+
+// MARK: - Try at home (v9.7)
+
+/// For grown-ups: what a learning place teaches, in one plain line, and a few short things to try together
+/// away from the screen. Written by hand, no shopping needed (things most homes have), and never homework.
+struct AtHomeIdeas: Equatable {
+    /// "What they're learning": one sentence a grown-up can read at a glance.
+    let learning: String
+    /// Two or three activities, each one sentence, that take a few minutes.
+    let ideas: [String]
+}
+
+enum AtHome {
+    /// Every learning place on the progress page, by `LearningArea.id`.
+    static let byPlace: [String: AtHomeIdeas] = [
+        "reading": AtHomeIdeas(learning: "Hearing the first sound in a word, building short words, sight words, rhymes and reading a short sentence.",
+                               ideas: ["Play I Spy with sounds: \"I spy something that starts with /b/.\"",
+                                       "Point out a sight word (the, and, is) on a cereal box or a sign and let them find it next time.",
+                                       "Take turns reading one line each from a favorite picture book."]),
+        "writing": AtHomeIdeas(learning: "Printing capital and lowercase letters, numbers 0 to 9 and short words, starting each stroke in the right place.",
+                               ideas: ["Write letters with a finger in sand, flour on a tray, or on a steamy window.",
+                                       "Let them write the shopping list, even if it's just the first letter of each thing.",
+                                       "Make a name card for each person at dinner."]),
+        "market": AtHomeIdeas(learning: "Counting coins, paying an exact amount, making change, comparing numbers and adding prices.",
+                              ideas: ["Set up a pretend shop with toys, price tags under 20¢ and real coins.",
+                                      "Let them count out the coins for something small at a real shop.",
+                                      "Ask \"Which costs more?\" with two things on a menu or flyer."]),
+        "clock": AtHomeIdeas(learning: "Telling time to the hour, half hour and quarter hour, setting a clock, and \"one hour later\".",
+                             ideas: ["Ask what time it is on a clock with hands at meals and bedtime.",
+                                     "Say \"We leave in one hour. What time will that be?\"",
+                                     "Make a paper-plate clock with a split pin for the hands."]),
+        "science": AtHomeIdeas(learning: "Guessing, then testing: sinking and floating, magnets, plant parts, weather, and solids, liquids and gases.",
+                               ideas: ["Fill the sink and guess first: does a spoon, a cork or an apple float?",
+                                       "Walk round the kitchen with a fridge magnet. What does it stick to?",
+                                       "Freeze water in a cup, then watch it melt. Where did the ice go?"]),
+        "world": AtHomeIdeas(learning: "The seven continents and five oceans, where animals live, and famous places around the world.",
+                             ideas: ["Find where a fruit or a toy was made on its label, then find that country on a map.",
+                                     "Pick an animal at bedtime and talk about where in the world it lives.",
+                                     "Look at a globe or a world map and trace the oceans with a finger."]),
+        "music": AtHomeIdeas(learning: "Listening and remembering short tunes, copying a rhythm, and playing a simple song.",
+                             ideas: ["Clap a short rhythm and have them clap it back, then swap.",
+                                     "Make a drum from a pot and a wooden spoon and play loud, then soft.",
+                                     "Sing a song you both know and stop: can they sing the next note?"]),
+        "spelling": AtHomeIdeas(learning: "Spelling words by sound, the middle sound, tricky words, and the silent e that makes a vowel say its name.",
+                                ideas: ["Spell a word out loud together using magnetic or paper letters.",
+                                        "Try magic e with paper letters: cap becomes cape, kit becomes kite.",
+                                        "Hunt for a tricky word in a book and spell it together."]),
+        "fractions": AtHomeIdeas(learning: "Halves, thirds and quarters: naming a part, finding it in a picture, sharing fairly and comparing slices.",
+                                 ideas: ["Cut a sandwich or a pizza into halves and quarters and name each piece.",
+                                         "Share 12 crackers between 3 plates fairly. How many on each?",
+                                         "Ask \"Would you rather have half or a quarter of this pancake?\""]),
+        "shapes": AtHomeIdeas(learning: "Naming flat and solid shapes, counting sides and corners, and spotting shape patterns.",
+                              ideas: ["Go on a shape hunt: a round plate, a rectangle door, a cylinder can.",
+                                      "Build a pattern with spoons and forks and ask what comes next.",
+                                      "Count the corners on a book, a napkin and a slice of toast."]),
+        "rhyme": AtHomeIdeas(learning: "Hearing rhymes, telling rhymes apart, clapping the beats (syllables) in a word, and finishing a rhyme.",
+                             ideas: ["Make up silly rhymes in the car: \"cat, hat, bat… splat!\"",
+                                     "Clap the beats in each family member's name.",
+                                     "Read a rhyming book and pause before the rhyming word."]),
+        "numbers": AtHomeIdeas(learning: "Place value: tens and ones, building numbers to 99 with blocks, and comparing two-digit numbers.",
+                               ideas: ["Bundle straws or pencils in tens with a rubber band, then count tens and ones.",
+                                       "Read house or bus numbers together: how many tens?",
+                                       "Roll two dice to make a number. Who made the bigger one?"]),
+        "times": AtHomeIdeas(learning: "Equal groups, skip counting by 2s, 3s, 5s and 10s, rows (arrays) and \"groups of\".",
+                             ideas: ["Count socks by 2s as you sort the laundry.",
+                                     "Put snacks in equal groups: 3 bowls with 4 grapes each. How many in all?",
+                                     "Spot rows in an egg box or a muffin tray and count them."]),
+        "measure": AtHomeIdeas(learning: "Longer and shorter, measuring with blocks, heavier and lighter, and which tool measures what.",
+                               ideas: ["Measure the table in hand spans, then in spoons. Why are the numbers different?",
+                                       "Hold two things, one in each hand, and guess which is heavier.",
+                                       "Use a measuring cup or kitchen scale while cooking together."]),
+        "feelings": AtHomeIdeas(learning: "Naming feelings, how someone in a story might feel, what helps with a big feeling, and kind words.",
+                                ideas: ["Talk about how a character in a book feels and why.",
+                                        "Share one feeling each at dinner: \"Today I felt… when…\"",
+                                        "Practise a calm-down idea together, like five slow breaths."]),
+        "nature": AtHomeIdeas(learning: "Where animals live, life cycles (frog, butterfly, chicken, plant), the five senses and baby animal names.",
+                              ideas: ["On a walk, name one thing you see, hear, smell and touch.",
+                                      "Plant a bean in a wet paper towel and watch it sprout.",
+                                      "Name the babies of animals in a picture book: kitten, puppy, calf."]),
+        "calendar": AtHomeIdeas(learning: "Days of the week, yesterday and tomorrow, months of the year, and the four seasons.",
+                                ideas: ["Each morning, ask \"What day is it? What was yesterday?\"",
+                                        "Find each family birthday on a calendar and say the month.",
+                                        "Look out of the window: what clues tell you the season?"]),
+        "compass": AtHomeIdeas(learning: "Left and right, north, south, east and west, finding a spot on a grid map, and following steps on a map.",
+                               ideas: ["Give directions to a hidden toy: \"Three steps forward, then turn left.\"",
+                                       "Draw a map of their room together and mark the bed and the door.",
+                                       "Play Simon Says with left and right hands."]),
+        "code": AtHomeIdeas(learning: "Coding: putting steps in order, loops (repeat) and finding mistakes (debugging) to guide a robot to a star.",
+                            ideas: ["Be the robot: they give step-by-step directions to get you to the kitchen.",
+                                    "Write the steps for brushing teeth on cards, mix them up, and put them back in order.",
+                                    "Find a pattern that repeats in a song or a dance: that's a loop!"]),
+    ]
+
+    /// A short, friendly fallback for any place without its own ideas yet.
+    static let general = AtHomeIdeas(learning: "Games that practise a skill a little at a time, with hints and no penalty for wrong answers.",
+                                     ideas: ["Ask them to show you their favorite game in this place and explain it.",
+                                             "Play one round together and take turns answering."])
+
+    static func ideas(for placeID: String) -> AtHomeIdeas { byPlace[placeID] ?? general }
+
+    /// The places to suggest first: ones being practised (games at 1 star), then ones started but not finished,
+    /// at most `limit`, in page order. Places not started are left out: there's nothing to build on yet.
+    static func suggested(_ areas: [LearningArea], limit: Int = 3) -> [LearningArea] {
+        let practising = areas.filter { !$0.needsPractice.isEmpty }
+        let started = areas.filter { $0.started && !$0.finished && $0.needsPractice.isEmpty }
+        return Array((practising + started).prefix(max(0, limit)))
+    }
+}

@@ -98,7 +98,7 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 - **Grown-ups area** behind a parent gate, with break reminders, narration and sound settings, plus a **Learning Report**: Brain Gate questions solved per subject (with first-try rates) and progress in every mode.
 - **Learning level:** questions fit the child's age: picture counting for 4–5, the classic mix for 6–7, times tables and harder science and words for 8–10. Automatic mode adapts to how the child is doing.
 - **Daily play limit** with a gentle "time to rest" goodbye. HopQuest has **no streaks, no daily-login rewards and no notifications**.
-- **Grown-ups' Progress page:** every skill by place, a chart of minutes played this week, printable certificates and practice sheets. An optional **bedtime** goodnight screen.
+- **Grown-ups' Progress page:** every skill by place, a chart of minutes played this week, printable certificates and practice sheets, and **Try at home** ideas for every place (what they're learning, plus things to do together off screen). An optional **bedtime** goodnight screen.
 - **Read with Me:** story words light up as they're read aloud.
 - **Accessibility:** **easy-read letters** setting, text grows with the Text Size setting, right/wrong answers use a shape as well as a color, left-handed controls, Reduce Motion respected, VoiceOver labels.
 - **iPad:** runs in any orientation, with the game in a tall play area in the middle.
