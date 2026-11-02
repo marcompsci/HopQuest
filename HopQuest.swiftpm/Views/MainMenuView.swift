@@ -92,27 +92,41 @@ struct MainMenuView: View {
                     codingLabCard
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                         let p = store.profile
-                        gameTile(art: "icon_reading", title: "Reading Nook", color: Color(hex: 0xD94A57), shadow: Color(hex: 0x9E2A3A),
-                                 badge: 0, detail: "\(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars",
-                                 label: "Reading Nook, \(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars", action: onReading)
-                        gameTile(art: "icon_market", title: "Math Market", color: Color(hex: 0xE07B00), shadow: Color(hex: 0xA35A00),
-                                 badge: 0, detail: "\(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars",
-                                 label: "Math Market, \(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars", action: onMarket)
-                        gameTile(art: "icon_science", title: "Science Lab", color: Color(hex: 0x1F7A8C), shadow: Color(hex: 0x135563),
-                                 badge: 0, detail: "\(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars",
-                                 label: "Science Lab, \(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars", action: onScience)
-                        gameTile(art: "icon_music", title: "Music Maker", color: Color(hex: 0xB0459C), shadow: Color(hex: 0x7E2C6F),
-                                 badge: 0, detail: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars",
-                                 label: "Music Maker, \(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars", action: onMusic)
-                        gameTile(art: "icon_writing", title: "Writing Desk", color: Color(hex: 0x2F6FD1), shadow: Color(hex: 0x1D4A96),
-                                 badge: 0, detail: "\(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars",
-                                 label: "Writing Desk, \(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars", action: onWriting)
-                        gameTile(art: "icon_clock", title: "Clock Tower", color: Color(hex: 0x2E7D4F), shadow: Color(hex: 0x1D5434),
-                                 badge: 0, detail: "\(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars",
-                                 label: "Clock Tower, \(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars", action: onClock)
-                        gameTile(art: "icon_world", title: "Around the World", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
-                                 badge: 0, detail: "\(p?.world.postcards.count ?? 0) of 7 postcards",
-                                 label: "Around the World, \(p?.world.postcards.count ?? 0) of 7 postcards", action: onWorldTour)
+                        if store.placeShown("reading") {
+                            gameTile(art: "icon_reading", title: "Reading Nook", color: Color(hex: 0xD94A57), shadow: Color(hex: 0x9E2A3A),
+                                     badge: 0, detail: "\(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars",
+                                     label: "Reading Nook, \(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars", action: onReading)
+                        }
+                        if store.placeShown("market") {
+                            gameTile(art: "icon_market", title: "Math Market", color: Color(hex: 0xE07B00), shadow: Color(hex: 0xA35A00),
+                                     badge: 0, detail: "\(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars",
+                                     label: "Math Market, \(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars", action: onMarket)
+                        }
+                        if store.placeShown("science") {
+                            gameTile(art: "icon_science", title: "Science Lab", color: Color(hex: 0x1F7A8C), shadow: Color(hex: 0x135563),
+                                     badge: 0, detail: "\(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars",
+                                     label: "Science Lab, \(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars", action: onScience)
+                        }
+                        if store.placeShown("music") {
+                            gameTile(art: "icon_music", title: "Music Maker", color: Color(hex: 0xB0459C), shadow: Color(hex: 0x7E2C6F),
+                                     badge: 0, detail: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars",
+                                     label: "Music Maker, \(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars", action: onMusic)
+                        }
+                        if store.placeShown("writing") {
+                            gameTile(art: "icon_writing", title: "Writing Desk", color: Color(hex: 0x2F6FD1), shadow: Color(hex: 0x1D4A96),
+                                     badge: 0, detail: "\(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars",
+                                     label: "Writing Desk, \(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars", action: onWriting)
+                        }
+                        if store.placeShown("clock") {
+                            gameTile(art: "icon_clock", title: "Clock Tower", color: Color(hex: 0x2E7D4F), shadow: Color(hex: 0x1D5434),
+                                     badge: 0, detail: "\(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars",
+                                     label: "Clock Tower, \(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars", action: onClock)
+                        }
+                        if store.placeShown("world") {
+                            gameTile(art: "icon_world", title: "Around the World", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
+                                     badge: 0, detail: "\(p?.world.postcards.count ?? 0) of 7 postcards",
+                                     label: "Around the World, \(p?.world.postcards.count ?? 0) of 7 postcards", action: onWorldTour)
+                        }
                         placeTile("spelling", art: "icon_spelling", title: "Spelling Bee", color: 0xB7791F, shadow: 0x8A5A12)
                         placeTile("fractions", art: "icon_fractions", title: "Fraction Bakery", color: 0xC2185B, shadow: 0x8E1243)
                         placeTile("shapes", art: "icon_shapes", title: "Shape Studio", color: 0x00796B, shadow: 0x00564C)
@@ -412,10 +426,14 @@ struct MainMenuView: View {
         .accessibilityLabel(label)
     }
 
+    /// A quiz-engine place's tile, or nothing when a grown-up took the place off the menu (v9.9).
+    @ViewBuilder
     private func placeTile(_ id: String, art: String, title: String, color: UInt32, shadow: UInt32) -> some View {
-        let stars = store.profile?.places[id]?.totalStars ?? 0
-        return gameTile(art: art, title: title, color: Color(hex: color), shadow: Color(hex: shadow), badge: 0,
-                        detail: "\(stars) of 12 stars", label: "\(title), \(stars) of 12 stars") { onQuizPlace(id) }
+        if store.placeShown(id) {
+            let stars = store.profile?.places[id]?.totalStars ?? 0
+            gameTile(art: art, title: title, color: Color(hex: color), shadow: Color(hex: shadow), badge: 0,
+                     detail: "\(stars) of 12 stars", label: "\(title), \(stars) of 12 stars") { onQuizPlace(id) }
+        }
     }
 
     /// The badges wall: a row of the latest badges earned.

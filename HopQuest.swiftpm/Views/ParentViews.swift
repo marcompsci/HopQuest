@@ -129,10 +129,15 @@ struct ParentSettingsView: View {
                     ForEach(LearnerTier.allCases) { Text($0.label).tag($0) }
                 }
                 LabeledContent("Right now", value: store.tierNote)
+                NavigationLink {
+                    MenuPlacesView()
+                } label: {
+                    LabeledContent("Places on the menu", value: placesOnMenuNote)
+                }
             } header: {
                 Text("Learning level")
             } footer: {
-                Text("Brain Gate questions match your child's level: picture counting for little learners, times tables and harder words for big learners. Automatic starts in the middle, then steps up after lots of first-try answers or eases down if questions feel too hard.")
+                Text("Brain Gate questions match your child's level: picture counting for little learners, times tables and harder words for big learners. Automatic starts in the middle, then steps up after lots of first-try answers or eases down if questions feel too hard. Places on the menu lets you turn off learning places that don't fit right now.")
             }
 
             Section {
@@ -230,6 +235,13 @@ struct ParentSettingsView: View {
                 store.startOver()
             }
         }
+    }
+
+    /// "All 18" or "15 of 18": how many learning places are on the menu (v9.9).
+    private var placesOnMenuNote: String {
+        let all = store.menuPlaceAreas.map(\.id)
+        let shown = MenuPlaces.visible(all, hidden: store.profile?.hiddenPlaces ?? []).count
+        return shown == all.count ? "All \(all.count)" : "\(shown) of \(all.count)"
     }
 
     /// A 0…100% slider saved on this device. Effects play a sample when you let go.

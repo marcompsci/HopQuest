@@ -72,9 +72,10 @@ extension GameStore {
         let areas = learningAreas
         let c = character
         // next up: something being practised, else the first game not started, else a game already learned
-        let practising = areas.lazy.compactMap { a in a.needsPractice.first.map { (a.title, $0.skill, "Practising") } }.first
-        let fresh = areas.lazy.compactMap { a in a.skills.first { $0.status == .notStarted }.map { (a.title, $0.skill, "Up next") } }.first
-        let learned = areas.lazy.compactMap { a in a.learned.last.map { (a.title, $0.skill, "Got it") } }.first
+        let menuAreas = areas.filter { !p.hiddenPlaces.contains($0.id) }
+        let practising = menuAreas.lazy.compactMap { a in a.needsPractice.first.map { (a.title, $0.skill, "Practising") } }.first
+        let fresh = menuAreas.lazy.compactMap { a in a.skills.first { $0.status == .notStarted }.map { (a.title, $0.skill, "Up next") } }.first
+        let learned = menuAreas.lazy.compactMap { a in a.learned.last.map { (a.title, $0.skill, "Got it") } }.first
         let pick = practising ?? fresh ?? learned ?? ("Hop Village", "exploring", "Up next")
         let es = L10n.isSpanish
         // in Spanish, the lesson name is translated; a skill with no translation is left off rather than shown in English

@@ -153,10 +153,23 @@ struct HatShelf: View {
 }
 
 extension GameStore {
+    /// Places on the menu (v9.9): false when a grown-up took this learning place off the menu.
+    func placeShown(_ id: String) -> Bool { !(profile?.hiddenPlaces.contains(id) ?? false) }
+
+    /// The learning places that have a tile on the menu (Code Club lives inside Coding Lab).
+    var menuPlaceAreas: [LearningArea] { learningAreas.filter { $0.id != "code" } }
+
+    /// Shows or hides a learning place on the menu. The last place shown can't be hidden.
+    func setPlaceShown(_ id: String, _ shown: Bool) {
+        guard profile != nil else { return }
+        let all = menuPlaceAreas.map(\.id)
+        profile?.hiddenPlaces = MenuPlaces.setShown(shown, id: id, hidden: profile?.hiddenPlaces ?? [], all: all)
+    }
+
     /// Surprise Me (v7.4): a learning place with a game not finished yet.
     func surprisePlace() -> String? {
         var g = SystemRandomNumberGenerator()
-        let areas = learningAreas.map { (id: $0.id, bests: $0.skills.map(\.best)) }
+        let areas = learningAreas.filter { placeShown($0.id) }.map { (id: $0.id, bests: $0.skills.map(\.best)) }
         let pick = SurpriseMe.pick(areas: areas, last: profile?.lastSurprise, using: &g)
         if let pick { profile?.lastSurprise = pick }
         return pick

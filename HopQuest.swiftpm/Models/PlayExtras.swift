@@ -60,6 +60,32 @@ enum SurpriseMe {
     }
 }
 
+// MARK: - Places on the menu (v9.9)
+
+/// Grown-ups can take learning places off the menu (too easy, too hard, or not right now). Progress in a hidden
+/// place is kept, and it comes back exactly as it was. At least one place always stays on the menu.
+enum MenuPlaces {
+    /// The hidden set after showing or hiding one place. Hiding the last place still shown does nothing,
+    /// and ids that aren't places in `all` are dropped.
+    static func setShown(_ shown: Bool, id: String, hidden: Set<String>, all: [String]) -> Set<String> {
+        var out = hidden.intersection(all)
+        if shown {
+            out.remove(id)
+        } else if all.contains(id) && all.contains(where: { $0 != id && !out.contains($0) }) {
+            out.insert(id)
+        }
+        return out
+    }
+
+    /// The places still on the menu, in order.
+    static func visible(_ all: [String], hidden: Set<String>) -> [String] { all.filter { !hidden.contains($0) } }
+
+    /// Whether a place may be switched off right now (it isn't the last one shown).
+    static func canHide(_ id: String, hidden: Set<String>, all: [String]) -> Bool {
+        hidden.contains(id) || visible(all, hidden: hidden).contains { $0 != id }
+    }
+}
+
 // MARK: - Buddy hats (v7.5)
 
 /// Hats for your buddy, unlocked by earning badges. Wearing a hat changes nothing in the game: it's just for fun.

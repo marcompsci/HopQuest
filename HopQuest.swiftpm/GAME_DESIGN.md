@@ -402,6 +402,9 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v9.8: Calm motion
 - A "Calm motion" switch in the grown-ups' settings, on by itself when Reduce Motion is on in iPhone Settings, for kids who find movement distracting or unsettling. Looping bobs, wiggles and spins stop (buddies, the map, the Sticker Book pack, Code Club and Robot Lab stars and gears, the goodnight screen); the balloon flight becomes a gentle fade and the map balloon no longer drops and bounces; drifting snow, petals, leaves and bubbles aren't drawn on the menu, the map and the worlds; the village uses its calmer weather and still garden. Every screen that already followed Reduce Motion follows Calm motion too.
 
+### v9.9: Places on the menu (grown-ups)
+- Behind the parental gate, grown-ups can turn learning places off and on (Learning level → Places on the menu), for places that are too easy, too hard or not right for now. A place that's off leaves the menu, Surprise Me and the widget's "up next"; its stars and progress are kept and come back when it's turned on again. At least one place always stays on. The Reading Nook and Math Market doors in Hop Village stay open. Saved with the player on the device; older saves load with every place on.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

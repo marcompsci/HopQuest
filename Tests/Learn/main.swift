@@ -1397,5 +1397,29 @@ test("Song shelf (v9.4): beats, speeds, and up to six kept songs") {
     check(L10n.spanish("Song 4") == "Canción 4" && L10n.spanishSpeech("Song 2 is on your shelf!") == "¡La canción 2 está en tu estante!", "song names and cheers in Spanish")
 }
 
+test("Places on the menu (v9.9): grown-ups hide places, the last one always stays") {
+    let all = ["reading", "market", "clock"]
+    var h: Set<String> = []
+    h = MenuPlaces.setShown(false, id: "market", hidden: h, all: all)
+    check(h == ["market"], "hide one")
+    check(MenuPlaces.visible(all, hidden: h) == ["reading", "clock"], "the rest stay, in order")
+    h = MenuPlaces.setShown(false, id: "clock", hidden: h, all: all)
+    check(!MenuPlaces.canHide("reading", hidden: h, all: all), "the last place shown can't be switched off")
+    h = MenuPlaces.setShown(false, id: "reading", hidden: h, all: all)
+    check(MenuPlaces.visible(all, hidden: h) == ["reading"], "hiding the last place does nothing")
+    check(MenuPlaces.canHide("clock", hidden: h, all: all), "a hidden place can always be switched back on")
+    h = MenuPlaces.setShown(true, id: "market", hidden: h, all: all)
+    check(h == ["clock"], "show it again")
+    check(MenuPlaces.setShown(false, id: "nope", hidden: ["gone"], all: all) == [], "ids that aren't places are dropped")
+    // Surprise Me only picks from places on the menu
+    var g = SeededRNG(state: 9)
+    let areas: [(id: String, bests: [Int])] = [("reading", [0, 0]), ("market", [0, 1]), ("clock", [1, 0])]
+    let shown = areas.filter { !(["market", "clock"] as Set).contains($0.id) }
+    for _ in 0..<50 {
+        check(SurpriseMe.pick(areas: shown, last: "reading", using: &g) == "reading", "only places on the menu")
+    }
+    check(SurpriseMe.pick(areas: [], last: nil, using: &g) == nil, "nothing to pick")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

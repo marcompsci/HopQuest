@@ -406,3 +406,41 @@ struct AtHomeIdeasView: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// Places on the menu (v9.9): grown-ups choose which learning places show up on the menu and in Surprise Me.
+/// Hiding a place keeps its stars and progress; switching it back on brings it back as it was.
+struct MenuPlacesView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        let areas = store.menuPlaceAreas
+        let all = areas.map(\.id)
+        let hidden = store.profile?.hiddenPlaces ?? []
+        List {
+            Section {
+                ForEach(areas) { a in
+                    Toggle(isOn: Binding(get: { store.placeShown(a.id) },
+                                         set: { store.setPlaceShown(a.id, $0) })) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(a.title)
+                            Text(a.started ? "\(a.stars) of \(a.maxStars) stars" : "Not started")
+                                .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                        }
+                    }
+                    .disabled(!MenuPlaces.canHide(a.id, hidden: hidden, all: all))
+                }
+            } header: {
+                Text("Learning places")
+            } footer: {
+                Text("Turn off places that are too easy, too hard, or not right for now. A place that's off leaves the menu, Surprise Me and the widget's \"up next\", and its stars and progress are kept for when you turn it back on. At least one place stays on. The Reading Nook and Math Market doors in Hop Village stay open.")
+            }
+            Section {
+                Button("Show every place") {
+                    for id in all { store.setPlaceShown(id, true) }
+                }
+                .disabled(hidden.isEmpty)
+            }
+        }
+        .navigationTitle("Places on the menu")
+    }
+}

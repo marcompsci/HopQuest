@@ -213,6 +213,8 @@ struct PlayerProfile: Codable, Equatable {
     /// Bedtime (v8.9): minutes after midnight, 0 = off. A grown-up can add 15 minutes from the goodnight screen.
     var bedtimeMinutes = 0
     var bedtimeSnoozeUntil: Date?
+    /// Learning places a grown-up took off the menu (v9.9), by place id. They also leave Surprise Me and the widget's "up next".
+    var hiddenPlaces: Set<String> = []
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -222,6 +224,7 @@ struct PlayerProfile: Codable, Equatable {
         case dailyLimitMinutes, playDay, playedSeconds
         case village, codeLab, missions, reading, market, seenStories, science, music
         case writing, clock, world, partner, milestones, quick, places, storyMaker, hopStarsClaimed, hat, lastSurprise, playHistory, levelMaker, scenes, bedtimeMinutes, bedtimeSnoozeUntil
+        case hiddenPlaces
     }
 }
 
@@ -284,6 +287,7 @@ extension PlayerProfile {
         scenes = (try? c.decodeIfPresent(SceneSave.self, forKey: .scenes)) ?? SceneSave()
         bedtimeMinutes = (try? c.decodeIfPresent(Int.self, forKey: .bedtimeMinutes)) ?? 0
         bedtimeSnoozeUntil = (try? c.decodeIfPresent(Date.self, forKey: .bedtimeSnoozeUntil)) ?? nil
+        hiddenPlaces = (try? c.decodeIfPresent(Set<String>.self, forKey: .hiddenPlaces)) ?? []
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
