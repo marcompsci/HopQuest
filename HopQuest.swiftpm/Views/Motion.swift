@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // One motion vocabulary for the whole app, after Apple's "Designing Fluid Interfaces" (WWDC 2018):
 // springs described by response (how fast) and damping (1 = no bounce), started from wherever the view is now,
@@ -22,6 +23,15 @@ enum Motion {
     static func adaptive(_ animation: Animation, reduceMotion: Bool) -> Animation {
         reduceMotion ? .easeInOut(duration: 0.18) : animation
     }
+}
+
+/// Calm motion (v9.8): the iPhone's Reduce Motion setting, or the grown-ups' own "Calm motion" switch for kids
+/// who find movement distracting or unsettling, without changing the whole device. Looping bobs, wiggles and
+/// spins stop; flights and drops become fades; drifting snow, petals and bubbles are not drawn.
+enum CalmMotion {
+    static let key = "hopquest.calmMotion"
+    /// For SpriteKit scenes and other places outside a SwiftUI view.
+    static var isOn: Bool { UIAccessibility.isReduceMotionEnabled || UserDefaults.standard.bool(forKey: key) }
 }
 
 extension AnyTransition {

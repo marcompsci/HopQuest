@@ -142,7 +142,8 @@ struct BouncyButtonStyle: ButtonStyle {
 
     private struct PressedLabel: View {
         let configuration: Configuration
-        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+        private var reduceMotion: Bool { systemReduceMotion || UserDefaults.standard.bool(forKey: CalmMotion.key) }
 
         var body: some View {
             configuration.label
@@ -415,7 +416,7 @@ struct CharacterBadge: View {
         }
         .frame(width: size, height: size * 1.1)
         .onAppear {
-            guard animated else { return }
+            guard animated, !CalmMotion.isOn else { return }
             withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { bounce = true }
         }
         .accessibilityElement()

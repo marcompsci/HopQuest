@@ -227,7 +227,7 @@ final class HopVillageScene: SKScene {
             let foot = scenePoint(Self.bedCenter(i, garden: b) + VPoint(0, 0.3))
             node.position = foot
             node.zPosition = depth(scenePoint(b.foot).y) + 0.2 + CGFloat(i / 3) * 0.01
-            if stage >= GardenSave.ripeStage && !UIAccessibility.isReduceMotionEnabled {
+            if stage >= GardenSave.ripeStage && !CalmMotion.isOn {
                 node.run(.repeatForever(.sequence([.scale(to: 1.08, duration: 0.5), .scale(to: 1.0, duration: 0.5)])))
             }
             world.addChild(node)
@@ -298,7 +298,7 @@ final class HopVillageScene: SKScene {
         environment = VillageEnvironmentSystem(world: world, camera: cam.node, map: map, worldSize: worldSize,
                                                quality: quality, eveningLights: setup.save.eveningLights, hour: setup.hour,
                                                season: setup.day.season, weather: setup.day.weather,
-                                               reduceMotion: UIAccessibility.isReduceMotionEnabled)
+                                               reduceMotion: CalmMotion.isOn)
         if environment?.isEvening == true { lightLamps() }
 
         for def in VillageNPCDef.everyone {

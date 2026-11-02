@@ -65,7 +65,9 @@ struct WritingGameView: View {
     var onFinish: (Int, [String]) -> Int
     var onBack: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @State private var rounds: [WritingRound] = []
     @State private var index = 0
     /// Which letter of the round (words have three) and which stroke of that letter.

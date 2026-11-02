@@ -165,7 +165,9 @@ struct QuizGameView: View {
     var onFinish: (Int) -> Int
     var onBack: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @State private var rounds: [QuizRound] = []
     @State private var index = 0
     @State private var missed = false

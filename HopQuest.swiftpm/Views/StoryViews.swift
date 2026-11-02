@@ -7,7 +7,9 @@ struct CutsceneView: View {
     let character: GameCharacter
     var onDone: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @State private var panel = 0
     @State private var line = 0
     @State private var shown = false

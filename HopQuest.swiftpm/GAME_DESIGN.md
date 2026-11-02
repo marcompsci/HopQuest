@@ -394,6 +394,9 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v9.7: Try at home (grown-ups)
 - Each learning place on the Progress page has a "Try at home" line: what the child is learning there in one plain sentence, and two or three short things to do together away from the screen (I Spy with sounds, a pretend shop with real coins, a shape hunt, "be the robot"). No shopping and no homework. A "Try at home" section at the top suggests the places being practised first, then places started but not finished. All written into the app; nothing is looked up or sent.
 
+### v9.8: Calm motion
+- A "Calm motion" switch in the grown-ups' settings, on by itself when Reduce Motion is on in iPhone Settings, for kids who find movement distracting or unsettling. Looping bobs, wiggles and spins stop (buddies, the map, the Sticker Book pack, Code Club and Robot Lab stars and gears, the goodnight screen); the balloon flight becomes a gentle fade and the map balloon no longer drops and bounces; drifting snow, petals, leaves and bubbles aren't drawn on the menu, the map and the worlds; the village uses its calmer weather and still garden. Every screen that already followed Reduce Motion follows Calm motion too.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

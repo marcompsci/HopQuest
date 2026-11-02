@@ -67,7 +67,9 @@ struct QuickGameView: View {
     @State private var rightDown: Date?
     @State private var result: (score: Int, earned: Int, best: Bool)?
     @State private var showHelp = true
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
 
     var body: some View {
         GeometryReader { geo in

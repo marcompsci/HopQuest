@@ -457,6 +457,7 @@ struct CodeChallengeView: View {
         .animation(.spring(), value: gotGears)
         .animation(.easeInOut(duration: 0.25), value: mapIndex)
         .onAppear {
+            guard !CalmMotion.isOn else { return }
             withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { starBounce = true }
             withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) { gearSpin = true }
         }

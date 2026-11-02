@@ -6,7 +6,9 @@ struct BreatheView: View {
     @EnvironmentObject var store: GameStore
     var onBack: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @State private var plan = BreathPlan()
     @State private var started: Date?
     @State private var elapsed: Double = 0

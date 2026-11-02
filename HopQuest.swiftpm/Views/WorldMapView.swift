@@ -287,6 +287,7 @@ struct WorldMapView: View {
                 .offset(y: bob ? -8 : 0)
                 .position(x: p.x, y: p.y - 66)
                 .onAppear {
+                    guard !CalmMotion.isOn else { return }
                     withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { bob = true }
                 }
                 .allowsHitTesting(false)
@@ -315,9 +316,14 @@ struct WorldMapView: View {
     private func startLanding() {
         guard landing != nil else { return }
         balloonVisible = true
-        balloonOffset = -900
-        withAnimation(.interpolatingSpring(stiffness: 70, damping: 8).delay(0.15)) {
+        if CalmMotion.isOn {
+            // calm motion: the balloon is simply there (no drop and bounce)
             balloonOffset = 0
+        } else {
+            balloonOffset = -900
+            withAnimation(.interpolatingSpring(stiffness: 70, damping: 8).delay(0.15)) {
+                balloonOffset = 0
+            }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
             Haptics.success()
@@ -356,6 +362,7 @@ struct BalloonFlightView: View {
     var onDone: () -> Void
 
     @State private var flying = false
+    @State private var calm = CalmMotion.isOn
     private let cloudXs: [CGFloat] = [0.15, 0.8, 0.4, 0.9, 0.2, 0.65, 0.35]
 
     var body: some View {
@@ -368,11 +375,12 @@ struct BalloonFlightView: View {
                     CloudView()
                         .frame(width: 130, height: 56)
                         .position(x: cloudXs[i] * geo.size.width,
-                                  y: (flying ? h * 1.1 : 0) + CGFloat(i) * h * 0.16 - h * 0.1)
+                                  y: (flying && !calm ? h * 1.1 : 0) + CGFloat(i) * h * 0.16 - h * 0.1)
                 }
                 BalloonView(theme: theme, character: character, size: 120)
-                    .scaleEffect(flying ? 0.2 : 2.0)
-                    .position(x: geo.size.width / 2, y: flying ? h * 0.06 : h * 0.72)
+                    .scaleEffect(calm ? 1.2 : (flying ? 0.2 : 2.0))
+                    .position(x: geo.size.width / 2, y: calm ? h * 0.55 : (flying ? h * 0.06 : h * 0.72))
+                    .opacity(calm && flying ? 0 : 1)
                 Text("Up, up and away! 🎈")
                     .font(.kid(30, .black))
                     .foregroundStyle(Palette.purple)

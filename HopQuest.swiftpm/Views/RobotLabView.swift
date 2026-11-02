@@ -484,6 +484,7 @@ struct RobotLabView: View {
                 .frame(width: cellSize, height: cellSize)
                 .offset(x: CGFloat(goal.x) * (cellSize + gap), y: CGFloat(goal.y) * (cellSize + gap))
                 .onAppear {
+                    guard !CalmMotion.isOn else { return }
                     withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { starBounce = true }
                 }
             // robot (stays upright; the arrow shows which way it faces)
@@ -687,6 +688,7 @@ struct RobotDrawing: View {
         .offset(y: dancing && bob ? -10 : 0)
         .animation(.spring(response: 0.5, dampingFraction: 0.6), value: built)
         .onAppear {
+            guard !CalmMotion.isOn else { return }
             withAnimation(.linear(duration: 1.6).repeatForever(autoreverses: false)) { spin = true }
             withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) { glow = true }
             if dancing {

@@ -100,7 +100,7 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 - **Daily play limit** with a gentle "time to rest" goodbye. HopQuest has **no streaks, no daily-login rewards and no notifications**.
 - **Grown-ups' Progress page:** every skill by place, a chart of minutes played this week, printable certificates and practice sheets, and **Try at home** ideas for every place (what they're learning, plus things to do together off screen). An optional **bedtime** goodnight screen.
 - **Read with Me:** story words light up as they're read aloud.
-- **Accessibility:** **easy-read letters** setting, text grows with the Text Size setting, right/wrong answers use a shape as well as a color, left-handed controls, Reduce Motion respected, VoiceOver labels.
+- **Accessibility:** **easy-read letters** setting, text grows with the Text Size setting, right/wrong answers use a shape as well as a color, left-handed controls, a **Calm motion** setting (also on with Reduce Motion) that stops looping and flying animations, VoiceOver labels.
 - **iPad:** runs in any orientation, with the game in a tall play area in the middle.
 - Saves only on the device, with no data collection. Live play is off until a grown-up turns it on, and shares only the buddy's name.
 

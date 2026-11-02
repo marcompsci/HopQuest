@@ -71,6 +71,7 @@ struct ParentSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Handedness.key) private var leftHanded = false
     @AppStorage(KidType.easyReadKey) private var easyRead = false
+    @AppStorage(CalmMotion.key) private var calmMotion = false
     @State private var confirmReset = false
     @State private var soundTick = false
     @State private var confirmStartOver = false
@@ -173,10 +174,11 @@ struct ParentSettingsView: View {
             Section {
                 Toggle("Left-handed controls", isOn: $leftHanded)
                 Toggle("Easy-read letters", isOn: $easyRead)
+                Toggle("Calm motion", isOn: $calmMotion)
             } header: {
                 Text("Controls and reading")
             } footer: {
-                Text("Left-handed controls put the joystick and arrows on the right and the action buttons on the left, in Hop Village and Pillow Bop. Easy-read letters use plainer, slightly bigger letters with more space between them, which many early and struggling readers (including kids with dyslexia) find easier. Text in HopQuest also grows with the iPhone's Text Size setting, and Reduce Motion calms the animations.")
+                Text("Left-handed controls put the joystick and arrows on the right and the action buttons on the left, in Hop Village and Pillow Bop. Easy-read letters use plainer, slightly bigger letters with more space between them, which many early and struggling readers (including kids with dyslexia) find easier. Text in HopQuest also grows with the iPhone's Text Size setting. Calm motion stops bobbing, wiggling and spinning, turns balloon flights into a gentle fade, and hides drifting snow, petals and bubbles; it's on by itself when Reduce Motion is on in iPhone Settings.")
             }
 
             Section("Play time") {
@@ -373,7 +375,9 @@ struct RestTimeView: View {
         }
         .onAppear {
             Narrator.shared.say(bedtime ? "It's bedtime. Sweet dreams! See you in the morning!" : "Time to rest! You played so well today. See you tomorrow!")
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { sway = true }
+            if !CalmMotion.isOn {
+                withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { sway = true }
+            }
         }
     }
 

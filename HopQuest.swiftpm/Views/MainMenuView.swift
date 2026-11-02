@@ -38,7 +38,9 @@ struct MainMenuView: View {
     @State private var showParent = false
     @State private var showCharacters = false
     @State private var bounce = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @State private var note: String?
     @Environment(\.scenePhase) private var scenePhase
 

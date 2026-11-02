@@ -92,7 +92,9 @@ struct WorldView: View {
 
 /// Soft snowflakes drifting down (stops when Reduce Motion is on).
 struct SnowfallView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     /// Bubbles that float up instead of snow that falls.
     var rising = false
     /// Snow is white; jungle leaves are green.

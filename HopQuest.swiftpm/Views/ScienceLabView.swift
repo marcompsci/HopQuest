@@ -58,7 +58,9 @@ struct ExperimentView: View {
     var onFinish: (Int) -> Int
     var onBack: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @State private var rounds: [ScienceRound] = []
     @State private var index = 0
     @State private var missed = false

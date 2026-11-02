@@ -47,7 +47,9 @@ struct StickerBookView: View {
             Narrator.shared.say(store.packsAvailable > 0
                 ? "Your Sticker Book! You have a sticker pack to open!"
                 : "Your Sticker Book! Earn stars to get sticker packs.")
-            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) { packWiggle = true }
+            if !CalmMotion.isOn {
+                withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) { packWiggle = true }
+            }
         }
     }
 

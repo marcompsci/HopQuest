@@ -130,7 +130,9 @@ struct AnswerButton: View {
 
     enum Mark { case plain, right, wrong }
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
 
     var body: some View {
         Button(action: action) {
@@ -186,7 +188,9 @@ struct LearnDoneCard: View {
     var onAgain: () -> Void
     var onBack: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @State private var shown = 0
 
     var body: some View {

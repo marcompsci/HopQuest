@@ -11,7 +11,9 @@ struct StarHopPlayView: View {
     /// A level from the Level Maker: played here only, never saved over the widget's game.
     var custom: CustomHopLevel? = nil
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage(CalmMotion.key) private var calmMotion = false
+    private var reduceMotion: Bool { systemReduceMotion || calmMotion }
     @Environment(\.scenePhase) private var scenePhase
     @State private var h = SharedStore.loadHop()
     @State private var showLevels = false
