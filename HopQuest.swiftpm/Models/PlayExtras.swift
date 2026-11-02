@@ -343,7 +343,7 @@ enum FridgeDoor {
         case .picture(let s):
             var names: [String] = []
             for p in s.placed where !names.contains(name(p.characterID)) { names.append(name(p.characterID)) }
-            let who = names.count > 4 ? list(Array(names.prefix(4))) + " and \(names.count - 4) more" : list(names)
+            let who = names.count > 4 ? names.prefix(4).joined(separator: ", ") + " and \(names.count - 4) more" : list(names)
             return "A picture \(backdropName(s.backdrop)) with \(who)."
         case .level(let l):
             var parts = ["\(l.stars.count) \(l.stars.count == 1 ? "star" : "stars")"]
