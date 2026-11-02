@@ -45,6 +45,7 @@ extension GameStore {
             LearningArea(id: "calendar", title: "Calendar Corner", skills: CalendarBank.games.map { SkillProgress(skill: $0.skill, best: p.places["calendar"]?.best($0.id) ?? 0) }),
             LearningArea(id: "compass", title: "Compass Camp", skills: CompassBank.games.map { SkillProgress(skill: $0.skill, best: p.places["compass"]?.best($0.id) ?? 0) }),
             LearningArea(id: "healthy", title: "Healthy Hut", skills: HealthyBank.games.map { SkillProgress(skill: $0.skill, best: p.places["healthy"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "planet", title: "Earth Helpers", skills: PlanetBank.games.map { SkillProgress(skill: $0.skill, best: p.places["planet"]?.best($0.id) ?? 0) }),
             LearningArea(id: "code", title: "Code Club", skills: CodeChallenge.all.map { SkillProgress(skill: "coding: \($0.topic.lowercased())", best: p.codeBest[$0.id] ?? 0) }),
         ]
     }

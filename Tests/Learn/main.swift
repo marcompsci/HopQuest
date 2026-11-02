@@ -792,7 +792,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 33, "33 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 34, "34 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -821,14 +821,14 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + RhymeBank.games.map(\.title) + NumberBank.games.map(\.title) + TimesBank.games.map(\.title) + MeasureBank.games.map(\.title) + FeelingsBank.games.map(\.title)
         + HatKind.allCases.map(\.title)
         + NatureBank.games.map(\.title) + CalendarBank.games.map(\.title) + CompassBank.games.map(\.title)
-        + HealthyBank.games.map(\.title)
+        + HealthyBank.games.map(\.title) + PlanetBank.games.map(\.title)
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
         + SpellingBank.games.map(\.intro) + FractionBank.games.map(\.intro) + ShapeBank.games.map(\.intro)
         + RhymeBank.games.map(\.intro) + NumberBank.games.map(\.intro) + TimesBank.games.map(\.intro) + MeasureBank.games.map(\.intro) + FeelingsBank.games.map(\.intro)
         + NatureBank.games.map(\.intro) + CalendarBank.games.map(\.intro) + CompassBank.games.map(\.intro)
-        + HealthyBank.games.map(\.intro)
+        + HealthyBank.games.map(\.intro) + PlanetBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
     check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
     check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
@@ -1187,6 +1187,48 @@ test("Healthy Hut: every game, 300 seeds, answers really right") {
     }
 }
 
+test("Earth Helpers: every game, 300 seeds, answers really right") {
+    check(PlanetBank.bins.allSatisfy { PlanetBank.binNames.contains($0.bin) } && Set(PlanetBank.bins.map(\.thing)).count == PlanetBank.bins.count, "every thing has one bin")
+    check(PlanetBank.binNames.allSatisfy { n in PlanetBank.bins.contains { $0.bin == n } }, "every bin is used")
+    check(PlanetBank.made.allSatisfy { PlanetBank.materials.contains($0.material) } && Set(PlanetBank.made.map(\.thing)).count == PlanetBank.made.count, "every thing has one material")
+    check(PlanetBank.materials.allSatisfy { m in PlanetBank.made.contains { $0.material == m } }, "every material is used")
+    check(Set(PlanetBank.electric.map(\.thing)).isDisjoint(with: PlanetBank.unplugged.map(\.thing)), "nothing both plugged and unplugged")
+    check(PlanetBank.moments.allSatisfy { $0.wrong.count == 2 && !$0.wrong.contains($0.right) }, "each choice: one right, two wrong")
+    let games = PlanetBank.games
+    check(games.count == 4 && Set(games.map(\.id)).count == 4, "planet: four games")
+    for g in games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            let rounds = PlanetBank.rounds(for: g.id, using: &rng)
+            check(rounds.count == 5, "planet/\(g.id): five rounds")
+            check(Set(rounds.map(\.say)).count == rounds.count, "planet/\(g.id): no question twice in a game")
+            for r in rounds {
+                check(r.choices.contains(r.answer) && Set(r.choices).count == r.choices.count && r.choices.count == 3, "planet/\(g.id): three choices hold the answer once (\(r.choices))")
+                switch g.id {
+                case "bins":
+                    let b = PlanetBank.bins.first { r.say == "Which bin does the \($0.thing) go in?" }!
+                    check(r.answer == b.bin && Set(r.choices) == Set(PlanetBank.binNames), "bins: \(b.thing) → \(b.bin)")
+                case "choices":
+                    let m = PlanetBank.moments.first { $0.question == r.say }!
+                    check(r.answer == m.right && Set(r.choices) == Set([m.right] + m.wrong), "choices: \(m.question)")
+                case "made":
+                    let m = PlanetBank.made.first { r.say == "What is the \($0.thing) made of?" }!
+                    check(r.answer == m.material && r.choices.allSatisfy { PlanetBank.materials.contains($0) }, "made: \(m.thing) → \(m.material)")
+                default: // power
+                    let plugged = r.choices.filter { c in PlanetBank.electric.contains { $0.thing == c } }
+                    let off = r.choices.filter { c in PlanetBank.unplugged.contains { $0.thing == c } }
+                    check(plugged == [r.answer] && off.count == 2, "power: only \(r.answer) uses electricity (\(r.choices))")
+                    check(r.say == "Which one uses electricity: the \(r.choices[0]), the \(r.choices[1]) or the \(r.choices[2])?", "power: the question names the choices in order")
+                    if case .picture(let pics) = r.visual {
+                        let names = pics.split(separator: " ").map { p in (PlanetBank.electric + PlanetBank.unplugged).first { $0.picture == String(p) }!.thing }
+                        check(names == r.choices, "power: the pictures match the choices")
+                    } else { check(false, "power: a picture") }
+                }
+            }
+        }
+    }
+}
+
 test("Brain Bubble widget: questions, one try each, every question before any repeat") {
     let all = BubbleBank.all
     check(all.count == 41, "41 questions (prime, so stepping by 7 visits them all)")
@@ -1358,7 +1400,7 @@ test("Bedtime: goodnight from bedtime until 6 in the morning, a grown-up can add
 
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {
     let ids = ["reading", "writing", "market", "clock", "science", "world", "music", "spelling", "fractions", "shapes", "rhyme",
-               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "code"]
+               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "code"]
     for id in ids {
         let a = AtHome.byPlace[id]
         check(a != nil, "\(id) has at-home ideas")

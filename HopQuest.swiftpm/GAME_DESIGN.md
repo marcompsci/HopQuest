@@ -310,7 +310,7 @@ A walkable pixel-art overworld. The child moves their buddy around a village and
 - A sixth world after the Rainbow Bridge: Kelp Forest, Turtle Reef, Coral Castle, with bubble rafts to hop on. The story now ends at the Coral Castle.
 
 ### v6.3: Badges
-- 23 badges (24 from v6.6, 29 from v7.2, 32 from v8.4, 33 from v9.1) for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
+- 23 badges (24 from v6.6, 29 from v7.2, 32 from v8.4, 34 from v9.2) for real learning and exploring (finishing a place, all postcards, every letter, stories, the whole story). No streaks; badges never go away.
 
 ### v6.4: Code Club with VoiceOver
 - The puzzle board is described from the robot ("The star is 3 squares up and 2 to the right. A rock is just ahead."), so robot puzzles can be solved without seeing them.
@@ -394,6 +394,10 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v9.1: Healthy Hut
 - A new learning place hosted by Sir Broccoli, four games on the quiz engine: **Body Jobs** (brain, heart, lungs, bones, muscles, teeth: which part has this job, and what a part does), **Food Groups** (fruit, vegetable, grain, protein, dairy; foods people sort different ways, like tomatoes, beans, corn and potatoes, are left out), **Healthy Habits** (washing hands, brushing, sneezing into your elbow, water, sleep, sunscreen, moving) and **Everyday or Sometimes?** (no food is called "bad": sometimes foods are treats for once in a while).
 - Menu tile (grown-ups can turn it off like any place), Surprise Me, Progress page with Try at home ideas, practice sheets, a **Health Hero** badge (33 badges) and Spanish titles and intros. Tests check every answer on 300 seeds per game.
+
+### v9.2: Earth Helpers
+- A new learning place hosted by Coral Turtle, four games: **Which Bin?** (recycling, compost or trash; only things that go in the same bin almost everywhere), **Planet Choices** (turn off the tap, lights off, a cloth bag, litter in a bin, giving toys away, a bottle you refill, both sides of the paper), **What's It Made Of?** (paper, metal, glass, wood, plastic; nothing made of two) and **Power Off** (which one of three things uses electricity).
+- Menu tile, Surprise Me, Progress page with Try at home ideas, practice sheets, a **Planet Protector** badge (34 badges) and Spanish titles and intros. Tests check every answer on 300 seeds per game, and that the Power Off pictures match the words.
 
 ### v9.4: Song shelf and beats (Music Maker)
 - The song builder gets a drum row under the notes (tap a box for Boom, Tap, Tss, Clap, then quiet again) and three speeds (slow turtle, walking, quick rabbit). Notes and drums play together.

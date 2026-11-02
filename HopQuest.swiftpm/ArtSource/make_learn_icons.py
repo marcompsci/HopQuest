@@ -416,6 +416,20 @@ def icon_fridge():
     return s
 
 
+def icon_planet():
+    s = ground()
+    # a smiling Earth with green land and a little leaf
+    s += C(100, 102, 64, "#4FA3E0")
+    s += P("M60 70 Q78 52 98 62 Q104 80 86 88 Q78 104 62 98 Q50 86 60 70 Z", "#5FC86A", False)
+    s += P("M112 112 Q134 100 150 116 Q148 142 126 150 Q110 140 112 112 Z", "#5FC86A", False)
+    s += C(100, 102, 64, "none")
+    s += shine(74, 70, 12, 7)
+    s += C(84, 110, 5, OUT, False) + C(116, 96, 5, OUT, False)
+    s += P("M86 126 Q100 138 116 124", "none", 4)
+    s += P("M150 40 Q176 28 182 56 Q156 66 150 40 Z", "#5FC86A", 4) + P("M152 42 Q166 46 176 54", "none", 3)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
@@ -424,7 +438,7 @@ ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science
          "icon_feelings": icon_feelings, "icon_breathe": icon_breathe, "icon_starhop": icon_starhop, "icon_surprise": icon_surprise,
          "icon_nature": icon_nature, "icon_calendar": icon_calendar, "icon_compass": icon_compass,
          "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes,
-         "icon_healthy": icon_healthy, "icon_fridge": icon_fridge}
+         "icon_healthy": icon_healthy, "icon_fridge": icon_fridge, "icon_planet": icon_planet}
 
 
 if __name__ == "__main__":

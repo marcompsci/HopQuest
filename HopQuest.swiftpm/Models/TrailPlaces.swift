@@ -372,3 +372,91 @@ enum HealthyBank {
         }
     }
 }
+
+// MARK: - Earth Helpers (v9.2)
+
+/// Coral Turtle's place: sorting into recycling, compost and trash, small choices that help the planet,
+/// what things are made of, and what uses electricity.
+enum PlanetBank {
+    /// Things with one clear bin. (Rules differ from town to town, so only the clearest things are used.)
+    static let bins: [(thing: String, picture: String, bin: String)] = [
+        ("newspaper", "📰", "recycling"), ("cardboard box", "📦", "recycling"), ("empty can", "🥫", "recycling"), ("glass jar", "🫙", "recycling"),
+        ("banana peel", "🍌", "compost"), ("apple core", "🍎", "compost"), ("eggshell", "🥚", "compost"), ("fallen leaf", "🍂", "compost"),
+        ("used bandage", "🩹", "trash"), ("candy wrapper", "🍬", "trash"), ("popped balloon", "🎈", "trash"),
+    ]
+    static let binNames = ["recycling", "compost", "trash"]
+
+    /// Small choices: one helps the planet, the other two clearly don't.
+    static let moments: [(picture: String, question: String, right: String, wrong: [String], why: String)] = [
+        ("🪥", "You're brushing your teeth. Which choice saves water?", "Turn off the tap while you brush", ["Let the water run the whole time", "Fill the sink to the top first"], "Turning off the tap saves lots of water."),
+        ("💡", "You're leaving your room. Which choice saves energy?", "Turn off the light", ["Leave every light on", "Turn on the TV too"], "Lights off saves energy."),
+        ("🛒", "You're going to the store. Which choice makes less trash?", "Bring a cloth bag from home", ["Get a new plastic bag for each thing", "Ask for extra bags"], "A bag you use again and again makes less trash."),
+        ("🧺", "Your picnic in the park is done. What do you do with the wrappers?", "Put them in a bin", ["Leave them on the grass", "Hide them under a bush"], "Litter in a bin keeps parks clean for animals and people."),
+        ("🧸", "Some of your toys still work, but you're too big for them. What could you do?", "Give them to someone who can use them", ["Throw them in the trash", "Bury them in the yard"], "Giving toys away means they get played with again."),
+        ("🥤", "What's the best way to bring a drink to school?", "A bottle you can refill", ["A new plastic bottle every day", "Two new juice boxes every day"], "A bottle you refill makes less trash."),
+        ("📄", "You drew on one side of a piece of paper. What could you do?", "Draw on the other side too", ["Throw it away right now", "Rip it into tiny bits for fun"], "Using both sides saves paper, and paper comes from trees."),
+    ]
+
+    /// What things are made of. Each thing is clearly one material.
+    static let made: [(thing: String, picture: String, material: String)] = [
+        ("newspaper", "📰", "paper"), ("cardboard box", "📦", "paper"), ("envelope", "✉️", "paper"),
+        ("can", "🥫", "metal"), ("key", "🔑", "metal"), ("bell", "🔔", "metal"), ("coin", "🪙", "metal"),
+        ("jar", "🫙", "glass"), ("window", "🪟", "glass"), ("mirror", "🪞", "glass"),
+        ("log", "🪵", "wood"), ("violin", "🎻", "wood"),
+        ("toothbrush", "🪥", "plastic"), ("lotion bottle", "🧴", "plastic"),
+    ]
+    static let materials = ["paper", "metal", "glass", "wood", "plastic"]
+
+    /// Things that use electricity, and things that don't.
+    static let electric: [(thing: String, picture: String)] = [
+        ("light bulb", "💡"), ("TV", "📺"), ("laptop", "💻"), ("flashlight", "🔦"), ("phone", "📱"),
+    ]
+    static let unplugged: [(thing: String, picture: String)] = [
+        ("book", "📖"), ("ball", "⚽"), ("bike", "🚲"), ("kite", "🪁"), ("teddy bear", "🧸"), ("crayon", "🖍️"), ("drum", "🥁"),
+    ]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "bins", title: "Which Bin?", symbol: "arrow.3.trianglepath", intro: "Paper, cans and jars go in recycling. Food scraps go in compost. The rest goes in the trash.", skill: "sorting recycling, compost and trash"),
+        QuizGameInfo(id: "choices", title: "Planet Choices", symbol: "leaf.fill", intro: "Small choices help our planet. Which one helps?", skill: "saving water, energy and trash"),
+        QuizGameInfo(id: "made", title: "What's It Made Of?", symbol: "cube.transparent", intro: "Things are made of paper, metal, glass, wood or plastic. Which one is it?", skill: "materials"),
+        QuizGameInfo(id: "power", title: "Power Off", symbol: "bolt.fill", intro: "Some things need electricity. Turn them off when you're done to save energy!", skill: "what uses electricity"),
+    ]
+
+    static let cheers = ["Earth helper!", "Shell-ebrate!", "That's right!", "The planet says thanks!", "Green and clean!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "bins":
+            return Array(bins.shuffled(using: &rng).prefix(count)).enumerated().map { i, b in
+                QuizRound(visual: .picture(b.picture), say: "Which bin does the \(b.thing) go in?",
+                          choices: binNames.shuffled(using: &rng), answer: b.bin,
+                          cheer: "The \(b.thing) goes in the \(b.bin). \(cheer(i))")
+            }
+        case "choices":
+            return Array(moments.shuffled(using: &rng).prefix(count)).enumerated().map { i, c in
+                QuizRound(visual: .picture(c.picture), say: c.question,
+                          choices: QuizShuffle.choices(c.right, c.wrong, using: &rng), answer: c.right,
+                          cheer: "\(c.why) \(cheer(i))")
+            }
+        case "made":
+            return Array(made.shuffled(using: &rng).prefix(count)).enumerated().map { i, m in
+                QuizRound(visual: .picture(m.picture), say: "What is the \(m.thing) made of?",
+                          choices: QuizShuffle.choices(m.material, materials, using: &rng), answer: m.material,
+                          cheer: "The \(m.thing) is made of \(m.material). \(cheer(i))")
+            }
+        default: // power
+            let plugged = electric.shuffled(using: &rng)
+            return (0..<count).map { i in
+                let on = plugged[i % plugged.count]
+                let off = Array(unplugged.shuffled(using: &rng).prefix(2))
+                let three = ([on] + off).shuffled(using: &rng)
+                let names = three.map(\.thing)
+                return QuizRound(visual: .picture(three.map(\.picture).joined(separator: " ")),
+                                 say: "Which one uses electricity: the \(names[0]), the \(names[1]) or the \(names[2])?",
+                                 choices: names, answer: on.thing,
+                                 cheer: "The \(on.thing) uses electricity. Turn it off when you're done! \(cheer(i))")
+            }
+        }
+    }
+}

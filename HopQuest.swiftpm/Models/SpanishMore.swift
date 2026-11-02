@@ -120,6 +120,14 @@ extension L10n {
         "A picture": "Un dibujo", "A Star Hop level": "Un nivel de Salto Estelar", "A song": "Una canción", "A story": "Un cuento",
         "Read it to me": "Léemelo",
         "Make a picture, a level, a song or a story, and it goes up here.": "Haz un dibujo, un nivel, una canción o un cuento, y aparecerá aquí.",
+        // v9.2 Earth Helpers
+        "Earth Helpers": "Ayudantes de la Tierra", "Reduce, reuse, recycle. Let's help our planet!": "Reduce, reutiliza, recicla. ¡Ayudemos a nuestro planeta!",
+        "Hi, I'm Coral! I love a clean, blue ocean. Welcome to Earth Helpers. Let's take care of our planet together.": "¡Hola, soy Coral! Me encanta el océano limpio y azul. Bienvenido a Ayudantes de la Tierra. Cuidemos juntos nuestro planeta.",
+        "Which Bin?": "¿Qué Bote?", "Planet Choices": "Decisiones por el Planeta", "What's It Made Of?": "¿De Qué Está Hecho?", "Power Off": "Apágalo",
+        "Paper, cans and jars go in recycling. Food scraps go in compost. The rest goes in the trash.": "El papel, las latas y los frascos van al reciclaje. Los restos de comida van a la composta. Lo demás va a la basura.",
+        "Small choices help our planet. Which one helps?": "Las decisiones pequeñas ayudan a nuestro planeta. ¿Cuál ayuda?",
+        "Things are made of paper, metal, glass, wood or plastic. Which one is it?": "Las cosas están hechas de papel, metal, vidrio, madera o plástico. ¿De cuál es?",
+        "Some things need electricity. Turn them off when you're done to save energy!": "Algunas cosas necesitan electricidad. ¡Apágalas cuando termines para ahorrar energía!",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
         "Certificate": "Diploma", "Text size and spacing": "Tamaño y espacio del texto",
