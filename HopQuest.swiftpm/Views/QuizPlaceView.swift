@@ -684,7 +684,7 @@ struct ShapeDrawing: View {
             let c = CGPoint(x: r.midX, y: r.midY), rad = min(r.width, r.height) / 2
             for i in 0..<n {
                 let a = (rotate + 360 * Double(i) / Double(n)) * .pi / 180
-                let pt = CGPoint(x: c.x + cos(a) * rad, y: c.y + sin(a) * rad)
+                let pt = CGPoint(x: c.x + CGFloat(cos(a)) * rad, y: c.y + CGFloat(sin(a)) * rad)
                 if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
             }
             p.closeSubpath()
