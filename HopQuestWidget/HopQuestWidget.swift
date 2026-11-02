@@ -642,10 +642,12 @@ struct BubbleProvider: TimelineProvider {
 struct BubblePickIntent: AppIntent {
     static var title: LocalizedStringResource = "Answer the Brain Bubble"
     @Parameter(title: "Choice") var choice: Int
+    /// The question the widget was showing when it was tapped.
+    @Parameter(title: "Question") var question: Int
     init() {}
-    init(choice: Int) { self.choice = choice }
+    init(choice: Int, question: Int) { self.choice = choice; self.question = question }
     func perform() async throws -> some IntentResult {
-        var b = SharedStore.loadBubble(); b.pick(choice); SharedStore.save(b)
+        var b = SharedStore.loadBubble(); b.pick(choice, asked: question); SharedStore.save(b)
         return .result()
     }
 }
@@ -704,7 +706,7 @@ struct BrainBubbleView: View {
                 Spacer(minLength: 0)
                 HStack(spacing: 6) {
                     ForEach(Array(q.choices.enumerated()), id: \.offset) { i, c in
-                        Button(intent: BubblePickIntent(choice: i)) {
+                        Button(intent: BubblePickIntent(choice: i, question: b.index)) {
                             Text(c).font(WidgetTheme.round(c.count > 8 ? 12 : 16, .black)).lineLimit(2).minimumScaleFactor(0.7)
                                 .foregroundStyle(WidgetTheme.ink).multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity, minHeight: large ? 54 : 40)

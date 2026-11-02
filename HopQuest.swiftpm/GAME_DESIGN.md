@@ -387,6 +387,9 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 - **Practice sheets**: for any game in the quiz places, a printable page of ten questions (with the pictures) and an answer page, made as a PDF on the device. Games at 1 star are marked "practising".
 - **Bedtime**: an optional time (7:00–9:00 PM) after which HopQuest shows a gentle goodnight screen until 6 AM. A grown-up can add 15 minutes behind the parental gate.
 
+### v9.0: Review fixes
+- An independent review found these, now fixed: the Brain Bubble's first question is saved when it's shown and each tap carries the question it answered, so a tap is never scored against a different question; compass and map pictures are scaled to fit on practice sheets (and sheets no longer repeat a question); the goodnight screen goes away by itself in the morning; trying out a made level no longer saves it (which could push out the oldest one), and kids can delete a level or picture when all six spots are full; a made level's finish is announced correctly; animal homes never offer another fair home as "wrong" (seal/ocean, duck/farm…); a seasons clue no longer gives the answer away; the touch picture matches its words; selected sky and sticker buttons are announced to VoiceOver.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

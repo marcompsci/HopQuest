@@ -86,7 +86,8 @@ struct StarHopPlayView: View {
         }
         if h.levelDone && !before.levelDone {
             Haptics.success()
-            Narrator.shared.say(h.champion ? "You beat every level!" : "Level \(h.level) done! \(h.lastRating) stars!")
+            Narrator.shared.say(h.custom != nil ? "You caught every star! \(h.lastRating) stars!"
+                                : h.champion ? "You beat every level!" : "Level \(h.level) done! \(h.lastRating) stars!")
         } else if h.bumped {
             Haptics.tap()
             Narrator.shared.say(h.outOfHearts ? "Out of hearts! Try again." : "Bonk! A puff cloud.")

@@ -74,7 +74,9 @@ struct BrainBubble: Codable, Equatable {
     var gotIt: Bool { picked == question.answer }
 
     /// Tap an answer. One try per question; the right answer is shown either way.
-    mutating func pick(_ i: Int) {
+    /// `asked` is the question the tapped widget was showing: a tap from an out-of-date widget is ignored.
+    mutating func pick(_ i: Int, asked: Int? = nil) {
+        if let asked, asked != index { return }
         guard picked == nil, question.choices.indices.contains(i) else { return }
         picked = i
         answered += 1
@@ -92,8 +94,10 @@ extension SharedStore {
 
     static func loadBubble(_ d: UserDefaults? = defaults) -> BrainBubble {
         if let data = d?.data(forKey: bubbleKey), let b = try? JSONDecoder().decode(BrainBubble.self, from: data) { return b }
+        // the first question is picked once and saved, so the question shown is the question answered
         var b = BrainBubble()
         b.start = Int.random(in: 0..<BubbleBank.all.count)
+        save(b, d)
         return b
     }
 

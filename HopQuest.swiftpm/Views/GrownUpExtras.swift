@@ -217,7 +217,13 @@ struct PracticeGamesList: View {
     }
 
     @MainActor private func make(_ g: QuizGameInfo) {
-        let rounds = Array((place.rounds(g.id) + place.rounds(g.id)).prefix(10))
+        // ten different questions (some games have only a few, so stop trying after a while)
+        var rounds: [QuizRound] = []
+        for _ in 0..<12 where rounds.count < 10 {
+            for r in place.rounds(g.id) where rounds.count < 10 && !rounds.contains(where: { $0.say == r.say && $0.visual == r.visual }) {
+                rounds.append(r)
+            }
+        }
         let name = store.profile?.name ?? ""
         let pages: [AnyView] = [
             AnyView(PracticePage(place: place, game: g, rounds: rounds, name: name, answers: false)),
@@ -298,13 +304,30 @@ struct PracticePage: View {
         .background(Color.white)
     }
 
+    /// Pictures shrunk to fit their spot on paper. Maps and compasses are drawn at full size, then scaled down as a whole.
+    @ViewBuilder private func sheetVisual(_ v: QuizVisual) -> some View {
+        switch v {
+        case .gridMap:
+            QuizVisualView(visual: v, accent: place.accent, large: false)
+                .frame(width: 200, height: 198).scaleEffect(0.55).frame(width: 110, height: 109)
+                .frame(maxWidth: .infinity)
+        case .compass:
+            QuizVisualView(visual: v, accent: place.accent, large: false)
+                .frame(width: 240, height: 230).scaleEffect(0.45).frame(width: 108, height: 104)
+                .frame(maxWidth: .infinity)
+        default:
+            QuizVisualView(visual: v, accent: place.accent, large: false)
+                .frame(maxWidth: .infinity, maxHeight: 70)
+                .scaleEffect(0.8)
+                .clipped()
+        }
+    }
+
     private func question(_ i: Int, _ r: QuizRound) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("\(i + 1). \(r.say)").font(.system(size: 11, weight: .semibold, design: .rounded)).lineLimit(3).fixedSize(horizontal: false, vertical: true)
             if r.visual != .none {
-                QuizVisualView(visual: r.visual, accent: place.accent, large: false)
-                    .frame(maxWidth: .infinity, maxHeight: 70)
-                    .scaleEffect(0.8)
+                sheetVisual(r.visual)
             }
             if r.kind == .spell {
                 Text("Write it: ____________").font(.system(size: 12, design: .rounded))

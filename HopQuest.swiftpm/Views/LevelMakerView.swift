@@ -9,6 +9,7 @@ struct LevelMakerView: View {
     @State private var tool: CustomHopLevel.Tool = .star
     @State private var playing: CustomHopLevel?
     @State private var tip: String?
+    @State private var confirmDelete = false
 
     var body: some View {
         ZStack {
@@ -43,6 +44,10 @@ struct LevelMakerView: View {
                     }
                     BigButton(title: "Make a new level", color: Palette.purple) {
                         guard var p = store.profile else { return }
+                        if p.levelMaker.levels.count >= CustomHopLevel.maxSaved {
+                            Narrator.shared.say("You have six levels. Open one to change it, or delete one first.")
+                            return
+                        }
                         let fresh = p.levelMaker.newLevel()
                         store.profile = p
                         tool = .star
@@ -88,6 +93,9 @@ struct LevelMakerView: View {
             VStack(spacing: 12) {
                 HStack {
                     CircleIconButton(systemName: "xmark", label: "Close without saving") { editing = nil }
+                    if store.profile?.levelMaker.levels.contains(where: { $0.id == level.id }) == true {
+                        CircleIconButton(systemName: "trash", label: "Delete this level") { confirmDelete = true }
+                    }
                     Spacer()
                     Text(level.name).font(.kid(22, .black)).foregroundStyle(theme.night ? .white : Palette.ink)
                     Spacer()
@@ -151,11 +159,12 @@ struct LevelMakerView: View {
                         }
                         .buttonStyle(BouncyButtonStyle())
                         .accessibilityLabel("\(HopWords.tr(t.title, L10n.isSpanish)) sky")
+                        .accessibilityAddTraits(level.theme == i ? .isSelected : [])
                     }
                 }
                 BigButton(title: "Play it!", color: Palette.purple) {
                     guard level.canPlay else { flash("Put at least one star on the board."); return }
-                    save(level, close: false)
+                    // try it out without saving: closing without saving really leaves nothing behind
                     playing = level
                 }
                 .opacity(level.canPlay ? 1 : 0.5)
@@ -164,6 +173,12 @@ struct LevelMakerView: View {
             .padding(.horizontal, 16).padding(.top, 8)
         }
         .animation(.easeOut(duration: 0.2), value: tip)
+        .confirmationDialog("Delete \(level.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                store.profile?.levelMaker.delete(level.id)
+                editing = nil
+            }
+        }
     }
 
     private func use(at cell: Int) {

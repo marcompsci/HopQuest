@@ -1066,6 +1066,7 @@ test("Nature Trail, Calendar Corner, Compass Camp: every game, 300 seeds, answer
                     case ("nature", "homes"):
                         let a = NatureBank.homes.first { r.say.contains("the \($0.animal) live") }!
                         check(r.answer == a.home, "homes: \(a.animal) → \(a.home)")
+                        check(r.choices.allSatisfy { !(NatureBank.alsoFits[a.animal] ?? []).contains($0) }, "homes: no other fair home offered as wrong")
                     case ("nature", "cycles"):
                         let c = NatureBank.cycles.first { r.say.hasPrefix("A \($0.name) grows") }!
                         let names = c.stages.map(\.0)
@@ -1165,8 +1166,15 @@ test("Brain Bubble widget: questions, one try each, every question before any re
     c.pick(c.question.answer)
     check(c.gotIt && c.right == 1, "a right answer")
     c.pick(99)
+    var stale = BrainBubble(); stale.start = 3
+    stale.pick(stale.question.answer, asked: stale.index + 1)
+    check(!stale.isAnswered, "a tap from an out-of-date widget is ignored")
+    stale.pick(stale.question.answer, asked: stale.index)
+    check(stale.gotIt, "a tap on the question shown counts")
     let d = UserDefaults(suiteName: "hopquest.tests.bubble")!
     d.removePersistentDomain(forName: "hopquest.tests.bubble")
+    let first = SharedStore.loadBubble(d)
+    check(SharedStore.loadBubble(d) == first, "the first question is saved, so it stays the same until answered")
     SharedStore.save(c, d)
     check(SharedStore.loadBubble(d) == c, "saved")
     check(HopWords.tr("It's 7.", true) == "Es 7." && HopWords.tr("3 right", true) == "3 correctas" && HopWords.tr("Next question", true) == "Otra pregunta", "widget words in Spanish")

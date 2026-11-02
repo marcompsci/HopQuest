@@ -24,6 +24,11 @@ enum NatureBank {
         ("frog", "🐸", "pond"), ("duck", "🦆", "pond"),
     ]
     static let habitats = ["desert", "polar ice", "rainforest", "ocean", "forest", "farm", "pond"]
+    /// Other homes that would also be fair answers, kept out of the wrong choices.
+    static let alsoFits: [String: Set<String>] = [
+        "seal": ["ocean"], "penguin": ["ocean"], "duck": ["farm"], "frog": ["rainforest", "forest"],
+        "parrot": ["forest"], "monkey": ["forest"], "owl": ["farm"], "deer": ["farm"],
+    ]
 
     /// Life cycles, in order.
     static let cycles: [(name: String, stages: [(String, String)])] = [
@@ -36,7 +41,7 @@ enum NatureBank {
     /// Things to notice, and the sense you use.
     static let senses: [(thing: String, picture: String, sense: String, part: String)] = [
         ("see a rainbow", "🌈", "sight", "eyes"), ("hear a bell ring", "🔔", "hearing", "ears"), ("smell a flower", "🌸", "smell", "nose"),
-        ("taste a lemon", "🍋", "taste", "tongue"), ("feel a soft blanket", "🧸", "touch", "skin"), ("see the stars", "🌟", "sight", "eyes"),
+        ("taste a lemon", "🍋", "taste", "tongue"), ("feel a soft teddy bear", "🧸", "touch", "skin"), ("see the stars", "🌟", "sight", "eyes"),
         ("hear a drum", "🥁", "hearing", "ears"), ("smell cookies baking", "🍪", "smell", "nose"), ("feel a prickly cactus", "🌵", "touch", "skin"),
     ]
     static let senseNames = ["sight", "hearing", "smell", "taste", "touch"]
@@ -64,7 +69,7 @@ enum NatureBank {
         case "homes":
             return Array(homes.shuffled(using: &rng).prefix(count)).enumerated().map { i, a in
                 QuizRound(visual: .picture(a.picture), say: "Where does the \(a.animal) live?",
-                          choices: QuizShuffle.choices(a.home, habitats, using: &rng), answer: a.home,
+                          choices: QuizShuffle.choices(a.home, habitats.filter { !(alsoFits[a.animal] ?? []).contains($0) }, using: &rng), answer: a.home,
                           cheer: "The \(a.animal) lives in the \(a.home). \(cheer(i))")
             }
         case "cycles":
@@ -111,7 +116,7 @@ enum CalendarBank {
     /// Seasons by what you see (not by month, which is different north and south of the equator).
     static let seasonClues: [(picture: String, clue: String, season: String)] = [
         ("⛄🧤", "Snowmen and mittens", "winter"), ("❄️🛷", "Snow and sleds", "winter"),
-        ("🌷🐣", "Tulips and baby chicks", "spring"), ("🌧️🌱", "Spring rain and new sprouts", "spring"),
+        ("🌷🐣", "Tulips and baby chicks", "spring"), ("🌧️🌱", "Rain showers and new sprouts", "spring"),
         ("🏖️🍦", "The beach and ice cream", "summer"), ("☀️🏊", "Hot sun and swimming", "summer"),
         ("🍂🍁", "Falling leaves", "fall"), ("🎃🍎", "Pumpkins and apple picking", "fall"),
     ]

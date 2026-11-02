@@ -125,6 +125,11 @@ struct RootView: View {
             if store.timeIsUp { restTime = true }
             if store.isBedtime { bedtimeRest = true; restTime = true }
         }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            if restTime, bedtimeRest, !store.isBedtime { restTime = false; bedtimeRest = false }
+            if !restTime, store.isBedtime { bedtimeRest = true; restTime = true }
+        }
         .onChange(of: restTime) { _, resting in
             if resting {
                 Narrator.shared.stop()
@@ -142,6 +147,11 @@ struct RootView: View {
         }
         .onReceive(ticker) { _ in
             // daily play limit (counts only while the app is open and in front)
+            // morning came while the goodnight screen was up: let the day begin
+            if restTime, bedtimeRest, !store.isBedtime {
+                restTime = false
+                bedtimeRest = false
+            }
             if scenePhase == .active, store.profile != nil, !restTime, store.isBedtime {
                 bedtimeRest = true
                 restTime = true

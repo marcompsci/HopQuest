@@ -8,7 +8,7 @@ struct StickerScenesView: View {
 
     @State private var scene: StickerScene?
     @State private var selected: Int?
-    @State private var dragStart: [Int: CGPoint] = [:]
+    @State private var confirmDelete = false
 
     var body: some View {
         ZStack {
@@ -34,6 +34,10 @@ struct StickerScenesView: View {
                 }
                 BigButton(title: "Make a new picture", color: Color(hex: 0xFF7A59)) {
                     guard var p = store.profile else { return }
+                    if p.scenes.scenes.count >= SceneSave.maxSaved {
+                        Narrator.shared.say("You have six pictures. Open one to change it, or delete one first.")
+                        return
+                    }
                     let fresh = p.scenes.newScene()
                     store.profile = p
                     selected = nil
@@ -64,6 +68,9 @@ struct StickerScenesView: View {
         VStack(spacing: 10) {
             HStack {
                 CircleIconButton(systemName: "xmark", label: "Close without saving") { scene = nil }
+                if store.profile?.scenes.scenes.contains(where: { $0.id == s.id }) == true {
+                    CircleIconButton(systemName: "trash", label: "Delete this picture") { confirmDelete = true }
+                }
                 Spacer()
                 Button {
                     guard var p = store.profile, let scene else { return }
@@ -129,6 +136,12 @@ struct StickerScenesView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14).padding(.top, 8)
+        .confirmationDialog("Delete this picture?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                store.profile?.scenes.delete(s.id)
+                scene = nil
+            }
+        }
     }
 
     private func tool(_ icon: String, _ label: String, _ action: @escaping () -> Void) -> some View {
@@ -170,6 +183,7 @@ struct SceneCanvas: View {
                         .onTapGesture { if interactive { onTap(p.id) } }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(c.name)
+                        .accessibilityAddTraits(interactive ? .isButton : [])
                         .accessibilityHint(interactive ? "Swipe up or down to move it" : "")
                         .accessibilityActions {
                             if interactive {
