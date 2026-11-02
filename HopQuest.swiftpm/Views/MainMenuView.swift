@@ -29,6 +29,7 @@ struct MainMenuView: View {
     var onBreathe: () -> Void = {}
     var onLevelMaker: () -> Void = {}
     var onScenes: () -> Void = {}
+    var onFridge: () -> Void = {}
     /// Surprise Me: opens a learning place by id.
     var onSurprise: (String) -> Void = { _ in }
     var onMap: () -> Void
@@ -86,6 +87,10 @@ struct MainMenuView: View {
                         gameTile(art: "icon_scenes", title: "Sticker Scenes", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
                                  badge: 0, detail: "Put your buddies in a picture",
                                  label: "Sticker Scenes: put your buddies in a picture", action: onScenes)
+                        let made = fridgeCount
+                        gameTile(art: "icon_fridge", title: "Fridge Door", color: Color(hex: 0x2F8F83), shadow: Color(hex: 0x1E6359),
+                                 badge: 0, detail: made == 0 ? "Show a grown-up what you made!" : "\(made) things you made",
+                                 label: "Fridge Door: show a grown-up what you made, \(made) things", action: onFridge)
                     }
                     section("Learn")
                         .padding(.top, 10)
@@ -392,6 +397,12 @@ struct MainMenuView: View {
         }
         .buttonStyle(BouncyButtonStyle())
         .accessibilityLabel("\(title), \(state == .locked ? "locked" : state == .done ? "finished" : "ready to play")")
+    }
+
+    /// How many things are on the Fridge Door (v9.6).
+    private var fridgeCount: Int {
+        guard let p = store.profile else { return 0 }
+        return FridgeDoor.items(pictures: p.scenes.scenes, levels: p.levelMaker.levels, songs: p.music.shelf, stories: p.storyMaker.stories).count
     }
 
     private func gameTile(art: String, title: String, color: Color, shadow: Color, badge: Int, detail: String? = nil, label: String,

@@ -268,3 +268,94 @@ enum Bedtime {
         return "\(h > 12 ? h - 12 : h):\(String(format: "%02d", m)) \(h >= 12 ? "PM" : "AM")"
     }
 }
+
+// MARK: - Fridge Door (v9.6)
+
+/// One thing the child made, hung on the Fridge Door to show a grown-up.
+enum FridgeItem: Equatable, Identifiable {
+    case picture(StickerScene)
+    case level(CustomHopLevel)
+    case song(ShelfSong)
+    case story(MadeStory)
+
+    var id: String {
+        switch self {
+        case .picture(let s): return "picture-\(s.id)"
+        case .level(let l): return "level-\(l.id)"
+        case .song(let s): return "song-\(s.id)"
+        case .story(let s): return "story-\(s.id)"
+        }
+    }
+
+    /// What kind of thing it is, in kid words.
+    var kind: String {
+        switch self {
+        case .picture: return "A picture"
+        case .level: return "A Star Hop level"
+        case .song: return "A song"
+        case .story: return "A story"
+        }
+    }
+}
+
+/// The Fridge Door: everything the child made, in one place to show a grown-up. Nothing is shared or sent anywhere;
+/// it only shows what is already saved on this device.
+enum FridgeDoor {
+    /// Pictures, levels, songs and stories taken in turns (newest of each first), so the show keeps changing.
+    static func items(pictures: [StickerScene], levels: [CustomHopLevel], songs: [ShelfSong], stories: [MadeStory]) -> [FridgeItem] {
+        let lists: [[FridgeItem]] = [
+            pictures.filter { !$0.placed.isEmpty }.map { FridgeItem.picture($0) },
+            levels.filter(\.canPlay).map { FridgeItem.level($0) },
+            songs.filter { !$0.song.isEmpty }.map { FridgeItem.song($0) },
+            stories.map { FridgeItem.story($0) },
+        ]
+        var out: [FridgeItem] = []
+        let longest = lists.map(\.count).max() ?? 0
+        for i in 0..<longest {
+            for list in lists where i < list.count { out.append(list[i]) }
+        }
+        return out
+    }
+
+    /// Joins names the way people say them: "A", "A and B", "A, B and C".
+    static func list(_ names: [String]) -> String {
+        switch names.count {
+        case 0: return ""
+        case 1: return names[0]
+        default: return names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1]
+        }
+    }
+
+    static func backdropName(_ b: String) -> String {
+        switch b {
+        case "beach": return "at the beach"
+        case "space": return "in space"
+        case "castle": return "at the castle"
+        case "ocean": return "under the sea"
+        case "city": return "in the city"
+        default: return "in the meadow"
+        }
+    }
+
+    /// A sentence for VoiceOver (and for a grown-up who can't see the screen well). `name` turns a buddy id into a name.
+    static func describe(_ item: FridgeItem, name: (String) -> String) -> String {
+        switch item {
+        case .picture(let s):
+            var names: [String] = []
+            for p in s.placed where !names.contains(name(p.characterID)) { names.append(name(p.characterID)) }
+            let who = names.count > 4 ? list(Array(names.prefix(4))) + " and \(names.count - 4) more" : list(names)
+            return "A picture \(backdropName(s.backdrop)) with \(who)."
+        case .level(let l):
+            var parts = ["\(l.stars.count) \(l.stars.count == 1 ? "star" : "stars")"]
+            if !l.clouds.isEmpty { parts.append("\(l.clouds.count) puff \(l.clouds.count == 1 ? "cloud" : "clouds")") }
+            if l.spring != nil { parts.append("a spring") }
+            return "A Star Hop level called \(l.name), with \(list(parts))."
+        case .song(let s):
+            let speed = ["slow", "walking", "quick"][max(0, min(2, s.song.tempo))]
+            let drums = s.song.beatCount == 0 ? "no drums" : "\(s.song.beatCount) \(s.song.beatCount == 1 ? "drum" : "drums")"
+            return "\(s.title): \(s.song.noteCount) \(s.song.noteCount == 1 ? "note" : "notes") and \(drums), at \(speed) speed."
+        case .story(let s):
+            return "A story called \(s.title), \(s.pages.count) \(s.pages.count == 1 ? "page" : "pages") long."
+        }
+    }
+}

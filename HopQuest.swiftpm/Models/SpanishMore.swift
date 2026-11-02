@@ -115,6 +115,11 @@ extension L10n {
         "Everyday foods help you grow. Sometimes foods are treats. Which is it?": "Los alimentos de todos los días te ayudan a crecer. Los de vez en cuando son premios. ¿Cuál es?",
         // Fort Friends 3 (v9.5)
         "This bridge holds on from the side, like a diving board. Engineers call that a cantilever!": "Este puente se sostiene de un lado, como un trampolín. ¡Los ingenieros lo llaman voladizo!",
+        // Fridge Door (v9.6)
+        "Fridge Door": "Puerta del Refri", "Show a grown-up what you made!": "¡Muéstrale a un adulto lo que hiciste!",
+        "A picture": "Un dibujo", "A Star Hop level": "Un nivel de Salto Estelar", "A song": "Una canción", "A story": "Un cuento",
+        "Read it to me": "Léemelo",
+        "Make a picture, a level, a song or a story, and it goes up here.": "Haz un dibujo, un nivel, una canción o un cuento, y aparecerá aquí.",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
         "Certificate": "Diploma", "Text size and spacing": "Tamaño y espacio del texto",
@@ -132,5 +137,6 @@ extension L10n {
         ("^Song (\\d+) is on your shelf!$", "¡La canción $1 está en tu estante!"),
         ("^Song (\\d+) is saved!$", "¡La canción $1 está guardada!"),
         ("^Song (\\d+) is open\\. Change it, then keep the changes\\.$", "La canción $1 está abierta. Cámbiala y luego guarda los cambios."),
+        ("^(\\d+) things you made$", "$1 cosas que hiciste"),
     ]
 }

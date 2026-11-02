@@ -398,6 +398,24 @@ def icon_healthy():
     return s
 
 
+def icon_fridge():
+    s = ground()
+    # a fridge door with a handle, a drawing and a music note held up by magnets
+    s += R(42, 28, 116, 148, 16, "#DFF3EF")
+    s += P("M42 92 L158 92", "none", 4)
+    s += R(140, 42, 8, 36, 4, "#9CC7BE") + R(140, 104, 8, 50, 4, "#9CC7BE")
+    s += R(56, 40, 62, 44, 4, "#FFFFFF")
+    s += P("M62 76 L76 58 L88 72 L98 62 L112 76 Z", "#34C77B", 3)
+    s += C(104, 52, 6, "#FFD93D", 3)
+    s += C(87, 38, 6, "#FF6B6B", 3)
+    s += R(58, 108, 50, 50, 4, "#FFFFFF")
+    s += P("M78 146 L78 120 L96 116 L96 140", "none", 5)
+    s += C(73, 147, 6, "#7C4DFF", 3) + C(91, 141, 6, "#7C4DFF", 3)
+    s += C(83, 106, 6, "#4D96FF", 3)
+    s += star(130, 168, 10)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
@@ -406,7 +424,7 @@ ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science
          "icon_feelings": icon_feelings, "icon_breathe": icon_breathe, "icon_starhop": icon_starhop, "icon_surprise": icon_surprise,
          "icon_nature": icon_nature, "icon_calendar": icon_calendar, "icon_compass": icon_compass,
          "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes,
-         "icon_healthy": icon_healthy}
+         "icon_healthy": icon_healthy, "icon_fridge": icon_fridge}
 
 
 if __name__ == "__main__":

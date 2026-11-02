@@ -124,6 +124,7 @@
 		D9ABBE6387042F9CA9C7B638 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5EA8EF111D77456F0CE6E43A /* Assets.xcassets */; };
 		DB795414CBDAB9B3F5FD24CF /* VillagePlayViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEEB1A557A15FF09114A2FB /* VillagePlayViews.swift */; };
 		DBC03B8D8D5C3505AC9CF1FB /* StickerScenesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC0B3E7F7CDE6E8DCDFDBB8 /* StickerScenesView.swift */; };
+		25E314F9F63289EBB18D47C6 /* FridgeDoorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06CF28C0AB0FA76A7327E7F7 /* FridgeDoorView.swift */; };
 		DC9F5A4297FEBB7433DDFEB5 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 15F0EDE003FE207103CD6660 /* PrivacyInfo.xcprivacy */; };
 		DCD7BF0E0C7B638203EFB0F5 /* CodeLessonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 409844DFB93CDE8C5844D508 /* CodeLessonView.swift */; };
 		DDA44BE1CCD42718FB983C9F /* VillageSaveState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A6803B72F887C2C1DE53A /* VillageSaveState.swift */; };
@@ -208,6 +209,7 @@
 		4A67B10B4F265BD6C4106121 /* Story.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Story.swift; sourceTree = "<group>"; };
 		4BC6A0D20B0EC4622363C871 /* WritingDeskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WritingDeskView.swift; sourceTree = "<group>"; };
 		4CC0B3E7F7CDE6E8DCDFDBB8 /* StickerScenesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerScenesView.swift; sourceTree = "<group>"; };
+		06CF28C0AB0FA76A7327E7F7 /* FridgeDoorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeDoorView.swift; sourceTree = "<group>"; };
 		51F4A290A8A504B077AA7D56 /* RobotCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotCode.swift; sourceTree = "<group>"; };
 		53233B33EC569279FE0BF8E8 /* BreatheView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreatheView.swift; sourceTree = "<group>"; };
 		53AFB372973131BC4F5B07D2 /* ReadAlong.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAlong.swift; sourceTree = "<group>"; };
@@ -488,6 +490,7 @@
 				7897A26A8390F64021A3684E /* StarHopPlayView.swift */,
 				76BC8E861EBCDB7D7796E0E2 /* StickerBookView.swift */,
 				4CC0B3E7F7CDE6E8DCDFDBB8 /* StickerScenesView.swift */,
+				06CF28C0AB0FA76A7327E7F7 /* FridgeDoorView.swift */,
 				3FBE99B975339E4D0F36D9DC /* StoryMakerView.swift */,
 				16CAF98AD780449FE270F029 /* StoryViews.swift */,
 				F242F6A25464AD85C1818D60 /* TeamViews.swift */,
@@ -712,6 +715,7 @@
 				8402C08C2D9342420CC6C68C /* StarHopPlayView.swift in Sources */,
 				38FD170F62C4719079E31C21 /* StickerBookView.swift in Sources */,
 				DBC03B8D8D5C3505AC9CF1FB /* StickerScenesView.swift in Sources */,
+				25E314F9F63289EBB18D47C6 /* FridgeDoorView.swift in Sources */,
 				B2375D0D433FC7C829CE1A34 /* Story.swift in Sources */,
 				C0A4F757D0040FDBBA8241F1 /* StoryMaker.swift in Sources */,
 				A9091D6DA442891F6AFD78E2 /* StoryMakerView.swift in Sources */,

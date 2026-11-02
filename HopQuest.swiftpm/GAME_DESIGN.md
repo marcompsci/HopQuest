@@ -405,6 +405,11 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 - The first time a bridge high up holds on only from the side, a new engineering idea is read aloud: it's a cantilever, like a diving board.
 - The level checker replays a reference route for each new level: every balloon and the fort, with no helper bricks needed.
 
+### v9.6: Fridge Door
+- A new menu tile shows everything the child made in one place, to show a grown-up: Sticker Scenes pictures, Level Maker levels, kept songs and Story Maker stories, one at a time on a paper card held up by a magnet, taken in turns so the show keeps changing. Swipe, or use the back and next buttons. Songs play right there (notes light up), and stories can be read aloud.
+- Show only: nothing is shared, sent or printed, and nothing new is saved. Empty pictures, levels with no stars and empty songs are left off.
+- Every card has a VoiceOver sentence ("A picture at the beach with Pip Penguin and Lavender Lop."); tests check the order and the sentences.
+
 ### v9.7: Try at home (grown-ups)
 - Each learning place on the Progress page has a "Try at home" line: what the child is learning there in one plain sentence, and two or three short things to do together away from the screen (I Spy with sounds, a pretend shop with real coins, a shape hunt, "be the robot"). No shopping and no homework. A "Try at home" section at the top suggests the places being practised first, then places started but not finished. All written into the app; nothing is looked up or sent.
 

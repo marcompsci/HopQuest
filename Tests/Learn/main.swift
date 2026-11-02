@@ -1465,5 +1465,49 @@ test("Places on the menu (v9.9): grown-ups hide places, the last one always stay
     check(SurpriseMe.pick(areas: [], last: nil, using: &g) == nil, "nothing to pick")
 }
 
+test("Fridge Door (v9.6): everything made, taken in turns, described for VoiceOver") {
+    func pic(_ id: String, _ who: [String], _ backdrop: String = "beach") -> StickerScene {
+        var s = StickerScene(id: id); s.backdrop = backdrop
+        for w in who { s.add(w) }
+        return s
+    }
+    func lvl(_ id: String, stars: [Int], clouds: [Int] = [], spring: Int? = nil) -> CustomHopLevel {
+        var l = CustomHopLevel(id: id, name: "My Level 1"); l.stars = stars; l.clouds = clouds; l.spring = spring
+        return l
+    }
+    func song(_ n: Int, notes: Int, beats: Int, tempo: Int = 1) -> ShelfSong {
+        var s = SongSteps(); s.tempo = tempo
+        for i in 0..<notes { s.toggle(step: i, key: i) }
+        for i in 0..<beats { s.cycleBeat(step: i) }
+        return ShelfSong(id: "song-\(n)", number: n, song: s)
+    }
+    let page = MadePage(place: .meadow, heroID: "pip", heroName: "Pip Penguin", heroEmoji: "🐧", action: "x", thing: "y")
+    let story = MadeStory(id: "st1", pages: [page, page, page], made: Date(timeIntervalSince1970: 0))
+
+    check(FridgeDoor.items(pictures: [], levels: [], songs: [], stories: []).isEmpty, "nothing made, nothing on the door")
+    let items = FridgeDoor.items(pictures: [pic("p1", ["pip"]), pic("p2", ["lop"]), pic("empty", [])],
+                                 levels: [lvl("l1", stars: [7]), lvl("nostars", stars: [])],
+                                 songs: [song(2, notes: 3, beats: 0), song(1, notes: 0, beats: 0)],
+                                 stories: [story])
+    check(items.map(\.id) == ["picture-p1", "level-l1", "song-song-2", "story-st1", "picture-p2"], "taken in turns, empty things left off: \(items.map(\.id))")
+    check(Set(items.map(\.id)).count == items.count, "every item has its own id")
+    let names = ["pip": "Pip Penguin", "lop": "Lavender Lop", "leo": "Leo Lion", "zara": "Zara Zebra", "ellie": "Ellie Elephant", "rocky": "Rocky Rhino"]
+    let name: (String) -> String = { names[$0] ?? $0 }
+    check(FridgeDoor.describe(.picture(pic("a", ["pip", "lop", "pip"])), name: name) == "A picture at the beach with Pip Penguin and Lavender Lop.", "a picture names each buddy once")
+    let crowd = FridgeDoor.describe(.picture(pic("b", ["pip", "lop", "leo", "zara", "ellie", "rocky"], "space")), name: name)
+    check(crowd == "A picture in space with Pip Penguin, Lavender Lop, Leo Lion, Zara Zebra and 2 more.", "a busy picture stays short: \(crowd)")
+    check(FridgeDoor.describe(.level(lvl("c", stars: [7, 8], clouds: [9], spring: 2)), name: name) == "A Star Hop level called My Level 1, with 2 stars, 1 puff cloud and a spring.", "a level")
+    check(FridgeDoor.describe(.level(lvl("d", stars: [7])), name: name) == "A Star Hop level called My Level 1, with 1 star.", "one star")
+    check(FridgeDoor.describe(.song(song(3, notes: 4, beats: 1, tempo: 2)), name: name) == "Song 3: 4 notes and 1 drum, at quick speed.", "a song")
+    check(FridgeDoor.describe(.song(song(4, notes: 1, beats: 0, tempo: 0)), name: name) == "Song 4: 1 note and no drums, at slow speed.", "a quiet song")
+    check(FridgeDoor.describe(.story(story), name: name).hasPrefix("A story called Pip and the "), "a story")
+    check(StickerScene.backdrops.allSatisfy { FridgeDoor.backdropName($0) != FridgeDoor.backdropName("meadow") || $0 == "meadow" }, "every backdrop has its own words")
+    for w in ["Fridge Door", "Show a grown-up what you made!", "A picture", "A Star Hop level", "A song", "A story", "Read it to me",
+              "Make a picture, a level, a song or a story, and it goes up here."] {
+        check(L10n.spanish(w) != nil, "\(w) has Spanish")
+    }
+    check(L10n.spanish("5 things you made") == "5 cosas que hiciste", "the menu count in Spanish")
+}
+
 print("\n\(passes) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

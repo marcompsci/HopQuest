@@ -47,6 +47,7 @@ enum Route: Equatable {
     case breathe
     case levelMaker
     case stickerScenes
+    case fridgeDoor
     // two players on one phone
     case teamKartSelect
     case teamKart(Int)
@@ -197,6 +198,7 @@ struct RootView: View {
                          onBreathe: { route = .breathe },
                          onLevelMaker: { route = .levelMaker },
                          onScenes: { route = .stickerScenes },
+                         onFridge: { route = .fridgeDoor },
                          onSurprise: { id in route = Self.route(forPlace: id) },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
@@ -332,6 +334,9 @@ struct RootView: View {
 
         case .stickerScenes:
             StickerScenesView(onBack: goHome)
+
+        case .fridgeDoor:
+            FridgeDoorView(onBack: goHome)
 
         case .castle:
             MyCastleView(onBack: goHome)
@@ -479,8 +484,8 @@ struct RootView: View {
     /// Racing music for driving and karts; the adventure theme everywhere else.
     private func updateMusic() {
         switch route {
-        case .musicMaker:
-            SoundFX.shared.stopMusic()   // the child makes the music here
+        case .musicMaker, .fridgeDoor:
+            SoundFX.shared.stopMusic()   // the child makes the music here (and plays their songs on the Fridge Door)
         case .kartSelect, .bop, .teamKartSelect, .teamKart, .teamBop:
             SoundFX.shared.playMusic(.race)
         case .playing(let id):

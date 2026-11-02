@@ -85,7 +85,7 @@ Every character, castle, balloon, robot part and icon was drawn from scratch in 
 | **Hot air balloon finish** | Your buddy rides a balloon from big to little and lands on the next level | |
 | **More learning places** (v6.8+) | **Spelling Bee, Fraction Bakery, Shape Studio, Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail, Calendar Corner, Compass Camp, Healthy Hut**: four games each on one shared quiz engine | Spelling, fractions, shapes, rhymes and syllables, place value, equal groups and skip counting, measuring, feelings and kindness, habitats and life cycles, the calendar, maps and directions, the body, food groups and healthy habits |
 | **Star Hop** | A 12-level tap-to-play game on the home-screen widget and in the app (same save): counting, spelling, adding and taking away, puff clouds, springs and bubble shields | Counting, skip counting, the alphabet, sums |
-| **Level Maker and Sticker Scenes** | Design your own Star Hop level and play it; put your buddy stickers into pictures | Planning, creativity |
+| **Level Maker, Sticker Scenes and the Fridge Door** | Design your own Star Hop level and play it; put your buddy stickers into pictures; show a grown-up everything you made (pictures, levels, songs and stories) on the Fridge Door | Planning, creativity, talking about your work |
 | **Brain Bubble widget** | A question with three answers to tap right on the home screen | Quick recall across subjects |
 | **Breathe with Buddy** | A balloon breathing break: in for 4, hold for 2, out for 5 | Calming down |
 | **Surprise me! and buddy hats** | One tap to something not finished yet; hats for your buddy unlocked by badges | |
