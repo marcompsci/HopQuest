@@ -207,6 +207,12 @@ struct PlayerProfile: Codable, Equatable {
     var lastSurprise: String?
     /// Minutes played each day for the last two weeks (v7.8), for the grown-ups' chart. Stays on this device.
     var playHistory = PlayHistory()
+    /// Star Hop levels the child made (v8.6), and their sticker scenes (v8.7).
+    var levelMaker = LevelMakerSave()
+    var scenes = SceneSave()
+    /// Bedtime (v8.9): minutes after midnight, 0 = off. A grown-up can add 15 minutes from the goodnight screen.
+    var bedtimeMinutes = 0
+    var bedtimeSnoozeUntil: Date?
 
     enum CodingKeys: String, CodingKey {
         case name, identity, theme, characterID, stars, completedChapters, breakReminderMinutes, narration, coopCharacterID, kartBest
@@ -215,7 +221,7 @@ struct PlayerProfile: Codable, Equatable {
         case recentFirstTry, learnerTier, decorOwned, decorPlaced, wallpaper, castleGuests
         case dailyLimitMinutes, playDay, playedSeconds
         case village, codeLab, missions, reading, market, seenStories, science, music
-        case writing, clock, world, partner, milestones, quick, places, storyMaker, hopStarsClaimed, hat, lastSurprise, playHistory
+        case writing, clock, world, partner, milestones, quick, places, storyMaker, hopStarsClaimed, hat, lastSurprise, playHistory, levelMaker, scenes, bedtimeMinutes, bedtimeSnoozeUntil
     }
 }
 
@@ -274,6 +280,10 @@ extension PlayerProfile {
         hat = (try? c.decodeIfPresent(HatKind.self, forKey: .hat)) ?? .none
         lastSurprise = (try? c.decodeIfPresent(String.self, forKey: .lastSurprise)) ?? nil
         playHistory = (try? c.decodeIfPresent(PlayHistory.self, forKey: .playHistory)) ?? PlayHistory()
+        levelMaker = (try? c.decodeIfPresent(LevelMakerSave.self, forKey: .levelMaker)) ?? LevelMakerSave()
+        scenes = (try? c.decodeIfPresent(SceneSave.self, forKey: .scenes)) ?? SceneSave()
+        bedtimeMinutes = (try? c.decodeIfPresent(Int.self, forKey: .bedtimeMinutes)) ?? 0
+        bedtimeSnoozeUntil = (try? c.decodeIfPresent(Date.self, forKey: .bedtimeSnoozeUntil)) ?? nil
         // Players from before the Story Book get the stories for levels they already finished.
         seenStories = (try? c.decodeIfPresent(Set<String>.self, forKey: .seenStories))
             ?? Set(completedChapters.compactMap { StoryBook.after(chapter: $0)?.id } + (completedChapters.isEmpty ? [] : ["intro"]))
@@ -485,6 +495,18 @@ final class GameStore: ObservableObject {
         p.playHistory.add(seconds, on: Date())
         profile = p
         return timeIsUp
+    }
+
+    var isBedtime: Bool {
+        guard let p = profile else { return false }
+        return Bedtime.isBedtime(now: Date(), bedtime: p.bedtimeMinutes, snoozeUntil: p.bedtimeSnoozeUntil)
+    }
+
+    /// A grown-up lets play go on a little past bedtime.
+    func snoozeBedtime(minutes: Int) {
+        guard var p = profile else { return }
+        p.bedtimeSnoozeUntil = Date().addingTimeInterval(Double(minutes * 60))
+        profile = p
     }
 
     var timeIsUp: Bool {

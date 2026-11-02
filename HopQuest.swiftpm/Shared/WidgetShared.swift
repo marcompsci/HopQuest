@@ -201,11 +201,13 @@ struct StarHop: Codable, Equatable {
     var rating: [Int] = Array(repeating: 0, count: StarHop.levels.count)
     /// The rating just earned, shown on the "level done" card.
     var lastRating = 0
+    /// A level the child made in the Level Maker (v8.6): stars stay where they were put, and nothing is recorded.
+    var custom: CustomHopLevel? = nil
 
     init() { startLevel(1) }
 
     enum CodingKeys: String, CodingKey {
-        case level, col, row, jumps, facingLeft, stars, clouds, collected, sequence, prompts, hearts, moves, turn, nextStarID, plays, best, levelsCleared, message, lastCatch, bumped, bubble, shield, popped, bounced, bumps, rating, lastRating
+        case level, col, row, jumps, facingLeft, stars, clouds, collected, sequence, prompts, hearts, moves, turn, nextStarID, plays, best, levelsCleared, message, lastCatch, bumped, bubble, shield, popped, bounced, bumps, rating, lastRating, custom
     }
 
     /// Older saves (from before a field existed) keep everything they have; new fields start at their defaults.
@@ -238,6 +240,7 @@ struct StarHop: Codable, Equatable {
         if let v = try? c.decodeIfPresent(Bool.self, forKey: .bounced) { bounced = v }
         if let v = try? c.decodeIfPresent(Int.self, forKey: .bumps) { bumps = v }
         if let v = try? c.decodeIfPresent([Int].self, forKey: .rating) { rating = v }
+        custom = (try? c.decodeIfPresent(CustomHopLevel.self, forKey: .custom)) ?? nil
         if let v = try? c.decodeIfPresent(Int.self, forKey: .lastRating) { lastRating = v }
         // the level list grew: pad the per-level lists, then rebuild a level that was saved under older rules
         if best.count < Self.levels.count { best += Array(repeating: 0, count: Self.levels.count - best.count) }
@@ -253,8 +256,8 @@ struct StarHop: Codable, Equatable {
 
     // MARK: Reading the state
 
-    var info: HopLevel { Self.levels[max(0, min(Self.levels.count - 1, level - 1))] }
-    var isFinalLevel: Bool { level == Self.levels.count }
+    var info: HopLevel { custom?.asLevel ?? Self.levels[max(0, min(Self.levels.count - 1, level - 1))] }
+    var isFinalLevel: Bool { custom == nil && level == Self.levels.count }
 
     var goal: Int {
         if case .stars(let n) = info.goal { return n }
@@ -313,14 +316,11 @@ struct StarHop: Codable, Equatable {
 
     /// Start (or restart) a level. Keeps the bests and how far the player has got.
     mutating func startLevel(_ n: Int) {
+        custom = nil
         level = max(1, min(Self.levels.count, n))
-        col = Self.startCol; row = 0; jumps = 0; facingLeft = false
-        collected = 0; hearts = Self.maxHearts; moves = 0; bumps = 0
-        lastCatch = nil; bumped = false; popped = false; bounced = false
-        bubble = nil; shield = false; lastRating = 0
-        stars = []
-        prompts = []
+        resetTry()
         plays += 1
+        prompts = []
         switch info.goal {
         case .stars:
             sequence = []
@@ -353,6 +353,25 @@ struct StarHop: Codable, Equatable {
         refill()
     }
 
+    /// Back to the start for a new try: the buddy, hearts and counters.
+    private mutating func resetTry() {
+        col = Self.startCol; row = 0; jumps = 0; facingLeft = false
+        collected = 0; hearts = Self.maxHearts; moves = 0; bumps = 0
+        lastCatch = nil; bumped = false; popped = false; bounced = false
+        bubble = nil; shield = false; lastRating = 0
+        stars = []
+    }
+
+    /// Plays a level from the Level Maker. Stars stay put (no drifting, no new ones); catch them all to finish.
+    mutating func play(_ level: CustomHopLevel) {
+        custom = level
+        resetTry()
+        sequence = []; prompts = []
+        clouds = level.clouds
+        stars = level.stars.enumerated().map { HopStar(id: 1000 + $0.offset, cell: $0.element) }
+        message = "Catch every star!"
+    }
+
     /// Picks a level from the level list (only ones already reached).
     mutating func pick(_ n: Int) {
         guard canPick(n) else { return }
@@ -362,6 +381,7 @@ struct StarHop: Codable, Equatable {
     /// After a level is finished: on to the next one (or back to the first after the last).
     mutating func nextLevel() {
         guard levelDone else { return }
+        if let c = custom { play(c); return }
         startLevel(isFinalLevel ? 1 : level + 1)
     }
 
@@ -372,7 +392,9 @@ struct StarHop: Codable, Equatable {
     }
 
     /// Try the same level again (after running out of hearts, or any time).
-    mutating func retry() { startLevel(level) }
+    mutating func retry() {
+        if let c = custom { play(c) } else { startLevel(level) }
+    }
 
     /// Back to level 1 (keeps the bests and the levels reached).
     mutating func newGame() {
@@ -433,6 +455,11 @@ struct StarHop: Codable, Equatable {
             }
         }
 
+        if levelDone, custom != nil {
+            lastRating = 1 + (bumps == 0 ? 1 : 0) + (moves <= par ? 1 : 0)
+            message = "You caught every star!"
+            return
+        }
         if levelDone {
             let i = level - 1
             if best.count < Self.levels.count { best += Array(repeating: 0, count: Self.levels.count - best.count) }
@@ -457,7 +484,8 @@ struct StarHop: Codable, Equatable {
         if outOfHearts { message = "Out of hearts!"; return }
 
         // 3. stars drift down one row every third move, and wrap back to the top when they reach the ground
-        if turn % 3 == 0 {
+        // (a made-up level's stars stay where the child put them)
+        if turn % 3 == 0 && custom == nil {
             for i in stars.indices {
                 let r = stars[i].cell / Self.columns, c = stars[i].cell % Self.columns
                 stars[i].cell = r == 0 ? cell(c, Self.rows - 1) : cell(c, r - 1)
@@ -492,7 +520,7 @@ struct StarHop: Codable, Equatable {
     /// Keeps two stars on the board, never on the buddy or a cloud.
     /// On counting and spelling levels one of them is always the one needed next, the other a different one.
     private mutating func refill() {
-        guard !levelDone else { return }
+        guard !levelDone, custom == nil else { return }
         var seed = UInt64(truncatingIfNeeded: turn &* 2_654_435_761 &+ collected &* 97 &+ level &* 7919 &+ nextStarID &* 31)
         func roll(_ n: Int) -> Int {
             seed = seed &* 6364136223846793005 &+ 1442695040888963407
@@ -533,5 +561,127 @@ struct StarHop: Codable, Equatable {
         if info.bubbles && bubble == nil && !shield && turn % 7 == 6 {
             bubble = freeCell()
         }
+    }
+}
+
+// MARK: - Level Maker (v8.6)
+
+/// A Star Hop level a child made: where the stars, clouds and spring go, and which sky.
+struct CustomHopLevel: Codable, Equatable, Identifiable {
+    enum Tool: String, CaseIterable, Codable { case star, cloud, spring, erase }
+
+    static let maxStars = 10
+    static let maxClouds = 3
+    static let maxSaved = 6
+    /// Skies to choose from: the first six Star Hop worlds.
+    static let themes = Array(StarHop.levels.prefix(6))
+
+    var id: String
+    var name: String
+    var stars: [Int] = []
+    var clouds: [Int] = []
+    var spring: Int? = nil
+    var theme: Int = 0
+
+    static var startCell: Int { StarHop.startCol }
+
+    var canPlay: Bool { !stars.isEmpty }
+
+    /// Squares the buddy can get to with this spring (clouds move, so they never block for good).
+    /// A spring bounces you past one square, so that square can't hold a star.
+    static func reachable(spring: Int?) -> Set<Int> {
+        var probe = CustomHopLevel(id: "", name: "")
+        probe.spring = spring
+        probe.stars = [-1]   // a star that can never be caught, so the probe never finishes
+        var g = StarHop(); g.play(probe)
+        struct Key: Hashable { let c, r, j: Int }
+        var seen: Set<Key> = [Key(c: g.col, r: g.row, j: g.jumps)]
+        var cells: Set<Int> = [g.buddyCell]
+        var queue = [g]
+        while let s = queue.popLast() {
+            for goRight in [true, false] {
+                var n = s
+                if goRight { n.right() } else { n.left() }
+                cells.insert(n.buddyCell)
+                let k = Key(c: n.col, r: n.row, j: n.jumps)
+                if !seen.contains(k) { seen.insert(k); queue.append(n) }
+            }
+        }
+        return cells
+    }
+
+    var asLevel: HopLevel {
+        let t = Self.themes[max(0, min(Self.themes.count - 1, theme))]
+        return HopLevel(number: 0, title: name, tip: "Catch every star!", goal: .stars(stars.count), clouds: clouds.count,
+                        skyTop: t.skyTop, skyBottom: t.skyBottom, grass: t.grass, soil: t.soil, night: t.night, spring: spring, bubbles: false)
+    }
+
+    /// What's on a square, for the editor.
+    func thing(at cell: Int) -> Tool? {
+        if stars.contains(cell) { return .star }
+        if clouds.contains(cell) { return .cloud }
+        if let sp = spring, cell == sp { return .spring }
+        return nil
+    }
+
+    /// Uses a tool on a square. Returns false when it can't go there (and why, in kid words).
+    @discardableResult
+    mutating func apply(_ tool: Tool, at cell: Int) -> (ok: Bool, why: String?) {
+        let size = StarHop.columns * StarHop.rows
+        guard (0..<size).contains(cell) else { return (false, nil) }
+        let row = cell / StarHop.columns, col = cell % StarHop.columns
+        switch tool {
+        case .erase:
+            stars.removeAll { $0 == cell }
+            clouds.removeAll { $0 == cell }
+            if spring == cell { spring = nil }
+            return (true, nil)
+        case .star:
+            if stars.contains(cell) { stars.removeAll { $0 == cell }; return (true, nil) }
+            if cell == Self.startCell { return (false, "Your buddy starts there!") }
+            if clouds.contains(cell) || spring == cell { return (false, "Something is already there.") }
+            if stars.count >= Self.maxStars { return (false, "That's the most stars: \(Self.maxStars).") }
+            if !Self.reachable(spring: spring).contains(cell) { return (false, "Your buddy can't reach there. Try another square!") }
+            stars.append(cell)
+        case .cloud:
+            if clouds.contains(cell) { clouds.removeAll { $0 == cell }; return (true, nil) }
+            if row == 0 { return (false, "Clouds float in the sky, not on the ground.") }
+            if stars.contains(cell) { return (false, "Something is already there.") }
+            if clouds.count >= Self.maxClouds { return (false, "That's the most clouds: \(Self.maxClouds).") }
+            clouds.append(cell)
+        case .spring:
+            if spring == cell { spring = nil; return (true, nil) }
+            if row != 0 { return (false, "Springs go on the ground.") }
+            if col == StarHop.startCol { return (false, "Your buddy starts there!") }
+            if stars.contains(cell) { return (false, "Something is already there.") }
+            spring = col
+            // a star the spring now bounces you past goes away, so every level can still be finished
+            let reach = Self.reachable(spring: spring)
+            let lost = stars.filter { !reach.contains($0) }
+            if !lost.isEmpty {
+                stars.removeAll { !reach.contains($0) }
+                return (true, "Boing! A star was out of reach, so it floated away.")
+            }
+        }
+        return (true, nil)
+    }
+}
+
+/// The Level Maker's saved levels (newest first, at most six).
+struct LevelMakerSave: Codable, Equatable {
+    var levels: [CustomHopLevel] = []
+    var made = 0
+
+    mutating func save(_ level: CustomHopLevel) {
+        levels.removeAll { $0.id == level.id }
+        levels.insert(level, at: 0)
+        if levels.count > CustomHopLevel.maxSaved { levels = Array(levels.prefix(CustomHopLevel.maxSaved)) }
+    }
+
+    mutating func delete(_ id: String) { levels.removeAll { $0.id == id } }
+
+    mutating func newLevel() -> CustomHopLevel {
+        made += 1
+        return CustomHopLevel(id: "my-\(made)-\(Int.random(in: 1000...9999))", name: "My Level \(made)")
     }
 }

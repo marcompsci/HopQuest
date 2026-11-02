@@ -141,3 +141,104 @@ struct PlayHistory: Codable, Equatable {
         week(endingOn: date, calendar: calendar).reduce(0) { $0 + $1.minutes }
     }
 }
+
+// MARK: - Sticker Scenes (v8.7)
+
+/// A picture made by placing buddy stickers on a backdrop.
+struct StickerScene: Codable, Equatable, Identifiable {
+    struct Placed: Codable, Equatable, Identifiable {
+        var id: Int
+        var characterID: String
+        /// Position in the picture, 0…1 across and down.
+        var x: Double
+        var y: Double
+        var scale: Double = 1
+        var flipped = false
+    }
+
+    static let backdrops = ["meadow", "beach", "space", "castle", "ocean", "city"]
+    static let maxStickers = 12
+    static let minScale = 0.5
+    static let maxScale = 2.0
+
+    var id: String
+    var backdrop: String = "meadow"
+    var placed: [Placed] = []
+    var nextID = 0
+
+    /// Adds a sticker near the middle, a little offset so a new one doesn't hide the last one.
+    @discardableResult
+    mutating func add(_ characterID: String) -> Int? {
+        guard placed.count < Self.maxStickers else { return nil }
+        let k = Double(placed.count % 5)
+        placed.append(Placed(id: nextID, characterID: characterID, x: 0.35 + k * 0.07, y: 0.55 - k * 0.04))
+        nextID += 1
+        return nextID - 1
+    }
+
+    mutating func move(_ id: Int, x: Double, y: Double) {
+        guard let i = placed.firstIndex(where: { $0.id == id }) else { return }
+        placed[i].x = min(1, max(0, x)); placed[i].y = min(1, max(0, y))
+    }
+
+    mutating func resize(_ id: Int, by factor: Double) {
+        guard let i = placed.firstIndex(where: { $0.id == id }) else { return }
+        placed[i].scale = min(Self.maxScale, max(Self.minScale, placed[i].scale * factor))
+    }
+
+    mutating func flip(_ id: Int) {
+        guard let i = placed.firstIndex(where: { $0.id == id }) else { return }
+        placed[i].flipped.toggle()
+    }
+
+    /// Brings a sticker to the front.
+    mutating func raise(_ id: Int) {
+        guard let i = placed.firstIndex(where: { $0.id == id }) else { return }
+        placed.append(placed.remove(at: i))
+    }
+
+    mutating func remove(_ id: Int) { placed.removeAll { $0.id == id } }
+}
+
+/// Saved scenes, newest first, at most six.
+struct SceneSave: Codable, Equatable {
+    static let maxSaved = 6
+    var scenes: [StickerScene] = []
+    var made = 0
+
+    mutating func save(_ scene: StickerScene) {
+        scenes.removeAll { $0.id == scene.id }
+        scenes.insert(scene, at: 0)
+        if scenes.count > Self.maxSaved { scenes = Array(scenes.prefix(Self.maxSaved)) }
+    }
+
+    mutating func delete(_ id: String) { scenes.removeAll { $0.id == id } }
+
+    mutating func newScene() -> StickerScene {
+        made += 1
+        return StickerScene(id: "scene-\(made)-\(Int.random(in: 1000...9999))")
+    }
+}
+
+// MARK: - Bedtime (v8.9)
+
+/// An optional bedtime set by a grown-up: from then until 6 in the morning HopQuest shows a gentle goodnight screen.
+enum Bedtime {
+    static let wakeMinutes = 6 * 60
+    /// Choices for grown-ups, in minutes after midnight (0 = off).
+    static let choices = [0, 19 * 60, 19 * 60 + 30, 20 * 60, 20 * 60 + 30, 21 * 60]
+
+    static func isBedtime(now: Date, bedtime: Int, snoozeUntil: Date?, calendar: Calendar = .current) -> Bool {
+        guard bedtime > 0 else { return false }
+        if let s = snoozeUntil, now < s { return false }
+        let c = calendar.dateComponents([.hour, .minute], from: now)
+        let m = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+        return bedtime > wakeMinutes ? (m >= bedtime || m < wakeMinutes) : (m >= bedtime && m < wakeMinutes)
+    }
+
+    static func label(_ minutes: Int) -> String {
+        guard minutes > 0 else { return "Off" }
+        let h = minutes / 60, m = minutes % 60
+        return "\(h > 12 ? h - 12 : h):\(String(format: "%02d", m)) \(h >= 12 ? "PM" : "AM")"
+    }
+}

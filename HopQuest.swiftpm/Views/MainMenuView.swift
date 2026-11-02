@@ -27,6 +27,8 @@ struct MainMenuView: View {
     var onBadges: () -> Void = {}
     var onStarHop: () -> Void = {}
     var onBreathe: () -> Void = {}
+    var onLevelMaker: () -> Void = {}
+    var onScenes: () -> Void = {}
     /// Surprise Me: opens a learning place by id.
     var onSurprise: (String) -> Void = { _ in }
     var onMap: () -> Void
@@ -76,6 +78,12 @@ struct MainMenuView: View {
                         gameTile(art: "icon_breathe", title: "Breathe", color: Color(hex: 0x4A9EDB), shadow: Color(hex: 0x2F74A8),
                                  badge: 0, detail: "Calm breaths with your buddy",
                                  label: "Breathe with Buddy, a calm break", action: onBreathe)
+                        gameTile(art: "icon_levelmaker", title: "Level Maker", color: Color(hex: 0x7C4DFF), shadow: Color(hex: 0x5631C7),
+                                 badge: 0, detail: "Make your own Star Hop level",
+                                 label: "Level Maker: make your own Star Hop level", action: onLevelMaker)
+                        gameTile(art: "icon_scenes", title: "Sticker Scenes", color: Color(hex: 0xFF7A59), shadow: Color(hex: 0xC2410C),
+                                 badge: 0, detail: "Put your buddies in a picture",
+                                 label: "Sticker Scenes: put your buddies in a picture", action: onScenes)
                     }
                     section("Learn")
                         .padding(.top, 10)
@@ -111,6 +119,9 @@ struct MainMenuView: View {
                         placeTile("times", art: "icon_times", title: "Times Treehouse", color: 0x8A5A2B, shadow: 0x5E3D1D)
                         placeTile("measure", art: "icon_measure", title: "Measure Meadow", color: 0x2F6F9F, shadow: 0x1F4B6C)
                         placeTile("feelings", art: "icon_feelings", title: "Feelings Corner", color: 0xC2185B, shadow: 0x8E1243)
+                        placeTile("nature", art: "icon_nature", title: "Nature Trail", color: 0x2E7D32, shadow: 0x1B5E20)
+                        placeTile("calendar", art: "icon_calendar", title: "Calendar Corner", color: 0xD35400, shadow: 0x9A3D00)
+                        placeTile("compass", art: "icon_compass", title: "Compass Camp", color: 0x1565C0, shadow: 0x0D47A1)
                         gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
                                  badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
                                  label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)

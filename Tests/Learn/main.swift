@@ -792,7 +792,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 29, "29 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 32, "32 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -820,11 +820,13 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + SpellingBank.games.map(\.title) + FractionBank.games.map(\.title) + ShapeBank.games.map(\.title)
         + RhymeBank.games.map(\.title) + NumberBank.games.map(\.title) + TimesBank.games.map(\.title) + MeasureBank.games.map(\.title) + FeelingsBank.games.map(\.title)
         + HatKind.allCases.map(\.title)
+        + NatureBank.games.map(\.title) + CalendarBank.games.map(\.title) + CompassBank.games.map(\.title)
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
         + SpellingBank.games.map(\.intro) + FractionBank.games.map(\.intro) + ShapeBank.games.map(\.intro)
         + RhymeBank.games.map(\.intro) + NumberBank.games.map(\.intro) + TimesBank.games.map(\.intro) + MeasureBank.games.map(\.intro) + FeelingsBank.games.map(\.intro)
+        + NatureBank.games.map(\.intro) + CalendarBank.games.map(\.intro) + CompassBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
     check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
     check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
@@ -1017,6 +1019,280 @@ test("Widgets in Spanish: every Star Hop message, level and button") {
     check(back.spanish == true, "the language travels to the widget")
     let old = #"{"name":"A","buddyName":"B","buddyEmoji":"x","buddyID":"pip","stars":1,"lifetimeStars":1,"lessonTitle":"L","skill":"s","skillState":"Up next","skillsLearned":0,"skillsTotal":1,"quickBest":0}"#
     check((try? JSONDecoder().decode(WidgetSnapshot.self, from: Data(old.utf8)))?.name == "A", "a snapshot from before still loads")
+}
+
+test("Read with Me: the right word lights up") {
+    func word(_ s: String, _ r: Range<String.Index>?) -> String? { r.map { String(s[$0]) } }
+    let line = "One day, Pip Penguin went to the beach and found a kite."
+    let speech = ReadAlongMath.speakable(line)
+    for (i, w) in ReadAlongMath.words(speech).enumerated() {
+        let loc = speech.utf16.distance(from: speech.utf16.startIndex, to: w.lowerBound.samePosition(in: speech.utf16)!)
+        let idx = ReadAlongMath.spokenWordIndex(speech: speech, utf16Location: loc)
+        check(idx == i, "word \(i) found from its position (\(idx))")
+        check(word(line, ReadAlongMath.displayRange(display: line, source: line, spoken: idx)) == String(speech[w]), "screen word matches spoken word \(i)")
+    }
+    // the title is read first but isn't on the page
+    let titled = "Pip and the Kite. " + line
+    check(word(line, ReadAlongMath.displayRange(display: line, source: titled, spoken: 4)) == "One", "after the title, the first page word")
+    check(ReadAlongMath.displayRange(display: line, source: titled, spoken: 1) == nil, "nothing lights up while the title is read")
+    // emoji make no sound and are skipped
+    let fun = "Hooray 🎉 you did it!"
+    check(word(fun, ReadAlongMath.displayRange(display: fun, source: fun, spoken: 1)) == "you", "an emoji is skipped")
+    check(ReadAlongMath.displayRange(display: "Hello there", source: "Something else", spoken: 0) == nil, "no light when the screen shows something else")
+    check(ReadAlongMath.displayRange(display: line, source: line, spoken: 99) == nil, "past the end, nothing")
+    check(ReadAlongMath.spokenWordIndex(speech: "", utf16Location: 5) == 0, "empty is safe")
+    check(ReadAlongMath.speakable("3 × 4 = 12 🎉") == "3 times 4 = 12", "symbols are read as words")
+}
+
+test("Nature Trail, Calendar Corner, Compass Camp: every game, 300 seeds, answers really right") {
+    let places: [(String, [QuizGameInfo], (String, inout SeededRNG) -> [QuizRound])] = [
+        ("nature", NatureBank.games, { NatureBank.rounds(for: $0, using: &$1) }),
+        ("calendar", CalendarBank.games, { CalendarBank.rounds(for: $0, using: &$1) }),
+        ("compass", CompassBank.games, { CompassBank.rounds(for: $0, using: &$1) }),
+    ]
+    let days = CalendarBank.days, months = CalendarBank.months
+    check(Set(NatureBank.babies.map(\.animal)).count == NatureBank.babies.count, "one baby name per animal")
+    check(CompassBank.mapThings.allSatisfy { GridWords.names[$0] != nil }, "every map picture has a name")
+    for (place, games, make) in places {
+        check(games.count == 4 && Set(games.map(\.id)).count == 4, "\(place): four games")
+        for g in games {
+            for seed in 0..<300 {
+                var rng = SeededRNG(state: UInt64(seed))
+                let rounds = make(g.id, &rng)
+                check(rounds.count == 5, "\(place)/\(g.id): five rounds")
+                for r in rounds {
+                    check(r.choices.contains(r.answer) && Set(r.choices).count == r.choices.count && r.choices.count >= 2, "\(place)/\(g.id): choices hold the answer once (\(r.choices))")
+                    switch (place, g.id) {
+                    case ("nature", "homes"):
+                        let a = NatureBank.homes.first { r.say.contains("the \($0.animal) live") }!
+                        check(r.answer == a.home, "homes: \(a.animal) → \(a.home)")
+                    case ("nature", "cycles"):
+                        let c = NatureBank.cycles.first { r.say.hasPrefix("A \($0.name) grows") }!
+                        let names = c.stages.map(\.0)
+                        let last = r.say.components(separatedBy: "After the ")[1].components(separatedBy: ",")[0]
+                        let k = names.firstIndex(of: last)!
+                        check(names[k + 1] == r.answer, "cycles: after \(last) comes \(r.answer)")
+                    case ("nature", "senses"):
+                        let s = NatureBank.senses.first { r.say.hasSuffix("to \($0.thing)?") }!
+                        check(r.answer == (r.say.hasPrefix("Which sense") ? s.sense : s.part), "senses: \(s.thing)")
+                    case ("nature", "babies"):
+                        let b = NatureBank.babies.first { r.say == "What is a baby \($0.animal) called?" }!
+                        check(r.answer == b.baby, "babies: \(b.animal)")
+                    case ("calendar", "days"):
+                        if case .text(let d) = r.visual, let i = days.firstIndex(of: d) {
+                            check(r.answer == days[(i + (r.say.contains("before") ? 6 : 1)) % 7], "days: \(r.say) → \(r.answer)")
+                        }
+                    case ("calendar", "yesterday"):
+                        let d = days.firstIndex { r.say.hasPrefix("Today is \($0).") }!
+                        check(r.answer == days[(d + (r.say.contains("tomorrow") ? 1 : 6)) % 7], "yesterday: \(r.say) → \(r.answer)")
+                    case ("calendar", "months"):
+                        if case .text(let m) = r.visual, let i = months.firstIndex(of: m) { check(r.answer == months[(i + 1) % 12], "months: after \(m)") }
+                    case ("calendar", "seasons"):
+                        check(CalendarBank.seasonClues.contains { r.say.hasPrefix($0.clue) && $0.season == r.answer }, "seasons: \(r.answer)")
+                    case ("compass", "leftRight"):
+                        if case .picture(let row) = r.visual {
+                            let items = row.split(separator: " ").map { GridWords.name(String($0)) }
+                            let target = r.say.components(separatedBy: "of the ")[1].dropLast()
+                            let k = items.firstIndex(of: String(target))!
+                            check(items[k + (r.say.contains("left") ? -1 : 1)] == r.answer, "leftRight: \(r.say) → \(r.answer)")
+                        }
+                    case ("compass", "compass"):
+                        if case .compass(let n, let e, let s, let w) = r.visual {
+                            let four = [n, e, s, w].map(GridWords.name)
+                            if r.say.hasPrefix("What is to the") {
+                                let d = CompassBank.directions.firstIndex { r.say.contains($0) }!
+                                check(four[d] == r.answer, "compass: \(r.say)")
+                            } else {
+                                let thing = four.firstIndex { r.say.contains("the \($0)?") }!
+                                check(CompassBank.directions[thing] == r.answer, "compass: \(r.say)")
+                            }
+                            check(Set(four).count == 4, "compass: four different things")
+                        }
+                    case ("compass", "gridFind"):
+                        if case .gridMap(let cols, _, let items, _) = r.visual {
+                            if r.say.hasPrefix("What is at") {
+                                let spot = String(r.say.dropFirst(11).dropLast())
+                                let cell = items.keys.first { CompassBank.cellName($0, cols: cols) == spot }!
+                                check(GridWords.name(items[cell]!) == r.answer, "gridFind: \(spot)")
+                            } else {
+                                let cell = items.keys.first { CompassBank.cellName($0, cols: cols) == r.answer }
+                                check(cell != nil && r.say.contains(GridWords.name(items[cell!]!)), "gridFind: where is → \(r.answer)")
+                            }
+                            check(Set(items.values).count == items.count, "gridFind: nothing twice on a map")
+                        }
+                    default: // follow
+                        if case .gridMap(let cols, let rows, let items, let marker) = r.visual, let start = marker {
+                            var c = start % cols, rr = start / cols
+                            let path = r.say.components(separatedBy: "Go ")[1].components(separatedBy: ". What")[0]
+                            for step in path.components(separatedBy: ", then ") {
+                                let parts = step.split(separator: " "); let n = Int(parts[0])!
+                                switch parts[1] { case "up": rr -= n; case "down": rr += n; case "left": c -= n; default: c += n }
+                                check(c >= 0 && c < cols && rr >= 0 && rr < rows, "follow: stays on the map")
+                            }
+                            check(items[rr * cols + c].map(GridWords.name) == r.answer && items[start] == nil, "follow: the walk ends at \(r.answer)")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+test("Brain Bubble widget: questions, one try each, every question before any repeat") {
+    let all = BubbleBank.all
+    check(all.count == 41, "41 questions (prime, so stepping by 7 visits them all)")
+    for q in all {
+        check(q.choices.count == 3 && Set(q.choices).count == 3 && q.choices.indices.contains(q.answer), "three different choices: \(q.question)")
+        check(!q.fact.isEmpty && !q.emoji.isEmpty, "a fact and a picture: \(q.question)")
+    }
+    check(Set(all.map(\.question)).count == all.count, "no question twice")
+    // spot-check some answers
+    func ans(_ s: String) -> String? { all.first { $0.question == s }.map { $0.choices[$0.answer] } }
+    check(ans("What is 4 + 3?") == "7" && ans("What is 9 − 4?") == "5" && ans("What is 10 + 6?") == "16" && ans("What is 2 groups of 3?") == "6", "math answers")
+    check(ans("How many legs does a spider have?") == "8" && ans("How many continents are there?") == "7", "facts")
+    var b = BrainBubble(); b.start = 5
+    var seen: Set<Int> = []
+    for _ in 0..<all.count { seen.insert(b.index); b.next() }
+    check(seen.count == all.count, "every question comes up once per lap")
+    var c = BrainBubble()
+    let right = c.question.answer
+    c.pick((right + 1) % 3)
+    check(c.isAnswered && !c.gotIt && c.right == 0 && c.answered == 1, "a wrong answer")
+    c.pick(right)
+    check(c.right == 0 && c.answered == 1, "one try per question")
+    c.next()
+    check(!c.isAnswered && c.turn == 1, "next question")
+    c.pick(c.question.answer)
+    check(c.gotIt && c.right == 1, "a right answer")
+    c.pick(99)
+    let d = UserDefaults(suiteName: "hopquest.tests.bubble")!
+    d.removePersistentDomain(forName: "hopquest.tests.bubble")
+    SharedStore.save(c, d)
+    check(SharedStore.loadBubble(d) == c, "saved")
+    check(HopWords.tr("It's 7.", true) == "Es 7." && HopWords.tr("3 right", true) == "3 correctas" && HopWords.tr("Next question", true) == "Otra pregunta", "widget words in Spanish")
+    d.removePersistentDomain(forName: "hopquest.tests.bubble")
+}
+
+test("Level Maker and Sticker Scenes") {
+    var lv = CustomHopLevel(id: "t", name: "Test")
+    check(!lv.canPlay, "an empty level can't be played")
+    check(!lv.apply(.star, at: CustomHopLevel.startCell).ok, "no star where the buddy starts")
+    check(!lv.apply(.cloud, at: 3).ok, "no cloud on the ground")
+    check(lv.apply(.cloud, at: 9).ok && !lv.apply(.star, at: 9).ok, "a cloud, then no star on it")
+    check(lv.apply(.spring, at: 4).ok && lv.spring == 4 && !lv.apply(.star, at: 4).ok, "a spring, then no star on it")
+    check(!lv.apply(.spring, at: 10).ok && !lv.apply(.spring, at: StarHop.startCol).ok, "springs only on the ground, not at the start")
+    check(lv.apply(.star, at: 14).ok && lv.thing(at: 14) == .star && lv.canPlay, "a star")
+    lv.apply(.star, at: 14)
+    check(lv.thing(at: 14) == nil, "tapping a star again takes it away")
+    for c in [2, 3, 5, 6, 7, 8, 10, 11, 12, 13, 15, 16, 17] { lv.apply(.star, at: c) }
+    check(lv.stars.count == CustomHopLevel.maxStars, "at most \(CustomHopLevel.maxStars) stars")
+    lv.apply(.erase, at: 9); lv.apply(.erase, at: 4)
+    check(lv.clouds.isEmpty && lv.spring == nil, "the eraser")
+    for c in [7, 8, 9, 10] { lv.apply(.cloud, at: c) }
+    check(lv.clouds.count <= CustomHopLevel.maxClouds, "at most 3 clouds")
+
+    var g = StarHop(); let before = g
+    var mine = CustomHopLevel(id: "m", name: "Mine")
+    mine.apply(.star, at: 2); mine.apply(.star, at: 9); mine.apply(.cloud, at: 16)
+    g.play(mine)
+    check(g.custom != nil && g.stars.count == 2 && g.goal == 2 && g.clouds == [16] && g.info.title == "Mine", "playing a made-up level")
+    let starCells = g.stars.map(\.cell)
+    g.left(); g.left(); g.left()
+    check(g.stars.map(\.cell) == starCells, "its stars stay where they were put")
+    // finish it with the look-ahead player, and check nothing is recorded
+    var taps = 0
+    while !g.levelDone && taps < 200 {
+        if g.outOfHearts { g.retry() }
+        var best: Bool? = nil
+        var frontier: [(StarHop, Bool)] = [true, false].map { r in var x = g; if r { x.right() } else { x.left() }; return (x, r) }
+        for _ in 0..<7 where best == nil {
+            if let hit = frontier.first(where: { $0.0.collected > g.collected && $0.0.hearts == g.hearts }) { best = hit.1; break }
+            frontier = frontier.flatMap { s, f in [true, false].map { r in var x = s; if r { x.right() } else { x.left() }; return (x, f) } }
+        }
+        if best ?? true { g.right() } else { g.left() }
+        taps += 1
+    }
+    check(g.levelDone && !g.champion && g.message == "You caught every star!", "a made-up level can be finished (\(taps) taps)")
+    check(g.best == before.best && g.rating == before.rating && g.levelsCleared == before.levelsCleared, "and it changes no Star Hop records")
+    g.nextLevel()
+    check(g.custom == mine && g.collected == 0 && g.stars.count == 2, "play again replays it")
+    g.startLevel(1)
+    check(g.custom == nil && g.stars.count == 2 && g.level == 1, "back to the real levels")
+    let rt = try! JSONDecoder().decode(StarHop.self, from: try! JSONEncoder().encode(g))
+    check(rt == g, "round trip")
+
+    // random made-up levels can always be finished
+    var x: UInt64 = 99
+    for n in 0..<60 {
+        var r = CustomHopLevel(id: "r\(n)", name: "R")
+        for _ in 0..<20 {
+            x = x &* 6364136223846793005 &+ 1442695040888963407
+            let tool = CustomHopLevel.Tool.allCases[Int((x >> 33) % 3)]
+            r.apply(tool, at: Int((x >> 40) % 18))
+        }
+        guard r.canPlay else { continue }
+        var p = StarHop(); p.play(r)
+        var t = 0
+        while !p.levelDone && t < 400 {
+            if p.outOfHearts { p.retry() }
+            var best: Bool? = nil
+            var frontier: [(StarHop, Bool)] = [true, false].map { rr in var y = p; if rr { y.right() } else { y.left() }; return (y, rr) }
+            for _ in 0..<7 where best == nil {
+                if let hit = frontier.first(where: { $0.0.collected > p.collected && $0.0.hearts == p.hearts }) { best = hit.1; break }
+                frontier = frontier.flatMap { s, f in [true, false].map { rr in var y = s; if rr { y.right() } else { y.left() }; return (y, f) } }
+            }
+            if best ?? true { p.right() } else { p.left() }
+            t += 1
+        }
+        check(p.levelDone, "made-up level \(n) can be finished (\(r.stars.count) stars, \(r.clouds.count) clouds)")
+    }
+
+    for sp in [nil, 0, 2, 3, 4, 5] as [Int?] {
+        let reach = CustomHopLevel.reachable(spring: sp)
+        let blocked = Set(0..<18).subtracting(reach).subtracting(sp.map { [$0] } ?? [])
+        check(blocked.count <= 1, "a spring at \(String(describing: sp)) blocks at most one square: \(blocked.sorted())")
+    }
+    var sp = CustomHopLevel(id: "s", name: "S")
+    sp.apply(.star, at: 16)
+    let r2 = sp.apply(.spring, at: 2)
+    check(sp.spring == 2 && !sp.stars.contains(16) && r2.why != nil, "a new spring sends an unreachable star away, and says so")
+    check(!sp.apply(.star, at: 16).ok, "and won't let a star go there")
+
+    var save = LevelMakerSave()
+    for _ in 0..<8 { save.save(save.newLevel()) }
+    check(save.levels.count == CustomHopLevel.maxSaved && save.made == 8, "six levels kept")
+
+    var sc = StickerScene(id: "s")
+    let a = sc.add("pip")!, b = sc.add("mochi")!
+    check(sc.placed.count == 2 && sc.placed[0].x != sc.placed[1].x, "stickers don't land on top of each other")
+    sc.move(a, x: 1.4, y: -0.2)
+    check(sc.placed.first { $0.id == a }!.x == 1 && sc.placed.first { $0.id == a }!.y == 0, "moves stay inside the picture")
+    for _ in 0..<10 { sc.resize(b, by: 1.5) }
+    check(sc.placed.first { $0.id == b }!.scale == StickerScene.maxScale, "can't grow forever")
+    sc.raise(a)
+    check(sc.placed.last!.id == a, "bring to front")
+    sc.flip(a); sc.remove(b)
+    check(sc.placed.count == 1 && sc.placed[0].flipped, "flip and remove")
+    for _ in 0..<20 { sc.add("pip") }
+    check(sc.placed.count == StickerScene.maxStickers, "at most \(StickerScene.maxStickers) stickers")
+    var ss = SceneSave()
+    for _ in 0..<9 { ss.save(ss.newScene()) }
+    check(ss.scenes.count == SceneSave.maxSaved, "six scenes kept")
+}
+
+test("Bedtime: goodnight from bedtime until 6 in the morning, a grown-up can add time") {
+    var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "UTC")!
+    func at(_ h: Int, _ m: Int) -> Date { cal.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: h, minute: m))! }
+    let bed = 19 * 60 + 30
+    check(!Bedtime.isBedtime(now: at(19, 29), bedtime: bed, snoozeUntil: nil, calendar: cal), "not yet at 7:29")
+    check(Bedtime.isBedtime(now: at(19, 30), bedtime: bed, snoozeUntil: nil, calendar: cal), "bedtime at 7:30")
+    check(Bedtime.isBedtime(now: at(23, 59), bedtime: bed, snoozeUntil: nil, calendar: cal) && Bedtime.isBedtime(now: at(3, 0), bedtime: bed, snoozeUntil: nil, calendar: cal), "through the night")
+    check(!Bedtime.isBedtime(now: at(6, 0), bedtime: bed, snoozeUntil: nil, calendar: cal) && !Bedtime.isBedtime(now: at(12, 0), bedtime: bed, snoozeUntil: nil, calendar: cal), "morning and daytime are fine")
+    check(!Bedtime.isBedtime(now: at(21, 0), bedtime: 0, snoozeUntil: nil, calendar: cal), "off means off")
+    check(!Bedtime.isBedtime(now: at(20, 0), bedtime: bed, snoozeUntil: at(20, 15), calendar: cal), "15 more minutes")
+    check(Bedtime.isBedtime(now: at(20, 16), bedtime: bed, snoozeUntil: at(20, 15), calendar: cal), "then goodnight again")
+    check(Bedtime.label(19 * 60 + 30) == "7:30 PM" && Bedtime.label(21 * 60) == "9:00 PM" && Bedtime.label(0) == "Off", "labels")
+    check(Bedtime.choices.allSatisfy { $0 == 0 || $0 > Bedtime.wakeMinutes }, "every choice is in the evening")
 }
 
 print("\n\(passes) checks passed, \(failures) failed")

@@ -327,12 +327,73 @@ def icon_surprise():
     return s
 
 
+def icon_nature():
+    s = ground()
+    # a big leaf, a butterfly and a little frog
+    s += P("M40 150 Q40 60 140 40 Q150 130 60 160 Z", "#5FC86A")
+    s += P("M48 150 Q90 100 132 52", "none", 4)
+    s += E(146, 112, 16, 22, "#FF9DE2", rot=-20) + E(170, 116, 14, 18, "#B983FF", rot=20) + P("M158 100 L158 136", "none", 4)
+    s += C(144, 160, 14, "#34C77B") + C(138, 152, 4, "#FFFFFF") + C(150, 152, 4, "#FFFFFF")
+    return s
+
+
+def icon_calendar():
+    s = ground()
+    # a calendar page with a sun stamp
+    s += R(36, 46, 128, 124, 12, "#FFFFFF")
+    s += R(36, 46, 128, 32, 12, "#FF8A3D")
+    s += C(70, 46, 6, OUT, False) + C(130, 46, 6, OUT, False)
+    for r in range(3):
+        for c in range(4):
+            s += R(48 + c * 28, 88 + r * 24, 18, 16, 3, "#FFE0B3" if (r, c) != (1, 2) else "#FFD93D", False)
+    s += C(116, 104, 12, "#FFD93D")
+    return s
+
+
+def icon_compass():
+    s = ground()
+    s += C(100, 100, 62, "#FFFFFF")
+    s += C(100, 100, 50, "#E8F1FF", False)
+    s += P("M100 50 L114 100 L100 150 L86 100 Z", "#FFFFFF")
+    s += P("M100 50 L114 100 L86 100 Z", "#FF5A5F")
+    s += C(100, 100, 7, OUT, False)
+    s += T(100, 34, "N", 22, "#1565C0")
+    return s
+
+
+def icon_levelmaker():
+    s = ground()
+    # a grid with a star, a cloud and a pencil
+    s += R(30, 50, 140, 110, 10, "#FFFFFF")
+    for k in range(1, 4):
+        s += P(f"M{30 + k * 35} 50 L{30 + k * 35} 160", "none", 2, op=0.3)
+    for k in range(1, 3):
+        s += P(f"M30 {50 + k * 37} L170 {50 + k * 37}", "none", 2, op=0.3)
+    s += P(star_path(82, 106, 16, 0.42), "#FFD93D", 3)
+    s += E(140, 70, 18, 11, "#E8F7FF")
+    s += P("M118 172 L170 120 L182 132 L130 184 L114 188 Z", "#FFB547")
+    return s
+
+
+def icon_scenes():
+    s = ground()
+    # a picture frame with a beach, a sun and a sticker buddy
+    s += R(28, 44, 144, 120, 10, "#8FD3FF")
+    s += P("M28 128 Q100 112 172 128 L172 164 L28 164 Z", "#F2D58A", False)
+    s += C(140, 74, 14, "#FFD93D", False)
+    s += C(80, 118, 22, "#FFB3C7") + C(73, 112, 3.5, OUT, False) + C(87, 112, 3.5, OUT, False) + P("M74 124 Q80 130 86 124", "none", 3)
+    s += R(28, 44, 144, 120, 10, "none")
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
          "icon_spelling": icon_spelling, "icon_fractions": icon_fractions, "icon_shapes": icon_shapes, "icon_story": icon_story,
          "icon_rhyme": icon_rhyme, "icon_numbers": icon_numbers, "icon_times": icon_times, "icon_measure": icon_measure,
-         "icon_feelings": icon_feelings, "icon_breathe": icon_breathe, "icon_starhop": icon_starhop, "icon_surprise": icon_surprise}
+         "icon_feelings": icon_feelings, "icon_breathe": icon_breathe, "icon_starhop": icon_starhop, "icon_surprise": icon_surprise,
+         "icon_nature": icon_nature, "icon_calendar": icon_calendar, "icon_compass": icon_compass,
+         "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes}
 
 
 if __name__ == "__main__":

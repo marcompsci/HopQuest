@@ -24,10 +24,18 @@ final class Narrator: NSObject, AVSpeechSynthesizerDelegate {
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         if !synthesizer.isSpeaking { SoundFX.shared.duckMusic(false) }
+        ReadAlong.shared.finished(utterance.speechString)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         if !synthesizer.isSpeaking { SoundFX.shared.duckMusic(false) }
+        ReadAlong.shared.finished(utterance.speechString)
+    }
+
+    /// Read with Me (v8.1): which word is being spoken, so the words on screen can light up as they're read.
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+        let index = ReadAlongMath.spokenWordIndex(speech: utterance.speechString, utf16Location: characterRange.location)
+        ReadAlong.shared.speaking(utterance.speechString, word: index)
     }
 
     /// Speaks `text`, cutting off whatever was being said before.
@@ -55,6 +63,8 @@ final class Narrator: NSObject, AVSpeechSynthesizerDelegate {
         utterance.postUtteranceDelay = 0.05
         // the learning content is English, so anything without a Spanish line is read in English
         utterance.voice = AVSpeechSynthesisVoice(language: spanish != nil ? "es-MX" : "en-US")
+        // words light up only when what is heard is what is written (not when a Spanish line is read)
+        ReadAlong.shared.started(source: spanish == nil ? text : "", speech: clean)
         synth.speak(utterance)
     }
 
@@ -81,25 +91,5 @@ final class Narrator: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     /// Strips emoji and swaps symbols the voice would read oddly.
-    static func speakable(_ text: String) -> String {
-        var t = text
-            .replacingOccurrences(of: "×", with: " times ")
-            .replacingOccurrences(of: "−", with: " minus ")
-            .replacingOccurrences(of: " + ", with: " plus ")
-            .replacingOccurrences(of: "·", with: ", ")
-            .replacingOccurrences(of: "...", with: ", ")
-            .replacingOccurrences(of: "mph", with: "miles per hour")
-        t = String(String.UnicodeScalarView(t.unicodeScalars.filter { scalar in
-            let p = scalar.properties
-            if p.isEmojiPresentation { return false }
-            if p.generalCategory == .otherSymbol { return false }
-            if scalar.value == 0xFE0F || scalar.value == 0x200D { return false }   // emoji joiners
-            if (0x2190...0x21FF).contains(scalar.value) || (0x25A0...0x25FF).contains(scalar.value) { return false } // arrows, shapes
-            return true
-        }))
-        return t
-            .components(separatedBy: .whitespacesAndNewlines)
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-    }
+    static func speakable(_ text: String) -> String { ReadAlongMath.speakable(text) }
 }

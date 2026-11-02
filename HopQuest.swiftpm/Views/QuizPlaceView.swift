@@ -61,6 +61,27 @@ struct QuizPlace {
                   rounds: { id in var g = SystemRandomNumberGenerator(); return FeelingsBank.rounds(for: id, using: &g) })
     }
 
+    static var nature: QuizPlace {
+        QuizPlace(id: "nature", title: "Nature Trail", line: "Animals, plants and our five senses. Let's explore!",
+                  greeting: "Hello! I'm Flora. Welcome to the Nature Trail. Let's see what lives and grows here!", host: Roster.character(id: "flora"),
+                  accent: Color(hex: 0x2E7D32), background: [Color(hex: 0xEEF8E8), Color(hex: 0xCFE8C2)], games: NatureBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return NatureBank.rounds(for: id, using: &g) })
+    }
+
+    static var calendar: QuizPlace {
+        QuizPlace(id: "calendar", title: "Calendar Corner", line: "Days, months and seasons. Let's learn the calendar!",
+                  greeting: "Peep! I'm Sunny. Welcome to Calendar Corner, where every day has a name!", host: Roster.character(id: "sunny"),
+                  accent: Color(hex: 0xD35400), background: [Color(hex: 0xFFF6E5), Color(hex: 0xFFE0B3)], games: CalendarBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return CalendarBank.rounds(for: id, using: &g) })
+    }
+
+    static var compass: QuizPlace {
+        QuizPlace(id: "compass", title: "Compass Camp", line: "Maps, compasses and paths. Let's find our way!",
+                  greeting: "Hi, I'm Captain Comet! Welcome to Compass Camp. Every explorer needs to find their way.", host: Roster.character(id: "comet"),
+                  accent: Color(hex: 0x1565C0), background: [Color(hex: 0xEAF3FF), Color(hex: 0xC8DEFA)], games: CompassBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return CompassBank.rounds(for: id, using: &g) })
+    }
+
     /// Every place, by id.
     static func named(_ id: String) -> QuizPlace {
         switch id {
@@ -71,6 +92,9 @@ struct QuizPlace {
         case "times": return .times
         case "measure": return .measure
         case "feelings": return .feelings
+        case "nature": return .nature
+        case "calendar": return .calendar
+        case "compass": return .compass
         default: return .shapes
         }
     }
@@ -396,6 +420,10 @@ struct QuizVisualView: View {
             GroupsDrawing(count: count, each: each, item: item, rows: rows, large: large, color: accent)
         case .bar(let length, let color, let units):
             RibbonDrawing(length: length, color: QuizColors.named(color), units: units, large: large)
+        case .gridMap(let cols, let rows, let items, let marker):
+            GridMapDrawing(cols: cols, rows: rows, items: items, marker: marker, accent: accent)
+        case .compass(let n, let e, let s, let w):
+            CompassDrawing(north: n, east: e, south: s, west: w, accent: accent)
         case .pattern(let s):
             HStack(spacing: 6) {
                 ForEach(Array(s.enumerated()), id: \.offset) { _, k in ShapeDrawing(kind: k, color: accent).frame(width: 40, height: 40) }
@@ -404,6 +432,68 @@ struct QuizVisualView: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(accent, style: StrokeStyle(lineWidth: 2, dash: [4, 3])))
             }
         }
+    }
+}
+
+/// A grid map with letters across the top and numbers down the side.
+struct GridMapDrawing: View {
+    let cols: Int
+    let rows: Int
+    let items: [Int: String]
+    let marker: Int?
+    let accent: Color
+
+    var body: some View {
+        let cell: CGFloat = 44
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Color.clear.frame(width: 24, height: 22)
+                ForEach(0..<cols, id: \.self) { c in
+                    Text(CompassBank.letters[c]).font(.kid(15, .black)).foregroundStyle(accent).frame(width: cell, height: 22)
+                }
+            }
+            ForEach(0..<rows, id: \.self) { r in
+                HStack(spacing: 0) {
+                    Text("\(r + 1)").font(.kid(15, .black)).foregroundStyle(accent).frame(width: 24, height: cell)
+                    ForEach(0..<cols, id: \.self) { c in
+                        let i = r * cols + c
+                        ZStack {
+                            Rectangle().fill((r + c) % 2 == 0 ? Color(hex: 0xE6F4D9) : Color(hex: 0xD6ECC4))
+                            Rectangle().stroke(Palette.ink.opacity(0.2), lineWidth: 1)
+                            if marker == i { Text("🚩").font(.system(size: 26)) }
+                            if let t = items[i] { Text(t).font(.system(size: 26)) }
+                        }
+                        .frame(width: cell, height: cell)
+                    }
+                }
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// A compass rose with a picture in each direction.
+struct CompassDrawing: View {
+    let north: String
+    let east: String
+    let south: String
+    let west: String
+    let accent: Color
+
+    var body: some View {
+        ZStack {
+            Circle().fill(.white).overlay(Circle().stroke(accent, lineWidth: 3)).frame(width: 110, height: 110)
+            Image(systemName: "location.north.fill").font(.system(size: 34, weight: .bold)).foregroundStyle(Palette.red)
+            ForEach(Array(zip(["N", "E", "S", "W"], [CGSize(width: 0, height: -40), CGSize(width: 40, height: 0), CGSize(width: 0, height: 40), CGSize(width: -40, height: 0)]).enumerated()), id: \.offset) { _, p in
+                Text(p.0).font(.kid(15, .black)).foregroundStyle(accent).offset(p.1)
+            }
+            Text(north).font(.system(size: 34)).offset(y: -88)
+            Text(east).font(.system(size: 34)).offset(x: 92)
+            Text(south).font(.system(size: 34)).offset(y: 88)
+            Text(west).font(.system(size: 34)).offset(x: -92)
+        }
+        .frame(width: 240, height: 230)
+        .accessibilityHidden(true)
     }
 }
 

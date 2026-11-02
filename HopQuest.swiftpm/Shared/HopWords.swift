@@ -35,6 +35,7 @@ enum HopWords {
         "Got it! ⭐": "¡Atrapada! ⭐", "Golden star! +2": "¡Estrella dorada! +2", "Boing!": "¡Boing!", "Bubble shield! 🫧": "¡Escudo de burbuja! 🫧",
         "Pop! Your bubble saved you.": "¡Pop! Tu burbuja te salvó.", "Bonk! A puff cloud. 💨": "¡Bonk! Una nube. 💨",
         "You finished every level!": "¡Terminaste todos los niveles!", "Tap to play!": "¡Toca para jugar!",
+        "Brain Bubble": "Burbuja Cerebral", "You caught every star!": "¡Atrapaste todas las estrellas!", "Catch every star!": "¡Atrapa todas las estrellas!", "Next question": "Otra pregunta", "Yes!": "¡Sí!", "Not quite.": "Casi.",
         // levels
         "Sunny Meadow": "Prado Soleado", "Breezy Beach": "Playa Ventosa", "Counting Hill": "Colina de Contar", "Snowy Peaks": "Picos Nevados",
         "Spelling Sky": "Cielo de Letras", "Starry Night": "Noche Estrellada", "ABC Garden": "Jardín ABC", "Rocket Launch": "Despegue",
@@ -59,5 +60,7 @@ enum HopWords {
         ("^Not (.+)\\. (.+) = \\?$", "No es $1. $2 = ?"),
         ("^That's (.+)\\. Find (.+) first!$", "Ese es $1. ¡Primero busca $2!"),
         ("^(.+)! Now find (.+)\\.$", "¡$1! Ahora busca $2."),
+        ("^It's (.+)\\.$", "Es $1."),
+        ("^(\\d+) right$", "$1 correctas"),
     ].compactMap { p in (try? NSRegularExpression(pattern: p.0)).map { ($0, p.1) } }
 }

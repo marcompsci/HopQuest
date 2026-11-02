@@ -127,7 +127,7 @@ struct StoryBuilder: View {
             }
             if pages.indices.contains(index) {
                 StoryStage(page: pages[index], height: 180)
-                Text(sentence).font(.kid(17, .bold)).foregroundStyle(Palette.ink).multilineTextAlignment(.center)
+                ReadAlongText(text: sentence, font: .kid(17, .bold)).multilineTextAlignment(.center)
                     .frame(minHeight: 48).fixedSize(horizontal: false, vertical: true)
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 12) {
@@ -258,7 +258,7 @@ struct StoryReader: View {
                 ForEach(Array(story.pages.enumerated()), id: \.offset) { i, p in
                     VStack(spacing: 16) {
                         StoryStage(page: p, height: 260)
-                        Text(StoryMakerBank.sentence(p, index: i)).font(.kid(22, .bold)).foregroundStyle(Palette.ink)
+                        ReadAlongText(text: StoryMakerBank.sentence(p, index: i), font: .kid(22, .bold))
                             .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                     }

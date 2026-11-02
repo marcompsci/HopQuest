@@ -104,9 +104,7 @@ struct CutsceneView: View {
                 Text("\(currentLine.voice == .buddy ? character.emoji : currentLine.voice.emoji) \(speaker)")
                     .font(.kid(16, .black)).foregroundStyle(Palette.purple)
             }
-            Text(currentLine.text)
-                .font(.kid(20, currentLine.voice == .narrator ? .bold : .heavy))
-                .foregroundStyle(Palette.ink)
+            ReadAlongText(text: currentLine.text, font: .kid(20, currentLine.voice == .narrator ? .bold : .heavy))
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
                 SpeakButton(label: "Read it again") { speak() }

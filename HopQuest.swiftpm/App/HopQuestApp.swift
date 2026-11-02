@@ -45,6 +45,8 @@ enum Route: Equatable {
     case badges
     case starHop
     case breathe
+    case levelMaker
+    case stickerScenes
     // two players on one phone
     case teamKartSelect
     case teamKart(Int)
@@ -66,6 +68,7 @@ struct RootView: View {
     @State private var sessionStart = Date()
     @State private var showBreak = false
     @State private var restTime = false
+    @State private var bedtimeRest = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var raceNonce = 0
     /// Where "back" and balloon landings return: the menu, the world map, or Hop Village.
@@ -94,8 +97,9 @@ struct RootView: View {
                 .transition(.opacity)
             }
             if restTime && store.profile != nil {
-                RestTimeView {
+                RestTimeView(bedtime: bedtimeRest) {
                     restTime = false
+                    bedtimeRest = false
                     sessionStart = Date()
                 }
                 .transition(.opacity)
@@ -119,6 +123,7 @@ struct RootView: View {
         .onAppear {
             updateMusic()
             if store.timeIsUp { restTime = true }
+            if store.isBedtime { bedtimeRest = true; restTime = true }
         }
         .onChange(of: restTime) { _, resting in
             if resting {
@@ -137,6 +142,11 @@ struct RootView: View {
         }
         .onReceive(ticker) { _ in
             // daily play limit (counts only while the app is open and in front)
+            if scenePhase == .active, store.profile != nil, !restTime, store.isBedtime {
+                bedtimeRest = true
+                restTime = true
+                return
+            }
             if scenePhase == .active, store.profile != nil, !restTime, store.addPlayTime(20) {
                 restTime = true
                 return
@@ -175,6 +185,8 @@ struct RootView: View {
                          onBadges: { route = .badges },
                          onStarHop: { route = .starHop },
                          onBreathe: { route = .breathe },
+                         onLevelMaker: { route = .levelMaker },
+                         onScenes: { route = .stickerScenes },
                          onSurprise: { id in route = Self.route(forPlace: id) },
                          onMap: { hub = .map; route = .map(landing: nil) },
                          onWorld: { id in route = .world(id) })
@@ -304,6 +316,12 @@ struct RootView: View {
 
         case .breathe:
             BreatheView(onBack: goHome)
+
+        case .levelMaker:
+            LevelMakerView(onBack: goHome)
+
+        case .stickerScenes:
+            StickerScenesView(onBack: goHome)
 
         case .castle:
             MyCastleView(onBack: goHome)

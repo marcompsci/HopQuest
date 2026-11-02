@@ -8,6 +8,8 @@ import WidgetKit
 struct StarHopPlayView: View {
     @EnvironmentObject var store: GameStore
     var onBack: () -> Void
+    /// A level from the Level Maker: played here only, never saved over the widget's game.
+    var custom: CustomHopLevel? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -38,6 +40,9 @@ struct StarHopPlayView: View {
             if h.champion {
                 card(title: HopWords.tr("You beat all \(StarHop.levels.count) levels! 🏆", L10n.isSpanish), detail: "\(h.totalRating) of \(StarHop.levels.count * 3) stars",
                      rating: h.lastRating, button: "Play again") { act { $0.newGame() } }
+            } else if h.levelDone, h.custom != nil {
+                card(title: HopWords.tr("You caught every star!", L10n.isSpanish), detail: h.info.title, rating: h.lastRating,
+                     button: "Play again") { act { $0.nextLevel() } }
             } else if h.levelDone {
                 card(title: HopWords.tr("Level \(h.level) done!", L10n.isSpanish),
                      detail: HopWords.tr("Next: \(StarHop.levels[min(h.level, StarHop.levels.count - 1)].title)", L10n.isSpanish),
@@ -52,25 +57,33 @@ struct StarHopPlayView: View {
         .animation(Motion.present, value: h.outOfHearts)
         .sheet(isPresented: $showLevels) { levelPicker }
         .onAppear {
-            h = SharedStore.loadHop()
+            if let custom {
+                var g = StarHop(); g.play(custom); h = g
+            } else {
+                h = SharedStore.loadHop()
+            }
             Narrator.shared.say(spokenGoal)
         }
         .onDisappear { Narrator.shared.stop() }
-        .onChange(of: scenePhase) { _, phase in if phase == .active { h = SharedStore.loadHop() } }
+        .onChange(of: scenePhase) { _, phase in if phase == .active && custom == nil { h = SharedStore.loadHop() } }
     }
 
     // MARK: Playing
 
     private func act(_ change: (inout StarHop) -> Void) {
-        // the widget may have moved on while the app was in the background: always play on from the latest save
-        let latest = SharedStore.loadHop()
-        if latest != h { h = latest }
+        if custom == nil {
+            // the widget may have moved on while the app was in the background: always play on from the latest save
+            let latest = SharedStore.loadHop()
+            if latest != h { h = latest }
+        }
         let before = h
         change(&h)
-        SharedStore.save(h)
-        #if canImport(WidgetKit)
-        WidgetCenter.shared.reloadTimelines(ofKind: "HopQuestStarHop")
-        #endif
+        if custom == nil {
+            SharedStore.save(h)
+            #if canImport(WidgetKit)
+            WidgetCenter.shared.reloadTimelines(ofKind: "HopQuestStarHop")
+            #endif
+        }
         if h.levelDone && !before.levelDone {
             Haptics.success()
             Narrator.shared.say(h.champion ? "You beat every level!" : "Level \(h.level) done! \(h.lastRating) stars!")
@@ -116,7 +129,7 @@ struct StarHopPlayView: View {
         HStack(spacing: 10) {
             CircleIconButton(systemName: "chevron.left", label: "Back", action: onBack)
             VStack(alignment: .leading, spacing: 0) {
-                Text("Star Hop · \(L10n.tr("Level")) \(h.level)").font(.kid(13, .bold)).foregroundStyle(ink.opacity(0.65))
+                Text(custom != nil ? L10n.tr("Level Maker") : "Star Hop · \(L10n.tr("Level")) \(h.level)").font(.kid(13, .bold)).foregroundStyle(ink.opacity(0.65))
                 Text(HopWords.tr(h.info.title, L10n.isSpanish)).font(.kid(22, .black)).lineLimit(1).minimumScaleFactor(0.7)
             }
             Spacer()
@@ -127,12 +140,14 @@ struct StarHopPlayView: View {
                 }
             }
             .accessibilityElement(children: .ignore).accessibilityLabel("\(h.hearts) hearts")
+            if custom == nil {
             Button { showLevels = true } label: {
                 Image(systemName: "square.grid.3x3.fill").font(.system(size: 17, weight: .bold)).foregroundStyle(Palette.ink.opacity(0.75))
                     .frame(width: 44, height: 44).background(Circle().fill(.regularMaterial))
             }
             .buttonStyle(BouncyButtonStyle())
             .accessibilityLabel("Levels")
+            }
         }
     }
 

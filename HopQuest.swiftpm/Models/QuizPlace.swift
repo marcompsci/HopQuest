@@ -43,6 +43,10 @@ enum QuizVisual: Equatable {
     case groups(count: Int, each: Int, item: String, rows: Bool)
     /// A ribbon `length` blocks long in a named color, with the block marks shown when `units` is on (v7.1).
     case bar(length: Int, color: String, units: Bool)
+    /// A grid map: columns A, B, C… and rows 1, 2, 3… from the top. `items` by cell (row × cols + col); `marker` is "you are here" (v8.4).
+    case gridMap(cols: Int, rows: Int, items: [Int: String], marker: Int?)
+    /// A compass rose with a picture at north, east, south and west (v8.4).
+    case compass(north: String, east: String, south: String, west: String)
 }
 
 extension QuizVisual {
@@ -53,6 +57,14 @@ extension QuizVisual {
         case .groups(let c, let e, _, let rows): return rows ? "\(c) rows of \(e)" : "\(c) groups of \(e)"
         case .bar(let n, let color, let units): return units ? "a \(color) ribbon over \(n) blocks" : "\(color) ribbon, \(n) blocks long"
         case .fraction(let p, let s, _): return "\(s) of \(p) parts colored"
+        case .gridMap(let cols, _, let items, let marker):
+            let letters = Array("ABCDEFGH")
+            func name(_ cell: Int) -> String { "\(letters[cell % cols])\(cell / cols + 1)" }
+            var parts = items.sorted { $0.key < $1.key }.map { "\(GridWords.name($0.value)) at \(name($0.key))" }
+            if let m = marker { parts.insert("You are at \(name(m))", at: 0) }
+            return "A map. " + parts.joined(separator: ", ")
+        case .compass(let n, let e, let s, let w):
+            return "A compass. North: \(GridWords.name(n)). East: \(GridWords.name(e)). South: \(GridWords.name(s)). West: \(GridWords.name(w))"
         case .picture(let p): return FeelingsBank.faceDescriptions[p]
         default: return nil
         }

@@ -146,10 +146,13 @@ struct ParentSettingsView: View {
                 if (store.profile?.dailyLimitMinutes ?? 0) > 0 {
                     LabeledContent("Played today", value: "\((store.profile?.playedSeconds ?? 0) / 60) min")
                 }
+                Picker("Bedtime", selection: binding(\.bedtimeMinutes, 0)) {
+                    ForEach(Bedtime.choices, id: \.self) { m in Text(Bedtime.label(m)).tag(m) }
+                }
             } header: {
                 Text("Daily play")
             } footer: {
-                Text("When time is up, your child's buddy says a gentle goodbye and the game rests until tomorrow. HopQuest has no streaks, no daily-login rewards, and never sends notifications, so it won't nag kids to come back.")
+                Text("When time is up, your child's buddy says a gentle goodbye and the game rests until tomorrow. With a bedtime set, HopQuest says goodnight from that time until 6 in the morning (a grown-up can add 15 minutes). HopQuest has no streaks, no daily-login rewards, and never sends notifications, so it won't nag kids to come back.")
             }
 
             Section {
@@ -322,6 +325,8 @@ struct LearningReportSection: View {
 /// The gentle end of today's play time. A grown-up can add 15 minutes after the parental gate.
 struct RestTimeView: View {
     @EnvironmentObject var store: GameStore
+    /// Bedtime (v8.9) rather than the daily play limit.
+    var bedtime = false
     var onMore: () -> Void
 
     @State private var showGate = false
@@ -345,11 +350,12 @@ struct RestTimeView: View {
                 Text("🌙").font(.system(size: 70))
                 CharacterBadge(character: store.character, size: 150)
                     .rotationEffect(.degrees(sway ? 3 : -3), anchor: .bottom)
-                Text("Time to rest, \(store.profile?.name ?? "friend")!")
+                Text(bedtime ? "Goodnight, \(store.profile?.name ?? "friend")!" : "Time to rest, \(store.profile?.name ?? "friend")!")
                     .font(.kid(32, .black))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
-                Text("You played so well today. \(store.character.name) is getting sleepy too. Your castle and stars will be right here tomorrow!")
+                Text(bedtime ? "It's bedtime. \(store.character.name) is putting on pajamas too. Sweet dreams, and see you in the morning!"
+                             : "You played so well today. \(store.character.name) is getting sleepy too. Your castle and stars will be right here tomorrow!")
                     .font(.kid(18, .semibold))
                     .foregroundStyle(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
@@ -366,7 +372,7 @@ struct RestTimeView: View {
             }
         }
         .onAppear {
-            Narrator.shared.say("Time to rest! You played so well today. See you tomorrow!")
+            Narrator.shared.say(bedtime ? "It's bedtime. Sweet dreams! See you in the morning!" : "Time to rest! You played so well today. See you tomorrow!")
             withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { sway = true }
         }
     }
@@ -382,7 +388,7 @@ struct RestTimeView: View {
                 .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0xF3ECFF)))
             BigButton(title: "Add 15 minutes", color: Palette.green) {
                 if Int(answer) == a * b {
-                    store.grantExtraTime(minutes: 15)
+                    if bedtime { store.snoozeBedtime(minutes: 15) } else { store.grantExtraTime(minutes: 15) }
                     onMore()
                 } else {
                     answer = ""

@@ -42,6 +42,8 @@ enum Badges {
         ("rhyme", "Rhyme Star", "music.quarternote.3", 0x2E8B3E), ("numbers", "Number Builder", "square.stack.3d.up.fill", 0x6A3FB5),
         ("times", "Group Counter", "circle.grid.2x2.fill", 0x8A5A2B), ("measure", "Measurer", "ruler.fill", 0x2F6F9F),
         ("feelings", "Big Heart", "heart.fill", 0xC2185B),
+        ("nature", "Nature Explorer", "leaf.fill", 0x2E7D32), ("calendar", "Day Keeper", "calendar", 0xD35400),
+        ("compass", "Pathfinder", "safari.fill", 0x1565C0),
     ]
 
     static let all: [Badge] = {
@@ -84,6 +86,9 @@ enum Badges {
         case "times": return "Times Treehouse"
         case "measure": return "Measure Meadow"
         case "feelings": return "Feelings Corner"
+        case "nature": return "Nature Trail"
+        case "calendar": return "Calendar Corner"
+        case "compass": return "Compass Camp"
         default: return "Code Club"
         }
     }

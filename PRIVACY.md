@@ -43,7 +43,7 @@ The note contains the child's first name or nickname, the milestone, the skills 
 HopQuest's widgets show the child's buddy, stars and what to play next, and a small tap-to-play game. They read a summary that the app saves in a shared area on the same device (an "App Group"). Widgets never use the internet and nothing is sent anywhere. The same widgets can go on the Lock Screen, where anyone holding the phone can see the stars and the next lesson; grown-ups can leave them off.
 
 ## Play time chart and certificates
-The grown-ups' Progress page shows minutes played each day this week. HopQuest keeps the last two weeks of daily minutes on the device, inside the player's save, and never sends them anywhere. Certificates are made on the device; a picture of one only leaves the device if a grown-up chooses Print or Share behind the parental gate.
+The grown-ups' Progress page shows minutes played each day this week. HopQuest keeps the last two weeks of daily minutes on the device, inside the player's save, and never sends them anywhere. Certificates are made on the device; a picture of one only leaves the device if a grown-up chooses Print or Share behind the parental gate. Practice sheets work the same way: the PDF is made on the device and only leaves it if a grown-up prints or shares it. Level Maker levels and Sticker Scenes are kept in the player's save on the device. The Brain Bubble widget keeps only which question is showing and how many were answered, in the same shared area on the device.
 
 ## Coding Lab
 Web pages kids build in the Coding Lab are shown inside the app only. The preview can't load anything from the internet and can't open links. Nothing kids make is shared with anyone.

@@ -41,6 +41,9 @@ extension GameStore {
             LearningArea(id: "times", title: "Times Treehouse", skills: TimesBank.games.map { SkillProgress(skill: $0.skill, best: p.places["times"]?.best($0.id) ?? 0) }),
             LearningArea(id: "measure", title: "Measure Meadow", skills: MeasureBank.games.map { SkillProgress(skill: $0.skill, best: p.places["measure"]?.best($0.id) ?? 0) }),
             LearningArea(id: "feelings", title: "Feelings Corner", skills: FeelingsBank.games.map { SkillProgress(skill: $0.skill, best: p.places["feelings"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "nature", title: "Nature Trail", skills: NatureBank.games.map { SkillProgress(skill: $0.skill, best: p.places["nature"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "calendar", title: "Calendar Corner", skills: CalendarBank.games.map { SkillProgress(skill: $0.skill, best: p.places["calendar"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "compass", title: "Compass Camp", skills: CompassBank.games.map { SkillProgress(skill: $0.skill, best: p.places["compass"]?.best($0.id) ?? 0) }),
             LearningArea(id: "code", title: "Code Club", skills: CodeChallenge.all.map { SkillProgress(skill: "coding: \($0.topic.lowercased())", best: p.codeBest[$0.id] ?? 0) }),
         ]
     }
@@ -120,6 +123,7 @@ struct ProgressPageView: View {
             }
             PlayWeekSection()
             CertificatesSection()
+            PracticeSheetsSection()
             ForEach(areas) { a in
                 Section {
                     ForEach(Array(a.skills.enumerated()), id: \.offset) { _, s in

@@ -620,10 +620,127 @@ struct StarHopWidget: Widget {
     }
 }
 
+// MARK: - Brain Bubble (v8.5): one question, three answers, tap right on the widget
+
+struct BubbleEntry: TimelineEntry {
+    let date: Date
+    let bubble: BrainBubble
+    let spanish: Bool
+}
+
+struct BubbleProvider: TimelineProvider {
+    func placeholder(in context: Context) -> BubbleEntry { BubbleEntry(date: Date(), bubble: BrainBubble(), spanish: false) }
+    func getSnapshot(in context: Context, completion: @escaping (BubbleEntry) -> Void) { completion(entry()) }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<BubbleEntry>) -> Void) {
+        completion(Timeline(entries: [entry()], policy: .never))
+    }
+    private func entry() -> BubbleEntry {
+        BubbleEntry(date: Date(), bubble: SharedStore.loadBubble(), spanish: SharedStore.loadSnapshot().spanish == true)
+    }
+}
+
+struct BubblePickIntent: AppIntent {
+    static var title: LocalizedStringResource = "Answer the Brain Bubble"
+    @Parameter(title: "Choice") var choice: Int
+    init() {}
+    init(choice: Int) { self.choice = choice }
+    func perform() async throws -> some IntentResult {
+        var b = SharedStore.loadBubble(); b.pick(choice); SharedStore.save(b)
+        return .result()
+    }
+}
+
+struct BubbleNextIntent: AppIntent {
+    static var title: LocalizedStringResource = "Next Brain Bubble question"
+    func perform() async throws -> some IntentResult {
+        var b = SharedStore.loadBubble(); b.next(); SharedStore.save(b)
+        return .result()
+    }
+}
+
+struct BrainBubbleView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: BubbleEntry
+
+    private var b: BrainBubble { entry.bubble }
+    private var q: BubbleQuestion { b.question }
+    private func t(_ s: String) -> String { HopWords.tr(s, entry.spanish) }
+
+    var body: some View {
+        let large = family == .systemLarge
+        VStack(alignment: .leading, spacing: large ? 10 : 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "bubbles.and.sparkles.fill").font(.system(size: 13, weight: .bold)).foregroundStyle(WidgetTheme.purple)
+                Text(t("Brain Bubble")).font(WidgetTheme.round(13, .black)).foregroundStyle(WidgetTheme.purple)
+                Spacer(minLength: 0)
+                if b.answered > 0 {
+                    Text(t("\(b.right) right")).font(WidgetTheme.round(11, .bold)).foregroundStyle(WidgetTheme.ink.opacity(0.55)).monospacedDigit()
+                }
+            }
+            HStack(alignment: .top, spacing: 10) {
+                Text(q.emoji).font(.system(size: large ? 46 : 34))
+                    .frame(width: large ? 64 : 46, height: large ? 64 : 46)
+                    .background(Circle().fill(.white.opacity(0.85)))
+                    .accessibilityHidden(true)
+                Text(q.question).font(WidgetTheme.round(large ? 19 : 15, .black)).lineLimit(3).minimumScaleFactor(0.75)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if b.isAnswered {
+                HStack(spacing: 6) {
+                    Image(systemName: b.gotIt ? "checkmark.circle.fill" : "lightbulb.fill")
+                        .foregroundStyle(b.gotIt ? Color(hop: 0x2FA35B) : Color(hop: 0xF2B705))
+                    Text(b.gotIt ? t("Yes!") : t("Not quite.") + " " + t("It's \(q.choices[q.answer]).")).font(WidgetTheme.round(13, .black))
+                }
+                Text(q.fact).font(WidgetTheme.round(12, .semibold)).foregroundStyle(WidgetTheme.ink.opacity(0.7)).lineLimit(large ? 3 : 2)
+                Spacer(minLength: 0)
+                Button(intent: BubbleNextIntent()) {
+                    Label(t("Next question"), systemImage: "arrow.right")
+                        .font(WidgetTheme.round(13, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Capsule().fill(WidgetTheme.purple))
+                }
+                .buttonStyle(.plain)
+            } else {
+                Spacer(minLength: 0)
+                HStack(spacing: 6) {
+                    ForEach(Array(q.choices.enumerated()), id: \.offset) { i, c in
+                        Button(intent: BubblePickIntent(choice: i)) {
+                            Text(c).font(WidgetTheme.round(c.count > 8 ? 12 : 16, .black)).lineLimit(2).minimumScaleFactor(0.7)
+                                .foregroundStyle(WidgetTheme.ink).multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity, minHeight: large ? 54 : 40)
+                                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white))
+                                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(WidgetTheme.purple.opacity(0.35), lineWidth: 1.5))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Answer: \(c)")
+                    }
+                }
+            }
+        }
+        .foregroundStyle(WidgetTheme.ink)
+        .animation(.spring(duration: 0.3), value: b.picked)
+    }
+}
+
+struct BrainBubbleWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "HopQuestBrainBubble", provider: BubbleProvider()) { entry in
+            BrainBubbleView(entry: entry)
+                .containerBackground(for: .widget) {
+                    LinearGradient(colors: [Color(hop: 0xEFE7FF), Color(hop: 0xFFF6FB)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                }
+        }
+        .configurationDisplayName("Brain Bubble")
+        .description("A quick question with three answers. Tap one right on the widget!")
+        .supportedFamilies([.systemMedium, .systemLarge])
+    }
+}
+
 @main
 struct HopQuestWidgets: WidgetBundle {
     var body: some Widget {
         BuddyWidget()
         StarHopWidget()
+        BrainBubbleWidget()
     }
 }

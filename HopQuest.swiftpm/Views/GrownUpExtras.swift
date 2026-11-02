@@ -157,3 +157,172 @@ struct CertificateCard: View {
         .accessibilityLabel("Certificate of Learning for \(name), for finishing every game in \(place)")
     }
 }
+
+// MARK: - Practice sheets (v8.8)
+
+/// Printable practice for any game in the quiz-engine places: ten questions on a page, and the answers on the next.
+struct PracticeSheetsSection: View {
+    @EnvironmentObject var store: GameStore
+    static let places = ["spelling", "fractions", "shapes", "rhyme", "numbers", "times", "measure", "feelings", "nature", "calendar", "compass"]
+
+    var body: some View {
+        Section {
+            ForEach(Self.places, id: \.self) { id in
+                let place = QuizPlace.named(id)
+                NavigationLink {
+                    PracticeGamesList(place: place)
+                } label: {
+                    HStack {
+                        Text(place.title)
+                        Spacer()
+                        let practising = place.games.filter { (store.profile?.places[id]?.best($0.id) ?? 0) == 1 }.count
+                        if practising > 0 {
+                            Text("\(practising) practising").font(.footnote).foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+        } header: {
+            Text("Practice sheets")
+        } footer: {
+            Text("Print ten questions to do together on paper, with an answer page. Games your child is still practising are marked. Made on this device.")
+        }
+    }
+}
+
+struct PracticeGamesList: View {
+    @EnvironmentObject var store: GameStore
+    let place: QuizPlace
+    @State private var file: URL?
+    @State private var making: String?
+
+    var body: some View {
+        List {
+            ForEach(place.games) { g in
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(g.title)
+                        Text(g.skill.firstCapitalized).font(.footnote).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if making == g.id, let file {
+                        ShareLink(item: file) { Label("Print or share", systemImage: "printer.fill") }
+                    } else {
+                        Button("Make sheet") { make(g) }.buttonStyle(.bordered)
+                    }
+                }
+            }
+        }
+        .navigationTitle(place.title)
+    }
+
+    @MainActor private func make(_ g: QuizGameInfo) {
+        let rounds = Array((place.rounds(g.id) + place.rounds(g.id)).prefix(10))
+        let name = store.profile?.name ?? ""
+        let pages: [AnyView] = [
+            AnyView(PracticePage(place: place, game: g, rounds: rounds, name: name, answers: false)),
+            AnyView(PracticePage(place: place, game: g, rounds: rounds, name: name, answers: true)),
+        ]
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(place.title) - \(g.title).pdf")
+        if PracticePDF.write(pages, to: url) {
+            file = url
+            making = g.id
+        }
+    }
+}
+
+enum PracticePDF {
+    static let size = CGSize(width: 612, height: 792)   // US Letter
+
+    @MainActor static func write(_ pages: [AnyView], to url: URL) -> Bool {
+        var box = CGRect(origin: .zero, size: size)
+        guard let ctx = CGContext(url as CFURL, mediaBox: &box, nil) else { return false }
+        for page in pages {
+            let r = ImageRenderer(content: page.frame(width: size.width, height: size.height).environment(\.colorScheme, .light))
+            r.render { _, draw in
+                ctx.beginPDFPage(nil)
+                draw(ctx)
+                ctx.endPDFPage()
+            }
+        }
+        ctx.closePDF()
+        return true
+    }
+}
+
+/// One printed page: the questions, or the answers.
+struct PracticePage: View {
+    let place: QuizPlace
+    let game: QuizGameInfo
+    let rounds: [QuizRound]
+    let name: String
+    let answers: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("HopQuest · \(place.title)").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(place.accent)
+                    Text(answers ? "\(game.title): answers" : game.title).font(.system(size: 22, weight: .heavy, design: .rounded))
+                }
+                Spacer()
+                if !answers {
+                    Text("Name: \(name.isEmpty ? "______________" : name)").font(.system(size: 13, weight: .semibold, design: .rounded))
+                }
+            }
+            if !answers {
+                Text(game.intro).font(.system(size: 11, design: .rounded)).foregroundStyle(.secondary)
+            }
+            Divider()
+            if answers {
+                ForEach(Array(rounds.enumerated()), id: \.offset) { i, r in
+                    HStack(alignment: .top) {
+                        Text("\(i + 1).").font(.system(size: 13, weight: .bold, design: .rounded)).frame(width: 24, alignment: .leading)
+                        Text(r.say).font(.system(size: 12, design: .rounded)).foregroundStyle(.secondary).lineLimit(2)
+                        Spacer()
+                        Text(r.answer).font(.system(size: 14, weight: .heavy, design: .rounded)).foregroundStyle(place.accent)
+                    }
+                }
+            } else {
+                let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
+                    ForEach(Array(rounds.enumerated()), id: \.offset) { i, r in question(i, r) }
+                }
+            }
+            Spacer(minLength: 0)
+            Text("Made with HopQuest. Do it together: read each question out loud, then circle or write the answer.")
+                .font(.system(size: 9, design: .rounded)).foregroundStyle(.secondary)
+        }
+        .padding(36)
+        .foregroundStyle(Color.black)
+        .background(Color.white)
+    }
+
+    private func question(_ i: Int, _ r: QuizRound) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("\(i + 1). \(r.say)").font(.system(size: 11, weight: .semibold, design: .rounded)).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+            if r.visual != .none {
+                QuizVisualView(visual: r.visual, accent: place.accent, large: false)
+                    .frame(maxWidth: .infinity, maxHeight: 70)
+                    .scaleEffect(0.8)
+            }
+            if r.kind == .spell {
+                Text("Write it: ____________").font(.system(size: 12, design: .rounded))
+            } else if !r.choiceVisuals.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(Array(r.choices.enumerated()), id: \.offset) { k, c in
+                        VStack(spacing: 2) {
+                            QuizVisualView(visual: r.choiceVisuals[k], accent: place.accent, large: false).frame(height: 44).scaleEffect(0.6)
+                            Text("○ \(c)").font(.system(size: 10, weight: .bold, design: .rounded))
+                        }
+                    }
+                }
+            } else {
+                Text(r.choices.map { "○ \($0)" }.joined(separator: "   ")).font(.system(size: 11, design: .rounded))
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.black.opacity(0.15), lineWidth: 1))
+    }
+}
