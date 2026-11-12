@@ -64,3 +64,27 @@ jobs:
             -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
             build | tail -n 60
+
+  ios-build-xcodeproj:
+    # The build that actually ships: app + widget extension, from HopQuest.xcodeproj (generated from project.yml).
+    name: iOS build, app + widget (Xcode project, Release, unsigned)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode
+        run: xcodebuild -version
+      - name: Build HopQuest + HopQuestWidget for the iOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project HopQuest.xcodeproj -scheme HopQuest \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tail -n 60
+      - name: Both privacy manifests are inside the built products
+        run: |
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -path '*Release-iphonesimulator/HopQuest.app' -type d | head -n 1)
+          test -n "$APP" || { echo "HopQuest.app not found"; exit 1; }
+          test -f "$APP/PrivacyInfo.xcprivacy" || { echo "app manifest missing"; exit 1; }
+          test -f "$APP/PlugIns/HopQuestWidget.appex/PrivacyInfo.xcprivacy" || { echo "widget manifest missing"; ls "$APP/PlugIns/HopQuestWidget.appex"; exit 1; }
+          echo "both manifests present"

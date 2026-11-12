@@ -18,7 +18,7 @@ let package = Package(
             bundleIdentifier: "com.phoronomics.hopquest",
             teamIdentifier: "X6LZQ3FS36",
             displayVersion: "2.0",
-            bundleVersion: "2",
+            bundleVersion: "3",
             appIcon: .asset("AppIcon"),
             accentColor: .presetColor(.purple),
             supportedDeviceFamilies: [

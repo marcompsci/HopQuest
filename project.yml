@@ -75,6 +75,8 @@ targets:
     sources:
       - path: HopQuestWidget
       - path: HopQuest.swiftpm/Shared
+      - path: Support/Widget/PrivacyInfo.xcprivacy
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.phoronomics.hopquest.widget

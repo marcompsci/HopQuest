@@ -15,6 +15,8 @@ import json, os, plistlib, re, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PKG = os.path.join(ROOT, "HopQuest.swiftpm")
+WIDGET = os.path.join(ROOT, "HopQuestWidget")
+SUPPORT = os.path.join(ROOT, "Support")
 STRICT = "--strict" in sys.argv
 
 results = []   # (status, name, detail)
@@ -34,20 +36,27 @@ def read(path):
         return f.read()
 
 
-def swift_files():
-    for base, dirs, files in os.walk(PKG):
-        dirs[:] = [d for d in dirs if d not in ("ArtSource", ".build", ".swiftpm")]
-        for f in files:
-            if f.endswith(".swift") and f != "Package.swift":
-                yield os.path.join(base, f)
+def swift_files(roots=(PKG, WIDGET)):
+    for root in roots:
+        for base, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if d not in ("ArtSource", ".build", ".swiftpm")]
+            for f in files:
+                if f.endswith(".swift") and f != "Package.swift":
+                    yield os.path.join(base, f)
 
 
 SOURCES = {p: read(p) for p in swift_files()}
 ALL_SWIFT = "\n".join(SOURCES.values())
 
 
-def uses(pattern):
-    return [os.path.relpath(p, ROOT) for p, s in SOURCES.items() if re.search(pattern, s)]
+def uses(pattern, only=None):
+    """Files whose code matches. only: a list of directories to limit the search to."""
+    return [os.path.relpath(p, ROOT) for p, s in SOURCES.items()
+            if re.search(pattern, s) and (only is None or any(p.startswith(d + os.sep) for d in only))]
+
+
+# The widget extension is built from HopQuestWidget/ plus HopQuest.swiftpm/Shared (see project.yml).
+WIDGET_DIRS = [WIDGET, os.path.join(PKG, "Shared")]
 
 
 # ---------------------------------------------------------------- package / versions
@@ -80,21 +89,16 @@ else:
     record("MANUAL", "Build number is higher than anything already uploaded",
            "create release/last_uploaded.json after each upload so this can be checked automatically")
 
-# ---------------------------------------------------------------- privacy manifest + required-reason APIs
-priv_path = os.path.join(PKG, "PrivacyInfo.xcprivacy")
-declared = {}
-if check(os.path.exists(priv_path), "Privacy manifest exists (PrivacyInfo.xcprivacy)", "missing PrivacyInfo.xcprivacy"):
-    try:
-        priv = plistlib.load(open(priv_path, "rb"))
-        check(priv.get("NSPrivacyTracking") is False, "Privacy manifest: no tracking", "NSPrivacyTracking must be false")
-        check(priv.get("NSPrivacyTrackingDomains", []) == [], "Privacy manifest: no tracking domains", "tracking domains listed")
-        check(priv.get("NSPrivacyCollectedDataTypes", []) == [], "Privacy manifest: no collected data (matches 'Data Not Collected')",
-              "collected data types are listed: the App Store privacy label must match")
-        for item in priv.get("NSPrivacyAccessedAPITypes", []):
-            declared[item.get("NSPrivacyAccessedAPIType")] = item.get("NSPrivacyAccessedAPITypeReasons", [])
-    except Exception as e:  # noqa: BLE001
-        record("FAIL", "Privacy manifest is a valid plist", str(e))
-
+# ---------------------------------------------------------------- privacy manifests + required-reason APIs
+# Approved reason codes (Apple: "Describing use of required reason API"). Only the codes HopQuest could
+# legitimately use are listed; anything else fails so a person has to look at it.
+REASONS = {
+    "NSPrivacyAccessedAPICategoryUserDefaults": {"CA92.1", "1C8F.1", "C56D.1", "AC6B.1"},
+    "NSPrivacyAccessedAPICategorySystemBootTime": {"35F9.1", "8FFB.1", "3D61.1"},
+    "NSPrivacyAccessedAPICategoryFileTimestamp": {"DDA9.1", "C617.1", "3B52.1", "0A2A.1"},
+    "NSPrivacyAccessedAPICategoryDiskSpace": {"85F4.1", "E174.1", "7D9E.1", "B728.1"},
+    "NSPrivacyAccessedAPICategoryActiveKeyboards": {"3EC4.1", "54BD.1"},
+}
 REQUIRED_REASON = {
     "NSPrivacyAccessedAPICategoryUserDefaults": r"\bUserDefaults\b|@AppStorage",
     "NSPrivacyAccessedAPICategorySystemBootTime": r"systemUptime|mach_absolute_time|mach_continuous_time",
@@ -102,14 +106,87 @@ REQUIRED_REASON = {
     "NSPrivacyAccessedAPICategoryDiskSpace": r"volumeAvailableCapacity|systemFreeSize|systemSize|statfs|NSFileSystemFreeSize",
     "NSPrivacyAccessedAPICategoryActiveKeyboards": r"activeInputModes",
 }
-for cat, pattern in REQUIRED_REASON.items():
-    files = uses(pattern)
-    short = cat.replace("NSPrivacyAccessedAPICategory", "")
-    if files:
-        check(bool(declared.get(cat)), f"Required-reason API '{short}' is declared with a reason",
-              f"used in {', '.join(files[:3])} but not declared in PrivacyInfo.xcprivacy (ITMS-91053)")
-    elif cat in declared:
-        record("PASS", f"Required-reason API '{short}' declared (not found in code: harmless, consider removing)")
+APP_GROUP_DEFAULTS = r"UserDefaults\(suiteName:"
+
+
+def audit_manifest(label, path, code_dirs):
+    """Checks one target's privacy manifest against the code that target compiles."""
+    declared = {}
+    if not check(os.path.exists(path), f"{label}: privacy manifest exists ({os.path.relpath(path, ROOT)})",
+                 "missing: every target that calls a required-reason API needs its own PrivacyInfo.xcprivacy (ITMS-91053)"):
+        return declared
+    try:
+        priv = plistlib.load(open(path, "rb"))
+    except Exception as e:  # noqa: BLE001
+        record("FAIL", f"{label}: privacy manifest is a valid plist", str(e))
+        return declared
+    check(priv.get("NSPrivacyTracking") is False, f"{label}: no tracking", "NSPrivacyTracking must be false")
+    check(priv.get("NSPrivacyTrackingDomains", []) == [], f"{label}: no tracking domains", "tracking domains listed")
+    check(priv.get("NSPrivacyCollectedDataTypes", []) == [], f"{label}: no collected data (matches 'Data Not Collected')",
+          "collected data types are listed: the App Store privacy label must match")
+    for item in priv.get("NSPrivacyAccessedAPITypes", []):
+        declared[item.get("NSPrivacyAccessedAPIType")] = item.get("NSPrivacyAccessedAPITypeReasons", [])
+    for cat, reasons in declared.items():
+        short = cat.replace("NSPrivacyAccessedAPICategory", "")
+        bad = [r for r in reasons if r not in REASONS.get(cat, set())]
+        check(bool(reasons) and not bad, f"{label}: '{short}' reason codes are valid ({', '.join(reasons)})",
+              f"unknown or empty reason codes {bad or reasons}: check Apple's list")
+    for cat, pattern in REQUIRED_REASON.items():
+        files = uses(pattern, code_dirs)
+        short = cat.replace("NSPrivacyAccessedAPICategory", "")
+        if files:
+            check(bool(declared.get(cat)), f"{label}: required-reason API '{short}' is declared",
+                  f"used in {', '.join(files[:3])} but not declared (ITMS-91053)")
+        elif cat in declared:
+            record("PASS", f"{label}: '{short}' declared (not found in this target's code: harmless, consider removing)")
+    if uses(APP_GROUP_DEFAULTS, code_dirs):
+        check("1C8F.1" in declared.get("NSPrivacyAccessedAPICategoryUserDefaults", []),
+              f"{label}: App Group defaults declared with reason 1C8F.1",
+              "UserDefaults(suiteName:) on the App Group is used: add 1C8F.1 (CA92.1 covers the app's own defaults only)")
+    return declared
+
+
+declared = audit_manifest("App", os.path.join(PKG, "PrivacyInfo.xcprivacy"), [PKG])
+audit_manifest("Widget", os.path.join(SUPPORT, "Widget", "PrivacyInfo.xcprivacy"), WIDGET_DIRS)
+
+# ---------------------------------------------------------------- Xcode project (the build that ships with the widget)
+yml_path = os.path.join(ROOT, "project.yml")
+if check(os.path.exists(yml_path), "Xcode project spec exists (project.yml)", "project.yml missing"):
+    yml = read(yml_path)
+    def yv(key):
+        mm = re.search(r"^\s*" + re.escape(key) + r":\s*\"?([^\"\n]+)\"?\s*$", yml, re.M)
+        return mm.group(1).strip() if mm else None
+    check(yv("MARKETING_VERSION") == (m_ver.group(1) if m_ver else None), "Xcode version matches Package.swift",
+          f"MARKETING_VERSION {yv('MARKETING_VERSION')} vs displayVersion {m_ver.group(1) if m_ver else '?'}")
+    check(yv("CURRENT_PROJECT_VERSION") == (m_build.group(1) if m_build else None), "Xcode build number matches Package.swift",
+          f"CURRENT_PROJECT_VERSION {yv('CURRENT_PROJECT_VERSION')} vs bundleVersion {m_build.group(1) if m_build else '?'}")
+    ids = re.findall(r"PRODUCT_BUNDLE_IDENTIFIER:\s*(\S+)", yml)
+    check("com.phoronomics.hopquest" in ids and all(i == "com.phoronomics.hopquest" or i.startswith("com.phoronomics.hopquest.") for i in ids),
+          "Bundle IDs: app com.phoronomics.hopquest, extensions prefixed with it", f"bundle IDs {ids}")
+    check(bool(re.search(r"DEVELOPMENT_TEAM:\s*[A-Z0-9]{10}", yml)), "Xcode team ID is set", "DEVELOPMENT_TEAM missing")
+    check(bool(re.search(r"ITSAppUsesNonExemptEncryption:\s*false", yml)), "Export compliance declared in Info.plist (exempt: no custom encryption)",
+          "ITSAppUsesNonExemptEncryption missing: every upload will ask")
+    lnd = re.search(r"NSLocalNetworkUsageDescription:\s*(.+)", yml)
+    check(bool(lnd) and len(lnd.group(1)) >= 20, "Xcode app: Local Network purpose string", "NSLocalNetworkUsageDescription missing")
+    check("NSBonjourServices" in yml, "Xcode app: Bonjour services declared", "NSBonjourServices missing")
+    check("Support/Widget/PrivacyInfo.xcprivacy" in yml and "HopQuest.swiftpm/PrivacyInfo.xcprivacy" in yml,
+          "Both privacy manifests are copied into their targets (each named PrivacyInfo.xcprivacy)",
+          "a privacy manifest isn't listed as a resource in project.yml")
+    check(bool(re.search(r"archive:\s*\n\s*config:\s*Release", yml)), "Archive uses the Release configuration", "scheme archive config isn't Release")
+ALLOWED_ENTITLEMENTS = {"com.apple.security.application-groups"}
+for ent in ("HopQuest.entitlements", "HopQuestWidget.entitlements"):
+    p = os.path.join(SUPPORT, ent)
+    if os.path.exists(p):
+        keys = set(plistlib.load(open(p, "rb")).keys())
+        check(keys <= ALLOWED_ENTITLEMENTS, f"{ent}: only the App Group entitlement",
+              f"extra entitlements {sorted(keys - ALLOWED_ENTITLEMENTS)}: confirm each is enabled for the App ID and needed")
+    else:
+        record("MANUAL", f"{ent} is generated by xcodegen", "run xcodegen generate and re-check")
+deep = uses(r"onOpenURL")
+if deep:
+    hosts = re.findall(r'case\s+"([a-z]+)":\s*route', ALL_SWIFT)
+    check('url.scheme == "hopquest"' in ALL_SWIFT and hosts == ["quickgame"], "Deep links: only hopquest://quickgame is acted on",
+          "onOpenURL handles more than the known quick-game link: review it")
 
 # ---------------------------------------------------------------- permissions / purpose strings
 if uses(r"import MultipeerConnectivity|import Network\b"):
@@ -135,7 +212,14 @@ for name, pattern in {
 }.items():
     files = uses(pattern)
     check(not files, f"Kids Category: no {name}", f"found in {', '.join(files)}")
-links = [f for f in uses(r"openURL|UIApplication\.shared\.open|\bLink\(|SFSafariViewController|ASWebAuthenticationSession")]
+def leaves_app(path):
+    code = SOURCES[os.path.join(ROOT, path)]
+    if re.search(r"openURL|UIApplication\.shared\.open|SFSafariViewController|ASWebAuthenticationSession", code):
+        return True
+    # a Link is fine only when every URL it can open is the app's own scheme (the widget opening HopQuest)
+    return bool(re.search(r"\bLink\(", code)) and any(not u.startswith("hopquest://") for u in re.findall(r'URL\(string:\s*"([^"]*)"', code)) \
+        or bool(re.search(r"\bLink\((?![^)]*URL\(string:\s*\"hopquest://)", code))
+links = [f for f in uses(r"openURL|UIApplication\.shared\.open|\bLink\(|SFSafariViewController|ASWebAuthenticationSession") if leaves_app(f)]
 check(not links, "Kids Category: no links out of the app", f"links found in {', '.join(links)}: they must sit behind the parental gate")
 http = uses(r'"https?://')
 check(not http, "No web addresses in the app code (no network calls)", f"URL literals in {', '.join(http)}")
@@ -152,7 +236,7 @@ check("var playMode: VillagePlayMode = .off" in save and "forKey: .playMode)) ??
 check(not re.search(r"case\s+[^\n]*\banyone\b", save), "No play with strangers ('anyone' mode is gone)", "an 'anyone' play mode is back")
 gc_flag = re.search(r"static let gameCenterAvailable\s*=\s*(true|false)", save)
 if gc_flag and gc_flag.group(1) == "false":
-    record("PASS", "Game Center play is switched off (no Game Center entitlement in a Swift Playgrounds package)")
+    record("PASS", "Game Center play is switched off (no Game Center entitlement in either build)")
 else:
     record("MANUAL", "Game Center play is on: confirm the build carries com.apple.developer.game-center and Game Center is enabled in App Store Connect")
 check("VillageNetMessage.cleanNick" in ALL_SWIFT and "let nick = store.character.name" in ALL_SWIFT,
@@ -230,9 +314,11 @@ except Exception:  # noqa: BLE001
 for item in [
     "Release build archives in Xcode (Product > Archive) and validates in the Organizer",
     "Tested on a real iPhone and iPad: first launch, onboarding, every menu card, Hop Village, background/foreground",
-    "Privacy report from the archive (Organizer > Generate Privacy Report) shows only UserDefaults + system boot time",
+    "Privacy report from the archive (Organizer > Generate Privacy Report) lists the app and the widget, only UserDefaults + system boot time",
+    "Widgets checked on a device: Buddy, Star Hop, Brain Bubble (home screen) and Lock Screen show no child name",
     "Export compliance answered at upload: only iOS-provided encryption (exempt)",
-    "Age rating questionnaire, Kids Category (6-8), privacy label 'Data Not Collected' entered in App Store Connect",
+    "Age rating questionnaire (current version), Kids Category (6-8), privacy label 'Data Not Collected' entered in App Store Connect",
+    "'What to Test' and version notes describe this build's actual changes (Guideline 2.3 / 2.5.19: no hidden features)",
     "Screenshots are current (6.9\" iPhone and 13\" iPad)",
 ]:
     record("MANUAL", item)
