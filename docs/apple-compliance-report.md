@@ -52,13 +52,13 @@ Severity: BLOCKER (likely rejection or blocked upload), HIGH, MEDIUM, LOW. ✅ m
 |---|---|---|---|---|---|---|---|
 | F-15 | Privacy manifests: every bundle that calls a required-reason API needs its own `PrivacyInfo.xcprivacy` (ITMS-91053 at upload) | `HopQuestWidget` target; `Shared/WidgetShared.swift:12` `UserDefaults(suiteName:)` | HIGH | The widget extension reads and writes App Group defaults but shipped no manifest. | Added `Support/Widget/PrivacyInfo.xcprivacy`:<br>• no tracking<br>• no data collected<br>• UserDefaults reason **1C8F.1**<br>It is copied into the widget's resources (`project.yml` and `project.pbxproj`). The file is named exactly `PrivacyInfo.xcprivacy`, as Apple requires. | ✅ | `release_check.py` audits the widget manifest against the widget's own code (`HopQuestWidget/` + `Shared/`). The CI job fails if `HopQuestWidget.appex/PrivacyInfo.xcprivacy` is missing from the build. The device build is in section 5. |
 | F-16 | Required-reason API: UserDefaults shared through an App Group needs 1C8F.1; CA92.1 covers only the app's own defaults | `HopQuest.swiftpm/PrivacyInfo.xcprivacy` | HIGH | The app writes the App Group store (for the widget) with only CA92.1 declared. | Added **1C8F.1** next to CA92.1. | ✅ | The gate checks:<br>• "App Group defaults declared with reason 1C8F.1"<br>• reason codes are checked against Apple's list for each category |
-| F-17 | Release gate didn't cover the shipping build | `scripts/release_check.py`, CI | MEDIUM | Gaps found:<br>• the gate scanned only `HopQuest.swiftpm`, not the widget<br>• it read versions only from `Package.swift`<br>• it didn't validate reason codes<br>• CI built only the `.swiftpm`, not the Xcode project | The gate now:<br>• scans the widget code<br>• audits each target's manifest<br>• checks `project.yml`: versions match, bundle-ID prefixes, team, export-compliance key, purpose strings, entitlements limited to the App Group, Release archive config, deep-link hosts<br>CI builds `HopQuest.xcodeproj` and checks both manifests are in the products. | ✅ | `release_check.py`: 74 PASS, 1 FAIL (F-3), 9 MANUAL. CI run on GitHub (section 5). |
+| F-17 | Release gate didn't cover the shipping build | `scripts/release_check.py`, CI | MEDIUM | Gaps found:<br>• the gate scanned only `HopQuest.swiftpm`, not the widget<br>• it read versions only from `Package.swift`<br>• it didn't validate reason codes<br>• CI built only the `.swiftpm`, not the Xcode project | The gate now:<br>• scans the widget code<br>• audits each target's manifest<br>• checks `project.yml`: versions match, bundle-ID prefixes, team, export-compliance key, purpose strings, entitlements limited to the App Group, Release archive config, deep-link hosts<br>CI builds `HopQuest.xcodeproj` and checks both manifests are in the products. | ✅ | `release_check.py`: 74 PASS, 1 FAIL (F-3), 9 MANUAL. CI run 43322005691: the Xcode-project build passed with both manifests present. |
 | F-18 | Build numbers must match and increase | `Package.swift` build 2 vs `project.yml` build 3 | MEDIUM | The two builds disagreed, so it was unclear which number an upload would carry. | Both now say 2.0 (3), and the gate fails if they drift. Whether 3 is above the last upload is still manual (F-9). | ✅ | Gate: "Xcode build number matches Package.swift" |
 | F-19 | 1.3 Kids Category: no links out of the app | `HopQuestWidget.swift:561` `Link(destination: hopquest://quickgame)` | LOW | This is not an exit link: the widget opens HopQuest itself. The gate now tells app-scheme links apart from links that leave the app. | Gate refined: any `http(s)` link, `openURL` or Safari view still fails. | ✅ | The gate passes, and a quick test of its check confirms it flags an `https` link and an unknown destination |
 | F-3 | 2.3 Accurate Metadata; 5.1.1(i) the privacy policy must be accurate and reachable | Privacy Policy URL `…/blob/main/PRIVACY.md` | **BLOCKER** | `main`'s policy is behind this branch: it doesn't mention the widgets, the App Group store, Level Maker, Scenes, Brain Bubble, or the grown-up chart, certificates and sheets. | Merge `feature/hop-village` → `main`, or host the current policy and update the URL. | ❌ needs owner approval | Gate: "Published privacy policy (main branch) matches this release" FAILs until merged |
 | F-4 | 2.3.3 Screenshots; the October 2026 metadata wording stresses accurate, all-ages creative assets | App Store Connect | HIGH | The current screenshots predate:<br>• the tabbed menu (Home / Adventures / Games / Learn / Worlds)<br>• the new world art<br>• the widgets<br>• Level Maker and Sticker Scenes | Take new 6.9" iPhone and 13" iPad sets that show only what ships. | ❌ manual | Manual |
 | F-20 | 2.5.19 (new, October 2026): no undisclosed changes in behavior; 2.3 accurate "What's New" | Review notes / What to Test | MEDIUM | Many features were added since the last notes. | `docs/app-review-notes.md` and `docs/external-tester-guide.md` now list every feature, including the widgets. There are no remote flags or server-switched features; everything is in the binary. | ✅ docs / ❌ paste into ASC | Diff review; gate MANUAL item |
-| F-6 | 2.1 App Completeness | Whole app | MEDIUM | Debug builds of every batch through v9.11 ran on the owner's iPhone. This audit's build ran there too (section 5). Not done yet:<br>• a Release Archive + Validate<br>• an iPad device run<br>• a full manual pass | Owner: Archive → Validate in Xcode, then the device checklist. | Partly | Xcode on the owner's Mac |
+| F-6 | 2.1 App Completeness | Whole app | MEDIUM | Debug builds of every batch through v9.11 ran on the owner's iPhone. This audit's build ran in the Simulator and in CI (section 5). Not done yet:<br>• a Release Archive + Validate<br>• an iPad device run<br>• a full manual pass | Owner: Archive → Validate in Xcode, then the device checklist. | Partly | Xcode on the owner's Mac |
 | F-9 | Build number above the last upload | App Store Connect | MEDIUM | It's unknown which builds were already uploaded. | Check TestFlight → Builds, then record the build in `release/last_uploaded.json`. | ❌ manual | Gate MANUAL until the file exists |
 | F-21 | Age rating questionnaire (Apple's updated age-rating questions) | App Store Connect | MEDIUM | Answers must reflect the current app (see `APPSTORE.md`). Since the last rating, the app added in-app sharing for grown-ups only, behind the gate. | Re-answer the questionnaire. Messaging/Chat: No. UGC: No. Unrestricted Web: No. Parental Controls: Yes. | ❌ manual | Manual |
 | F-10 | 3.1 Paid Apps Agreement | App Store Connect → Business | MEDIUM | Needed before sale; not needed for TestFlight. | Confirm agreement, tax and banking. | ❌ manual | Manual |
@@ -95,12 +95,12 @@ Earlier findings F-1, F-7, F-8 and F-14 from October 17 were closed then. The F-
 
 | Gate | Where | Result |
 |---|---|---|
-| Logic tests (all suites) | CI `tests` job (swift:5.10 container) | See the GitHub Actions run for commit `aa72d3a` (the local Linux toolchain was unavailable this session, so tests ran only in CI) |
+| Logic tests (all suites) | CI `tests` job (swift:5.10 container) | ✅ CI run 43322005691 (the local Linux toolchain was unavailable this session, so tests ran only in CI) |
 | Compliance checks | `python3 scripts/release_check.py` | **74 PASS · 1 FAIL (F-3) · 9 MANUAL** |
-| Secret scan | gitleaks (CI) + the gate's own scan | Gate ✅; gitleaks in CI |
-| iOS build, `.swiftpm` | CI `ios-build` | CI run |
-| iOS build, Xcode project with widget, Release | CI `ios-build-xcodeproj` (new) | CI run (first run of this job) |
-| Device build | Xcode on the owner's Mac, Run to iPhone (Debug) | Section 7 |
+| Secret scan | gitleaks (CI) + the gate's own scan | ✅ both |
+| iOS build, `.swiftpm` | CI `ios-build` (macos-15) | ✅ run 43322005691 |
+| iOS build, Xcode project with widget, Release | CI `ios-build-xcodeproj` (new, macos-15) | ✅ BUILD SUCCEEDED; "both manifests present" (app and `HopQuestWidget.appex`) |
+| Local Xcode build | Xcode on the owner's Mac, Run (Debug), destination iPhone 17 Pro **Simulator**, iOS 26.5 | ✅ Build succeeded, no issues, 73.6 s; the log shows "Copy PrivacyInfo.xcprivacy" in the HopQuestWidget target |
 | Archive / Validate | Xcode Organizer | **Not run:** requires the owner (menu commands can't be driven from here) |
 | UI tests | — | None exist. Adding an XCUITest target is possible now that there is an Xcode project; it's a future task. |
 | Dependency vulnerabilities | Gate: no dependencies | ✅ |
@@ -127,8 +127,13 @@ Earlier findings F-1, F-7, F-8 and F-14 from October 17 were closed then. The F-
 ## 7. Verification log (November 12, 2026)
 
 - `release_check.py`: run locally after the changes; output summarized in section 5.
-- CI: commit `aa72d3a` pushed; the run is linked from the Actions tab.
-- Xcode: the project with the widget manifest was installed on the owner's Mac and built with Run to the iPhone. The result is recorded in the final report message for this audit.
+- CI run 43322005691:
+  - tests ✅
+  - both iOS builds ✅
+  - gitleaks ✅
+  - compliance ❌ only on F-3 (74 PASS / 1 FAIL / 9 MANUAL)
+- The first run of this audit (43321228181) showed GitHub has retired the `macos-14` runners: both iOS jobs failed immediately. Moved to `macos-15`.
+- Xcode on the owner's Mac: a Debug build to the iPhone 17 Pro Simulator succeeded. This was a simulator, not a physical device, and not an archive.
 
 ## 8. Permanent release gate
 
