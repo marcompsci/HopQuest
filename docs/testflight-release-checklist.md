@@ -10,11 +10,12 @@ Work through this before **every** TestFlight upload. Tick each box in the pull 
 
 ## B. Version and signing
 
-- [ ] `Package.swift`: `displayVersion` is the marketing version, and `bundleVersion` is higher than every build already uploaded for that version (check App Store Connect → TestFlight → Builds).
-- [ ] Bundle ID `com.phoronomics.hopquest`, team `X6LZQ3FS36`.
-- [ ] In Xcode, the destination is **Any iOS Device (arm64)**, then Product → **Archive**. This uses the Release configuration.
+- [ ] `project.yml` (`MARKETING_VERSION`, `CURRENT_PROJECT_VERSION`) and `Package.swift` (`displayVersion`, `bundleVersion`) agree; the gate fails if they don't. The build number must be higher than every build already uploaded for that version (App Store Connect → TestFlight → Builds).
+- [ ] After editing `project.yml`, regenerate with `xcodegen generate` and commit `HopQuest.xcodeproj`.
+- [ ] Bundle IDs `com.phoronomics.hopquest` and `com.phoronomics.hopquest.widget`, team `X6LZQ3FS36`, App Group `group.com.phoronomics.hopquest` enabled for both App IDs.
+- [ ] Open **`HopQuest.xcodeproj`**, not the `.swiftpm`: the widget only exists in the Xcode project. Set the destination to **Any iOS Device (arm64)**, then Product → **Archive** (the Release configuration).
 - [ ] Organizer → **Validate App** passes, with automatic signing and an App Store distribution profile.
-- [ ] Organizer → **Generate Privacy Report** lists only UserDefaults and system boot time.
+- [ ] Organizer → **Generate Privacy Report** lists **HopQuest and HopQuestWidget**, with only UserDefaults and system boot time, and no tracking or collected data.
 
 ## C. Device tests (one iPhone and one iPad)
 
@@ -22,8 +23,10 @@ Work through this before **every** TestFlight upload. Tick each box in the pull 
 - [ ] Fresh install: onboarding works with an empty name ("Explorer") and with a typed name.
 - [ ] Cold start (after force-quit) and warm start (back from the home screen) land where they should, with no frozen screen.
 
-**Every menu card opens and can be left again**
-- [ ] PLAY (Hop Village)
+**Every page and card opens and can be left again**
+- [ ] Bottom menu: Home, Adventures, Games, Learn, Worlds
+- [ ] PLAY (Hop Village), SURPRISE ME!
+- [ ] Star Dash, Star Hop, Breathe, Level Maker, Sticker Scenes, Fridge Door, Writing Desk, the learning places
 - [ ] Coding Lab, Reading Nook, Math Market, Science Lab, Music Maker
 - [ ] Stickers, Fort Friends, Pillow Bop, Bubble Kart, My Castle
 - [ ] Adventure Map, Together, Stories
@@ -43,6 +46,15 @@ Work through this before **every** TestFlight upload. Tick each box in the pull 
 - [ ] Play with others shows only Off / Nearby only.
 - [ ] Left-handed controls.
 - [ ] Start over with a new player.
+
+**Widgets**
+- [ ] Add Buddy, Star Hop and Brain Bubble to the home screen. Each one updates, and its buttons work.
+- [ ] A Star Hop button that opens the app lands in Star Dash. With no player, or at bedtime, it just opens the app.
+- [ ] Lock Screen widgets show no child name.
+
+**Grown-up extras**
+- [ ] Progress page: chart, certificate Print/Share, practice sheet Print/Share, milestone text. Each is reachable only after the gate.
+- [ ] Bedtime: the goodnight screen shows, then clears in the morning.
 
 **Two devices (if available)**
 - [ ] Nearby only on both.
@@ -67,11 +79,13 @@ Work through this before **every** TestFlight upload. Tick each box in the pull 
 
 ## D. App Store Connect
 
-- [ ] What to Test filled in (see `docs/external-tester-guide.md`).
+- [ ] What to Test filled in (see `docs/external-tester-guide.md`). It describes this build's actual changes (Guidelines 2.3 and 2.5.19).
+- [ ] Screenshots show the current app (tab menu, worlds, widgets), not older screens.
+- [ ] The age rating questionnaire is answered on the current form.
 - [ ] Beta App Description, feedback email and contact info set (see `docs/app-review-notes.md`).
-- [ ] Export compliance answered: iOS-provided encryption only (exempt).
+- [ ] Export compliance: pre-answered by `ITSAppUsesNonExemptEncryption = NO` (iOS-provided encryption only). Confirm App Store Connect didn't ask.
 - [ ] Privacy Policy URL opens the **current** policy, which is on `main`.
-- [ ] After uploading, update `release/last_uploaded.json`, e.g. `{"version": "2.0", "build": "2"}`, and commit it.
+- [ ] After uploading, update `release/last_uploaded.json`, e.g. `{"version": "2.0", "build": "3"}`, and commit it.
 
 ## E. Never without the owner's go-ahead
 

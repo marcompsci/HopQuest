@@ -13,22 +13,30 @@ HopQuest is a Kids Category app for ages 6–8, sold as a one-time purchase.
 
 **Grown-up settings** are behind a parental gate. Tap the gear ("Grown-ups") at the top of the home screen and type the answer to the multiplication shown (e.g. 7 × 8 = 56).
 
-**New in 2.0, and where to find it.** Complete onboarding with any name, then:
+**Where to find things.** Complete onboarding with any name. The home page has **PLAY** (Hop Village) and **SURPRISE ME!**, with My Castle, Together and Stories below. A menu bar at the bottom opens these pages:
 
-- **PLAY** opens Hop Village, a walkable village. Its buildings open games:
-  - Reading Nook and Math Market (new, beside the museum and the main road)
-  - Coding Lab
-  - the garden below the house on the hill (plant, water, pick a pet)
-- **Home screen cards:**
-  - Coding Lab (24 lessons: HTML/CSS, Python, game code; a safe built-in Python, no network)
-  - Reading Nook, Math Market, Science Lab and Music Maker
-  - Stickers, Fort Friends, Pillow Bop (four arenas) and Bubble Kart (five cups)
-  - My Castle
-- **Adventure Map:** story levels unlock in order, starting at Meadow Street.
-  - Short story scenes play once after each level. They can be skipped and replayed from **Stories**.
-  - Robot Lab leads to Code Club and the Machine Workshop.
-  - Snowy Peaks, Sunny Shores and Jungle Journey open one after another after Castle Hill.
-- **Together:** two players on one device (Team Hop, Team Drive, Bubble Kart, Pillow Bop, Team Robot Code, Team Fort).
+- **Adventures:** the story map (levels unlock in order from Meadow Street; short story scenes can be skipped and replayed from Stories) and Robot Lab.
+- **Games:**
+  - Stickers, Fort Friends, Pillow Bop, Bubble Kart, Star Dash, Star Hop
+  - Breathe (a calm breathing exercise)
+  - Level Maker (kids build Star Hop levels; saved on the device)
+  - Sticker Scenes, Fridge Door
+- **Learn:**
+  - Coding Lab (a safe built-in Python, no network)
+  - Reading Nook, Math Market, Science Lab, Music Maker, Writing Desk
+  - learning places such as Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail, Calendar Corner, Compass Camp and Healthy Hut
+- **Worlds:** the story worlds (Snowy Peaks, Sunny Shores, Jungle Journey and more), each with its own levels.
+- **Together:** two players on one device.
+
+**Widgets (WidgetKit extension in the same app).** Home-screen widgets: Buddy, Star Hop (a tap-to-play mini game) and Brain Bubble (one multiple-choice question). They:
+- read and write a small App Group store on the same device
+- use no network and collect nothing
+- open the app with `hopquest://quickgame`, a link back into the app only
+- on the Lock Screen, never show the child's name
+
+**Grown-up extras (behind the gate):** a weekly play-time chart, certificates and printable practice sheets, Bedtime and a daily limit. Sharing or printing uses the iOS share sheet or Messages and is only reachable behind the gate.
+
+**Nothing is switched on remotely.** There is no server and no feature flag fetched from anywhere: every feature described here is in the submitted binary (Guideline 2.5.19).
 
 **Play with others.** It is OFF by default, and only a grown-up can turn it on: Grown-up settings → Hop Village → "Play with others" → **Nearby only**.
 
@@ -53,6 +61,6 @@ HopQuest is a Kids Category app for ages 6–8, sold as a one-time purchase.
 ## Answers for App Store Connect forms
 
 - **Age rating:** see `APPSTORE.md` → "Age rating answers". Messaging and Chat: No. User-Generated Content: No. Unrestricted Web Access: No. Parental Controls: Yes. Cartoon or Fantasy Violence: Infrequent/Mild.
-- **Privacy label:** Data Not Collected.
-- **Export compliance:** uses encryption, but only the encryption built into iOS (exempt). The owner must confirm.
+- **Privacy label:** Data Not Collected (app and widget).
+- **Export compliance:** only the encryption built into iOS (exempt). `ITSAppUsesNonExemptEncryption` is set to NO in the Info.plist. The owner must confirm.
 - **Content rights:** no third-party content. The songs in Music Maker are traditional or public domain (Twinkle Twinkle, Mary Had a Little Lamb, Hot Cross Buns, Ode to Joy), synthesized in the app.

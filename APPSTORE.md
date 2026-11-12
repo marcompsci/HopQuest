@@ -6,7 +6,7 @@ Everything below is ready to paste into App Store Connect for the 2.0 update. Ve
 - **Name:** HopQuest: Learn & Play (App Store Connect app 6823413640)
 - **Subtitle:** Learn, build & play adventure
 - **Bundle ID:** com.phoronomics.hopquest
-- **Version / build:** 2.0 (2)
+- **Version / build:** 2.0 (3)
 - **SKU:** HOPQUEST001
 - **Primary language:** English (U.S.)
 - **Primary category:** Education · **Secondary category:** Games › Family

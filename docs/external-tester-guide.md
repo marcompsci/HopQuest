@@ -4,7 +4,7 @@
 
 ## Part 1: For the developer (App Store Connect)
 
-1. **Upload a build.** Archive in Xcode, then Organizer → Distribute App → App Store Connect → Upload. Wait for processing; you'll get an email. Answer export compliance if asked.
+1. **Upload a build (owner only).** Open `HopQuest.xcodeproj`, not the `.swiftpm`: only the Xcode project contains the widget. Choose Any iOS Device → Product → Archive → Validate App → Distribute App → App Store Connect → Upload. Wait for processing; you'll get an email. Export compliance is pre-answered in the Info.plist.
 2. **Internal group (optional, no review needed).** TestFlight → Internal Testing → ＋ → name it (e.g. "Phoronomics team"). Add App Store Connect users and turn on the build.
 3. **External group.** TestFlight → External Testing → ＋ → name it (e.g. "Family beta").
 4. **Test information.** TestFlight → Test Information:
@@ -31,20 +31,24 @@
 
 ## Part 2: What to Test (paste into App Store Connect, 4,000 characters max)
 
-Thanks for testing HopQuest 2.0! Please try:
+Thanks for testing HopQuest 2.0 (build 3)! Please try:
 
 1. **First launch:** type a name (or leave it blank), pick a buddy and a castle.
-2. **Hop Village (PLAY):**
+2. **Home page:** tap PLAY (Hop Village) and SURPRISE ME! Then use the menu bar at the bottom to visit Adventures, Games, Learn and Worlds, and come back Home. My Castle, Together and Stories are at the bottom of Home.
+3. **Hop Village:**
    - walk around and visit the Reading Nook, Math Market and Coding Lab
-   - plant something in the garden below the house, then come back tomorrow to see it grow
-   - pick a pet in the garden
-3. **Learning games on the home screen:** Reading Nook, Math Market, Science Lab, Music Maker and Coding Lab. Did anything feel too hard or too easy for your child?
-4. **Adventure Map:** play Meadow Street to the end. A short story scene should play. Then try a few more levels.
-5. **Games:** Bubble Kart (try Snowy Slalom's jump ramps), Pillow Bop (try the Moon Base arena) and Fort Friends.
-6. **Together:** two players on one device in Bubble Kart or Pillow Bop.
-7. **Grown-ups:**
-   - open the gear and try the settings
-   - with two devices in the same room, turn on "Play with others → Nearby only" on both and try a Brain Duel
+   - plant something in the garden, and pick a pet
+4. **Learn:** Reading Nook, Math Market, Science Lab, Music Maker, Writing Desk and the learning places (Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail and more). Did anything feel too hard or too easy for your child?
+5. **Adventures and Worlds:** play Meadow Street to the end (a short story scene plays), then open a world from the Worlds page.
+6. **Games:**
+   - Bubble Kart, Pillow Bop, Fort Friends, Star Dash, Star Hop and Breathe
+   - Level Maker: build a Star Hop level and play it
+   - Sticker Scenes
+7. **Widgets:** long-press the home screen → ＋ → HopQuest. Add the Buddy, Star Hop and Brain Bubble widgets, then play Star Hop and answer a Brain Bubble right on the home screen. If you add a Lock Screen widget, check it doesn't show your child's name.
+8. **Grown-ups:** open the gear and answer the multiplication. Try:
+   - the Progress page: chart, certificates and practice sheets
+   - Bedtime and the daily limit
+   - with two devices in the same room: "Play with others → Nearby only" on both, then a Brain Duel
 
 Please tell us about:
 - anything that froze, crashed or looked wrong
