@@ -47,7 +47,7 @@ jobs:
 
   ios-build:
     name: iOS build (simulator, unsigned)
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - name: Show Xcode
@@ -68,7 +68,7 @@ jobs:
   ios-build-xcodeproj:
     # The build that actually ships: app + widget extension, from HopQuest.xcodeproj (generated from project.yml).
     name: iOS build, app + widget (Xcode project, Release, unsigned)
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - name: Show Xcode
