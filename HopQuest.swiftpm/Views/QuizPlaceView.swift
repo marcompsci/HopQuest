@@ -103,6 +103,34 @@ struct QuizPlace {
                   rounds: { id in var g = SystemRandomNumberGenerator(); return GraphBank.rounds(for: id, using: &g) })
     }
 
+    static var words: QuizPlace {
+        QuizPlace(id: "words", title: "Word Workshop", line: "Glue words, squish words, sort words. Let's build!",
+                  greeting: "Hoo-hoo! I'm Ollie. Welcome to my Word Workshop, where we build with words!", host: Roster.character(id: "ollie"),
+                  accent: Color(hex: 0x5D4037), background: [Color(hex: 0xF7F0EA), Color(hex: 0xE8D9CC)], games: WordBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return WordBank.rounds(for: id, using: &g) })
+    }
+
+    static var tenframe: QuizPlace {
+        QuizPlace(id: "tenframe", title: "Ten Frame Farm", line: "Chicks, eggs and apples in tens. Let's count!",
+                  greeting: "Hi, I'm Polly! On my farm we count everything in tens. Welcome to Ten Frame Farm!", host: Roster.character(id: "polly"),
+                  accent: Color(hex: 0xC0392B), background: [Color(hex: 0xFDF1E6), Color(hex: 0xF6DCC3)], games: FrameBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return FrameBank.rounds(for: id, using: &g) })
+    }
+
+    static var sky: QuizPlace {
+        QuizPlace(id: "sky", title: "Sky Watch", line: "The moon, shadows and the weather. Look up!",
+                  greeting: "Hello, I'm Nova Wing! I fly high every day. Welcome to Sky Watch!", host: Roster.character(id: "novawing"),
+                  accent: Color(hex: 0x283593), background: [Color(hex: 0xE8EBFA), Color(hex: 0xC9D0F2)], games: SkyBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return SkyBank.rounds(for: id, using: &g) })
+    }
+
+    static var helpers: QuizPlace {
+        QuizPlace(id: "helpers", title: "Helper Town", line: "Helpers, tools and safe choices. Let's explore town!",
+                  greeting: "Hi, I'm Leo! Lots of people help our town every day. Welcome to Helper Town!", host: Roster.character(id: "leo"),
+                  accent: Color(hex: 0x00838F), background: [Color(hex: 0xE5F6F7), Color(hex: 0xC2E8EB)], games: HelperBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return HelperBank.rounds(for: id, using: &g) })
+    }
+
     /// Every place, by id.
     static func named(_ id: String) -> QuizPlace {
         switch id {
@@ -119,6 +147,10 @@ struct QuizPlace {
         case "healthy": return .healthy
         case "planet": return .planet
         case "graphs": return .graphs
+        case "words": return .words
+        case "tenframe": return .tenframe
+        case "sky": return .sky
+        case "helpers": return .helpers
         default: return .shapes
         }
     }
@@ -456,6 +488,12 @@ struct QuizVisualView: View {
             GraphDrawing(labels: labels, counts: counts, bars: bars, accent: accent, large: large)
         case .jumble(let items):
             JumbleDrawing(items: items, large: large)
+        case .tenFrames(let counts, let item):
+            VStack(spacing: large ? 10 : 6) {
+                ForEach(Array(counts.enumerated()), id: \.offset) { _, n in
+                    TenFrameDrawing(filled: n, item: item, color: accent, large: large && counts.count == 1)
+                }
+            }
         case .pattern(let s):
             HStack(spacing: 6) {
                 ForEach(Array(s.enumerated()), id: \.offset) { _, k in ShapeDrawing(kind: k, color: accent).frame(width: 40, height: 40) }
@@ -533,6 +571,37 @@ struct TallyDrawing: View {
                 .frame(width: width, height: height)
             }
         }
+        .accessibilityHidden(true)
+    }
+}
+
+/// A ten frame: two rows of five boxes, filled left to right along the top row first (v9.13).
+struct TenFrameDrawing: View {
+    let filled: Int
+    let item: String
+    let color: Color
+    let large: Bool
+
+    var body: some View {
+        let cell: CGFloat = large ? 50 : 36
+        VStack(spacing: 0) {
+            ForEach(0..<2, id: \.self) { row in
+                HStack(spacing: 0) {
+                    ForEach(0..<5, id: \.self) { col in
+                        let k = row * 5 + col
+                        ZStack {
+                            Rectangle().fill(Color.white)
+                            Rectangle().strokeBorder(color, lineWidth: 2)
+                            if k < filled {
+                                Text(item).font(.system(size: cell * 0.62))
+                            }
+                        }
+                        .frame(width: cell, height: cell)
+                    }
+                }
+            }
+        }
+        .overlay(Rectangle().strokeBorder(color, lineWidth: 3))
         .accessibilityHidden(true)
     }
 }

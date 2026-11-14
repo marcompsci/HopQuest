@@ -1,7 +1,7 @@
 """Menu icons for the learning places (Reading Nook, Math Market, Science Lab, Music Maker, Garden, Stories),
 in the same ink-outline style as icon_kart / icon_bop (make_world.py), so the menu doesn't fall back to emoji.
 
-Usage: python3 make_learn_icons.py <Assets.xcassets dir>
+Usage: python3 make_learn_icons.py <Assets.xcassets dir> [icon_name ...]
 Renders each 200x200 SVG to a 300x300 PNG imageset with Playwright (same as render_world.py).
 """
 import json
@@ -443,6 +443,59 @@ def icon_graphs():
     return s
 
 
+def icon_words():
+    s = ground()
+    # three letter blocks stacked, with a pencil
+    s += R(30, 112, 52, 52, 8, "#FF9F45") + R(86, 112, 52, 52, 8, "#7FD6C2") + R(58, 58, 52, 52, 8, "#FFD93D")
+    s += shine(40, 122, 8, 4) + shine(96, 122, 8, 4) + shine(68, 68, 8, 4)
+    s += P("M44 152 L56 124 L68 152 M49 142 L63 142", "none", 6)
+    s += P("M104 124 L104 152 Q122 152 122 145 Q122 138 104 138 Q120 138 120 131 Q120 124 104 124", "none", 6)
+    s += P("M96 72 Q78 70 78 84 Q78 98 96 96", "none", 6)
+    s += P("M146 160 L176 70 L186 74 L156 164 Z", "#FFB74D", 5) + P("M146 160 L156 164 L148 176 Z", "#F2C38B", 4)
+    s += P("M176 70 L186 74 L189 66 L179 62 Z", "#FF6B6B", 4)
+    return s
+
+
+def icon_tenframe():
+    s = ground()
+    # a ten frame on a red barn board, seven chicks-yellow dots inside
+    s += R(22, 62, 156, 82, 10, "#C0392B")
+    s += R(30, 70, 140, 66, 4, "#FFFFFF")
+    for k in range(1, 5):
+        s += P(f"M{30 + k * 28} 70 L{30 + k * 28} 136", "none", 4)
+    s += P("M30 103 L170 103", "none", 4)
+    for k in range(7):
+        x = 44 + (k % 5) * 28
+        y = 87 + (k // 5) * 33
+        s += C(x, y, 10, "#FFD93D", 4)
+    s += P("M70 62 L100 32 L130 62", "#E57373", 5)
+    s += star(160, 34, 11)
+    return s
+
+
+def icon_sky():
+    s = ground()
+    # a night sky card: a crescent moon, stars and a little cloud
+    s += R(26, 34, 148, 132, 16, "#283593")
+    s += C(86, 96, 38, "#FFE082", 5)
+    s += C(104, 84, 34, "#283593", False)
+    s += star(140, 62, 12) + star(128, 112, 8) + star(56, 54, 7)
+    s += P("M104 150 Q104 132 122 134 Q128 120 144 126 Q158 120 162 136 Q174 138 172 150 Z", "#FFFFFF", 5)
+    return s
+
+
+def icon_helpers():
+    s = ground()
+    # a little town hall with a flag and a helping heart
+    s += R(40, 92, 120, 76, 6, "#B2EBF2")
+    s += P("M30 96 L100 50 L170 96 Z", "#00838F", 5)
+    s += R(88, 128, 24, 40, 4, "#8D6E63") + C(106, 150, 3, OUT, False)
+    s += R(54, 110, 22, 22, 3, "#FFFFFF") + R(124, 110, 22, 22, 3, "#FFFFFF")
+    s += P("M100 50 L100 22", "none", 4) + P("M100 22 L124 28 L100 36 Z", "#FF6B6B", 4)
+    s += P("M154 52 Q154 40 166 42 Q176 44 172 56 L160 70 L148 58 Q144 46 154 52 Z", "#FF6B6B", 4)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
@@ -452,15 +505,19 @@ ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science
          "icon_nature": icon_nature, "icon_calendar": icon_calendar, "icon_compass": icon_compass,
          "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes,
          "icon_healthy": icon_healthy, "icon_fridge": icon_fridge, "icon_planet": icon_planet,
-         "icon_graphs": icon_graphs}
+         "icon_graphs": icon_graphs, "icon_words": icon_words, "icon_tenframe": icon_tenframe, "icon_sky": icon_sky,
+         "icon_helpers": icon_helpers}
 
 
 if __name__ == "__main__":
     from playwright.sync_api import sync_playwright
     assets = sys.argv[1]
+    only = set(sys.argv[2:])  # optional: just these icons
     with sync_playwright() as p:
         b = p.chromium.launch()
         for name, fn in ICONS.items():
+            if only and name not in only:
+                continue
             body = svg(200, 200, fn())
             page = b.new_page(viewport={"width": 200, "height": 200}, device_scale_factor=1.5)
             page.set_content(f'<html><body style="margin:0;background:transparent">{body}</body></html>')

@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "filename": "icon_tenframe.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

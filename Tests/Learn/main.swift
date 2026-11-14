@@ -792,7 +792,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 35, "35 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 39, "39 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -822,6 +822,7 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + HatKind.allCases.map(\.title)
         + NatureBank.games.map(\.title) + CalendarBank.games.map(\.title) + CompassBank.games.map(\.title)
         + HealthyBank.games.map(\.title) + PlanetBank.games.map(\.title) + GraphBank.games.map(\.title)
+        + WordBank.games.map(\.title) + FrameBank.games.map(\.title) + SkyBank.games.map(\.title) + HelperBank.games.map(\.title)
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
@@ -829,6 +830,7 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + RhymeBank.games.map(\.intro) + NumberBank.games.map(\.intro) + TimesBank.games.map(\.intro) + MeasureBank.games.map(\.intro) + FeelingsBank.games.map(\.intro)
         + NatureBank.games.map(\.intro) + CalendarBank.games.map(\.intro) + CompassBank.games.map(\.intro)
         + HealthyBank.games.map(\.intro) + PlanetBank.games.map(\.intro) + GraphBank.games.map(\.intro)
+        + WordBank.games.map(\.intro) + FrameBank.games.map(\.intro) + SkyBank.games.map(\.intro) + HelperBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
     check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
     check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
@@ -1460,9 +1462,133 @@ test("Bedtime: goodnight from bedtime until 6 in the morning, a grown-up can add
     check(Bedtime.choices.allSatisfy { $0 == 0 || $0 > Bedtime.wakeMinutes }, "every choice is in the evening")
 }
 
+test("Word Workshop (v9.12): every game, 300 seeds, answers worked out from the words") {
+    let games = WordBank.games
+    check(games.count == 4 && Set(games.map(\.id)).count == 4, "words: four games")
+    let compoundWords = Set(WordBank.compounds.map(WordBank.word))
+    check(compoundWords.count == WordBank.compounds.count, "no compound word twice")
+    check(compoundWords.isDisjoint(with: WordBank.plainWords), "plain words aren't compounds")
+    check(Set(WordBank.abcWords.map { $0.prefix(1) }).count == WordBank.abcWords.count, "ABC words all start differently")
+    check(Set(WordBank.doing.map(\.word)).isDisjoint(with: WordBank.naming.map(\.word)), "no word is both kinds")
+    check(Set(WordBank.contractions.map(\.short)).count == WordBank.contractions.count, "every squish word is different")
+    for g in games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            let rounds = WordBank.rounds(for: g.id, using: &rng)
+            check(rounds.count == 5, "words/\(g.id): five rounds")
+            for r in rounds {
+                check(r.choices.count == 3 && Set(r.choices).count == 3 && r.choices.contains(r.answer), "words/\(g.id): three choices hold the answer once (\(r.choices))")
+                switch g.id {
+                case "compound":
+                    if case .text(let t) = r.visual {
+                        let parts = t.components(separatedBy: " + ")
+                        check(parts.count == 2 && r.answer == parts[0] + parts[1], "compound: \(t) → \(r.answer)")
+                        check(r.choices.allSatisfy { compoundWords.contains($0) }, "compound: every choice is a real compound")
+                    } else {
+                        check(compoundWords.contains(r.answer) && r.choices.filter { compoundWords.contains($0) }.count == 1, "compound: one compound among plain words (\(r.choices))")
+                    }
+                case "abc":
+                    let sorted = r.choices.sorted()
+                    check(r.answer == (r.say.contains("last") ? sorted[2] : sorted[0]), "abc: \(r.say) \(r.choices) → \(r.answer)")
+                case "kinds":
+                    let doing = Set(WordBank.doing.map(\.word)), naming = Set(WordBank.naming.map(\.word))
+                    let pool = r.say.contains("doing") ? doing : naming
+                    check(pool.contains(r.answer) && r.choices.filter { pool.contains($0) }.count == 1, "kinds: \(r.say) \(r.choices) → \(r.answer)")
+                default:
+                    if case .text(let long) = r.visual {
+                        check(WordBank.contractions.contains { $0.long == long && $0.short == r.answer }, "short: \(long) → \(r.answer)")
+                    } else { check(false, "short: shows the two words") }
+                }
+            }
+        }
+    }
+}
+
+test("Ten Frame Farm (v9.13): frames hold the right counts, answers worked out") {
+    check(FrameBank.frames(7) == [7] && FrameBank.frames(10) == [10] && FrameBank.frames(16) == [10, 6] && FrameBank.frames(20) == [10, 10], "frames for a number")
+    check(QuizVisual.tenFrames([7], item: "🐣").spoken == "A ten frame with 7 chicks", "one frame for VoiceOver")
+    check(QuizVisual.tenFrames([10, 1], item: "🥚").spoken == "2 ten frames: 10 eggs and 1 egg", "two frames for VoiceOver")
+    check(FrameBank.pictures.allSatisfy { FrameBank.items[$0] != nil }, "every picture has a name")
+    for g in FrameBank.games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            let rounds = FrameBank.rounds(for: g.id, using: &rng)
+            check(rounds.count == 5, "tenframe/\(g.id): five rounds")
+            for r in rounds {
+                check(r.choices.count == 3 && Set(r.choices).count == 3 && r.choices.contains(r.answer), "tenframe/\(g.id): three choices (\(r.choices))")
+                check(r.choices.allSatisfy { (Int($0) ?? 0) >= 1 }, "tenframe/\(g.id): counting numbers")
+                guard case .tenFrames(let counts, _) = r.visual, let answer = Int(r.answer) else { check(false, "tenframe: frames shown"); continue }
+                check(counts.allSatisfy { (0...10).contains($0) }, "tenframe: a frame holds 0 to 10")
+                let total = counts.reduce(0, +)
+                switch g.id {
+                case "count": check(answer == total && (counts.count == 1 || counts[0] == 10), "count: \(counts) → \(answer)")
+                case "make10": check(counts.count == 1 && answer + total == 10, "make10: \(counts) → \(answer)")
+                case "doubles": check(counts.count == 2 && counts[0] == counts[1] && answer == total, "doubles: \(counts) → \(answer)")
+                default: check(answer == total + (r.say.contains("more than") ? 1 : -1), "moreless: \(r.say) → \(answer)")
+                }
+            }
+        }
+    }
+}
+
+test("Sky Watch (v9.14): one right answer, wrong ones never fit") {
+    check(SkyBank.moons.allSatisfy { SkyBank.moonNames.contains($0.name) }, "every moon has a name from the list")
+    for w in SkyBank.weathers {
+        check(Set(w.fits).isDisjoint(with: w.never), "\(w.id): nothing both fits and doesn't")
+        check((w.fits + w.never).allSatisfy { SkyBank.gear[$0] != nil }, "\(w.id): every thing has a picture")
+    }
+    let banks = SkyBank.shadows + SkyBank.facts
+    check(banks.allSatisfy { !$0.wrong.contains($0.answer) && Set($0.wrong).count == 2 }, "two different wrong answers")
+    for g in SkyBank.games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            let rounds = SkyBank.rounds(for: g.id, using: &rng)
+            check(rounds.count == 5, "sky/\(g.id): five rounds")
+            if g.id == "shadow" || g.id == "facts" { check(Set(rounds.map(\.say)).count == 5, "sky/\(g.id): no question twice") }
+            for r in rounds {
+                check(r.choices.count == 3 && Set(r.choices).count == 3 && r.choices.contains(r.answer), "sky/\(g.id): three choices (\(r.choices))")
+                switch g.id {
+                case "moon":
+                    guard case .picture(let p) = r.visual, let m = SkyBank.moons.first(where: { $0.picture == p }) else { check(false, "moon: a moon"); continue }
+                    check(r.answer == m.name, "moon: \(p) → \(r.answer)")
+                case "weather":
+                    guard case .picture(let p) = r.visual, let w = SkyBank.weathers.first(where: { $0.picture == p }) else { check(false, "weather: a sky"); continue }
+                    check(w.fits.map(SkyBank.label).contains(r.answer), "weather: \(w.id) → \(r.answer)")
+                    check(r.choices.filter { w.fits.map(SkyBank.label).contains($0) }.count == 1, "weather: only one thing fits (\(r.choices))")
+                default:
+                    check(banks.contains { $0.say == r.say && $0.answer == r.answer }, "sky: \(r.say) → \(r.answer)")
+                }
+            }
+        }
+    }
+}
+
+test("Helper Town (v9.15): helpers who do nearly the same job are never wrong answers") {
+    check(HelperBank.jobs.allSatisfy { HelperBank.helpers[$0.answer] != nil } && HelperBank.tools.allSatisfy { HelperBank.helpers[$0.answer] != nil }, "every answer is a helper")
+    check(HelperBank.jobs.allSatisfy { $0.picture != HelperBank.helpers[$0.answer] }, "the picture never shows the answer")
+    check(!HelperBank.wrongHelpers(for: "doctor").contains("vet") && !HelperBank.wrongHelpers(for: "police officer").contains("teacher"), "close helpers left out")
+    for g in HelperBank.games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            let rounds = HelperBank.rounds(for: g.id, using: &rng)
+            check(rounds.count == 5 && Set(rounds.map { "\($0.say)|\($0.answer)" }).count == 5, "helpers/\(g.id): five different rounds")
+            for r in rounds {
+                check(r.choices.count == 3 && Set(r.choices).count == 3 && r.choices.contains(r.answer), "helpers/\(g.id): three choices (\(r.choices))")
+                switch g.id {
+                case "jobs", "tools":
+                    let wrong = Set(HelperBank.wrongHelpers(for: r.answer))
+                    check(r.choices.filter { $0 != r.answer }.allSatisfy { wrong.contains($0) }, "helpers: no close helper offered (\(r.choices))")
+                case "safe": check(HelperBank.safety.contains { $0.say == r.say && $0.answer == r.answer }, "safe: \(r.say)")
+                default: check(HelperBank.signs.contains { $0.say == r.say && $0.answer == r.answer }, "signs: \(r.say)")
+                }
+            }
+        }
+    }
+}
+
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {
     let ids = ["reading", "writing", "market", "clock", "science", "world", "music", "spelling", "fractions", "shapes", "rhyme",
-               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "code"]
+               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "code"]
     for id in ids {
         let a = AtHome.byPlace[id]
         check(a != nil, "\(id) has at-home ideas")

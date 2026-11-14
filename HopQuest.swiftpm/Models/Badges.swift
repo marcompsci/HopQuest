@@ -46,6 +46,8 @@ enum Badges {
         ("compass", "Pathfinder", "safari.fill", 0x1565C0),
         ("healthy", "Health Hero", "figure.run", 0x558B2F), ("planet", "Planet Protector", "arrow.3.trianglepath", 0x00897B),
         ("graphs", "Data Detective", "chart.bar.fill", 0x7B1FA2),
+        ("words", "Word Builder", "textformat.abc", 0x5D4037), ("tenframe", "Ten Tamer", "10.circle.fill", 0xC0392B),
+        ("sky", "Sky Spotter", "moon.stars.fill", 0x283593), ("helpers", "Town Helper", "person.2.fill", 0x00838F),
     ]
 
     static let all: [Badge] = {
@@ -94,6 +96,10 @@ enum Badges {
         case "healthy": return "Healthy Hut"
         case "planet": return "Earth Helpers club"
         case "graphs": return "Graph Garden"
+        case "words": return "Word Workshop"
+        case "tenframe": return "Ten Frame Farm"
+        case "sky": return "Sky Watch"
+        case "helpers": return "Helper Town"
         default: return "Code Club"
         }
     }

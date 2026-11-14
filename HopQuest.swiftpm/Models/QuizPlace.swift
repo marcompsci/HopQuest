@@ -53,6 +53,8 @@ enum QuizVisual: Equatable {
     case graph(labels: [String], counts: [Int], bars: Bool)
     /// A jumble of pictures to sort and count (v9.3).
     case jumble([String])
+    /// Ten frames (two rows of five boxes), each filled with `counts[k]` pictures, left to right, top row first (v9.13).
+    case tenFrames([Int], item: String)
 }
 
 extension QuizVisual {
@@ -86,6 +88,9 @@ extension QuizVisual {
             let rows = zip(labels, counts).map { "\(GraphBank.many($0.0)): \($0.1)" }
             return (bars ? "A bar graph. " : "A picture graph. ") + rows.joined(separator: ", ")
         case .jumble(let items): return "A jumble of pictures: " + items.map { GraphBank.one($0) }.joined(separator: ", ")
+        case .tenFrames(let counts, let item):
+            let things = counts.map { "\($0) \($0 == 1 ? FrameBank.one(item) : FrameBank.many(item))" }
+            return counts.count == 1 ? "A ten frame with \(things[0])" : "\(counts.count) ten frames: " + things.joined(separator: " and ")
         default: return nil
         }
     }

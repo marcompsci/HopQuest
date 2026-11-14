@@ -47,6 +47,10 @@ extension GameStore {
             LearningArea(id: "healthy", title: "Healthy Hut", skills: HealthyBank.games.map { SkillProgress(skill: $0.skill, best: p.places["healthy"]?.best($0.id) ?? 0) }),
             LearningArea(id: "planet", title: "Earth Helpers", skills: PlanetBank.games.map { SkillProgress(skill: $0.skill, best: p.places["planet"]?.best($0.id) ?? 0) }),
             LearningArea(id: "graphs", title: "Graph Garden", skills: GraphBank.games.map { SkillProgress(skill: $0.skill, best: p.places["graphs"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "words", title: "Word Workshop", skills: WordBank.games.map { SkillProgress(skill: $0.skill, best: p.places["words"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "tenframe", title: "Ten Frame Farm", skills: FrameBank.games.map { SkillProgress(skill: $0.skill, best: p.places["tenframe"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "sky", title: "Sky Watch", skills: SkyBank.games.map { SkillProgress(skill: $0.skill, best: p.places["sky"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "helpers", title: "Helper Town", skills: HelperBank.games.map { SkillProgress(skill: $0.skill, best: p.places["helpers"]?.best($0.id) ?? 0) }),
             LearningArea(id: "code", title: "Code Club", skills: CodeChallenge.all.map { SkillProgress(skill: "coding: \($0.topic.lowercased())", best: p.codeBest[$0.id] ?? 0) }),
         ]
     }

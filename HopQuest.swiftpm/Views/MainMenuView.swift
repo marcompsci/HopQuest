@@ -264,6 +264,10 @@ struct MainMenuView: View {
             placeTile("healthy", art: "icon_healthy", title: "Healthy Hut", color: 0x558B2F, shadow: 0x33691E)
             placeTile("planet", art: "icon_planet", title: "Earth Helpers", color: 0x00897B, shadow: 0x00695C)
             placeTile("graphs", art: "icon_graphs", title: "Graph Garden", color: 0x7B1FA2, shadow: 0x4A148C)
+            placeTile("words", art: "icon_words", title: "Word Workshop", color: 0x5D4037, shadow: 0x3E2723)
+            placeTile("tenframe", art: "icon_tenframe", title: "Ten Frame Farm", color: 0xC0392B, shadow: 0x8E2A1F)
+            placeTile("sky", art: "icon_sky", title: "Sky Watch", color: 0x283593, shadow: 0x1A237E)
+            placeTile("helpers", art: "icon_helpers", title: "Helper Town", color: 0x00838F, shadow: 0x005F66)
             gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
                      badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
                      label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)
