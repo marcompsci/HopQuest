@@ -149,6 +149,39 @@ struct PlaceSave: Codable, Equatable {
     var totalStars: Int { best.values.reduce(0, +) }
 }
 
+/// A practice sheet with a little of every game in a place (v9.21): games take turns, no question twice.
+enum PracticeMix {
+    static let id = "mix"
+
+    static func info(for games: [QuizGameInfo]) -> QuizGameInfo {
+        QuizGameInfo(id: id, title: "Mixed Review", symbol: "shuffle",
+                     intro: "A little of every game: " + games.map(\.title).joined(separator: ", ") + ".",
+                     skill: "a mix of every game")
+    }
+
+    /// Up to `count` different rounds, taking turns between the games.
+    static func rounds(games: [QuizGameInfo], count: Int = 10, make: (String) -> [QuizRound]) -> [QuizRound] {
+        guard !games.isEmpty else { return [] }
+        var out: [QuizRound] = []
+        var pools: [String: [QuizRound]] = [:]
+        var stuck = 0
+        var k = 0
+        while out.count < count && stuck < games.count * 6 {
+            let g = games[k % games.count].id
+            k += 1
+            if pools[g, default: []].isEmpty { pools[g] = make(g) }
+            if let next = pools[g]!.firstIndex(where: { r in !out.contains { $0.say == r.say && $0.visual == r.visual } }) {
+                out.append(pools[g]!.remove(at: next))
+                stuck = 0
+            } else {
+                pools[g] = []
+                stuck += 1
+            }
+        }
+        return out
+    }
+}
+
 enum QuizShuffle {
     /// The answer plus wrong choices, shuffled, with no repeats.
     static func choices<G: RandomNumberGenerator>(_ answer: String, _ wrong: [String], count: Int = 3, using rng: inout G) -> [String] {

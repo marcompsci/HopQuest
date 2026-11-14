@@ -46,7 +46,10 @@ enum HopWords {
         "Catch the letters to spell the word!": "¡Atrapa las letras para formar la palabra!", "Count by twos: 2, 4, 6…": "Cuenta de dos en dos: 2, 4, 6…",
         "Catch the letters in ABC order!": "¡Atrapa las letras en orden ABC!", "Count down to blast off: 6, 5, 4…": "Cuenta hacia atrás para despegar: 6, 5, 4…",
         "Catch the answer to each sum!": "¡Atrapa la respuesta de cada suma!", "Count by tens: 10, 20, 30…": "Cuenta de diez en diez: 10, 20, 30…",
-        "Catch the answer to each take-away!": "¡Atrapa la respuesta de cada resta!", "The last level! Catch 12 stars.": "¡El último nivel! Atrapa 12 estrellas.",
+        "Catch the answer to each take-away!": "¡Atrapa la respuesta de cada resta!", "Catch 12 stars at the castle!": "¡Atrapa 12 estrellas en el castillo!",
+        "Sandy Dunes": "Dunas de Arena", "Backwards Bridge": "Puente al Revés", "Fives Forest": "Bosque de Cincos", "Cloud Kingdom": "Reino de las Nubes",
+        "Count by threes: 3, 6, 9…": "Cuenta de tres en tres: 3, 6, 9…", "ABC backwards: Z, Y, X…": "ABC al revés: Z, Y, X…",
+        "Count by fives: 5, 10, 15…": "Cuenta de cinco en cinco: 5, 10, 15…", "The very last level! Catch 14 stars.": "¡El último nivel! Atrapa 14 estrellas.",
     ]
 
     static let patterns: [(NSRegularExpression, String)] = [

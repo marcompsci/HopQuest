@@ -13,7 +13,7 @@ struct BubbleQuestion: Equatable {
 }
 
 enum BubbleBank {
-    /// 41 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
+    /// 53 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
     static let all: [BubbleQuestion] = [
         BubbleQuestion(emoji: "➕", question: "What is 4 + 3?", choices: ["6", "7", "8"], answer: 1, fact: "4 + 3 = 7. So does 3 + 4!"),
         BubbleQuestion(emoji: "➖", question: "What is 9 − 4?", choices: ["5", "4", "6"], answer: 0, fact: "9 take away 4 leaves 5."),
@@ -56,6 +56,19 @@ enum BubbleBank {
         BubbleQuestion(emoji: "🦉", question: "When are owls most awake?", choices: ["At night", "At lunch", "In the morning"], answer: 0, fact: "Owls hunt at night. They're nocturnal!"),
         BubbleQuestion(emoji: "✖️", question: "What is 2 groups of 3?", choices: ["5", "6", "9"], answer: 1, fact: "3 + 3 = 6, so 2 groups of 3 is 6."),
         BubbleQuestion(emoji: "🍕", question: "A pizza cut into 2 equal parts. Each part is…", choices: ["A half", "A third", "A quarter"], answer: 0, fact: "Two equal parts are called halves."),
+        // v9.18: twelve more, from Word Workshop, Ten Frame Farm, Sky Watch and Helper Town
+        BubbleQuestion(emoji: "🌻", question: "Sun + flower makes which word?", choices: ["Sunshine", "Sunflower", "Flowerpot"], answer: 1, fact: "Two little words glued together make a compound word!"),
+        BubbleQuestion(emoji: "🔤", question: "Which comes first in ABC order?", choices: ["Dog", "Cat", "Fish"], answer: 1, fact: "C comes before D and F, so cat goes first."),
+        BubbleQuestion(emoji: "🦘", question: "Which one is a doing word?", choices: ["Jump", "Chair", "Apple"], answer: 0, fact: "You can jump! Chair and apple name things."),
+        BubbleQuestion(emoji: "✂️", question: "What is the short word for \"do not\"?", choices: ["Didn't", "Don't", "Can't"], answer: 1, fact: "Do not squishes into don't, with a little mark."),
+        BubbleQuestion(emoji: "🐣", question: "7 chicks in a ten frame. How many more make 10?", choices: ["3", "2", "4"], answer: 0, fact: "7 and 3 make 10."),
+        BubbleQuestion(emoji: "👯", question: "What is double 6?", choices: ["10", "12", "14"], answer: 1, fact: "6 + 6 = 12."),
+        BubbleQuestion(emoji: "🔢", question: "What is one more than 19?", choices: ["18", "29", "20"], answer: 2, fact: "After 19 comes 20!"),
+        BubbleQuestion(emoji: "🌕", question: "A moon that looks like a whole circle is a…", choices: ["Full moon", "Half moon", "New moon"], answer: 0, fact: "A full moon is round and bright."),
+        BubbleQuestion(emoji: "🌞", question: "When is your shadow shortest?", choices: ["At noon", "At sunrise", "At sunset"], answer: 0, fact: "The sun is highest at noon, so shadows are short."),
+        BubbleQuestion(emoji: "🌨️", question: "It's snowing. What should you wear?", choices: ["Sandals", "Mittens", "A swimsuit"], answer: 1, fact: "Mittens keep your fingers warm."),
+        BubbleQuestion(emoji: "🚒", question: "Who drives a fire truck?", choices: ["A baker", "A firefighter", "A farmer"], answer: 1, fact: "Firefighters put out fires and help in emergencies."),
+        BubbleQuestion(emoji: "🛑", question: "What does a red stop sign mean?", choices: ["Go fast", "Stop", "Turn left"], answer: 1, fact: "Stop, then look both ways."),
     ]
     static let step = 7
 }

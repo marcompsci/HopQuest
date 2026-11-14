@@ -55,6 +55,7 @@ extension L10n {
         "Buddy hats": "Sombreros para tu amigo", "No hat": "Sin sombrero", "Party Hat": "Gorro de Fiesta", "Ball Cap": "Gorra",
         "Flower Crown": "Corona de Flores", "Cozy Beanie": "Gorro de Lana", "Golden Crown": "Corona de Oro", "Wizard Hat": "Sombrero de Mago",
         "Top Hat": "Sombrero de Copa", "Space Helmet": "Casco Espacial",
+        "Chef's Hat": "Gorro de Chef", "Fire Helmet": "Casco de Bombero", "Smarty Cap": "Birrete",
         "Level": "Nivel", "Finished": "Terminado", "No bumps": "Sin choques", "Quick feet": "Pies rápidos", "Next level": "Siguiente nivel",
         "Try again": "Intenta otra vez", "Out of hearts!": "¡Sin corazones!", "The puff clouds got you. You can do it!": "Las nubes te atraparon. ¡Tú puedes!",
         "Tap left to step. Tap right to jump, and again to double jump!": "Toca a la izquierda para caminar. ¡Toca a la derecha para saltar, y otra vez para doble salto!",
@@ -165,6 +166,7 @@ extension L10n {
         "Every helper has special tools. Who uses this one?": "Cada ayudante tiene herramientas especiales. ¿Quién usa esta?",
         "Smart choices keep you safe. What's the safe thing to do?": "Las buenas decisiones te cuidan. ¿Qué es lo seguro?",
         "Signs and lights tell us what to do. What does this one mean?": "Las señales y luces nos dicen qué hacer. ¿Qué significa esta?",
+        "Keep going!": "¡Sigue así!", "New!": "¡Nuevo!",
         "Word Builder": "Constructor de Palabras", "Ten Tamer": "Domador del Diez", "Sky Spotter": "Observador del Cielo", "Town Helper": "Ayudante del Pueblo",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
@@ -184,5 +186,6 @@ extension L10n {
         ("^Song (\\d+) is saved!$", "¡La canción $1 está guardada!"),
         ("^Song (\\d+) is open\\. Change it, then keep the changes\\.$", "La canción $1 está abierta. Cámbiala y luego guarda los cambios."),
         ("^(\\d+) things you made$", "$1 cosas que hiciste"),
+        ("^(\\d+) of (\\d+) games done$", "$1 de $2 juegos listos"),
     ]
 }

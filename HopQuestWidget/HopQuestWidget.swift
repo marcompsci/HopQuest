@@ -541,10 +541,11 @@ struct StarHopWidgetView: View {
 
     private var footer: some View {
         VStack(spacing: 8) {
-            // two rows of six: tap a level you've reached to play it
+            // two rows: tap a level you've reached to play it
+            let perRow = (StarHop.levels.count + 1) / 2
             ForEach(0..<2, id: \.self) { rowIndex in
                 HStack(spacing: 4) {
-                    ForEach(StarHop.levels[(rowIndex * 6)..<min(StarHop.levels.count, rowIndex * 6 + 6)], id: \.number) { lv in
+                    ForEach(StarHop.levels[(rowIndex * perRow)..<min(StarHop.levels.count, rowIndex * perRow + perRow)], id: \.number) { lv in
                         Button(intent: HopPickLevelIntent(level: lv.number)) {
                             levelDot(lv)
                         }

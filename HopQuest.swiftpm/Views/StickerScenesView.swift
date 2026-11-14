@@ -244,6 +244,31 @@ struct Backdrop: View {
                     }
                     .frame(width: w, height: h * 0.8, alignment: .bottom).position(x: w / 2, y: h * 0.48)
                     Rectangle().fill(Color(hex: 0x9AA0A6)).frame(height: h * 0.14).position(x: w / 2, y: h * 0.93)
+                case "farm":
+                    LinearGradient(colors: [Color(hex: 0xBFE3FF), Color(hex: 0xFFF6E0)], startPoint: .top, endPoint: .bottom)
+                    Rectangle().fill(Color(hex: 0x8BC34A)).frame(height: h * 0.34).position(x: w / 2, y: h * 0.83)
+                    // a red barn with a white door
+                    Path { p in
+                        p.move(to: CGPoint(x: w * 0.06, y: h * 0.42)); p.addLine(to: CGPoint(x: w * 0.2, y: h * 0.26))
+                        p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.42)); p.closeSubpath()
+                    }.fill(Color(hex: 0x8E2A1F))
+                    Rectangle().fill(Color(hex: 0xC0392B)).frame(width: w * 0.28, height: h * 0.26).position(x: w * 0.2, y: h * 0.55)
+                    Rectangle().fill(.white).frame(width: w * 0.08, height: h * 0.14).position(x: w * 0.2, y: h * 0.61)
+                    ForEach(0..<6, id: \.self) { i in
+                        Rectangle().fill(Color(hex: 0xF5E6C8)).frame(width: 4, height: h * 0.1).position(x: w * (0.5 + CGFloat(i) * 0.09), y: h * 0.63)
+                    }
+                    Rectangle().fill(Color(hex: 0xF5E6C8)).frame(width: w * 0.48, height: 4).position(x: w * 0.72, y: h * 0.6)
+                    Text("☀️").font(.system(size: h * 0.14)).position(x: w * 0.86, y: h * 0.14)
+                    Text("🌻").font(.system(size: h * 0.1)).position(x: w * 0.9, y: h * 0.84)
+                case "snow":
+                    LinearGradient(colors: [Color(hex: 0xC9D6EA), Color(hex: 0xF4F8FF)], startPoint: .top, endPoint: .bottom)
+                    Ellipse().fill(.white).frame(width: w * 1.6, height: h * 0.55).position(x: w * 0.5, y: h * 1.0)
+                    ForEach(0..<20, id: \.self) { i in
+                        Circle().fill(.white).frame(width: CGFloat(4 + i % 3 * 2), height: CGFloat(4 + i % 3 * 2))
+                            .position(x: w * CGFloat((i * 37 + 5) % 100) / 100, y: h * CGFloat((i * 23 + 11) % 70) / 100)
+                    }
+                    Text("🌲").font(.system(size: h * 0.24)).position(x: w * 0.12, y: h * 0.62)
+                    Text("⛄").font(.system(size: h * 0.18)).position(x: w * 0.86, y: h * 0.72)
                 default: // meadow
                     LinearGradient(colors: [Color(hex: 0xBFE3FF), Color(hex: 0xEEF8FF)], startPoint: .top, endPoint: .bottom)
                     Ellipse().fill(Color(hex: 0x59C46B)).frame(width: w * 1.5, height: h * 0.6).position(x: w * 0.5, y: h * 1.0)

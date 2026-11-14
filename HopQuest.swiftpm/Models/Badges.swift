@@ -64,7 +64,7 @@ enum Badges {
             Badge(id: "dash", title: "Quick Feet", how: "Reach the flag in Star Dash.", symbol: "hare.fill", colorHex: 0x4D7CFF) { $0.dashFinished },
             Badge(id: "puzzler", title: "Robot Whisperer", how: "Solve 10 Code Club puzzles.", symbol: "cpu.fill", colorHex: 0x7C4DFF) { $0.codePuzzles >= 10 },
             Badge(id: "collector", title: "Sticker Collector", how: "Collect 20 buddy stickers.", symbol: "heart.circle.fill", colorHex: 0xFF5A8A) { $0.stickers >= 20 },
-            Badge(id: "hopper", title: "Star Hopper", how: "Finish all 12 Star Hop levels on the HopQuest widget.", symbol: "star.square.on.square.fill", colorHex: 0x4B3F8F) { $0.hopLevels >= StarHop.levels.count },
+            Badge(id: "hopper", title: "Star Hopper", how: "Finish every Star Hop level on the HopQuest widget.", symbol: "star.square.on.square.fill", colorHex: 0x4B3F8F) { $0.hopLevels >= StarHop.levels.count },
         ]
         for (id, title, symbol, color) in areaBadges {
             out.append(Badge(id: "area-\(id)", title: title, how: "Get 2 stars or more in every game in the \(areaName(id)).",
@@ -105,4 +105,10 @@ enum Badges {
     }
 
     static func earned(_ input: BadgeInput) -> [Badge] { all.filter { $0.earned(input) } }
+
+    /// How close a place badge is (v9.22): games at 2 stars or more, out of all the place's games. Nil for other badges.
+    static func progress(_ b: Badge, areas: [LearningArea]) -> (done: Int, total: Int)? {
+        guard b.id.hasPrefix("area-"), let a = areas.first(where: { "area-\($0.id)" == b.id }) else { return nil }
+        return (a.learned.count, a.skills.count)
+    }
 }

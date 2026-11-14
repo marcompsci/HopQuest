@@ -212,6 +212,9 @@ struct MainMenuView: View {
     @ViewBuilder private var learnPage: some View {
         section("Learn")
             .padding(.top, 4)
+        if let area = KeepGoing.pick(store.learningAreas.filter { store.placeShown($0.id) }) {
+            keepGoingCard(area)
+        }
         codingLabCard
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
             let p = store.profile
@@ -519,7 +522,7 @@ struct MainMenuView: View {
     }
 
     private func gameTile(art: String, title: String, color: Color, shadow: Color, badge: Int, detail: String? = nil, label: String,
-                          action: @escaping () -> Void) -> some View {
+                          ribbon: String? = nil, action: @escaping () -> Void) -> some View {
         Button {
             Haptics.tap()
             action()
@@ -546,9 +549,44 @@ struct MainMenuView: View {
                         .offset(x: 6, y: -8)
                 }
             }
+            .overlay(alignment: .topLeading) {
+                if let ribbon {
+                    Text(L10n.tr(ribbon))
+                        .font(.kid(13, .black))
+                        .foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 9).padding(.vertical, 3)
+                        .background(Capsule().fill(Color(hex: 0xFFD93D)))
+                        .overlay(Capsule().stroke(.white, lineWidth: 2))
+                        .rotationEffect(.degrees(-8))
+                        .offset(x: -4, y: -8)
+                }
+            }
         }
         .buttonStyle(BouncyButtonStyle())
-        .accessibilityLabel(label)
+        .accessibilityLabel(ribbon.map { "\(L10n.tr($0)) \(label)" } ?? label)
+    }
+
+    /// Keep going (v9.16): the place with a game to practise, or one started and not finished, one tap away.
+    private func keepGoingCard(_ area: LearningArea) -> some View {
+        Button {
+            Haptics.tap()
+            onSurprise(area.id)
+        } label: {
+            HStack(spacing: 12) {
+                ArtImage("icon_\(area.id)").frame(width: 46, height: 46)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L10n.tr("Keep going!")).font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.6))
+                    Text(L10n.tr(area.title)).font(.kid(19, .black)).foregroundStyle(Palette.ink).lineLimit(1).minimumScaleFactor(0.7)
+                    Text(L10n.tr(KeepGoing.detail(area))).font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.6)).monospacedDigit()
+                }
+                Spacer()
+                Image(systemName: "play.fill").font(.system(size: 18, weight: .black)).foregroundStyle(Palette.purple)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.white.opacity(0.9)))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("\(L10n.tr("Keep going!")) \(L10n.tr(area.title)), \(L10n.tr(KeepGoing.detail(area)))")
     }
 
     /// A quiz-engine place's tile, or nothing when a grown-up took the place off the menu (v9.9).
@@ -557,7 +595,8 @@ struct MainMenuView: View {
         if store.placeShown(id) {
             let stars = store.profile?.places[id]?.totalStars ?? 0
             gameTile(art: art, title: title, color: Color(hex: color), shadow: Color(hex: shadow), badge: 0,
-                     detail: "\(stars) of 12 stars", label: "\(title), \(stars) of 12 stars") { onQuizPlace(id) }
+                     detail: "\(stars) of 12 stars", label: "\(title), \(stars) of 12 stars",
+                     ribbon: NewPlaces.showRibbon(id, plays: store.profile?.places[id]?.plays ?? 0) ? "New!" : nil) { onQuizPlace(id) }
         }
     }
 

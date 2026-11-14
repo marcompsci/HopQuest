@@ -198,7 +198,7 @@ struct PracticeGamesList: View {
 
     var body: some View {
         List {
-            ForEach(place.games) { g in
+            ForEach([PracticeMix.info(for: place.games)] + place.games) { g in
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(g.title)
@@ -219,9 +219,13 @@ struct PracticeGamesList: View {
     @MainActor private func make(_ g: QuizGameInfo) {
         // ten different questions (some games have only a few, so stop trying after a while)
         var rounds: [QuizRound] = []
-        for _ in 0..<12 where rounds.count < 10 {
-            for r in place.rounds(g.id) where rounds.count < 10 && !rounds.contains(where: { $0.say == r.say && $0.visual == r.visual }) {
-                rounds.append(r)
+        if g.id == PracticeMix.id {
+            rounds = PracticeMix.rounds(games: place.games, make: place.rounds)
+        } else {
+            for _ in 0..<12 where rounds.count < 10 {
+                for r in place.rounds(g.id) where rounds.count < 10 && !rounds.contains(where: { $0.say == r.say && $0.visual == r.visual }) {
+                    rounds.append(r)
+                }
             }
         }
         let name = store.profile?.name ?? ""

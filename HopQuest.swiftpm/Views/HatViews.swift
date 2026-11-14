@@ -49,6 +49,25 @@ struct HatView: View {
                 case .astronaut:
                     Circle().fill(.white.opacity(0.35)).overlay(Circle().stroke(.white, lineWidth: 4)).overlay(Circle().stroke(Palette.ink, lineWidth: 2))
                         .frame(width: w * 1.1, height: w * 1.1).offset(y: w * 0.45)
+                case .chef:
+                    // a puffy top on a band
+                    HStack(spacing: -w * 0.12) {
+                        ForEach(0..<3, id: \.self) { i in
+                            Circle().fill(.white).overlay(Circle().stroke(Palette.ink, lineWidth: 2.5)).frame(width: w * 0.36, height: w * 0.36)
+                                .offset(y: i == 1 ? -h * 0.12 : 0)
+                        }
+                    }
+                    .offset(y: -h * 0.3)
+                    RoundedRectangle(cornerRadius: 4).fill(.white).overlay(RoundedRectangle(cornerRadius: 4).stroke(Palette.ink, lineWidth: 2.5))
+                        .frame(width: w * 0.62, height: h * 0.4)
+                case .fireHelmet:
+                    Capsule().fill(Color(hex: 0xD62828)).overlay(Capsule().stroke(Palette.ink, lineWidth: 2.5)).frame(width: w, height: h * 0.2)
+                    HatShape.dome.fill(Color(hex: 0xD62828)).overlay(HatShape.dome.stroke(Palette.ink, lineWidth: 2.5)).frame(width: w * 0.74, height: h * 0.72).offset(y: -h * 0.12)
+                    Image(systemName: "shield.fill").font(.system(size: w * 0.2, weight: .bold)).foregroundStyle(Color(hex: 0xFFD93D)).offset(y: -h * 0.36)
+                case .gradCap:
+                    HatShape.dome.fill(Palette.ink).frame(width: w * 0.6, height: h * 0.45)
+                    Rectangle().fill(Palette.ink).frame(width: w * 0.95, height: w * 0.95 * 0.28).rotation3DEffect(.degrees(55), axis: (x: 1, y: 0, z: 0)).offset(y: -h * 0.38)
+                    Capsule().fill(Color(hex: 0xFFD93D)).frame(width: 3, height: h * 0.35).offset(x: w * 0.38, y: -h * 0.12)
                 }
             }
             .frame(width: w, height: h, alignment: .bottom)

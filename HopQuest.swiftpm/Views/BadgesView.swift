@@ -61,6 +61,14 @@ struct BadgesView: View {
                     Text(b.title).font(.kid(24, .black)).displayTracking(24)
                     Text(earned.contains(b.id) ? "You earned this badge!" : b.how)
                         .font(.kid(17, .semibold)).foregroundStyle(Palette.ink.opacity(0.75)).multilineTextAlignment(.center)
+                    if !earned.contains(b.id), let p = Badges.progress(b, areas: store.learningAreas), p.total > 0 {
+                        VStack(spacing: 6) {
+                            ProgressView(value: Double(p.done), total: Double(p.total)).tint(Color(hex: b.colorHex))
+                            Text(L10n.tr("\(p.done) of \(p.total) games done")).font(.kid(14, .bold)).foregroundStyle(Palette.ink.opacity(0.65)).monospacedDigit()
+                        }
+                        .padding(.horizontal, 20)
+                        .accessibilityElement(children: .combine)
+                    }
                     BigButton(title: "Done", color: Palette.purple) { open = nil }
                 }
                 .foregroundStyle(Palette.ink)

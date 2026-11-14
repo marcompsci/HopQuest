@@ -590,7 +590,14 @@ test("Widget: snapshot saving and the Star Hop game") {
     check(StarHop.words.allSatisfy { Set($0).count == $0.count }, "no spelling word repeats a letter")
 
     // Star Hop 3: new levels, springs, bubbles, ratings
-    check(StarHop.levels.count == 12 && StarHop.levels.map(\.number) == Array(1...12), "twelve levels, numbered in order")
+    check(StarHop.levels.count == 16 && StarHop.levels.map(\.number) == Array(1...16), "sixteen levels, numbered in order")
+    var t13 = StarHop(); t13.startLevel(13)
+    check(t13.sequence == ["3", "6", "9", "12", "15", "18"], "level 13 counts by threes")
+    var t14 = StarHop(); t14.startLevel(14)
+    check(t14.sequence == ["Z", "Y", "X", "W", "V", "U"] && Set(t14.sequence).count == 6, "level 14: the alphabet backwards, every letter different")
+    var t15 = StarHop(); t15.startLevel(15)
+    check(t15.sequence == ["5", "10", "15", "20", "25", "30"] && t15.info.night, "level 15 counts by fives at night")
+    check(StarHop.levels.allSatisfy { lv in lv.spring.map { (0..<StarHop.columns).contains($0) } ?? true }, "every spring is on the board")
     var abc = StarHop(); abc.startLevel(7)
     check(abc.sequence == ["A", "B", "C", "D", "E", "F"] && abc.needed == "A", "ABC Garden is the alphabet in order")
     var down = StarHop(); down.startLevel(8)
@@ -652,8 +659,8 @@ test("Widget: snapshot saving and the Star Hop game") {
     // saves from before Star Hop 3 keep their progress
     let old = #"{"level":4,"col":1,"row":0,"jumps":0,"facingLeft":false,"stars":[],"clouds":[],"collected":3,"sequence":[],"hearts":2,"moves":9,"turn":40,"nextStarID":30,"plays":5,"best":[20,18,25,0,0,0],"levelsCleared":3,"message":"Hi","bumped":false}"#
     let up = try! JSONDecoder().decode(StarHop.self, from: Data(old.utf8))
-    check(up.level == 4 && up.levelsCleared == 3 && up.best.count == 12 && Array(up.best.prefix(3)) == [20, 18, 25], "an old save keeps its level and bests")
-    check(Array(up.rating.prefix(4)) == [1, 1, 1, 0] && up.rating.count == 12, "levels finished before ratings count as one star")
+    check(up.level == 4 && up.levelsCleared == 3 && up.best.count == StarHop.levels.count && Array(up.best.prefix(3)) == [20, 18, 25], "an old save keeps its level and bests")
+    check(Array(up.rating.prefix(4)) == [1, 1, 1, 0] && up.rating.count == StarHop.levels.count, "levels finished before ratings count as one star")
     check(up.playing && up.hearts == 3 && up.stars.count == 2, "and the level starts fresh under the new rules")
     let rt = try! JSONDecoder().decode(StarHop.self, from: try! JSONEncoder().encode(r2))
     check(rt == r2, "a new save round-trips exactly")
@@ -801,7 +808,7 @@ test("Badges: earned from real progress, never lost") {
     b.chaptersDone.insert(21); b.postcards = 7; b.lettersWritten = 62; b.storiesMade = 3; b.biggestIsland = 40; b.dashFinished = true
     b.codePuzzles = 10; b.stickers = 20; b.lifetimeStars = 300
     check(!Badges.earned(b).contains { $0.id == "hopper" }, "Star Hopper needs the widget levels")
-    b.hopLevels = 12
+    b.hopLevels = StarHop.levels.count
     b.finishedAreas = Set(Badges.areaBadges.map(\.0))
     check(Badges.earned(b).count == Badges.all.count, "every badge can be earned")
     check(Badges.all.allSatisfy { !$0.how.isEmpty && !$0.title.isEmpty }, "every badge says how to earn it")
@@ -1295,7 +1302,7 @@ test("Graph Garden: every game, 300 seeds, answers worked out from the picture")
 
 test("Brain Bubble widget: questions, one try each, every question before any repeat") {
     let all = BubbleBank.all
-    check(all.count == 41, "41 questions (prime, so stepping by 7 visits them all)")
+    check(all.count == 53, "53 questions (prime, so stepping by 7 visits them all)")
     for q in all {
         check(q.choices.count == 3 && Set(q.choices).count == 3 && q.choices.indices.contains(q.answer), "three different choices: \(q.question)")
         check(!q.fact.isEmpty && !q.emoji.isEmpty, "a fact and a picture: \(q.question)")
@@ -1305,6 +1312,9 @@ test("Brain Bubble widget: questions, one try each, every question before any re
     func ans(_ s: String) -> String? { all.first { $0.question == s }.map { $0.choices[$0.answer] } }
     check(ans("What is 4 + 3?") == "7" && ans("What is 9 − 4?") == "5" && ans("What is 10 + 6?") == "16" && ans("What is 2 groups of 3?") == "6", "math answers")
     check(ans("How many legs does a spider have?") == "8" && ans("How many continents are there?") == "7", "facts")
+    check(ans("What is double 6?") == "12" && ans("What is one more than 19?") == "20" && ans("7 chicks in a ten frame. How many more make 10?") == "3", "v9.18 math answers")
+    check(ans("Which comes first in ABC order?") == "Cat" && ans("When is your shadow shortest?") == "At noon", "v9.18 answers")
+    check(all.allSatisfy { $0.question.count <= 52 && $0.choices.allSatisfy { $0.count <= 18 } }, "fits on a medium widget")
     var b = BrainBubble(); b.start = 5
     var seen: Set<Int> = []
     for _ in 0..<all.count { seen.insert(b.index); b.next() }
@@ -1584,6 +1594,41 @@ test("Helper Town (v9.15): helpers who do nearly the same job are never wrong an
             }
         }
     }
+}
+
+test("Keep going, New! ribbons, mixed practice sheets and badge progress (v9.16–v9.22)") {
+    func area(_ id: String, _ bests: [Int]) -> LearningArea {
+        LearningArea(id: id, title: id, skills: bests.map { SkillProgress(skill: "s", best: $0) })
+    }
+    check(KeepGoing.pick([area("a", [0, 0]), area("b", [3, 3])]) == nil, "nothing to keep going before playing, or once done")
+    check(KeepGoing.pick([area("started", [3, 0]), area("stuck", [1, 3])])?.id == "stuck", "a game to practise comes first")
+    check(KeepGoing.pick([area("code", [1, 0]), area("half", [2, 0])])?.id == "half", "Code Club has its own card")
+    check(KeepGoing.detail(area("x", [3, 2, 1, 0])) == "2 of 4 games done", "games done counts 2 stars or more")
+    check(NewPlaces.showRibbon("sky", plays: 0) && !NewPlaces.showRibbon("sky", plays: 1) && !NewPlaces.showRibbon("graphs", plays: 0), "New! until played once, only on new places")
+    check(NewPlaces.ids.allSatisfy { id in Badges.areaBadges.contains { $0.0 == id } }, "every new place has a badge")
+
+    let games = SkyBank.games
+    for seed in 0..<200 {
+        var rng = SeededRNG(state: UInt64(seed))
+        let mix = PracticeMix.rounds(games: games) { SkyBank.rounds(for: $0, using: &rng) }
+        check(mix.count == 10, "mix: ten questions (\(mix.count))")
+        check(Set(mix.map { "\($0.say)|\($0.visual)" }).count == mix.count, "mix: no question twice")
+    }
+    var rng = SeededRNG(state: 7)
+    let first4 = PracticeMix.rounds(games: FrameBank.games, count: 4) { FrameBank.rounds(for: $0, using: &rng) }
+    check(first4[0].say.hasPrefix("How many") && first4[1].say.contains("make 10") && first4[2].say.hasPrefix("Double") && first4[3].say.contains("one "), "mix: games take turns")
+    let tiny = PracticeMix.rounds(games: [QuizGameInfo(id: "x", title: "X", symbol: "", intro: "", skill: "")]) { _ in
+        [QuizRound(visual: .none, say: "Only one", choices: ["a", "b", "c"], answer: "a", cheer: "")]
+    }
+    check(tiny.count == 1, "mix: stops when a game runs out of new questions")
+    check(PracticeMix.info(for: WordBank.games).intro.contains("Word Glue") && PracticeMix.rounds(games: []) { _ in [] }.isEmpty, "mix: names its games")
+
+    let sky = Badges.all.first { $0.id == "area-sky" }!
+    check(Badges.progress(sky, areas: [area("sky", [3, 2, 1, 0])])! == (2, 4), "badge progress: 2 of 4")
+    check(Badges.progress(Badges.all.first { $0.id == "firstHop" }!, areas: []) == nil, "no progress line for other badges")
+    check(HatKind.next(badges: 21)! == (.chef, 3) && HatKind.gradCap.badgesNeeded <= Badges.all.count, "new hats unlock with more badges")
+    check(StickerScene.backdrops.count == 8 && FridgeDoor.backdropName("farm") == "on the farm" && FridgeDoor.backdropName("snow") == "in the snow", "farm and snow backdrops")
+    check(L10n.spanish("3 of 4 games done") == "3 de 4 juegos listos" && L10n.spanish("Keep going!") == "¡Sigue así!" && L10n.spanish("New!") == "¡Nuevo!", "Spanish for the Learn page")
 }
 
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {

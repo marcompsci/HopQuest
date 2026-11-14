@@ -113,7 +113,7 @@ struct HopLevel: Equatable {
 /// tap the left half to step left; tap the right half to jump up and to the right; tap the right half again while in the air
 /// to double jump even higher, then glide down. The board wraps around at the edges.
 ///
-/// Twelve levels, each its own little world: plain star levels, counting (up, down, by twos and tens), spelling, the
+/// Sixteen levels, each its own little world: plain star levels, counting (up, down, by twos and tens), spelling, the
 /// alphabet, adding and taking away. Puff clouds float along the sky rows from level 2; bumping one costs a heart
 /// (the ground is always safe). Catching a wrong number or letter never costs anything: the star just pops somewhere else.
 /// Spring pads bounce you up high; bubble shields save you from one bump. Each level is rated 1–3 stars:
@@ -147,8 +147,17 @@ struct StarHop: Codable, Equatable {
                  skyTop: 0xC7B8F5, skyBottom: 0xF3EEFF, grass: 0x7FBF7A, soil: 0x8B6A55, spring: 2, bubbles: true),
         HopLevel(number: 11, title: "Take-Away Tundra", tip: "Catch the answer to each take-away!", goal: .math(add: false, rounds: 5), clouds: 2,
                  skyTop: 0xBFDDF0, skyBottom: 0xFAFDFF, grass: 0xFFFFFF, soil: 0x9FB3C8, bubbles: true),
-        HopLevel(number: 12, title: "Rainbow Castle", tip: "The last level! Catch 12 stars.", goal: .stars(12), clouds: 3,
+        HopLevel(number: 12, title: "Rainbow Castle", tip: "Catch 12 stars at the castle!", goal: .stars(12), clouds: 3,
                  skyTop: 0xFFB3C7, skyBottom: 0xC9F0FF, grass: 0x6FD08C, soil: 0xA77B5B, spring: 5, bubbles: true),
+        // v9.19: four more
+        HopLevel(number: 13, title: "Sandy Dunes", tip: "Count by threes: 3, 6, 9…", goal: .count(from: 3, step: 3, to: 18), clouds: 2,
+                 skyTop: 0xFFD9A0, skyBottom: 0xFFF4E0, grass: 0xE9C46A, soil: 0xC0894F, spring: 1, bubbles: true),
+        HopLevel(number: 14, title: "Backwards Bridge", tip: "ABC backwards: Z, Y, X…", goal: .inOrder(["Z", "Y", "X", "W", "V", "U"]), clouds: 2,
+                 skyTop: 0xA8D8EA, skyBottom: 0xEAF7FB, grass: 0x5DAE8B, soil: 0x7A5C45, spring: 4),
+        HopLevel(number: 15, title: "Fives Forest", tip: "Count by fives: 5, 10, 15…", goal: .count(from: 5, step: 5, to: 30), clouds: 2,
+                 skyTop: 0x1F3B2D, skyBottom: 0x3F6F52, grass: 0x2E7D4F, soil: 0x4E3B2A, night: true, spring: 2, bubbles: true),
+        HopLevel(number: 16, title: "Cloud Kingdom", tip: "The very last level! Catch 14 stars.", goal: .stars(14), clouds: 3,
+                 skyTop: 0xE3D5FF, skyBottom: 0xFFFFFF, grass: 0xB9E4C9, soil: 0x9C8FB5, spring: 3, bubbles: true),
     ]
 
     /// Moves allowed for the "quick feet" star. In-order levels need a particular star, so they get more room.

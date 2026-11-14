@@ -343,3 +343,25 @@ enum HelperBank {
         }
     }
 }
+
+// MARK: - Learn page helpers (v9.16–v9.17)
+
+/// "Keep going": the one place to suggest at the top of the Learn page — a game still at 1 star first,
+/// then a place that's started but not finished. Nothing before the first game, nothing once all are done.
+enum KeepGoing {
+    static func pick(_ areas: [LearningArea]) -> LearningArea? {
+        AtHome.suggested(areas.filter { $0.id != "code" }, limit: 1).first
+    }
+
+    /// "2 of 4 games done" (done = 2 stars or more, the same as the grown-ups' progress page).
+    static func detail(_ area: LearningArea) -> String {
+        "\(area.learned.count) of \(area.skills.count) games done"
+    }
+}
+
+/// Places that are new in this update get a "New!" ribbon on the menu until they're played once.
+enum NewPlaces {
+    static let ids: Set<String> = ["words", "tenframe", "sky", "helpers"]
+
+    static func showRibbon(_ id: String, plays: Int) -> Bool { ids.contains(id) && plays == 0 }
+}
