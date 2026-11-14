@@ -38,13 +38,13 @@ Thanks for testing HopQuest 2.0 (build 3)! Please try:
 3. **Hop Village:**
    - walk around and visit the Reading Nook, Math Market and Coding Lab
    - plant something in the garden, and pick a pet
-4. **Learn:** Reading Nook, Math Market, Science Lab, Music Maker, Writing Desk and the learning places (Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail and more). Did anything feel too hard or too easy for your child?
+4. **Learn:** Reading Nook, Math Market, Science Lab, Music Maker, Writing Desk and the learning places (Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail and more). New in this build: Word Workshop, Ten Frame Farm, Sky Watch and Helper Town, plus a Keep going card at the top of Learn. Did anything feel too hard or too easy for your child?
 5. **Adventures and Worlds:** play Meadow Street to the end (a short story scene plays), then open a world from the Worlds page.
 6. **Games:**
    - Bubble Kart, Pillow Bop, Fort Friends, Star Dash, Star Hop and Breathe
    - Level Maker: build a Star Hop level and play it
    - Sticker Scenes
-7. **Widgets:** long-press the home screen → ＋ → HopQuest. Add the Buddy, Star Hop and Brain Bubble widgets, then play Star Hop and answer a Brain Bubble right on the home screen. If you add a Lock Screen widget, check it doesn't show your child's name.
+7. **Widgets:** long-press the home screen → ＋ → HopQuest. Add the Buddy, Star Hop and Brain Bubble widgets, then play Star Hop (now 16 levels) and answer a Brain Bubble right on the home screen. If you add a Lock Screen widget, check it doesn't show your child's name.
 8. **Grown-ups:** open the gear and answer the multiplication. Try:
    - the Progress page: chart, certificates and practice sheets
    - Bedtime and the daily limit

@@ -434,6 +434,38 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v9.11: Original art for the story worlds
 - The five world cards (Snowy Peaks, Sunny Shores, Jungle Journey, Sky Islands, Ocean Deep) and their fifteen level buttons now show original pictures in HopQuest's ink-outline style instead of emoji (`ArtSource/make_world_icons.py`). Locked levels show their picture greyed with the padlock. If a picture were ever missing, the old emoji shows instead.
 
+### v9.12: Word Workshop
+- Ollie Owl's place for word building: **Word Glue** (compound words like sun + flower), **ABC Order** (which word comes first or last), **Naming or Doing?** (nouns and verbs, chosen so no word is both) and **Squish Words** (contractions like do not → don't).
+
+### v9.13: Ten Frame Farm
+- Polly Panda counts in tens with a new ten-frame picture (two rows of five boxes, two frames for teen numbers, read aloud by VoiceOver): **Fill the Frame**, **Make Ten**, **Doubles** and **One More, One Less**.
+
+### v9.14: Sky Watch
+- Nova Wing's place for the sky: **Moon Shapes** (full, half, crescent, new), **Shadow Play**, **Dress for the Weather** (each weather lists what fits and what plainly doesn't, so sunglasses in the snow are never a wrong answer) and **Sky Facts**.
+
+### v9.15: Helper Town
+- Leo Lion's town: **Who Helps?**, **Helper Tools**, **Stay Safe** (helmets, seat belts, a grown-up at the pool, asking a store worker if you're lost) and **Read the Signs** (stop, walk light, be careful). Helpers who do nearly the same job (doctor, dentist, vet; teacher, librarian, police officer) are never wrong answers for each other, and the picture never shows the answer.
+- Each new place has menu art, a badge, progress for grown-ups, practice sheets, try-at-home ideas and Spanish for the interface.
+
+### v9.16–v9.17: Keep going, and New! ribbons
+- The Learn page starts with a **Keep going** card: the place with a game still at one star, or one started and not finished, one tap away ("2 of 4 games done"). Nothing shows before the first game or once everything is done.
+- The four new places wear a **New!** ribbon until they're played once.
+
+### v9.18: Twelve more Brain Bubble questions
+- 53 questions (still a prime, so stepping by 7 shows every one before any repeats), drawn from the four new places.
+
+### v9.19: Star Hop levels 13–16
+- **Sandy Dunes** (count by threes), **Backwards Bridge** (Z, Y, X… in order), **Fives Forest** (count by fives at night) and **Cloud Kingdom** (14 stars, three clouds). The large widget shows the levels in two rows of eight. Older saves keep everything; the new levels open after level 12.
+
+### v9.20: Farm and snow scenes, and three hats
+- Sticker Scenes gets a farm (red barn, fence, sunflower) and a snowy hill (pine tree and snowman). New hats for 24, 28 and 32 badges: **Chef's Hat**, **Fire Helmet** and **Smarty Cap**.
+
+### v9.21: Mixed Review practice sheets (grown-ups)
+- Every place's practice sheets now start with **Mixed Review**: ten questions taking turns between the place's four games, no question twice.
+
+### v9.22: Badge progress
+- Tapping a place badge you haven't earned shows how close it is: a bar and "2 of 4 games done".
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.
