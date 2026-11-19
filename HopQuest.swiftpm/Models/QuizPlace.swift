@@ -55,6 +55,8 @@ enum QuizVisual: Equatable {
     case jumble([String])
     /// Ten frames (two rows of five boxes), each filled with `counts[k]` pictures, left to right, top row first (v9.13).
     case tenFrames([Int], item: String)
+    /// A number line from 0 to `to` with a dot, and hops drawn from `hopFrom` to the dot (v9.24).
+    case numberLine(to: Int, dot: Int, hopFrom: Int?)
 }
 
 extension QuizVisual {
@@ -91,6 +93,10 @@ extension QuizVisual {
         case .tenFrames(let counts, let item):
             let things = counts.map { "\($0) \($0 == 1 ? FrameBank.one(item) : FrameBank.many(item))" }
             return counts.count == 1 ? "A ten frame with \(things[0])" : "\(counts.count) ten frames: " + things.joined(separator: " and ")
+        case .numberLine(let to, let dot, let hopFrom):
+            // never say where a hop lands: that's the question
+            if let s = hopFrom { return "A number line from 0 to \(to), with \(abs(dot - s)) hops \(dot > s ? "forward" : "back") from \(s)" }
+            return "A number line from 0 to \(to) with a dot on it. Numbers are marked every \(to > 10 ? 5 : 1)"
         default: return nil
         }
     }
@@ -147,6 +153,39 @@ struct PlaceSave: Codable, Equatable {
     }
 
     var totalStars: Int { best.values.reduce(0, +) }
+}
+
+/// Help inside a quiz round (v9.25–v9.28).
+enum QuizHelp {
+    /// After this many wrong picks in a round, the right answer glows (the round still counts as missed).
+    static let hintAfter = 2
+
+    static func showsHint(wrongPicks: Int) -> Bool { wrongPicks >= hintAfter }
+
+    /// "Say it again" reads the question, then the word choices, so kids still learning to read can hear them.
+    /// Picture choices and spelling tiles aren't read: VoiceOver describes pictures, and reading tiles would spell the answer.
+    static func readAloud(_ r: QuizRound) -> String {
+        guard r.kind != .spell, r.choiceVisuals.isEmpty, r.choices.count >= 2 else { return r.say }
+        let words = r.choices.map(spoken)
+        return "\(r.say) Is it \(words.dropLast().joined(separator: ", ")), or \(words.last!)?"
+    }
+
+    /// Signs read as words.
+    static func spoken(_ choice: String) -> String {
+        switch choice {
+        case ">": return "greater than"
+        case "<": return "less than"
+        case "=": return "equal to"
+        default: return choice
+        }
+    }
+
+    /// The rounds to look at again after a game: the missed ones, in order, no repeats.
+    static func tricky(_ missed: [QuizRound]) -> [QuizRound] {
+        var out: [QuizRound] = []
+        for r in missed where !out.contains(where: { $0.say == r.say && $0.visual == r.visual }) { out.append(r) }
+        return out
+    }
 }
 
 /// A practice sheet with a little of every game in a place (v9.21): games take turns, no question twice.

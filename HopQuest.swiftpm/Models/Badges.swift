@@ -48,6 +48,7 @@ enum Badges {
         ("graphs", "Data Detective", "chart.bar.fill", 0x7B1FA2),
         ("words", "Word Builder", "textformat.abc", 0x5D4037), ("tenframe", "Ten Tamer", "10.circle.fill", 0xC0392B),
         ("sky", "Sky Spotter", "moon.stars.fill", 0x283593), ("helpers", "Town Helper", "person.2.fill", 0x00838F),
+        ("sounds", "Super Listener", "ear.fill", 0x6A1B9A), ("numberline", "Line Hopper", "arrow.left.and.right", 0xEF6C00),
     ]
 
     static let all: [Badge] = {
@@ -100,6 +101,8 @@ enum Badges {
         case "tenframe": return "Ten Frame Farm"
         case "sky": return "Sky Watch"
         case "helpers": return "Helper Town"
+        case "sounds": return "Sound Shop"
+        case "numberline": return "Number Line Lane"
         default: return "Code Club"
         }
     }

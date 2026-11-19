@@ -51,6 +51,8 @@ extension GameStore {
             LearningArea(id: "tenframe", title: "Ten Frame Farm", skills: FrameBank.games.map { SkillProgress(skill: $0.skill, best: p.places["tenframe"]?.best($0.id) ?? 0) }),
             LearningArea(id: "sky", title: "Sky Watch", skills: SkyBank.games.map { SkillProgress(skill: $0.skill, best: p.places["sky"]?.best($0.id) ?? 0) }),
             LearningArea(id: "helpers", title: "Helper Town", skills: HelperBank.games.map { SkillProgress(skill: $0.skill, best: p.places["helpers"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "sounds", title: "Sound Shop", skills: SoundBank.games.map { SkillProgress(skill: $0.skill, best: p.places["sounds"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "numberline", title: "Number Line Lane", skills: LineBank.games.map { SkillProgress(skill: $0.skill, best: p.places["numberline"]?.best($0.id) ?? 0) }),
             LearningArea(id: "code", title: "Code Club", skills: CodeChallenge.all.map { SkillProgress(skill: "coding: \($0.topic.lowercased())", best: p.codeBest[$0.id] ?? 0) }),
         ]
     }

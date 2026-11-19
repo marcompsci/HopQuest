@@ -90,7 +90,7 @@ enum MenuPlaces {
 
 /// Hats for your buddy, unlocked by earning badges. Wearing a hat changes nothing in the game: it's just for fun.
 enum HatKind: String, CaseIterable, Codable, Identifiable {
-    case none, party, cap, flower, beanie, crown, wizard, topHat, astronaut, chef, fireHelmet, gradCap
+    case none, party, cap, flower, beanie, crown, wizard, topHat, astronaut, chef, fireHelmet, gradCap, captain
 
     var id: String { rawValue }
 
@@ -108,6 +108,7 @@ enum HatKind: String, CaseIterable, Codable, Identifiable {
         case .chef: return "Chef's Hat"
         case .fireHelmet: return "Fire Helmet"
         case .gradCap: return "Smarty Cap"
+        case .captain: return "Captain's Hat"
         }
     }
 
@@ -125,6 +126,7 @@ enum HatKind: String, CaseIterable, Codable, Identifiable {
         case .chef: return 24
         case .fireHelmet: return 28
         case .gradCap: return 32
+        case .captain: return 36
         }
     }
 

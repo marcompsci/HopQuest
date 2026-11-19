@@ -64,6 +64,11 @@ struct HatView: View {
                     Capsule().fill(Color(hex: 0xD62828)).overlay(Capsule().stroke(Palette.ink, lineWidth: 2.5)).frame(width: w, height: h * 0.2)
                     HatShape.dome.fill(Color(hex: 0xD62828)).overlay(HatShape.dome.stroke(Palette.ink, lineWidth: 2.5)).frame(width: w * 0.74, height: h * 0.72).offset(y: -h * 0.12)
                     Image(systemName: "shield.fill").font(.system(size: w * 0.2, weight: .bold)).foregroundStyle(Color(hex: 0xFFD93D)).offset(y: -h * 0.36)
+                case .captain:
+                    Capsule().fill(Palette.ink).frame(width: w * 0.9, height: h * 0.16).offset(y: h * 0.06)
+                    RoundedRectangle(cornerRadius: w * 0.12).fill(.white).overlay(RoundedRectangle(cornerRadius: w * 0.12).stroke(Palette.ink, lineWidth: 2.5))
+                        .frame(width: w * 0.78, height: h * 0.42).offset(y: -h * 0.16)
+                    Image(systemName: "anchor").font(.system(size: w * 0.2, weight: .bold)).foregroundStyle(Color(hex: 0xFFC21A)).offset(y: -h * 0.16)
                 case .gradCap:
                     HatShape.dome.fill(Palette.ink).frame(width: w * 0.6, height: h * 0.45)
                     Rectangle().fill(Palette.ink).frame(width: w * 0.95, height: w * 0.95 * 0.28).rotation3DEffect(.degrees(55), axis: (x: 1, y: 0, z: 0)).offset(y: -h * 0.38)

@@ -13,7 +13,7 @@ struct BubbleQuestion: Equatable {
 }
 
 enum BubbleBank {
-    /// 53 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
+    /// 59 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
     static let all: [BubbleQuestion] = [
         BubbleQuestion(emoji: "➕", question: "What is 4 + 3?", choices: ["6", "7", "8"], answer: 1, fact: "4 + 3 = 7. So does 3 + 4!"),
         BubbleQuestion(emoji: "➖", question: "What is 9 − 4?", choices: ["5", "4", "6"], answer: 0, fact: "9 take away 4 leaves 5."),
@@ -69,6 +69,13 @@ enum BubbleBank {
         BubbleQuestion(emoji: "🌨️", question: "It's snowing. What should you wear?", choices: ["Sandals", "Mittens", "A swimsuit"], answer: 1, fact: "Mittens keep your fingers warm."),
         BubbleQuestion(emoji: "🚒", question: "Who drives a fire truck?", choices: ["A baker", "A firefighter", "A farmer"], answer: 1, fact: "Firefighters put out fires and help in emergencies."),
         BubbleQuestion(emoji: "🛑", question: "What does a red stop sign mean?", choices: ["Go fast", "Stop", "Turn left"], answer: 1, fact: "Stop, then look both ways."),
+        // v9.29: six more, from Sound Shop and Number Line Lane
+        BubbleQuestion(emoji: "🚢", question: "Ship starts with which sound?", choices: ["Ch", "Sh", "Th"], answer: 1, fact: "S and h together make the sh sound."),
+        BubbleQuestion(emoji: "🐷", question: "Which vowel is in the middle of pig?", choices: ["A", "O", "I"], answer: 2, fact: "P-i-g: the middle sound is i."),
+        BubbleQuestion(emoji: "🐸", question: "Frog starts with which blend?", choices: ["Fr", "Fl", "Tr"], answer: 0, fact: "F and r blend together: fr-og."),
+        BubbleQuestion(emoji: "➡️", question: "Start at 8 and hop 4 forward. Where?", choices: ["11", "12", "4"], answer: 1, fact: "8 + 4 = 12."),
+        BubbleQuestion(emoji: "⬅️", question: "Start at 10 and hop 3 back. Where?", choices: ["7", "13", "6"], answer: 0, fact: "10 − 3 = 7."),
+        BubbleQuestion(emoji: "🐊", question: "Which is true?", choices: ["9 > 12", "12 > 9", "12 = 9"], answer: 1, fact: "The open mouth faces the bigger number: 12 > 9."),
     ]
     static let step = 7
 }

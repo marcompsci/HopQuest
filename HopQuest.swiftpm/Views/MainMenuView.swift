@@ -271,6 +271,8 @@ struct MainMenuView: View {
             placeTile("tenframe", art: "icon_tenframe", title: "Ten Frame Farm", color: 0xC0392B, shadow: 0x8E2A1F)
             placeTile("sky", art: "icon_sky", title: "Sky Watch", color: 0x283593, shadow: 0x1A237E)
             placeTile("helpers", art: "icon_helpers", title: "Helper Town", color: 0x00838F, shadow: 0x005F66)
+            placeTile("sounds", art: "icon_sounds", title: "Sound Shop", color: 0x6A1B9A, shadow: 0x4A148C)
+            placeTile("numberline", art: "icon_numberline", title: "Number Line Lane", color: 0xEF6C00, shadow: 0xB34F00)
             gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
                      badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
                      label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)

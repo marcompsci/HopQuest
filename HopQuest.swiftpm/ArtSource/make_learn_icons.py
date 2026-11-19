@@ -496,6 +496,33 @@ def icon_helpers():
     return s
 
 
+def icon_sounds():
+    s = ground()
+    # a big ear-shaped speaker with sound waves and letter tiles
+    s += R(30, 66, 44, 68, 10, "#6A1B9A")
+    s += P("M74 70 L118 40 L118 160 L74 130 Z", "#B388FF", 5)
+    s += P("M134 74 Q150 100 134 126", "none", 6) + P("M150 60 Q174 100 150 140", "none", 6)
+    s += R(122, 146, 34, 34, 6, "#FFD93D") + R(160, 146, 34, 34, 6, "#7FD6C2")
+    s += P("M132 168 Q132 154 140 154 Q148 154 148 160 M132 168 Q140 172 148 166", "none", 4)
+    s += P("M170 152 L170 174 M170 162 Q176 156 184 162 L184 174", "none", 4)
+    return s
+
+
+def icon_numberline():
+    s = ground()
+    # a number line with hop arcs and a landing dot
+    s += P("M20 130 L180 130", "none", 7)
+    for k in range(6):
+        x = 28 + k * 29
+        s += P(f"M{x} 118 L{x} 142", "none", 5)
+    s += P("M57 124 Q71 82 86 124", "none", 5) + P("M86 124 Q100 82 115 124", "none", 5) + P("M115 124 Q129 82 144 124", "none", 5)
+    s += C(57, 130, 9, "#FFFFFF", 4) + C(144, 130, 11, "#EF6C00", 4)
+    s += R(40, 152, 120, 28, 10, "#FFB74D")
+    s += P("M64 158 L76 166 L64 174 M136 158 L124 166 L136 174", "none", 5)
+    s += star(160, 52, 12)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
@@ -506,7 +533,7 @@ ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science
          "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes,
          "icon_healthy": icon_healthy, "icon_fridge": icon_fridge, "icon_planet": icon_planet,
          "icon_graphs": icon_graphs, "icon_words": icon_words, "icon_tenframe": icon_tenframe, "icon_sky": icon_sky,
-         "icon_helpers": icon_helpers}
+         "icon_helpers": icon_helpers, "icon_sounds": icon_sounds, "icon_numberline": icon_numberline}
 
 
 if __name__ == "__main__":

@@ -131,6 +131,20 @@ struct QuizPlace {
                   rounds: { id in var g = SystemRandomNumberGenerator(); return HelperBank.rounds(for: id, using: &g) })
     }
 
+    static var sounds: QuizPlace {
+        QuizPlace(id: "sounds", title: "Sound Shop", line: "Sh, ch, th, blends and vowels. Let's listen!",
+                  greeting: "Hi, I'm Pip! In my Sound Shop we listen very carefully. Welcome!", host: Roster.character(id: "pip"),
+                  accent: Color(hex: 0x6A1B9A), background: [Color(hex: 0xF5EAFB), Color(hex: 0xE4CFF2)], games: SoundBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return SoundBank.rounds(for: id, using: &g) })
+    }
+
+    static var numberline: QuizPlace {
+        QuizPlace(id: "numberline", title: "Number Line Lane", line: "Hop forward, hop back, and compare. Let's hop!",
+                  greeting: "Hi, I'm Benny! I love hopping along the number line. Welcome to Number Line Lane!", host: Roster.character(id: "benny"),
+                  accent: Color(hex: 0xEF6C00), background: [Color(hex: 0xFFF3E6), Color(hex: 0xFFE0BF)], games: LineBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return LineBank.rounds(for: id, using: &g) })
+    }
+
     /// Every place, by id.
     static func named(_ id: String) -> QuizPlace {
         switch id {
@@ -151,6 +165,8 @@ struct QuizPlace {
         case "tenframe": return .tenframe
         case "sky": return .sky
         case "helpers": return .helpers
+        case "sounds": return .sounds
+        case "numberline": return .numberline
         default: return .shapes
         }
     }
@@ -235,6 +251,10 @@ struct QuizGameView: View {
     @State private var shakeTile: Int?
     @State private var result: (stars: Int, earned: Int)?
     @State private var advanceTask: Task<Void, Never>?
+    /// Rounds missed this game (v9.26), and whether this run is "practice the tricky ones" (v9.27: no stars change).
+    @State private var missedRounds: [QuizRound] = []
+    @State private var practising = false
+    @State private var tileMisses = 0
 
     private var round: QuizRound? { rounds.indices.contains(index) ? rounds[index] : nil }
 
@@ -245,7 +265,7 @@ struct QuizGameView: View {
                 Spacer()
                 Text(L10n.tr(game.title)).font(.kid(20, .black)).displayTracking(20).foregroundStyle(Palette.ink)
                 Spacer()
-                SpeakButton(label: "Say it again") { if let r = round { Narrator.shared.sayAnyway(r.say) } }
+                SpeakButton(label: "Say it again") { if let r = round { Narrator.shared.sayAnyway(QuizHelp.readAloud(r)) } }
             }
             RoundDots(done: index, total: max(rounds.count, 1))
             if let r = round, result == nil {
@@ -262,7 +282,10 @@ struct QuizGameView: View {
                 ZStack {
                     Color.black.opacity(0.25).ignoresSafeArea()
                     LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry, total: rounds.count,
-                                  host: place.host, onAgain: start, onBack: onBack)
+                                  host: place.host, practice: practising,
+                                  tricky: QuizHelp.tricky(missedRounds).map { (say: $0.say, answer: QuizHelp.spoken($0.answer)) },
+                                  onTricky: missedRounds.isEmpty ? nil : { startTricky() },
+                                  onAgain: { start() }, onBack: onBack)
                 }
             }
         }
@@ -309,6 +332,7 @@ struct QuizGameView: View {
                             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .stroke(right == c ? Palette.green : wrong.contains(c) ? Palette.red : Palette.ink.opacity(0.15), lineWidth: right == c || wrong.contains(c) ? 4 : 2))
                             .opacity(wrong.contains(c) ? 0.5 : 1)
+                            .overlay(hintGlow(c == r.answer, cornerRadius: 18))
                         }
                         .buttonStyle(BouncyButtonStyle())
                         .accessibilityLabel(choiceLabel(c, r.choiceVisuals[i]) + (wrong.contains(c) ? ", not this one" : ""))
@@ -325,6 +349,7 @@ struct QuizGameView: View {
                                 .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
                                     .stroke(right == c ? Palette.green : wrong.contains(c) ? Palette.red : Palette.ink.opacity(0.15), lineWidth: right == c || wrong.contains(c) ? 4 : 2))
                                 .opacity(wrong.contains(c) ? 0.5 : 1)
+                                .overlay(hintGlow(c == r.answer, cornerRadius: 20))
                         }
                         .buttonStyle(BouncyButtonStyle())
                         .accessibilityLabel("Picture \(c)\(r.choiceVisuals[i].spoken.map { ": \($0)" } ?? "")\(wrong.contains(c) ? ", not this one" : "")")
@@ -338,6 +363,7 @@ struct QuizGameView: View {
                                      state: right == c ? .right : wrong.contains(c) ? .wrong : .plain) {
                             pick(c, in: r)
                         }
+                        .overlay(hintGlow(c == r.answer, cornerRadius: 20))
                     }
                 }
             }
@@ -365,6 +391,7 @@ struct QuizGameView: View {
                             .frame(maxWidth: .infinity, minHeight: 58)
                             .background(RoundedRectangle(cornerRadius: 14).fill(usedTiles.contains(i) ? Color.gray.opacity(0.35) : place.accent)
                                 .shadow(color: .black.opacity(0.18), radius: 0, x: 0, y: 4))
+                            .overlay(tileHint(i, letter, in: r))
                             .modifier(Shake(animatableData: shakeTile == i && !reduceMotion ? 1 : 0))
                     }
                     .buttonStyle(BouncyButtonStyle())
@@ -385,12 +412,51 @@ struct QuizGameView: View {
     private func start() {
         advanceTask?.cancel()
         rounds = place.rounds(game.id)
-        index = 0; firstTry = 0; result = nil
+        practising = false
+        index = 0; firstTry = 0; result = nil; missedRounds = []
         reset()
         Narrator.shared.say("\(game.intro) \(rounds.first?.say ?? "")")
     }
 
-    private func reset() { missed = false; wrong = []; right = nil; typed = ""; usedTiles = []; shakeTile = nil }
+    /// Play just the rounds missed last time (v9.27). Stars and progress don't change.
+    private func startTricky() {
+        let again = QuizHelp.tricky(missedRounds)
+        guard !again.isEmpty else { return start() }
+        advanceTask?.cancel()
+        rounds = again
+        practising = true
+        index = 0; firstTry = 0; result = nil; missedRounds = []
+        reset()
+        Narrator.shared.say("Let's try the tricky ones again. \(rounds.first?.say ?? "")")
+    }
+
+    private func reset() { missed = false; wrong = []; right = nil; typed = ""; usedTiles = []; shakeTile = nil; tileMisses = 0 }
+
+    /// The right answer glows after two wrong picks (v9.28).
+    @ViewBuilder
+    private func hintGlow(_ isAnswer: Bool, cornerRadius: CGFloat) -> some View {
+        if isAnswer, right == nil, QuizHelp.showsHint(wrongPicks: wrong.count) {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(Palette.green, style: StrokeStyle(lineWidth: 4, dash: [9, 6]))
+                .shadow(color: Palette.green.opacity(0.6), radius: reduceMotion ? 0 : 8)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// In spelling, the next letter's tile glows after two wrong taps.
+    @ViewBuilder
+    private func tileHint(_ i: Int, _ letter: String, in r: QuizRound) -> some View {
+        if right == nil, QuizHelp.showsHint(wrongPicks: tileMisses), typed.count < r.answer.count,
+           letter == String(r.answer[r.answer.index(r.answer.startIndex, offsetBy: typed.count)]),
+           !usedTiles.contains(i),
+           r.choices.indices.first(where: { j in !usedTiles.contains(j) && r.choices[j] == letter }) == i {
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(.white, style: StrokeStyle(lineWidth: 4, dash: [8, 5]))
+                .shadow(color: .white.opacity(0.8), radius: reduceMotion ? 0 : 6)
+                .allowsHitTesting(false)
+        }
+    }
 
     private func pick(_ c: String, in r: QuizRound) {
         guard right == nil else { return }
@@ -401,7 +467,7 @@ struct QuizGameView: View {
             missed = true
             wrong.insert(c)
             Haptics.bump(.oops)
-            Narrator.shared.say("Not quite. Try another one!")
+            Narrator.shared.say(QuizHelp.showsHint(wrongPicks: wrong.count) ? "Here's a hint: look for the glowing one!" : "Not quite. Try another one!")
         }
     }
 
@@ -416,6 +482,7 @@ struct QuizGameView: View {
             if typed == r.answer { right = r.answer; succeed(r) }
         } else {
             missed = true
+            tileMisses += 1
             Haptics.bump(.oops)
             withAnimation(.easeOut(duration: 0.35)) { shakeTile = i }
             Narrator.shared.say("Try another letter. Listen: \(r.answer).")
@@ -428,7 +495,7 @@ struct QuizGameView: View {
 
     private func succeed(_ r: QuizRound) {
         Haptics.success(.correct)
-        if !missed { firstTry += 1 }
+        if !missed { firstTry += 1 } else { missedRounds.append(r) }
         Narrator.shared.say(r.cheer)
         advanceTask?.cancel()
         advanceTask = Task { @MainActor in
@@ -441,7 +508,8 @@ struct QuizGameView: View {
             } else {
                 index = rounds.count
                 let stars = LearnScore.stars(firstTry: firstTry, of: rounds.count)
-                let earned = onFinish(stars)
+                // practising the tricky ones never changes stars or progress
+                let earned = practising ? 0 : onFinish(stars)
                 Haptics.success(.fanfare)
                 withAnimation(Motion.present) { result = (stars, earned) }
                 Narrator.shared.say(earned > 0 ? "You did it! \(earned) new stars!" : "You did it! Great work!")
@@ -488,6 +556,9 @@ struct QuizVisualView: View {
             GraphDrawing(labels: labels, counts: counts, bars: bars, accent: accent, large: large)
         case .jumble(let items):
             JumbleDrawing(items: items, large: large)
+        case .numberLine(let to, let dot, let hopFrom):
+            NumberLineDrawing(to: to, dot: dot, hopFrom: hopFrom, color: accent, large: large)
+                .frame(height: large ? 110 : 70)
         case .tenFrames(let counts, let item):
             VStack(spacing: large ? 10 : 6) {
                 ForEach(Array(counts.enumerated()), id: \.offset) { _, n in
@@ -569,6 +640,55 @@ struct TallyDrawing: View {
                     ctx.stroke(p, with: .color(color), style: StrokeStyle(lineWidth: large ? 4 : 3, lineCap: .round))
                 }
                 .frame(width: width, height: height)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// A number line from 0: a tick for every number, labels every 5 (every 1 up to 10), a dot, and hop arcs (v9.24).
+struct NumberLineDrawing: View {
+    let to: Int
+    let dot: Int
+    let hopFrom: Int?
+    let color: Color
+    let large: Bool
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            let pad: CGFloat = 14
+            let lineY = h * 0.62
+            let step = (w - pad * 2) / CGFloat(max(to, 1))
+            let x = { (n: Int) in pad + CGFloat(n) * step }
+            ZStack {
+                Path { p in p.move(to: CGPoint(x: pad - 6, y: lineY)); p.addLine(to: CGPoint(x: w - pad + 6, y: lineY)) }
+                    .stroke(Palette.ink, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                ForEach(0...to, id: \.self) { n in
+                    let labelled = to <= 10 || n % 5 == 0
+                    Path { p in
+                        p.move(to: CGPoint(x: x(n), y: lineY - (labelled ? 9 : 5)))
+                        p.addLine(to: CGPoint(x: x(n), y: lineY + (labelled ? 9 : 5)))
+                    }
+                    .stroke(Palette.ink, lineWidth: labelled ? 2.5 : 1.5)
+                    if labelled {
+                        Text("\(n)").font(.kid(large ? 15 : 11, .bold)).foregroundStyle(Palette.ink)
+                            .position(x: x(n), y: lineY + (large ? 22 : 17))
+                    }
+                }
+                if let s = hopFrom, s != dot {
+                    let dir = dot > s ? 1 : -1
+                    ForEach(0..<abs(dot - s), id: \.self) { k in
+                        let a = s + k * dir, b = a + dir
+                        Path { p in
+                            p.move(to: CGPoint(x: x(a), y: lineY - 4))
+                            p.addQuadCurve(to: CGPoint(x: x(b), y: lineY - 4), control: CGPoint(x: (x(a) + x(b)) / 2, y: lineY - h * 0.5))
+                        }
+                        .stroke(color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    }
+                    Circle().fill(.white).overlay(Circle().stroke(color, lineWidth: 3)).frame(width: 14, height: 14).position(x: x(s), y: lineY)
+                }
+                Circle().fill(color).overlay(Circle().stroke(.white, lineWidth: 2)).frame(width: 16, height: 16).position(x: x(dot), y: lineY)
             }
         }
         .accessibilityHidden(true)

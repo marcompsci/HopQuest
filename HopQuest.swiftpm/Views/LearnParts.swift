@@ -185,6 +185,11 @@ struct LearnDoneCard: View {
     let firstTry: Int
     let total: Int
     var host: GameCharacter? = nil
+    /// A practice run of the tricky ones (v9.27): no stars line, since stars don't change.
+    var practice = false
+    /// Questions missed this game, with their answers (v9.26), and a way to play just those again.
+    var tricky: [(say: String, answer: String)] = []
+    var onTricky: (() -> Void)? = nil
     var onAgain: () -> Void
     var onBack: () -> Void
 
@@ -195,7 +200,8 @@ struct LearnDoneCard: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            if let host {
+            // with a review list the host steps aside, so the card still fits a small phone
+            if let host, tricky.isEmpty {
                 CharacterBadge(character: host, size: 96, animated: true).accessibilityHidden(true)
             }
             Text(L10n.tr("\(L10n.tr(title)) done!")).font(.kid(28, .black)).displayTracking(28).foregroundStyle(Palette.ink)
@@ -216,6 +222,30 @@ struct LearnDoneCard: View {
             if earned > 0 {
                 Label(L10n.tr("\(earned) new \(earned == 1 ? "star" : "stars")"), systemImage: "sparkles")
                     .font(.kid(18, .black)).foregroundStyle(Palette.green)
+            }
+            if practice {
+                Text(L10n.tr("Practice doesn't change your stars.")).font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.55))
+            }
+            if !tricky.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.tr("Let's look again")).font(.kid(15, .black)).foregroundStyle(Palette.ink)
+                    ForEach(Array(tricky.prefix(2).enumerated()), id: \.offset) { _, t in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(t.say).font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.7)).lineLimit(2)
+                            Text(L10n.tr("Answer: \(t.answer)")).font(.kid(14, .black)).foregroundStyle(Palette.green)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                    if tricky.count > 2 {
+                        Text(L10n.tr("and \(tricky.count - 2) more")).font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.55))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.green.opacity(0.08)))
+                if let onTricky {
+                    BigButton(title: "Practice the tricky ones", color: Color(hex: 0xF29E1F), action: onTricky)
+                }
             }
             BigButton(title: "Play again", color: Palette.green, action: onAgain)
             BigButton(title: "Pick another game", color: Palette.purple, action: onBack)

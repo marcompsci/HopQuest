@@ -799,7 +799,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 39, "39 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 41, "41 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -830,6 +830,7 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + NatureBank.games.map(\.title) + CalendarBank.games.map(\.title) + CompassBank.games.map(\.title)
         + HealthyBank.games.map(\.title) + PlanetBank.games.map(\.title) + GraphBank.games.map(\.title)
         + WordBank.games.map(\.title) + FrameBank.games.map(\.title) + SkyBank.games.map(\.title) + HelperBank.games.map(\.title)
+        + SoundBank.games.map(\.title) + LineBank.games.map(\.title)
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
@@ -838,6 +839,7 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + NatureBank.games.map(\.intro) + CalendarBank.games.map(\.intro) + CompassBank.games.map(\.intro)
         + HealthyBank.games.map(\.intro) + PlanetBank.games.map(\.intro) + GraphBank.games.map(\.intro)
         + WordBank.games.map(\.intro) + FrameBank.games.map(\.intro) + SkyBank.games.map(\.intro) + HelperBank.games.map(\.intro)
+        + SoundBank.games.map(\.intro) + LineBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
     check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
     check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
@@ -1302,7 +1304,7 @@ test("Graph Garden: every game, 300 seeds, answers worked out from the picture")
 
 test("Brain Bubble widget: questions, one try each, every question before any repeat") {
     let all = BubbleBank.all
-    check(all.count == 53, "53 questions (prime, so stepping by 7 visits them all)")
+    check(all.count == 59, "59 questions (prime, so stepping by 7 visits them all)")
     for q in all {
         check(q.choices.count == 3 && Set(q.choices).count == 3 && q.choices.indices.contains(q.answer), "three different choices: \(q.question)")
         check(!q.fact.isEmpty && !q.emoji.isEmpty, "a fact and a picture: \(q.question)")
@@ -1631,9 +1633,77 @@ test("Keep going, New! ribbons, mixed practice sheets and badge progress (v9.16�
     check(L10n.spanish("3 of 4 games done") == "3 de 4 juegos listos" && L10n.spanish("Keep going!") == "¡Sigue así!" && L10n.spanish("New!") == "¡Nuevo!", "Spanish for the Learn page")
 }
 
+test("Sound Shop and Number Line Lane (v9.23–v9.24): answers worked out from the words and the line") {
+    for g in SoundBank.games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            let rounds = SoundBank.rounds(for: g.id, using: &rng)
+            check(rounds.count == 5 && Set(rounds.map(\.say)).count == 5, "sounds/\(g.id): five different words")
+            for r in rounds {
+                check(r.choices.count == 3 && Set(r.choices).count == 3 && r.choices.contains(r.answer), "sounds/\(g.id): three choices (\(r.choices))")
+                let word = r.say.components(separatedBy: ".")[0].lowercased()
+                switch g.id {
+                case "digraph": check(word.hasPrefix(r.answer) && ["sh", "ch", "th"].contains(r.answer), "digraph: \(word) → \(r.answer)")
+                case "end": check(word.hasSuffix(r.answer) && r.choices.filter { word.hasSuffix($0) }.count == 1, "end: \(word) → \(r.answer)")
+                case "middle":
+                    let letters = Array(word).map(String.init)
+                    check(word.count == 3 && letters[1] == r.answer && SoundBank.vowels.contains(r.answer), "middle: \(word) → \(r.answer)")
+                    check(r.choices.allSatisfy { SoundBank.vowels.contains($0) }, "middle: vowels only")
+                default: check(word.hasPrefix(r.answer) && r.choices.filter { word.hasPrefix($0) }.count == 1, "blend: \(word) → \(r.answer) \(r.choices)")
+                }
+            }
+        }
+    }
+    let pictures = SoundBank.digraphWords.map(\.picture) + SoundBank.endWords.map(\.picture) + SoundBank.cvcWords.map(\.picture) + SoundBank.blendWords.map(\.picture)
+    var meaning: [String: String] = [:]
+    for (w, p) in SoundBank.digraphWords.map({ ($0.word, $0.picture) }) + SoundBank.endWords.map({ ($0.word, $0.picture) })
+        + SoundBank.cvcWords.map({ ($0.word, $0.picture) }) + SoundBank.blendWords.map({ ($0.word, $0.picture) }) {
+        check(meaning[p] == nil || meaning[p] == w, "one picture never means two words (\(p): \(meaning[p] ?? "") / \(w))")
+        meaning[p] = w
+    }
+    check(!pictures.isEmpty, "pictures")
+
+    check(QuizVisual.numberLine(to: 20, dot: 9, hopFrom: 4).spoken == "A number line from 0 to 20, with 5 hops forward from 4", "hops read aloud, landing not given away")
+    for g in LineBank.games {
+        for seed in 0..<300 {
+            var rng = SeededRNG(state: UInt64(seed))
+            for r in LineBank.rounds(for: g.id, using: &rng) {
+                check(r.choices.count == 3 && Set(r.choices).count == 3 && r.choices.contains(r.answer), "line/\(g.id): three choices (\(r.choices))")
+                if g.id == "compare" {
+                    guard case .text(let t) = r.visual else { check(false, "compare shows numbers"); continue }
+                    let n = t.components(separatedBy: "◻").map { Int($0.trimmingCharacters(in: .whitespaces))! }
+                    check(r.answer == (n[0] > n[1] ? ">" : n[0] < n[1] ? "<" : "="), "compare: \(t) → \(r.answer)")
+                    continue
+                }
+                guard case .numberLine(let to, let dot, let from) = r.visual, let ans = Int(r.answer) else { check(false, "line shown"); continue }
+                check((0...to).contains(dot) && ans == dot, "line/\(g.id): the answer is where the dot is (\(dot))")
+                switch g.id {
+                case "forward": check(from != nil && dot > from! && r.say.contains("hop \(dot - from!) forward"), "forward: \(r.say)")
+                case "back": check(from != nil && dot < from! && r.say.contains("hop \(from! - dot) back"), "back: \(r.say)")
+                default: check(from == nil && dot >= 1, "where: just a dot")
+                }
+            }
+        }
+    }
+}
+
+test("Help in quiz rounds (v9.25–v9.28): read the choices, look again, tricky ones, hints") {
+    let words = QuizRound(visual: .none, say: "Which one is a doing word?", choices: ["jump", "chair", "apple"], answer: "jump", cheer: "")
+    check(QuizHelp.readAloud(words) == "Which one is a doing word? Is it jump, chair, or apple?", "word choices are read")
+    let signs = QuizRound(visual: .text("4  ◻  9"), say: "Which sign goes in the box?", choices: ["<", ">", "="], answer: "<", cheer: "")
+    check(QuizHelp.readAloud(signs) == "Which sign goes in the box? Is it less than, greater than, or equal to?", "signs read as words")
+    let spell = QuizRound(kind: .spell, visual: .none, say: "Spell cat.", choices: ["c", "a", "t", "x"], answer: "cat", cheer: "")
+    check(QuizHelp.readAloud(spell) == "Spell cat.", "spelling tiles aren't read out")
+    check(!QuizHelp.showsHint(wrongPicks: 1) && QuizHelp.showsHint(wrongPicks: 2), "the glow comes after two misses")
+    check(QuizHelp.tricky([words, signs, words]).count == 2, "each tricky question once")
+    check(Badges.all.count == 41 && NewPlaces.ids.count == 6, "two more badges, six new places")
+    check(HatKind.captain.badgesNeeded == 36 && HatKind.allCases.last == .captain, "Captain's Hat at 36 badges")
+    check(L10n.spanish("Answer: 12") == "Respuesta: 12" && L10n.spanish("and 3 more") == "y 3 más" && L10n.spanish("Let's look again") == "Miremos otra vez", "Spanish for the review")
+}
+
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {
     let ids = ["reading", "writing", "market", "clock", "science", "world", "music", "spelling", "fractions", "shapes", "rhyme",
-               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "code"]
+               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "sounds", "numberline", "code"]
     for id in ids {
         let a = AtHome.byPlace[id]
         check(a != nil, "\(id) has at-home ideas")

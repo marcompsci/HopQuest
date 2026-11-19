@@ -55,7 +55,7 @@ extension L10n {
         "Buddy hats": "Sombreros para tu amigo", "No hat": "Sin sombrero", "Party Hat": "Gorro de Fiesta", "Ball Cap": "Gorra",
         "Flower Crown": "Corona de Flores", "Cozy Beanie": "Gorro de Lana", "Golden Crown": "Corona de Oro", "Wizard Hat": "Sombrero de Mago",
         "Top Hat": "Sombrero de Copa", "Space Helmet": "Casco Espacial",
-        "Chef's Hat": "Gorro de Chef", "Fire Helmet": "Casco de Bombero", "Smarty Cap": "Birrete",
+        "Chef's Hat": "Gorro de Chef", "Fire Helmet": "Casco de Bombero", "Smarty Cap": "Birrete", "Captain's Hat": "Gorra de Capitán",
         "Level": "Nivel", "Finished": "Terminado", "No bumps": "Sin choques", "Quick feet": "Pies rápidos", "Next level": "Siguiente nivel",
         "Try again": "Intenta otra vez", "Out of hearts!": "¡Sin corazones!", "The puff clouds got you. You can do it!": "Las nubes te atraparon. ¡Tú puedes!",
         "Tap left to step. Tap right to jump, and again to double jump!": "Toca a la izquierda para caminar. ¡Toca a la derecha para saltar, y otra vez para doble salto!",
@@ -167,6 +167,25 @@ extension L10n {
         "Smart choices keep you safe. What's the safe thing to do?": "Las buenas decisiones te cuidan. ¿Qué es lo seguro?",
         "Signs and lights tell us what to do. What does this one mean?": "Las señales y luces nos dicen qué hacer. ¿Qué significa esta?",
         "Keep going!": "¡Sigue así!", "New!": "¡Nuevo!",
+        // v9.25–v9.28 help in quiz rounds
+        "Let's look again": "Miremos otra vez", "Practice the tricky ones": "Practica las difíciles",
+        "Practice doesn't change your stars.": "Practicar no cambia tus estrellas.",
+        "Here's a hint: look for the glowing one!": "Una pista: ¡busca la que brilla!",
+        // v9.23–v9.24 Sound Shop, Number Line Lane
+        "Sound Shop": "Tienda de Sonidos", "Sh, ch, th, blends and vowels. Let's listen!": "Sh, ch, th, mezclas y vocales. ¡A escuchar!",
+        "Hi, I'm Pip! In my Sound Shop we listen very carefully. Welcome!": "¡Hola, soy Pip! En mi Tienda de Sonidos escuchamos con mucha atención. ¡Bienvenido!",
+        "Sh, Ch or Th?": "¿Sh, Ch o Th?", "Last Sound": "Último Sonido", "Middle Vowel": "Vocal del Medio", "Blend It": "Mézclalo",
+        "Two letters can make one sound! Listen to the start of the word.": "¡Dos letras pueden hacer un solo sonido! Escucha el principio de la palabra.",
+        "Say the word slowly. What sound do you hear at the very end?": "Di la palabra despacio. ¿Qué sonido oyes al final?",
+        "A, e, i, o, u! Which vowel is hiding in the middle?": "¡A, e, i, o, u! ¿Qué vocal se esconde en el medio?",
+        "Some words start with two sounds blended together, like fr in frog.": "Algunas palabras empiezan con dos sonidos juntos, como fr en frog.",
+        "Number Line Lane": "Calle de la Recta Numérica", "Hop forward, hop back, and compare. Let's hop!": "Salta adelante, salta atrás y compara. ¡A saltar!",
+        "Hi, I'm Benny! I love hopping along the number line. Welcome to Number Line Lane!": "¡Hola, soy Benny! Me encanta saltar por la recta numérica. ¡Bienvenido a la Calle de la Recta Numérica!",
+        "Find the Dot": "Encuentra el Punto", "Hop Forward": "Salta Adelante", "Hop Back": "Salta Atrás", "Bigger or Smaller?": "¿Mayor o Menor?",
+        "Count along the number line. What number is the dot on?": "Cuenta por la recta numérica. ¿En qué número está el punto?",
+        "Hopping forward on a number line is adding!": "¡Saltar hacia adelante en la recta numérica es sumar!",
+        "Hopping back on a number line is taking away!": "¡Saltar hacia atrás en la recta numérica es restar!",
+        "The open mouth of > and < always faces the bigger number!": "¡La boca abierta de > y < siempre mira al número mayor!",
         "Word Builder": "Constructor de Palabras", "Ten Tamer": "Domador del Diez", "Sky Spotter": "Observador del Cielo", "Town Helper": "Ayudante del Pueblo",
         // grown-ups (v7.7–v8.0)
         "Easy-read letters": "Letras fáciles de leer", "Play this week": "Juego esta semana", "Certificates": "Diplomas", "Share": "Compartir",
@@ -187,5 +206,7 @@ extension L10n {
         ("^Song (\\d+) is open\\. Change it, then keep the changes\\.$", "La canción $1 está abierta. Cámbiala y luego guarda los cambios."),
         ("^(\\d+) things you made$", "$1 cosas que hiciste"),
         ("^(\\d+) of (\\d+) games done$", "$1 de $2 juegos listos"),
+        ("^Answer: (.+)$", "Respuesta: $1"),
+        ("^and (\\d+) more$", "y $1 más"),
     ]
 }

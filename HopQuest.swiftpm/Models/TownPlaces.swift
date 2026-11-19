@@ -361,7 +361,129 @@ enum KeepGoing {
 
 /// Places that are new in this update get a "New!" ribbon on the menu until they're played once.
 enum NewPlaces {
-    static let ids: Set<String> = ["words", "tenframe", "sky", "helpers"]
+    static let ids: Set<String> = ["words", "tenframe", "sky", "helpers", "sounds", "numberline"]
 
     static func showRibbon(_ id: String, plays: Int) -> Bool { ids.contains(id) && plays == 0 }
+}
+
+// MARK: - Sound Shop (v9.23)
+
+enum SoundBank {
+    static let digraphWords: [(word: String, picture: String, sound: String)] = [
+        ("ship", "🚢", "sh"), ("shoe", "👟", "sh"), ("shell", "🐚", "sh"), ("sheep", "🐑", "sh"),
+        ("chick", "🐥", "ch"), ("cheese", "🧀", "ch"), ("chair", "🪑", "ch"), ("cherry", "🍒", "ch"),
+        ("thumb", "👍", "th"), ("three", "3️⃣", "th"), ("thread", "🧵", "th"),
+    ]
+    static let endWords: [(word: String, picture: String)] = [
+        ("cat", "🐱"), ("dog", "🐶"), ("bus", "🚌"), ("sun", "☀️"), ("bed", "🛏️"), ("cup", "☕"),
+        ("map", "🗺️"), ("web", "🕸️"), ("fox", "🦊"), ("bat", "🦇"), ("van", "🚐"), ("leaf", "🍃"),
+    ]
+    /// Three-letter words with a short vowel in the middle.
+    static let cvcWords: [(word: String, picture: String)] = [
+        ("cat", "🐱"), ("hat", "🎩"), ("map", "🗺️"), ("bed", "🛏️"), ("web", "🕸️"), ("hen", "🐔"),
+        ("pig", "🐷"), ("six", "6️⃣"), ("dog", "🐶"), ("fox", "🦊"), ("pot", "🍲"), ("bus", "🚌"), ("sun", "☀️"), ("cup", "☕"),
+    ]
+    static let vowels = ["a", "e", "i", "o", "u"]
+    static let blendWords: [(word: String, picture: String, blend: String)] = [
+        ("frog", "🐸", "fr"), ("flag", "🚩", "fl"), ("star", "⭐", "st"), ("sled", "🛷", "sl"), ("crab", "🦀", "cr"),
+        ("drum", "🥁", "dr"), ("tree", "🌳", "tr"), ("snail", "🐌", "sn"), ("plane", "✈️", "pl"), ("broom", "🧹", "br"),
+        ("grapes", "🍇", "gr"), ("clock", "🕐", "cl"),
+    ]
+    static var blends: [String] { Array(Set(blendWords.map(\.blend))).sorted() }
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "digraph", title: "Sh, Ch or Th?", symbol: "speaker.wave.2.fill", intro: "Two letters can make one sound! Listen to the start of the word.", skill: "sh, ch and th sounds"),
+        QuizGameInfo(id: "end", title: "Last Sound", symbol: "arrow.right.to.line", intro: "Say the word slowly. What sound do you hear at the very end?", skill: "ending sounds"),
+        QuizGameInfo(id: "middle", title: "Middle Vowel", symbol: "a.circle.fill", intro: "A, e, i, o, u! Which vowel is hiding in the middle?", skill: "short vowel sounds"),
+        QuizGameInfo(id: "blend", title: "Blend It", symbol: "wind", intro: "Some words start with two sounds blended together, like fr in frog.", skill: "consonant blends"),
+    ]
+
+    static let cheers = ["Sound-tastic!", "You heard it!", "That's right!", "Great listening!", "Super sounding!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "digraph":
+            return SkyBank.pick(digraphWords, count, using: &rng).enumerated().map { i, w in
+                QuizRound(visual: .picture(w.picture), say: "\(w.word.capitalized). Which sound does it start with?",
+                          choices: QuizShuffle.choices(w.sound, ["sh", "ch", "th"].filter { $0 != w.sound }, using: &rng), answer: w.sound,
+                          cheer: "\(w.word.capitalized) starts with \(w.sound)! \(cheer(i))")
+            }
+        case "end":
+            return SkyBank.pick(endWords, count, using: &rng).enumerated().map { i, w in
+                let last = String(w.word.last!)
+                let wrong = ["t", "g", "s", "n", "d", "p", "b", "x", "m", "f"].filter { $0 != last }
+                return QuizRound(visual: .picture(w.picture), say: "\(w.word.capitalized). Which letter does it end with?",
+                                 choices: QuizShuffle.choices(last, wrong, using: &rng), answer: last,
+                                 cheer: "\(w.word.capitalized) ends with \(last)! \(cheer(i))")
+            }
+        case "middle":
+            return SkyBank.pick(cvcWords, count, using: &rng).enumerated().map { i, w in
+                let letters = Array(w.word).map(String.init)
+                let v = letters[1]
+                return QuizRound(visual: .text("\(letters[0]) _ \(letters[2])  \(w.picture)"), say: "\(w.word.capitalized). Which vowel is in the middle?",
+                                 choices: QuizShuffle.choices(v, vowels.filter { $0 != v }, using: &rng), answer: v,
+                                 cheer: "\(letters[0]), \(v), \(letters[2]): \(w.word)! \(cheer(i))")
+            }
+        default: // blend
+            return SkyBank.pick(blendWords, count, using: &rng).enumerated().map { i, w in
+                QuizRound(visual: .picture(w.picture), say: "\(w.word.capitalized). Which two letters does it start with?",
+                          choices: QuizShuffle.choices(w.blend, blends.filter { $0 != w.blend }, using: &rng), answer: w.blend,
+                          cheer: "\(w.blend.uppercased()), \(w.word)! \(cheer(i))")
+            }
+        }
+    }
+}
+
+// MARK: - Number Line Lane (v9.24)
+
+enum LineBank {
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "where", title: "Find the Dot", symbol: "smallcircle.filled.circle", intro: "Count along the number line. What number is the dot on?", skill: "reading a number line"),
+        QuizGameInfo(id: "forward", title: "Hop Forward", symbol: "arrow.right.circle.fill", intro: "Hopping forward on a number line is adding!", skill: "adding on a number line"),
+        QuizGameInfo(id: "back", title: "Hop Back", symbol: "arrow.left.circle.fill", intro: "Hopping back on a number line is taking away!", skill: "taking away on a number line"),
+        QuizGameInfo(id: "compare", title: "Bigger or Smaller?", symbol: "lessthan.circle.fill", intro: "The open mouth of > and < always faces the bigger number!", skill: "comparing with >, < and ="),
+    ]
+
+    static let cheers = ["Hop-tastic!", "Right on the line!", "That's right!", "Number ninja!", "Great hopping!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "where":
+            return (0..<count).map { i -> QuizRound in
+                let top = i < 2 ? 10 : 20
+                let n = Int.random(in: 1..<top, using: &rng)
+                return QuizRound(visual: .numberLine(to: top, dot: n, hopFrom: nil), say: "What number is the dot on?",
+                                 choices: GraphBank.numberChoices(n, others: [n + 1, n - 1], using: &rng), answer: "\(n)",
+                                 cheer: "The dot is on \(n). \(cheer(i))")
+            }
+        case "forward":
+            return (0..<count).map { i -> QuizRound in
+                let h = Int.random(in: 2...6, using: &rng)
+                let s = Int.random(in: 0...(20 - h), using: &rng)
+                return QuizRound(visual: .numberLine(to: 20, dot: s + h, hopFrom: s), say: "Start at \(s) and hop \(h) forward. Where do you land?",
+                                 choices: GraphBank.numberChoices(s + h, others: [s + h + 1, s + h - 1, s - h], using: &rng), answer: "\(s + h)",
+                                 cheer: "\(s) plus \(h) is \(s + h). \(cheer(i))")
+            }
+        case "back":
+            return (0..<count).map { i -> QuizRound in
+                let h = Int.random(in: 2...6, using: &rng)
+                let s = Int.random(in: (h + 1)...20, using: &rng)
+                return QuizRound(visual: .numberLine(to: 20, dot: s - h, hopFrom: s), say: "Start at \(s) and hop \(h) back. Where do you land?",
+                                 choices: GraphBank.numberChoices(s - h, others: [s - h + 1, s - h - 1, s + h], using: &rng), answer: "\(s - h)",
+                                 cheer: "\(s) take away \(h) is \(s - h). \(cheer(i))")
+            }
+        default: // compare
+            return (0..<count).map { i -> QuizRound in
+                let a = Int.random(in: 0...50, using: &rng)
+                let b = i == 3 ? a : Int.random(in: 0...50, using: &rng)
+                let answer = a > b ? ">" : a < b ? "<" : "="
+                let words = a > b ? "is greater than" : a < b ? "is less than" : "is equal to"
+                return QuizRound(visual: .text("\(a)  ◻  \(b)"), say: "Which sign goes in the box?",
+                                 choices: QuizShuffle.choices(answer, [">", "<", "="].filter { $0 != answer }, using: &rng), answer: answer,
+                                 cheer: "\(a) \(words) \(b). \(cheer(i))")
+            }
+        }
+    }
 }
