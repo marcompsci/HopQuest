@@ -466,6 +466,25 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### v9.22: Badge progress
 - Tapping a place badge you haven't earned shows how close it is: a bar and "2 of 4 games done".
 
+### v9.23: Sound Shop
+- Pip Penguin's listening place: **Sh, Ch or Th?**, **Last Sound**, **Middle Vowel** (c _ t) and **Blend It** (fr, st, cl…). The Reading Nook already covered first sounds and the Spelling Bee covers magic e, so these go further. No picture stands for two different words.
+
+### v9.24: Number Line Lane
+- Benny Banana hops along a new number-line picture (a tick for every number, labels every 5, hop arcs): **Find the Dot**, **Hop Forward** (adding), **Hop Back** (taking away) and **Bigger or Smaller?** (>, < and =). VoiceOver describes the hops but never says where they land.
+
+### v9.25–v9.28: Help inside every quiz round
+- **Say it again** now reads the word choices too ("Is it jump, chair, or apple?"), for kids still learning to read. Signs are read as words; spelling tiles and picture choices aren't read out.
+- The done card lists the questions missed, with their answers (**Let's look again**).
+- **Practice the tricky ones** replays only the missed questions. Practice never changes stars or progress.
+- After two wrong picks the right answer glows (the next letter tile in spelling games). The round still counts as missed, so stars stay honest.
+
+### v9.29–v9.30: Six more Brain Bubble questions, and the Captain's Hat
+- Brain Bubble has 59 questions (still a prime, so stepping by 7 shows every one). The Captain's Hat arrives at 36 badges.
+
+### Release: version 1.0 and the TestFlight workflow
+- The project now says **1.0** (build 3), matching App Store Connect's first version.
+- `.github/workflows/testflight.yml` archives and uploads from a GitHub Mac with Xcode 26, using an App Store Connect API key the owner adds as repo secrets. It runs only when started by hand and never submits for review.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

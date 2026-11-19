@@ -24,7 +24,7 @@ HopQuest is a Kids Category app for ages 6–8, sold as a one-time purchase.
 - **Learn:**
   - Coding Lab (a safe built-in Python, no network)
   - Reading Nook, Math Market, Science Lab, Music Maker, Writing Desk
-  - learning places such as Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail, Calendar Corner, Compass Camp, Healthy Hut, Word Workshop, Ten Frame Farm, Sky Watch and Helper Town
+  - learning places such as Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail, Calendar Corner, Compass Camp, Healthy Hut, Word Workshop, Ten Frame Farm, Sky Watch, Helper Town, Sound Shop and Number Line Lane
 - **Worlds:** the story worlds (Snowy Peaks, Sunny Shores, Jungle Journey and more), each with its own levels.
 - **Together:** two players on one device.
 
