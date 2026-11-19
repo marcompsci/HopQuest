@@ -85,7 +85,7 @@ Work through this before **every** TestFlight upload. Tick each box in the pull 
 - [ ] Beta App Description, feedback email and contact info set (see `docs/app-review-notes.md`).
 - [ ] Export compliance: pre-answered by `ITSAppUsesNonExemptEncryption = NO` (iOS-provided encryption only). Confirm App Store Connect didn't ask.
 - [ ] Privacy Policy URL opens the **current** policy, which is on `main`.
-- [ ] After uploading, update `release/last_uploaded.json`, e.g. `{"version": "2.0", "build": "3"}`, and commit it.
+- [ ] After uploading, update `release/last_uploaded.json`, e.g. `{"version": "1.0", "build": "3"}`, and commit it.
 
 ## E. Never without the owner's go-ahead
 
@@ -93,3 +93,21 @@ Work through this before **every** TestFlight upload. Tick each box in the pull 
 - [ ] Submitting for Beta App Review or App Review.
 - [ ] Enabling a public link.
 - [ ] Merging to `main`.
+
+
+## Automated upload (GitHub Actions, no Xcode menus needed)
+
+`.github/workflows/testflight.yml` archives the app and widget on a GitHub Mac with Xcode 26, then uploads to App Store Connect. It runs only when started by hand, and **never submits for App Review**.
+
+**One-time setup (owner only, about 5 minutes):**
+1. App Store Connect → **Users and Access → Integrations → App Store Connect API → Team Keys → ＋**. Name it "HopQuest CI" and give it the **Admin** role, so Xcode can create the distribution certificate and profiles itself. Download the `.p8` file; Apple only lets you download it once.
+2. GitHub → marcompsci/HopQuest → **Settings → Secrets and variables → Actions → New repository secret**, three times:
+   - `ASC_KEY_ID`: the key's ID
+   - `ASC_ISSUER_ID`: the Issuer ID shown above the keys list
+   - `ASC_KEY_P8`: open the `.p8` file in a text editor and paste all of it, including the BEGIN and END lines
+3. Keep the `.p8` file somewhere safe, or delete it. Never commit it.
+
+**Each upload:**
+1. GitHub → **Actions → TestFlight upload → Run workflow**. Enter a build number higher than any uploaded for this version.
+2. The gate job runs the tests and the release check. Any failure stops the upload, except the main-branch privacy-policy check, which is reported as a warning because it only blocks external testing and App Review.
+3. When Apple's "processed" email arrives, the build appears under TestFlight. Then record it in `release/last_uploaded.json`.

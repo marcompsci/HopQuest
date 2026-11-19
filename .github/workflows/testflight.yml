@@ -1,0 +1,135 @@
+name: TestFlight upload
+
+# Archives HopQuest (app + widget) on a GitHub Mac and uploads it to App Store Connect for TestFlight.
+# It only runs when someone starts it by hand (Actions → TestFlight upload → Run workflow): never on a push.
+# Uploading does NOT submit anything for App Review; that stays a manual step in App Store Connect.
+#
+# One-time setup by the account owner (see docs/testflight-release-checklist.md, "Automated upload"):
+#   App Store Connect → Users and Access → Integrations → App Store Connect API → Team Keys → "+",
+#   role Admin (needed so Xcode can create the distribution certificate and profiles itself).
+#   Then in GitHub → Settings → Secrets and variables → Actions, add:
+#     ASC_KEY_ID       the key's ID
+#     ASC_ISSUER_ID    the Issuer ID shown above the keys list
+#     ASC_KEY_P8       the full text of the downloaded AuthKey_XXXX.p8 file
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Build number (must be higher than every build already uploaded for this version)"
+        required: true
+        default: "3"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Tests and compliance gate
+    runs-on: ubuntu-latest
+    container: swift:5.10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Logic tests
+        run: PKG=HopQuest.swiftpm bash scripts/run_tests.sh
+      - name: Install Python
+        run: apt-get update -qq && apt-get install -y -qq python3 git > /dev/null
+      - name: Release gate (only the main-branch privacy policy may still be pending)
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main || true
+          python3 scripts/release_check.py | tee gate.txt || true
+          # Any FAIL other than the published-policy check stops the upload. That one blocks
+          # external testing and App Review, not a TestFlight upload, and it is reported below.
+          if grep -E "^\s*FAIL" gate.txt | grep -v "Published privacy policy (main branch)"; then
+            echo "::error::Release gate has failures; not uploading."; exit 1
+          fi
+          if grep -q "Published privacy policy (main branch)" gate.txt && grep -E "^\s*FAIL.*Published privacy policy" gate.txt > /dev/null; then
+            echo "::warning::The privacy policy on main is behind this build. Merge to main before external testing or App Review."
+          fi
+
+  upload:
+    name: Archive and upload to App Store Connect
+    needs: gate
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the newest Xcode 26 (App Store uploads need the iOS 26 SDK)
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$X" ]; then echo "::error::No Xcode 26 on this runner"; ls /Applications | grep Xcode; exit 1; fi
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+      - name: Check the secrets are set
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!v}" ]; then echo "::error::Secret $v is missing (see the setup notes at the top of this file)"; exit 1; fi
+          done
+      - name: Write the API key (deleted at the end of the job)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8"
+          chmod 600 "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8"
+      - name: Archive (Release, automatic signing)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project HopQuest.xcodeproj -scheme HopQuest -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/HopQuest.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CURRENT_PROJECT_VERSION="${{ inputs.build_number }}" | tail -n 80
+      - name: Both privacy manifests are in the archive
+        run: |
+          APP="$RUNNER_TEMP/HopQuest.xcarchive/Products/Applications/HopQuest.app"
+          test -f "$APP/PrivacyInfo.xcprivacy" && test -f "$APP/PlugIns/HopQuestWidget.appex/PrivacyInfo.xcprivacy"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" -c "Print :CFBundleVersion" "$APP/Info.plist"
+      - name: Upload to App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>X6LZQ3FS36</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/HopQuest.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -n 60
+          echo "Uploaded build ${{ inputs.build_number }}. Apple emails when processing finishes (usually 5–30 minutes)."
+      - name: Remove the API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"

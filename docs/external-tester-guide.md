@@ -31,7 +31,7 @@
 
 ## Part 2: What to Test (paste into App Store Connect, 4,000 characters max)
 
-Thanks for testing HopQuest 2.0 (build 3)! Please try:
+Thanks for testing HopQuest 1.0! Please try:
 
 1. **First launch:** type a name (or leave it blank), pick a buddy and a castle.
 2. **Home page:** tap PLAY (Hop Village) and SURPRISE ME! Then use the menu bar at the bottom to visit Adventures, Games, Learn and Worlds, and come back Home. My Castle, Together and Stories are at the bottom of Home.
