@@ -156,6 +156,7 @@ struct AnswerButton: View {
         }
         .buttonStyle(BouncyButtonStyle())
         .disabled(state == .wrong)
+        .accessibilityLabel(QuizHelp.accessible(text))
         .accessibilityValue(state == .right ? "Correct" : state == .wrong ? "Not this one" : "")
     }
 }
@@ -187,6 +188,8 @@ struct LearnDoneCard: View {
     var host: GameCharacter? = nil
     /// A practice run of the tricky ones (v9.27): no stars line, since stars don't change.
     var practice = false
+    /// The best stars ever for this game (v9.43): "Your best is still 3 stars" when this run scored lower.
+    var best: Int? = nil
     /// Questions missed this game, with their answers (v9.26), and a way to play just those again.
     var tricky: [(say: String, answer: String)] = []
     var onTricky: (() -> Void)? = nil
@@ -222,6 +225,10 @@ struct LearnDoneCard: View {
             if earned > 0 {
                 Label(L10n.tr("\(earned) new \(earned == 1 ? "star" : "stars")"), systemImage: "sparkles")
                     .font(.kid(18, .black)).foregroundStyle(Palette.green)
+            }
+            if let best, best > stars {
+                Text(L10n.tr("Your best is still \(best) \(best == 1 ? "star" : "stars")."))
+                    .font(.kid(14, .bold)).foregroundStyle(Palette.ink.opacity(0.6))
             }
             if practice {
                 Text(L10n.tr("Practice doesn't change your stars.")).font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.55))

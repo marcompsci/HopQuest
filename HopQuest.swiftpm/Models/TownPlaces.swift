@@ -239,7 +239,7 @@ enum SkyBank {
                 let answer = label(right)
                 return QuizRound(visual: .picture(w.picture), say: w.say,
                                  choices: QuizShuffle.choices(answer, w.never.map(label), using: &rng), answer: answer,
-                                 cheer: "\(right.capitalized) for \(w.id) days! \(cheer(i))")
+                                 cheer: "\(right.prefix(1).uppercased() + right.dropFirst()) for \(w.id) days! \(cheer(i))")
             }
         default: // facts
             return pick(facts, count, using: &rng).enumerated().map { i, q in
@@ -361,7 +361,7 @@ enum KeepGoing {
 
 /// Places that are new in this update get a "New!" ribbon on the menu until they're played once.
 enum NewPlaces {
-    static let ids: Set<String> = ["words", "tenframe", "sky", "helpers", "sounds", "numberline"]
+    static let ids: Set<String> = ["words", "tenframe", "sky", "helpers", "sounds", "numberline", "colors", "evenodd", "animals", "opposites", "sentences"]
 
     static func showRibbon(_ id: String, plays: Int) -> Bool { ids.contains(id) && plays == 0 }
 }
@@ -484,6 +484,420 @@ enum LineBank {
                                  choices: QuizShuffle.choices(answer, [">", "<", "="].filter { $0 != answer }, using: &rng), answer: answer,
                                  cheer: "\(a) \(words) \(b). \(cheer(i))")
             }
+        }
+    }
+}
+
+// MARK: - Color Lab (v9.31)
+
+enum ColorBank {
+    static let swatch: [String: String] = [
+        "red": "🔴", "orange": "🟠", "yellow": "🟡", "green": "🟢", "blue": "🔵", "purple": "🟣",
+        "brown": "🟤", "black": "⚫", "white": "⚪", "pink": "🩷", "gray": "🩶",
+    ]
+    static func label(_ c: String) -> String { "\(swatch[c] ?? "") \(c)" }
+
+    /// Paint mixing, kid style.
+    static let mixes: [(a: String, b: String, makes: String)] = [
+        ("red", "yellow", "orange"), ("blue", "yellow", "green"), ("red", "blue", "purple"),
+        ("red", "white", "pink"), ("black", "white", "gray"), ("red", "green", "brown"),
+    ]
+    static let warm = ["red", "orange", "yellow"]
+    static let cool = ["blue", "green", "purple"]
+    static let rainbow = ["red", "orange", "yellow", "green", "blue", "purple"]
+
+    static let lightDark: [(say: String, answer: String, wrong: [String])] = [
+        ("You add white paint to blue. What happens?", "it gets lighter", ["it gets darker", "it turns orange"]),
+        ("You add black paint to green. What happens?", "it gets darker", ["it gets lighter", "it turns pink"]),
+        ("Which paint makes red into pink?", "white", ["black", "blue"]),
+        ("Which paint makes a color darker?", "black", ["white", "yellow"]),
+        ("Is the night sky light or dark?", "dark", ["light", "rainbow"]),
+        ("Is a sunny yellow lemon light or dark?", "light", ["dark", "see-through"]),
+    ]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "mix", title: "Mix It!", symbol: "paintpalette.fill", intro: "Mix two paints and you get a brand new color!", skill: "mixing colors"),
+        QuizGameInfo(id: "warmcool", title: "Warm or Cool", symbol: "thermometer.sun.fill", intro: "Warm colors feel like fire and sun. Cool colors feel like water and grass.", skill: "warm and cool colors"),
+        QuizGameInfo(id: "light", title: "Light and Dark", symbol: "circle.lefthalf.filled", intro: "White makes colors lighter. Black makes them darker!", skill: "lighter and darker colors"),
+        QuizGameInfo(id: "rainbow", title: "Rainbow Order", symbol: "rainbow", intro: "Red, orange, yellow, green, blue, purple. What comes next?", skill: "the order of the rainbow"),
+    ]
+
+    static let cheers = ["Colorful!", "Paint-tastic!", "That's right!", "What an artist!", "Bright idea!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "mix":
+            return SkyBank.pick(mixes, count, using: &rng).enumerated().map { i, m in
+                let flip = Bool.random(using: &rng)
+                let (a, b) = flip ? (m.b, m.a) : (m.a, m.b)
+                let wrong = mixes.map(\.makes).filter { $0 != m.makes }.map(label)
+                return QuizRound(visual: .text("\(swatch[a]!) + \(swatch[b]!)"), say: "Mix \(a) and \(b). What color do you get?",
+                                 choices: QuizShuffle.choices(label(m.makes), wrong, using: &rng), answer: label(m.makes),
+                                 cheer: "\(a.capitalized) and \(b) make \(m.makes)! \(cheer(i))")
+            }
+        case "warmcool":
+            return (0..<count).map { i -> QuizRound in
+                let wantWarm = i % 2 == 0
+                let right = (wantWarm ? warm : cool).randomElement(using: &rng)!
+                let wrong = Array((wantWarm ? cool : warm).shuffled(using: &rng).prefix(2))
+                return QuizRound(visual: .picture(wantWarm ? "🔥" : "💧"), say: wantWarm ? "Which one is a warm color?" : "Which one is a cool color?",
+                                 choices: QuizShuffle.choices(label(right), wrong.map(label), using: &rng), answer: label(right),
+                                 cheer: "\(right.capitalized) is a \(wantWarm ? "warm" : "cool") color. \(cheer(i))")
+            }
+        case "light":
+            return SkyBank.pick(lightDark, count, using: &rng).enumerated().map { i, q in
+                QuizRound(visual: .picture(["🎨", "🖌️", "🌙", "🍋", "🖍️"][i % 5]), say: q.say,
+                          choices: QuizShuffle.choices(q.answer, q.wrong, using: &rng), answer: q.answer,
+                          cheer: "Yes: \(q.answer). \(cheer(i))")
+            }
+        default: // rainbow
+            return (0..<count).map { i -> QuizRound in
+                let k = Int.random(in: 0..<(rainbow.count - 1), using: &rng)
+                let shown = rainbow.prefix(k + 1).map { swatch[$0]! }.joined(separator: " ") + " ❓"
+                let answer = rainbow[k + 1]
+                let wrong = rainbow.filter { $0 != answer }.map(label)
+                return QuizRound(visual: .text(shown), say: "In a rainbow, which color comes after \(rainbow[k])?",
+                                 choices: QuizShuffle.choices(label(answer), wrong, using: &rng), answer: label(answer),
+                                 cheer: "\(answer.capitalized) comes after \(rainbow[k]). \(cheer(i))")
+            }
+        }
+    }
+}
+
+// MARK: - Even Steven (v9.32)
+
+enum EvenBank {
+    static let items: [String: (one: String, many: String)] = ["🧦": ("sock", "socks"), "🍪": ("cookie", "cookies"), "👟": ("shoe", "shoes"), "🐟": ("fish", "fish")]
+    static let pictures = ["🧦", "🍪", "👟", "🐟"]
+    static func isEven(_ n: Int) -> Bool { n % 2 == 0 }
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "pairs", title: "Buddy Pairs", symbol: "person.2.circle.fill", intro: "Put things in pairs. If everyone has a buddy, the number is even!", skill: "even and odd with pairs"),
+        QuizGameInfo(id: "which", title: "Spot the Even", symbol: "eye.fill", intro: "Even numbers end in 0, 2, 4, 6 or 8. Odd numbers end in 1, 3, 5, 7 or 9.", skill: "even and odd numbers"),
+        QuizGameInfo(id: "twos", title: "Count by Twos", symbol: "2.circle.fill", intro: "Two, four, six, eight! Skip-count by twos.", skill: "counting by twos"),
+        QuizGameInfo(id: "share", title: "Fair Share", symbol: "square.split.2x1.fill", intro: "Share fairly between two friends. How many does each one get?", skill: "halving even numbers"),
+    ]
+
+    static let cheers = ["Even-tastic!", "Purr-fect!", "That's right!", "Super sorting!", "Fair and square!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        let item = pictures.randomElement(using: &rng)!
+        let many = items[item]!.many
+        switch id {
+        case "pairs":
+            let ns = Array(Array(3...12).shuffled(using: &rng).prefix(count))
+            return ns.enumerated().map { i, n in
+                let answer = isEven(n) ? "even" : "odd"
+                return QuizRound(visual: .pairs(n, item: item), say: "There are \(n) \(many). Does every one have a buddy? Is \(n) even or odd?",
+                                 choices: ["even", "odd"], answer: answer,
+                                 cheer: isEven(n) ? "Every one has a buddy, so \(n) is even. \(cheer(i))" : "One is left over, so \(n) is odd. \(cheer(i))")
+            }
+        case "which":
+            return (0..<count).map { i -> QuizRound in
+                let wantEven = i % 2 == 0
+                var pool = Array(1...30).shuffled(using: &rng)
+                let right = pool.first { isEven($0) == wantEven }!
+                pool.removeAll { $0 == right }
+                let wrong = Array(pool.filter { isEven($0) != wantEven }.prefix(2))
+                return QuizRound(visual: .picture(wantEven ? "✌️" : "☝️"), say: wantEven ? "Which number is even?" : "Which number is odd?",
+                                 choices: QuizShuffle.choices("\(right)", wrong.map { "\($0)" }, using: &rng), answer: "\(right)",
+                                 cheer: "\(right) is \(wantEven ? "even" : "odd"). \(cheer(i))")
+            }
+        case "twos":
+            return (0..<count).map { i -> QuizRound in
+                let start = Int.random(in: 0...8, using: &rng) * 2
+                let seq = (0..<3).map { start + $0 * 2 }
+                let answer = start + 6
+                return QuizRound(visual: .text(seq.map(String.init).joined(separator: ", ") + ", ?"), say: "Count by twos. What comes next?",
+                                 choices: GraphBank.numberChoices(answer, others: [answer - 1, answer + 1, answer + 2], using: &rng), answer: "\(answer)",
+                                 cheer: "\(seq.map(String.init).joined(separator: ", ")), \(answer)! \(cheer(i))")
+            }
+        default: // share
+            let ns = Array(Array(1...9).shuffled(using: &rng).prefix(count)).map { $0 * 2 }
+            return ns.enumerated().map { i, n in
+                QuizRound(visual: .pairs(n, item: item), say: "Share \(n) \(many) fairly between 2 friends. How many does each friend get?",
+                          choices: GraphBank.numberChoices(n / 2, others: [n, n / 2 + 1, n / 2 - 1], using: &rng), answer: "\(n / 2)",
+                          cheer: "\(n) shared by 2 is \(n / 2) each. \(cheer(i))")
+            }
+        }
+    }
+}
+
+// MARK: - Animal Club (v9.33)
+
+enum AnimalBank {
+    static let animals: [(name: String, picture: String, group: String, covering: String, legs: Int, eats: String)] = [
+        ("dog", "🐶", "mammal", "fur", 4, "plants and animals"), ("cow", "🐄", "mammal", "fur", 4, "plants"),
+        ("lion", "🦁", "mammal", "fur", 4, "animals"), ("rabbit", "🐰", "mammal", "fur", 4, "plants"),
+        ("bear", "🐻", "mammal", "fur", 4, "plants and animals"), ("whale", "🐋", "mammal", "smooth skin", 0, "animals"),
+        ("eagle", "🦅", "bird", "feathers", 2, "animals"), ("penguin", "🐧", "bird", "feathers", 2, "animals"),
+        ("parrot", "🦜", "bird", "feathers", 2, "plants"), ("shark", "🦈", "fish", "scales", 0, "animals"),
+        ("goldfish", "🐠", "fish", "scales", 0, "plants and animals"), ("snake", "🐍", "reptile", "scales", 0, "animals"),
+        ("turtle", "🐢", "reptile", "scales", 4, "plants and animals"), ("lizard", "🦎", "reptile", "scales", 4, "animals"),
+        ("frog", "🐸", "amphibian", "smooth skin", 4, "animals"), ("ant", "🐜", "insect", "a hard shell", 6, "plants and animals"),
+        ("bee", "🐝", "insect", "a hard shell", 6, "plants"), ("ladybug", "🐞", "insect", "a hard shell", 6, "animals"),
+    ]
+    /// "a dog", "an ant".
+    static func a(_ word: String) -> String { (["a", "e", "i", "o", "u"].contains(word.prefix(1)) ? "an " : "a ") + word }
+    /// "A dog" at the start of a sentence.
+    static func A(_ word: String) -> String { let s = a(word); return s.prefix(1).uppercased() + s.dropFirst() }
+    static let groups = ["mammal", "bird", "fish", "reptile", "amphibian", "insect"]
+    static let coverings = ["fur", "feathers", "scales", "smooth skin", "a hard shell"]
+    static let diets = ["plants", "animals", "plants and animals"]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "group", title: "Animal Groups", symbol: "pawprint.fill", intro: "Mammals, birds, fish, reptiles, amphibians and insects. Which group?", skill: "animal groups"),
+        QuizGameInfo(id: "cover", title: "Fur, Feathers or Scales?", symbol: "leaf.fill", intro: "Animals are covered in different things. What covers this one?", skill: "what covers animals"),
+        QuizGameInfo(id: "legs", title: "Count the Legs", symbol: "figure.walk", intro: "Two, four, six or none at all! How many legs?", skill: "animal legs"),
+        QuizGameInfo(id: "eat", title: "What's for Dinner?", symbol: "fork.knife", intro: "Some animals eat plants, some eat other animals, and some eat both!", skill: "what animals eat"),
+    ]
+
+    static let cheers = ["Wild!", "Hop-hop hooray!", "That's right!", "Animal expert!", "Paws-itively right!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        // a turtle's shell is made of scales and bone, so it sits out the covering game
+        let picks = SkyBank.pick(id == "cover" ? animals.filter { $0.name != "turtle" } : animals, count, using: &rng)
+        return picks.enumerated().map { i, a in
+            switch id {
+            case "group":
+                return QuizRound(visual: .picture(a.picture), say: "What kind of animal is \(Self.a(a.name))?",
+                                 choices: QuizShuffle.choices(a.group, groups.filter { $0 != a.group }, using: &rng), answer: a.group,
+                                 cheer: "\(Self.A(a.name)) is \(Self.a(a.group))! \(cheer(i))")
+            case "cover":
+                return QuizRound(visual: .picture(a.picture), say: "What covers \(Self.a(a.name))'s body?",
+                                 choices: QuizShuffle.choices(a.covering, coverings.filter { $0 != a.covering }, using: &rng), answer: a.covering,
+                                 cheer: "\(Self.A(a.name)) has \(a.covering). \(cheer(i))")
+            case "legs":
+                return QuizRound(visual: .picture(a.picture), say: "How many legs does \(Self.a(a.name)) have?",
+                                 choices: QuizShuffle.choices("\(a.legs)", ["0", "2", "4", "6", "8"].filter { $0 != "\(a.legs)" }, using: &rng), answer: "\(a.legs)",
+                                 cheer: a.legs == 0 ? "No legs at all! \(cheer(i))" : "\(a.legs) legs! \(cheer(i))")
+            default: // eat
+                return QuizRound(visual: .picture(a.picture), say: "What does \(Self.a(a.name)) eat?",
+                                 choices: diets, answer: a.eats,
+                                 cheer: "\(Self.A(a.name)) eats \(a.eats). \(cheer(i))")
+            }
+        }
+    }
+}
+
+// MARK: - Opposite Island (v9.34)
+
+enum OppositeBank {
+    static let pairs: [(String, String)] = [
+        ("hot", "cold"), ("big", "small"), ("up", "down"), ("fast", "slow"), ("happy", "sad"), ("day", "night"),
+        ("open", "closed"), ("full", "empty"), ("wet", "dry"), ("loud", "quiet"), ("in", "out"), ("push", "pull"),
+    ]
+    static func opposite(_ w: String) -> String? {
+        pairs.first { $0.0 == w }?.1 ?? pairs.first { $0.1 == w }?.0
+    }
+
+    static let families: [String: [String]] = [
+        "fruit": ["🍎 apple", "🍌 banana", "🍇 grapes", "🍓 strawberry"],
+        "animal": ["🐶 dog", "🐱 cat", "🐮 cow", "🐷 pig"],
+        "vehicle": ["🚗 car", "🚌 bus", "🚲 bike", "✈️ plane"],
+        "clothes": ["👕 shirt", "🧦 socks", "🧢 cap", "👖 jeans"],
+    ]
+    static func family(of thing: String) -> String? { families.first { $0.value.contains(thing) }?.key }
+    static let kindOf = ["fruit": "a fruit", "animal": "an animal", "vehicle": "a vehicle", "clothes": "clothing"]
+
+    /// Smallest to biggest.
+    static let sizes = ["🐜 ant", "🐭 mouse", "🐱 cat", "🐕 dog", "🐴 horse", "🐘 elephant", "🐋 whale"]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "opposite", title: "Opposites", symbol: "arrow.left.arrow.right", intro: "Hot and cold, up and down! What's the opposite?", skill: "opposite words"),
+        QuizGameInfo(id: "odd", title: "Which Doesn't Belong?", symbol: "questionmark.square.dashed", intro: "Three things go together. Which one doesn't belong?", skill: "finding what doesn't belong"),
+        QuizGameInfo(id: "together", title: "What Goes Together?", symbol: "square.on.square", intro: "Find the one that belongs with the others!", skill: "sorting into groups"),
+        QuizGameInfo(id: "size", title: "Biggest and Smallest", symbol: "arrow.up.and.down.square.fill", intro: "Picture them side by side. Which is biggest? Which is smallest?", skill: "comparing sizes"),
+    ]
+
+    static let cheers = ["Island-tastic!", "Holy guacamole!", "That's right!", "Smart thinking!", "You got it!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "opposite":
+            return SkyBank.pick(pairs, count, using: &rng).enumerated().map { i, p in
+                let (w, answer) = Bool.random(using: &rng) ? p : (p.1, p.0)
+                let wrong = pairs.flatMap { [$0.0, $0.1] }.filter { $0 != answer && $0 != w }
+                return QuizRound(visual: .text(w.uppercased()), say: "What's the opposite of \(w)?",
+                                 choices: QuizShuffle.choices(answer, wrong, using: &rng), answer: answer,
+                                 cheer: "\(w.capitalized) and \(answer) are opposites. \(cheer(i))")
+            }
+        case "odd", "together":
+            let keys = families.keys.sorted()
+            return (0..<count).map { i -> QuizRound in
+                let main = keys[(i + Int.random(in: 0..<keys.count, using: &rng)) % keys.count]
+                let other = keys.filter { $0 != main }.randomElement(using: &rng)!
+                let mains = families[main]!.shuffled(using: &rng)
+                let outsider = families[other]!.randomElement(using: &rng)!
+                if id == "odd" {
+                    return QuizRound(visual: .none, say: "Which one doesn't belong?",
+                                     choices: QuizShuffle.choices(outsider, Array(mains.prefix(2)), using: &rng), answer: outsider,
+                                     cheer: "The \(outsider.split(separator: " ").last!) isn't \(kindOf[main] ?? main). \(cheer(i))")
+                }
+                let others = keys.filter { $0 != main }.shuffled(using: &rng).prefix(2).map { families[$0]!.randomElement(using: &rng)! }
+                return QuizRound(visual: .text(mains.prefix(2).map { String($0.split(separator: " ").first!) }.joined(separator: "  ")),
+                                 say: "Which one goes with these?",
+                                 choices: QuizShuffle.choices(mains[2], others, using: &rng), answer: mains[2],
+                                 cheer: "They're all \(main == "clothes" ? "clothes" : main + "s")! \(cheer(i))")
+            }
+        default: // size
+            return (0..<count).map { i -> QuizRound in
+                let three = Array(sizes.shuffled(using: &rng).prefix(3))
+                let order = three.sorted { sizes.firstIndex(of: $0)! < sizes.firstIndex(of: $1)! }
+                let biggest = i % 2 == 0
+                let answer = biggest ? order[2] : order[0]
+                return QuizRound(visual: .none, say: biggest ? "Which one is the biggest?" : "Which one is the smallest?",
+                                 choices: three, answer: answer,
+                                 cheer: "The \(answer.split(separator: " ").last!) is the \(biggest ? "biggest" : "smallest"). \(cheer(i))")
+            }
+        }
+    }
+}
+
+// MARK: - Sentence Station (v9.35)
+
+enum SentenceBank {
+    static let sentences = ["The dog runs fast.", "My cat is sleepy.", "We play at the park.", "I like red apples.", "The sun is hot.",
+                            "Birds can fly.", "She has a blue hat.", "It is time for lunch."]
+    static let endings: [(text: String, mark: String)] = [
+        ("Where is my hat", "?"), ("Can we go outside", "?"), ("What is your name", "?"), ("Do you like cake", "?"),
+        ("I like pizza", "."), ("The sky is blue", "."), ("My dog is brown", "."), ("We read a book", "."),
+        ("Watch out", "!"), ("Yay, we won", "!"), ("Wow, look at that rainbow", "!"), ("Hooray, it snowed", "!"),
+    ]
+    static let plurals: [(one: String, many: String, wrong: [String])] = [
+        ("cat", "cats", ["cates", "caties"]), ("box", "boxes", ["boxs", "boxies"]), ("bus", "buses", ["buss", "busies"]),
+        ("dog", "dogs", ["doges", "dogies"]), ("fox", "foxes", ["foxs", "foxen"]), ("mouse", "mice", ["mouses", "mousies"]),
+        ("foot", "feet", ["foots", "footies"]), ("child", "children", ["childs", "childies"]), ("dish", "dishes", ["dishs", "dishies"]),
+        ("bird", "birds", ["birdes", "birdies"]),
+    ]
+    static let questionWords: [(blank: String, answer: String)] = [
+        ("___ is your name?", "What"), ("___ do you live?", "Where"), ("___ will you go to bed?", "When"),
+        ("___ is your best friend?", "Who"), ("___ are you smiling?", "Why"), ("___ color is the sky?", "What"),
+        ("___ is the park?", "Where"), ("___ is your teacher?", "Who"),
+    ]
+    static let qWords = ["Who", "What", "Where", "When", "Why"]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "capital", title: "Big Letter First", symbol: "textformat.size.larger", intro: "Every sentence starts with a capital letter!", skill: "capital letters"),
+        QuizGameInfo(id: "end", title: "End Marks", symbol: "questionmark", intro: "A period tells, a question mark asks, and an exclamation mark shouts!", skill: "periods, question marks and exclamation marks"),
+        QuizGameInfo(id: "plural", title: "One or More", symbol: "square.stack.fill", intro: "One cat, two cats! Some words change in surprising ways.", skill: "plurals"),
+        QuizGameInfo(id: "qword", title: "Question Words", symbol: "bubble.left.fill", intro: "Who, what, where, when and why. Which one fits?", skill: "question words"),
+    ]
+
+    static let cheers = ["Full steam ahead!", "Crunch-tastic!", "That's right!", "Sentence superstar!", "All aboard!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "capital":
+            return SkyBank.pick(sentences, count, using: &rng).enumerated().map { i, s in
+                let lower = s.prefix(1).lowercased() + s.dropFirst()
+                let words = s.split(separator: " ").map(String.init)
+                let middle = ([words[0].lowercased()] + words.dropFirst().enumerated().map { k, w in k == 0 ? w.capitalized : w }).joined(separator: " ")
+                return QuizRound(visual: .picture("🚂"), say: "Which sentence starts the right way?",
+                                 choices: QuizShuffle.choices(s, [lower, middle], using: &rng), answer: s,
+                                 cheer: "It starts with a capital \(s.prefix(1)). \(cheer(i))")
+            }
+        case "end":
+            return SkyBank.pick(endings, count, using: &rng).enumerated().map { i, e in
+                QuizRound(visual: .text(e.text + " ◻"), say: "Which mark goes at the end?",
+                          choices: [".", "?", "!"], answer: e.mark,
+                          cheer: (e.mark == "?" ? "It asks something, so it gets a question mark." : e.mark == "!" ? "It's exciting, so it gets an exclamation mark!" : "It tells something, so it gets a period.") + " \(cheer(i))")
+            }
+        case "plural":
+            return SkyBank.pick(plurals, count, using: &rng).enumerated().map { i, p in
+                QuizRound(visual: .text("1 \(p.one) → 2 ?"), say: "One \(p.one), two what?",
+                          choices: QuizShuffle.choices(p.many, p.wrong, using: &rng), answer: p.many,
+                          cheer: "One \(p.one), two \(p.many)! \(cheer(i))")
+            }
+        default: // qword
+            return SkyBank.pick(questionWords, count, using: &rng).enumerated().map { i, q in
+                QuizRound(visual: .text(q.blank), say: "Which question word fits?",
+                          choices: QuizShuffle.choices(q.answer, qWords.filter { $0 != q.answer }, using: &rng), answer: q.answer,
+                          cheer: q.blank.replacingOccurrences(of: "___", with: q.answer) + " \(cheer(i))")
+            }
+        }
+    }
+}
+
+// MARK: - Learn page subjects (v9.36, v9.38)
+
+/// Filter chips on the Learn page: every place belongs to one subject.
+enum LearnSubject: String, CaseIterable, Identifiable {
+    case all, words, math, science, world, art
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: return "All"
+        case .words: return "Words"
+        case .math: return "Math"
+        case .science: return "Science"
+        case .world: return "World & Me"
+        case .art: return "Art & Music"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .all: return "square.grid.2x2.fill"
+        case .words: return "textformat.abc"
+        case .math: return "number"
+        case .science: return "leaf.fill"
+        case .world: return "globe.americas.fill"
+        case .art: return "paintpalette.fill"
+        }
+    }
+
+    static let places: [LearnSubject: [String]] = [
+        .words: ["reading", "writing", "spelling", "rhyme", "words", "sounds", "sentences", "opposites"],
+        .math: ["market", "clock", "fractions", "shapes", "numbers", "times", "measure", "calendar", "graphs", "tenframe", "numberline", "evenodd"],
+        .science: ["science", "nature", "sky", "planet", "animals", "healthy"],
+        .world: ["world", "feelings", "compass", "helpers"],
+        .art: ["music", "colors"],
+    ]
+
+    /// The subject a place belongs to (nil for places that aren't on the Learn grid, like Code Club).
+    static func of(_ placeID: String) -> LearnSubject? {
+        places.first { $0.value.contains(placeID) }?.key
+    }
+
+    func includes(_ placeID: String) -> Bool { self == .all || LearnSubject.of(placeID) == self }
+
+    /// "3 of 12 done" for a chip: places finished (every game at 2 stars or more) out of the subject's places on the menu.
+    static func done(_ subject: LearnSubject, areas: [LearningArea]) -> (done: Int, total: Int) {
+        let mine = areas.filter { subject.includes($0.id) && $0.id != "code" }
+        return (mine.filter(\.finished).count, mine.count)
+    }
+}
+
+// MARK: - Mystery Mix (v9.37)
+
+/// Five questions from quiz places the child has already played, one place at a time. Always there, never daily.
+enum MysteryMix {
+    static let id = "mystery"
+    static let minSources = 2
+    static let quizPlaceIDs = ["spelling", "fractions", "shapes", "rhyme", "numbers", "times", "measure", "feelings", "nature", "calendar",
+                               "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "sounds", "numberline",
+                               "colors", "evenodd", "animals", "opposites", "sentences"]
+
+    /// Places played at least once and still on the menu.
+    static func sources(plays: [String: Int], shown: (String) -> Bool) -> [String] {
+        quizPlaceIDs.filter { (plays[$0] ?? 0) > 0 && shown($0) }
+    }
+
+    /// Which place and game each question comes from: places take turns, so five places give five different ones.
+    static func plan<G: RandomNumberGenerator>(sources: [String], games: (String) -> [String], count: Int = 5, using rng: inout G) -> [(place: String, game: String)] {
+        guard !sources.isEmpty else { return [] }
+        let order = sources.shuffled(using: &rng)
+        return (0..<count).compactMap { k in
+            let place = order[k % order.count]
+            guard let game = games(place).randomElement(using: &rng) else { return nil }
+            return (place, game)
         }
     }
 }

@@ -57,6 +57,8 @@ enum QuizVisual: Equatable {
     case tenFrames([Int], item: String)
     /// A number line from 0 to `to` with a dot, and hops drawn from `hopFrom` to the dot (v9.24).
     case numberLine(to: Int, dot: Int, hopFrom: Int?)
+    /// Things lined up in pairs, one above the other; an odd one out sits alone at the end (v9.32).
+    case pairs(Int, item: String)
 }
 
 extension QuizVisual {
@@ -97,6 +99,9 @@ extension QuizVisual {
             // never say where a hop lands: that's the question
             if let s = hopFrom { return "A number line from 0 to \(to), with \(abs(dot - s)) hops \(dot > s ? "forward" : "back") from \(s)" }
             return "A number line from 0 to \(to) with a dot on it. Numbers are marked every \(to > 10 ? 5 : 1)"
+        case .pairs(let n, let item):
+            let name = n == 1 ? (EvenBank.items[item]?.one ?? item) : (EvenBank.items[item]?.many ?? item)
+            return "\(n) \(name) lined up in pairs" + (n % 2 == 1 ? ", with one left over" : "")
         default: return nil
         }
     }
@@ -166,7 +171,7 @@ enum QuizHelp {
     /// Picture choices and spelling tiles aren't read: VoiceOver describes pictures, and reading tiles would spell the answer.
     static func readAloud(_ r: QuizRound) -> String {
         guard r.kind != .spell, r.choiceVisuals.isEmpty, r.choices.count >= 2 else { return r.say }
-        let words = r.choices.map(spoken)
+        let words = r.choices.map(accessible)
         return "\(r.say) Is it \(words.dropLast().joined(separator: ", ")), or \(words.last!)?"
     }
 
@@ -176,8 +181,18 @@ enum QuizHelp {
         case ">": return "greater than"
         case "<": return "less than"
         case "=": return "equal to"
+        case ".": return "period"
+        case "?": return "question mark"
+        case "!": return "exclamation mark"
         default: return choice
         }
+    }
+
+    /// What VoiceOver says for an answer button (v9.44): the word without its emoji ("🔴 red" → "red"), signs as words.
+    /// A choice that is only a picture keeps its text, so VoiceOver can still describe it.
+    static func accessible(_ choice: String) -> String {
+        let words = ReadAlongMath.speakable(spoken(choice))
+        return words.isEmpty ? choice : words
     }
 
     /// The rounds to look at again after a game: the missed ones, in order, no repeats.

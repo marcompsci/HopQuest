@@ -69,6 +69,14 @@ struct HatView: View {
                     RoundedRectangle(cornerRadius: w * 0.12).fill(.white).overlay(RoundedRectangle(cornerRadius: w * 0.12).stroke(Palette.ink, lineWidth: 2.5))
                         .frame(width: w * 0.78, height: h * 0.42).offset(y: -h * 0.16)
                     Image(systemName: "anchor").font(.system(size: w * 0.2, weight: .bold)).foregroundStyle(Color(hex: 0xFFC21A)).offset(y: -h * 0.16)
+                case .beret:
+                    Ellipse().fill(Color(hex: 0xC2185B)).overlay(Ellipse().stroke(Palette.ink, lineWidth: 2.5))
+                        .frame(width: w * 0.95, height: h * 0.42).rotationEffect(.degrees(-8)).offset(y: -h * 0.06)
+                    Capsule().fill(Palette.ink).frame(width: 4, height: h * 0.16).offset(x: w * 0.04, y: -h * 0.32)
+                case .explorer:
+                    Ellipse().fill(Color(hex: 0xD7B98E)).overlay(Ellipse().stroke(Palette.ink, lineWidth: 2.5)).frame(width: w * 1.05, height: h * 0.22)
+                    HatShape.dome.fill(Color(hex: 0xC8A06A)).overlay(HatShape.dome.stroke(Palette.ink, lineWidth: 2.5)).frame(width: w * 0.66, height: h * 0.6).offset(y: -h * 0.16)
+                    Rectangle().fill(Color(hex: 0x6D4C41)).frame(width: w * 0.66, height: h * 0.1).offset(y: -h * 0.06)
                 case .gradCap:
                     HatShape.dome.fill(Palette.ink).frame(width: w * 0.6, height: h * 0.45)
                     Rectangle().fill(Palette.ink).frame(width: w * 0.95, height: w * 0.95 * 0.28).rotation3DEffect(.degrees(55), axis: (x: 1, y: 0, z: 0)).offset(y: -h * 0.38)

@@ -49,6 +49,9 @@ enum Badges {
         ("words", "Word Builder", "textformat.abc", 0x5D4037), ("tenframe", "Ten Tamer", "10.circle.fill", 0xC0392B),
         ("sky", "Sky Spotter", "moon.stars.fill", 0x283593), ("helpers", "Town Helper", "person.2.fill", 0x00838F),
         ("sounds", "Super Listener", "ear.fill", 0x6A1B9A), ("numberline", "Line Hopper", "arrow.left.and.right", 0xEF6C00),
+        ("colors", "Color Mixer", "paintpalette.fill", 0xAD1457), ("evenodd", "Pair Pro", "person.2.circle.fill", 0x00897B),
+        ("animals", "Animal Expert", "pawprint.fill", 0x558B2F), ("opposites", "Opposite Ace", "arrow.left.arrow.right", 0x2E7D32),
+        ("sentences", "Sentence Star", "text.quote", 0xE65100),
     ]
 
     static let all: [Badge] = {
@@ -103,6 +106,11 @@ enum Badges {
         case "helpers": return "Helper Town"
         case "sounds": return "Sound Shop"
         case "numberline": return "Number Line Lane"
+        case "colors": return "Color Lab"
+        case "evenodd": return "Even Steven"
+        case "animals": return "Animal Club"
+        case "opposites": return "Opposite Island"
+        case "sentences": return "Sentence Station"
         default: return "Code Club"
         }
     }

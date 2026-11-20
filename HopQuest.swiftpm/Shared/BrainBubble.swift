@@ -13,7 +13,7 @@ struct BubbleQuestion: Equatable {
 }
 
 enum BubbleBank {
-    /// 59 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
+    /// 67 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
     static let all: [BubbleQuestion] = [
         BubbleQuestion(emoji: "➕", question: "What is 4 + 3?", choices: ["6", "7", "8"], answer: 1, fact: "4 + 3 = 7. So does 3 + 4!"),
         BubbleQuestion(emoji: "➖", question: "What is 9 − 4?", choices: ["5", "4", "6"], answer: 0, fact: "9 take away 4 leaves 5."),
@@ -76,6 +76,15 @@ enum BubbleBank {
         BubbleQuestion(emoji: "➡️", question: "Start at 8 and hop 4 forward. Where?", choices: ["11", "12", "4"], answer: 1, fact: "8 + 4 = 12."),
         BubbleQuestion(emoji: "⬅️", question: "Start at 10 and hop 3 back. Where?", choices: ["7", "13", "6"], answer: 0, fact: "10 − 3 = 7."),
         BubbleQuestion(emoji: "🐊", question: "Which is true?", choices: ["9 > 12", "12 > 9", "12 = 9"], answer: 1, fact: "The open mouth faces the bigger number: 12 > 9."),
+        // v9.39: eight more, from the five newest places
+        BubbleQuestion(emoji: "🎨", question: "Red and yellow paint make which color?", choices: ["Green", "Orange", "Purple"], answer: 1, fact: "Red + yellow = orange!"),
+        BubbleQuestion(emoji: "🌈", question: "Which color comes after green in a rainbow?", choices: ["Blue", "Red", "Yellow"], answer: 0, fact: "Red, orange, yellow, green, blue, purple."),
+        BubbleQuestion(emoji: "🧦", question: "Is 7 even or odd?", choices: ["Even", "Odd", "Both"], answer: 1, fact: "7 socks can't all be in pairs: one is left over."),
+        BubbleQuestion(emoji: "🍪", question: "Share 10 cookies fairly with 2 friends. Each gets…", choices: ["4", "5", "6"], answer: 1, fact: "10 shared by 2 is 5 each."),
+        BubbleQuestion(emoji: "🐸", question: "A frog is which kind of animal?", choices: ["Reptile", "Amphibian", "Mammal"], answer: 1, fact: "Frogs start life in water as tadpoles."),
+        BubbleQuestion(emoji: "🐋", question: "Is a whale a fish or a mammal?", choices: ["Fish", "Mammal", "Bird"], answer: 1, fact: "Whales breathe air and feed milk to their babies."),
+        BubbleQuestion(emoji: "🔥", question: "What's the opposite of hot?", choices: ["Cold", "Big", "Wet"], answer: 0, fact: "Hot and cold are opposites."),
+        BubbleQuestion(emoji: "🐭", question: "One mouse, two…", choices: ["Mouses", "Mice", "Mousies"], answer: 1, fact: "Some words change completely: mouse → mice."),
     ]
     static let step = 7
 }

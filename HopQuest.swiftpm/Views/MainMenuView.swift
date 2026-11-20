@@ -45,6 +45,7 @@ struct MainMenuView: View {
     @State private var note: String?
     @Environment(\.scenePhase) private var scenePhase
     @State private var tab: MenuTab = MainMenuView.lastTab
+    @State private var subject: LearnSubject = MainMenuView.lastSubject
     @Namespace private var tabSpace
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -150,6 +151,7 @@ struct MainMenuView: View {
 
     /// The page shown, kept while the app is open so coming back from a game lands on the same page.
     static var lastTab: MenuTab = .home
+    static var lastSubject: LearnSubject = .all
 
     @ViewBuilder private var homePage: some View {
         playButton
@@ -212,43 +214,49 @@ struct MainMenuView: View {
     @ViewBuilder private var learnPage: some View {
         section("Learn")
             .padding(.top, 4)
-        if let area = KeepGoing.pick(store.learningAreas.filter { store.placeShown($0.id) }) {
-            keepGoingCard(area)
+        subjectChips
+        if subject == .all {
+            if let area = KeepGoing.pick(store.learningAreas.filter { store.placeShown($0.id) }) {
+                keepGoingCard(area)
+            }
+            if MysteryMix.sources(plays: (store.profile?.places ?? [:]).mapValues(\.plays), shown: store.placeShown).count >= MysteryMix.minSources {
+                mysteryCard
+            }
+            codingLabCard
         }
-        codingLabCard
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
             let p = store.profile
-            if store.placeShown("reading") {
+            if shows("reading") {
                 gameTile(art: "icon_reading", title: "Reading Nook", color: Color(hex: 0xD94A57), shadow: Color(hex: 0x9E2A3A),
                          badge: 0, detail: "\(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars",
                          label: "Reading Nook, \(p?.reading.totalStars ?? 0) of \(ReadingSave.maxStars) stars", action: onReading)
             }
-            if store.placeShown("market") {
+            if shows("market") {
                 gameTile(art: "icon_market", title: "Math Market", color: Color(hex: 0xE07B00), shadow: Color(hex: 0xA35A00),
                          badge: 0, detail: "\(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars",
                          label: "Math Market, \(p?.market.totalStars ?? 0) of \(MarketSave.maxStars) stars", action: onMarket)
             }
-            if store.placeShown("science") {
+            if shows("science") {
                 gameTile(art: "icon_science", title: "Science Lab", color: Color(hex: 0x1F7A8C), shadow: Color(hex: 0x135563),
                          badge: 0, detail: "\(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars",
                          label: "Science Lab, \(p?.science.totalStars ?? 0) of \(ScienceSave.maxStars) stars", action: onScience)
             }
-            if store.placeShown("music") {
+            if shows("music") {
                 gameTile(art: "icon_music", title: "Music Maker", color: Color(hex: 0xB0459C), shadow: Color(hex: 0x7E2C6F),
                          badge: 0, detail: "\(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars",
                          label: "Music Maker, \(p?.music.totalStars ?? 0) of \(MusicSave.maxStars) stars", action: onMusic)
             }
-            if store.placeShown("writing") {
+            if shows("writing") {
                 gameTile(art: "icon_writing", title: "Writing Desk", color: Color(hex: 0x2F6FD1), shadow: Color(hex: 0x1D4A96),
                          badge: 0, detail: "\(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars",
                          label: "Writing Desk, \(p?.writing.totalStars ?? 0) of \(WritingSave.maxStars) stars", action: onWriting)
             }
-            if store.placeShown("clock") {
+            if shows("clock") {
                 gameTile(art: "icon_clock", title: "Clock Tower", color: Color(hex: 0x2E7D4F), shadow: Color(hex: 0x1D5434),
                          badge: 0, detail: "\(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars",
                          label: "Clock Tower, \(p?.clock.totalStars ?? 0) of \(ClockSave.maxStars) stars", action: onClock)
             }
-            if store.placeShown("world") {
+            if shows("world") {
                 gameTile(art: "icon_world", title: "Around the World", color: Color(hex: 0x5B4BC4), shadow: Color(hex: 0x3B2F8C),
                          badge: 0, detail: "\(p?.world.postcards.count ?? 0) of 7 postcards",
                          label: "Around the World, \(p?.world.postcards.count ?? 0) of 7 postcards", action: onWorldTour)
@@ -273,6 +281,11 @@ struct MainMenuView: View {
             placeTile("helpers", art: "icon_helpers", title: "Helper Town", color: 0x00838F, shadow: 0x005F66)
             placeTile("sounds", art: "icon_sounds", title: "Sound Shop", color: 0x6A1B9A, shadow: 0x4A148C)
             placeTile("numberline", art: "icon_numberline", title: "Number Line Lane", color: 0xEF6C00, shadow: 0xB34F00)
+            placeTile("colors", art: "icon_colors", title: "Color Lab", color: 0xAD1457, shadow: 0x810F41)
+            placeTile("evenodd", art: "icon_evenodd", title: "Even Steven", color: 0x00897B, shadow: 0x00665C)
+            placeTile("animals", art: "icon_animals", title: "Animal Club", color: 0x558B2F, shadow: 0x3F6823)
+            placeTile("opposites", art: "icon_opposites", title: "Opposite Island", color: 0x2E7D32, shadow: 0x225D25)
+            placeTile("sentences", art: "icon_sentences", title: "Sentence Station", color: 0xE65100, shadow: 0xAC3C00)
             gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
                      badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
                      label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)
@@ -594,11 +607,67 @@ struct MainMenuView: View {
     /// A quiz-engine place's tile, or nothing when a grown-up took the place off the menu (v9.9).
     @ViewBuilder
     private func placeTile(_ id: String, art: String, title: String, color: UInt32, shadow: UInt32) -> some View {
-        if store.placeShown(id) {
+        if shows(id) {
             let stars = store.profile?.places[id]?.totalStars ?? 0
             gameTile(art: art, title: title, color: Color(hex: color), shadow: Color(hex: shadow), badge: 0,
                      detail: "\(stars) of 12 stars", label: "\(title), \(stars) of 12 stars",
                      ribbon: NewPlaces.showRibbon(id, plays: store.profile?.places[id]?.plays ?? 0) ? "New!" : nil) { onQuizPlace(id) }
+        }
+    }
+
+    /// Mystery Mix (v9.37): five questions from places already played, any time.
+    private var mysteryCard: some View {
+        Button {
+            Haptics.tap()
+            onQuizPlace(MysteryMix.id)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "questionmark.circle.fill").font(.system(size: 34, weight: .black)).foregroundStyle(Color(hex: 0x5E35B1))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L10n.tr("Mystery Mix")).font(.kid(19, .black)).foregroundStyle(Palette.ink)
+                    Text(L10n.tr("Five questions from places you've played")).font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.6))
+                }
+                Spacer()
+                Image(systemName: "shuffle").font(.system(size: 18, weight: .black)).foregroundStyle(Color(hex: 0x5E35B1))
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.white.opacity(0.9)))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("\(L10n.tr("Mystery Mix")), \(L10n.tr("Five questions from places you've played"))")
+    }
+
+    /// A place's tile shows when a grown-up hasn't hidden it and it fits the chosen subject (v9.36).
+    private func shows(_ id: String) -> Bool { store.placeShown(id) && subject.includes(id) }
+
+    /// Subject chips (v9.36), each with how many of its places are done (v9.38).
+    private var subjectChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(LearnSubject.allCases) { sub in
+                    let tally = LearnSubject.done(sub, areas: store.learningAreas.filter { store.placeShown($0.id) })
+                    Button {
+                        Haptics.tap()
+                        withAnimation(Motion.snappy) { subject = sub }
+                        MainMenuView.lastSubject = sub
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: sub.symbol).font(.system(size: 13, weight: .bold))
+                            Text(L10n.tr(sub.title)).font(.kid(14, .black))
+                            if sub != .all, tally.total > 0 {
+                                Text("\(tally.done)/\(tally.total)").font(.kid(12, .bold)).monospacedDigit().opacity(0.7)
+                            }
+                        }
+                        .foregroundStyle(subject == sub ? .white : Palette.ink)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(Capsule().fill(subject == sub ? Palette.purple : .white.opacity(0.9)))
+                    }
+                    .buttonStyle(BouncyButtonStyle())
+                    .accessibilityLabel(sub == .all ? L10n.tr(sub.title) : "\(L10n.tr(sub.title)), \(tally.done) of \(tally.total) places done")
+                    .accessibilityAddTraits(subject == sub ? .isSelected : [])
+                }
+            }
+            .padding(.horizontal, 2)
         }
     }
 

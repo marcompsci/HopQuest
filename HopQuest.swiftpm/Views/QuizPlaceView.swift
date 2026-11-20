@@ -145,6 +145,60 @@ struct QuizPlace {
                   rounds: { id in var g = SystemRandomNumberGenerator(); return LineBank.rounds(for: id, using: &g) })
     }
 
+    static var colors: QuizPlace {
+        QuizPlace(id: "colors", title: "Color Lab", line: "Mix, sort and paint the rainbow. Let's get colorful!",
+                  greeting: "Hi, I'm Gigi! My Color Lab is full of paint. Let's mix some colors!", host: Roster.character(id: "gigi"),
+                  accent: Color(hex: 0xAD1457), background: [Color(hex: 0xFCE4EC), Color(hex: 0xF8BBD9)], games: ColorBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return ColorBank.rounds(for: id, using: &g) })
+    }
+
+    static var evenodd: QuizPlace {
+        QuizPlace(id: "evenodd", title: "Even Steven", line: "Pairs, twos and fair shares. Let's sort!",
+                  greeting: "Hi, I'm Mochi! I love things in pairs. Welcome to Even Steven!", host: Roster.character(id: "mochi"),
+                  accent: Color(hex: 0x00897B), background: [Color(hex: 0xE0F2F1), Color(hex: 0xB2DFDB)], games: EvenBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return EvenBank.rounds(for: id, using: &g) })
+    }
+
+    static var animals: QuizPlace {
+        QuizPlace(id: "animals", title: "Animal Club", line: "Fur, feathers, scales and legs. Meet the animals!",
+                  greeting: "Hi, I'm Lavender! Welcome to Animal Club, where we learn all about animals!", host: Roster.character(id: "lavender"),
+                  accent: Color(hex: 0x558B2F), background: [Color(hex: 0xF1F8E9), Color(hex: 0xDCEDC8)], games: AnimalBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return AnimalBank.rounds(for: id, using: &g) })
+    }
+
+    static var opposites: QuizPlace {
+        QuizPlace(id: "opposites", title: "Opposite Island", line: "Opposites, odd ones out and sizes. Let's think!",
+                  greeting: "Hola! I'm Avi! On Opposite Island, things are hot and cold, big and small!", host: Roster.character(id: "avi"),
+                  accent: Color(hex: 0x2E7D32), background: [Color(hex: 0xE8F5E9), Color(hex: 0xC8E6C9)], games: OppositeBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return OppositeBank.rounds(for: id, using: &g) })
+    }
+
+    static var sentences: QuizPlace {
+        QuizPlace(id: "sentences", title: "Sentence Station", line: "Capitals, end marks and question words. All aboard!",
+                  greeting: "Hi, I'm Carlos! All aboard the Sentence Station train!", host: Roster.character(id: "carlos"),
+                  accent: Color(hex: 0xE65100), background: [Color(hex: 0xFFF3E0), Color(hex: 0xFFE0B2)], games: SentenceBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return SentenceBank.rounds(for: id, using: &g) })
+    }
+
+    /// Mystery Mix (v9.37): one question from each of the places a child has played, places taking turns.
+    static func mystery(sources: [String]) -> QuizPlace {
+        let info = QuizGameInfo(id: "mix", title: "Mystery Mix", symbol: "questionmark.circle.fill",
+                                intro: "Five questions from places you've played. Which place is next?", skill: "a mix of everything")
+        return QuizPlace(id: MysteryMix.id, title: "Mystery Mix", line: "A little of everything you've played. Surprise!",
+                         greeting: "Hi, I'm Gemma! I've packed a mystery mix of questions just for you!", host: Roster.character(id: "gemma"),
+                         accent: Color(hex: 0x5E35B1), background: [Color(hex: 0xEDE7F6), Color(hex: 0xD1C4E9)], games: [info],
+                         rounds: { _ in
+                             var g = SystemRandomNumberGenerator()
+                             var out: [QuizRound] = []
+                             for pick in MysteryMix.plan(sources: sources, games: { QuizPlace.named($0).games.map(\.id) }, using: &g) {
+                                 if let r = QuizPlace.named(pick.place).rounds(pick.game).first(where: { r in !out.contains { $0.say == r.say && $0.visual == r.visual } }) {
+                                     out.append(r)
+                                 }
+                             }
+                             return out
+                         })
+    }
+
     /// Every place, by id.
     static func named(_ id: String) -> QuizPlace {
         switch id {
@@ -167,6 +221,11 @@ struct QuizPlace {
         case "helpers": return .helpers
         case "sounds": return .sounds
         case "numberline": return .numberline
+        case "colors": return .colors
+        case "evenodd": return .evenodd
+        case "animals": return .animals
+        case "opposites": return .opposites
+        case "sentences": return .sentences
         default: return .shapes
         }
     }
@@ -190,7 +249,7 @@ struct QuizPlaceView: View {
         ZStack {
             LinearGradient(colors: place.background, startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             if let game = playing {
-                QuizGameView(place: place, game: game,
+                QuizGameView(place: place, game: game, best: store.profile?.places[place.id]?.best(game.id) ?? 0,
                              onFinish: { stars in store.recordPlace(place.id, game: game.id, stars: stars) },
                              onBack: { playing = nil; Narrator.shared.say("Pick another game!") })
                     .id(game.id)
@@ -234,6 +293,8 @@ extension QuizGameInfo: Hashable {
 struct QuizGameView: View {
     let place: QuizPlace
     let game: QuizGameInfo
+    /// The best stars saved for this game (v9.43), shown on the done card when this run scored lower.
+    var best = 0
     var onFinish: (Int) -> Int
     var onBack: () -> Void
 
@@ -282,7 +343,7 @@ struct QuizGameView: View {
                 ZStack {
                     Color.black.opacity(0.25).ignoresSafeArea()
                     LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry, total: rounds.count,
-                                  host: place.host, practice: practising,
+                                  host: place.host, practice: practising, best: practising ? nil : best,
                                   tricky: QuizHelp.tricky(missedRounds).map { (say: $0.say, answer: QuizHelp.spoken($0.answer)) },
                                   onTricky: missedRounds.isEmpty ? nil : { startTricky() },
                                   onAgain: { start() }, onBack: onBack)
@@ -559,6 +620,8 @@ struct QuizVisualView: View {
         case .numberLine(let to, let dot, let hopFrom):
             NumberLineDrawing(to: to, dot: dot, hopFrom: hopFrom, color: accent, large: large)
                 .frame(height: large ? 110 : 70)
+        case .pairs(let n, let item):
+            PairsDrawing(count: n, item: item, color: accent, large: large)
         case .tenFrames(let counts, let item):
             VStack(spacing: large ? 10 : 6) {
                 ForEach(Array(counts.enumerated()), id: \.offset) { _, n in
@@ -691,6 +754,35 @@ struct NumberLineDrawing: View {
                 Circle().fill(color).overlay(Circle().stroke(.white, lineWidth: 2)).frame(width: 16, height: 16).position(x: x(dot), y: lineY)
             }
         }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Things in pairs (v9.32): columns of two, the odd one out alone at the end with a dashed space for its missing buddy.
+struct PairsDrawing: View {
+    let count: Int
+    let item: String
+    let color: Color
+    let large: Bool
+
+    var body: some View {
+        let size: CGFloat = large ? 34 : 24
+        HStack(alignment: .top, spacing: large ? 8 : 5) {
+            ForEach(0..<((count + 1) / 2), id: \.self) { col in
+                VStack(spacing: 4) {
+                    Text(item).font(.system(size: size))
+                    if col * 2 + 1 < count {
+                        Text(item).font(.system(size: size))
+                    } else {
+                        RoundedRectangle(cornerRadius: 8).stroke(color, style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
+                            .frame(width: size + 4, height: size + 4)
+                    }
+                }
+                .padding(4)
+                .background(RoundedRectangle(cornerRadius: 12).fill(color.opacity(0.1)))
+            }
+        }
+        .minimumScaleFactor(0.5)
         .accessibilityHidden(true)
     }
 }

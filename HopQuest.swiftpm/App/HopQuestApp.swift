@@ -314,7 +314,10 @@ struct RootView: View {
             QuickGameView(onExit: goHome)
 
         case .quizPlace(let id):
-            QuizPlaceView(place: .named(id), onBack: goHome)
+            QuizPlaceView(place: id == MysteryMix.id
+                          ? .mystery(sources: MysteryMix.sources(plays: (store.profile?.places ?? [:]).mapValues(\.plays), shown: store.placeShown))
+                          : .named(id),
+                          onBack: goHome)
                 .id(id)
 
         case .storyMaker:

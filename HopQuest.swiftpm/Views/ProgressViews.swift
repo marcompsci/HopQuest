@@ -53,6 +53,11 @@ extension GameStore {
             LearningArea(id: "helpers", title: "Helper Town", skills: HelperBank.games.map { SkillProgress(skill: $0.skill, best: p.places["helpers"]?.best($0.id) ?? 0) }),
             LearningArea(id: "sounds", title: "Sound Shop", skills: SoundBank.games.map { SkillProgress(skill: $0.skill, best: p.places["sounds"]?.best($0.id) ?? 0) }),
             LearningArea(id: "numberline", title: "Number Line Lane", skills: LineBank.games.map { SkillProgress(skill: $0.skill, best: p.places["numberline"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "colors", title: "Color Lab", skills: ColorBank.games.map { SkillProgress(skill: $0.skill, best: p.places["colors"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "evenodd", title: "Even Steven", skills: EvenBank.games.map { SkillProgress(skill: $0.skill, best: p.places["evenodd"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "animals", title: "Animal Club", skills: AnimalBank.games.map { SkillProgress(skill: $0.skill, best: p.places["animals"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "opposites", title: "Opposite Island", skills: OppositeBank.games.map { SkillProgress(skill: $0.skill, best: p.places["opposites"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "sentences", title: "Sentence Station", skills: SentenceBank.games.map { SkillProgress(skill: $0.skill, best: p.places["sentences"]?.best($0.id) ?? 0) }),
             LearningArea(id: "code", title: "Code Club", skills: CodeChallenge.all.map { SkillProgress(skill: "coding: \($0.topic.lowercased())", best: p.codeBest[$0.id] ?? 0) }),
         ]
     }

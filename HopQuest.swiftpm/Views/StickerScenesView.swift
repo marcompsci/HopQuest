@@ -269,6 +269,36 @@ struct Backdrop: View {
                     }
                     Text("🌲").font(.system(size: h * 0.24)).position(x: w * 0.12, y: h * 0.62)
                     Text("⛄").font(.system(size: h * 0.18)).position(x: w * 0.86, y: h * 0.72)
+                case "jungle":
+                    LinearGradient(colors: [Color(hex: 0x9BE7A0), Color(hex: 0x2E7D32)], startPoint: .top, endPoint: .bottom)
+                    ForEach(0..<7, id: \.self) { i in
+                        Ellipse().fill(Color(hex: i % 2 == 0 ? 0x1B5E20 : 0x388E3C))
+                            .frame(width: w * 0.38, height: h * 0.16)
+                            .rotationEffect(.degrees(Double(i * 26 - 70)))
+                            .position(x: w * CGFloat(i) / 6, y: h * (i % 2 == 0 ? 0.08 : 0.16))
+                    }
+                    Rectangle().fill(Color(hex: 0x6D4C41)).frame(width: w * 0.06, height: h * 0.7).position(x: w * 0.12, y: h * 0.62)
+                    Path { p in
+                        p.move(to: CGPoint(x: w * 0.15, y: h * 0.3))
+                        p.addQuadCurve(to: CGPoint(x: w * 0.55, y: h * 0.32), control: CGPoint(x: w * 0.35, y: h * 0.5))
+                    }.stroke(Color(hex: 0x8D6E63), lineWidth: 4)
+                    Rectangle().fill(Color(hex: 0x33691E)).frame(height: h * 0.18).position(x: w / 2, y: h * 0.92)
+                    Text("🌺").font(.system(size: h * 0.08)).position(x: w * 0.82, y: h * 0.86)
+                case "studio":
+                    LinearGradient(colors: [Color(hex: 0xFFF8E1), Color(hex: 0xFFECB3)], startPoint: .top, endPoint: .bottom)
+                    Rectangle().fill(Color(hex: 0xBCAAA4)).frame(height: h * 0.26).position(x: w / 2, y: h * 0.87)
+                    // an easel with a blank canvas
+                    Path { p in
+                        p.move(to: CGPoint(x: w * 0.7, y: h * 0.3)); p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.86))
+                        p.move(to: CGPoint(x: w * 0.7, y: h * 0.3)); p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.86))
+                    }.stroke(Color(hex: 0x8D6E63), lineWidth: 5)
+                    Rectangle().fill(.white).overlay(Rectangle().stroke(Color(hex: 0x8D6E63), lineWidth: 3))
+                        .frame(width: w * 0.26, height: h * 0.3).position(x: w * 0.7, y: h * 0.45)
+                    ForEach(0..<4, id: \.self) { i in
+                        Circle().fill([Color.red, Color.yellow, Color.blue, Color.green][i]).frame(width: h * 0.06, height: h * 0.06)
+                            .position(x: w * (0.1 + CGFloat(i) * 0.07), y: h * 0.84)
+                    }
+                    Text("🖼️").font(.system(size: h * 0.13)).position(x: w * 0.18, y: h * 0.24)
                 default: // meadow
                     LinearGradient(colors: [Color(hex: 0xBFE3FF), Color(hex: 0xEEF8FF)], startPoint: .top, endPoint: .bottom)
                     Ellipse().fill(Color(hex: 0x59C46B)).frame(width: w * 1.5, height: h * 0.6).position(x: w * 0.5, y: h * 1.0)

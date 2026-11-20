@@ -523,6 +523,66 @@ def icon_numberline():
     return s
 
 
+def icon_colors():
+    s = ground()
+    # a paint palette with five paint blobs and a brush
+    s += P("M30 110 Q30 52 100 48 Q172 46 172 104 Q172 128 146 124 Q124 120 122 140 Q120 166 92 164 Q30 160 30 110 Z", "#F5DEB3", 6)
+    s += C(66, 92, 13, "#FF5252", 4) + C(98, 74, 13, "#FFD93D", 4) + C(134, 82, 13, "#40C4FF", 4)
+    s += C(62, 128, 13, "#66BB6A", 4) + C(94, 140, 11, "#B388FF", 4)
+    s += P("M150 176 L184 120 L192 125 L158 181 Z", "#8D6E63", 4) + P("M184 120 L192 125 L196 112 Z", "#FF5252", 4)
+    return s
+
+
+def icon_evenodd():
+    s = ground()
+    # socks in pairs: two pairs and one left over
+    for k, x in enumerate([34, 82]):
+        for y in [62, 116]:
+            s += P(f"M{x} {y} L{x + 26} {y} L{x + 26} {y + 28} Q{x + 40} {y + 30} {x + 40} {y + 42} L{x + 8} {y + 42} Q{x} {y + 42} {x} {y + 30} Z", ["#4FC3F7", "#FF8A65"][k], 5)
+    s += P("M136 116 L162 116 L162 144 Q176 146 176 158 L144 158 Q136 158 136 146 Z", "#AED581", 5)
+    s += R(132, 58, 46, 46, 10, "#FFFFFF") + P("M146 70 L164 92 M164 70 L146 92", "none", 5)
+    return s
+
+
+def icon_animals():
+    s = ground()
+    # a big paw print
+    s += E(100, 128, 40, 34, "#8D6E63", 6)
+    s += E(58, 82, 15, 19, "#8D6E63", 5) + E(86, 62, 15, 19, "#8D6E63", 5) + E(116, 62, 15, 19, "#8D6E63", 5) + E(144, 82, 15, 19, "#8D6E63", 5)
+    s += shine(88, 116, 10, 5)
+    s += star(166, 44, 10)
+    return s
+
+
+def icon_opposites():
+    s = ground()
+    # a sun and a snowflake back to back on an island, with a two-way arrow
+    s += E(100, 160, 78, 16, "#FFE0B2", 5)
+    s += C(62, 90, 26, "#FFD93D", 5)
+    for a in range(8):
+        import math
+        x1, y1 = 62 + 34 * math.cos(a * math.pi / 4), 90 + 34 * math.sin(a * math.pi / 4)
+        x2, y2 = 62 + 44 * math.cos(a * math.pi / 4), 90 + 44 * math.sin(a * math.pi / 4)
+        s += P(f"M{x1:.0f} {y1:.0f} L{x2:.0f} {y2:.0f}", "none", 5)
+    s += P("M140 60 L140 120 M114 75 L166 105 M114 105 L166 75", "none", 7)
+    s += P("M140 60 L140 120 M114 75 L166 105 M114 105 L166 75", "none", 3)
+    s += P("M70 142 L130 142 M70 142 L80 134 M70 142 L80 150 M130 142 L120 134 M130 142 L120 150", "none", 5)
+    return s
+
+
+def icon_sentences():
+    s = ground()
+    # a little train carrying a capital A, a word and an end mark
+    s += R(22, 96, 56, 50, 8, "#E65100") + R(30, 70, 26, 28, 4, "#E65100")
+    s += R(84, 104, 44, 42, 6, "#FFD93D") + R(134, 104, 44, 42, 6, "#7FD6C2")
+    s += P("M96 136 L106 112 L116 136 M100 128 L112 128", "none", 5)
+    s += P("M156 112 L156 128 M156 136 L156 138", "none", 7)
+    for x in [38, 66, 106, 156]:
+        s += C(x, 152, 10, "#5D4037", 4)
+    s += C(44, 52, 8, "#FFFFFF", 3) + C(60, 40, 10, "#FFFFFF", 3)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
@@ -533,7 +593,9 @@ ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science
          "icon_levelmaker": icon_levelmaker, "icon_scenes": icon_scenes,
          "icon_healthy": icon_healthy, "icon_fridge": icon_fridge, "icon_planet": icon_planet,
          "icon_graphs": icon_graphs, "icon_words": icon_words, "icon_tenframe": icon_tenframe, "icon_sky": icon_sky,
-         "icon_helpers": icon_helpers, "icon_sounds": icon_sounds, "icon_numberline": icon_numberline}
+         "icon_helpers": icon_helpers, "icon_sounds": icon_sounds, "icon_numberline": icon_numberline,
+         "icon_colors": icon_colors, "icon_evenodd": icon_evenodd, "icon_animals": icon_animals, "icon_opposites": icon_opposites,
+         "icon_sentences": icon_sentences}
 
 
 if __name__ == "__main__":

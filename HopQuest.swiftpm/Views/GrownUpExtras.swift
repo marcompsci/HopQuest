@@ -163,10 +163,21 @@ struct CertificateCard: View {
 /// Printable practice for any game in the quiz-engine places: ten questions on a page, and the answers on the next.
 struct PracticeSheetsSection: View {
     @EnvironmentObject var store: GameStore
-    static let places = ["spelling", "fractions", "shapes", "rhyme", "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "sounds", "numberline"]
+    static var places: [String] { MysteryMix.quizPlaceIDs }
 
     var body: some View {
         Section {
+            // All places (v9.42): a sheet that mixes every place the child has played (or every place, before that)
+            let played = MysteryMix.sources(plays: (store.profile?.places ?? [:]).mapValues(\.plays), shown: store.placeShown)
+            NavigationLink {
+                PracticeGamesList(place: .mystery(sources: played.count >= MysteryMix.minSources ? played : Self.places))
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("All places mix")
+                    Text(played.count >= MysteryMix.minSources ? "From the \(played.count) places they've played" : "From every place")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+            }
             ForEach(Self.places, id: \.self) { id in
                 let place = QuizPlace.named(id)
                 NavigationLink {

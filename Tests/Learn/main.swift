@@ -799,7 +799,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 41, "41 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 46, "46 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -831,6 +831,8 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + HealthyBank.games.map(\.title) + PlanetBank.games.map(\.title) + GraphBank.games.map(\.title)
         + WordBank.games.map(\.title) + FrameBank.games.map(\.title) + SkyBank.games.map(\.title) + HelperBank.games.map(\.title)
         + SoundBank.games.map(\.title) + LineBank.games.map(\.title)
+        + ColorBank.games.map(\.title) + EvenBank.games.map(\.title) + AnimalBank.games.map(\.title) + OppositeBank.games.map(\.title) + SentenceBank.games.map(\.title)
+        + LearnSubject.allCases.map(\.title) + ["Mystery Mix"]
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
@@ -840,6 +842,7 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + HealthyBank.games.map(\.intro) + PlanetBank.games.map(\.intro) + GraphBank.games.map(\.intro)
         + WordBank.games.map(\.intro) + FrameBank.games.map(\.intro) + SkyBank.games.map(\.intro) + HelperBank.games.map(\.intro)
         + SoundBank.games.map(\.intro) + LineBank.games.map(\.intro)
+        + ColorBank.games.map(\.intro) + EvenBank.games.map(\.intro) + AnimalBank.games.map(\.intro) + OppositeBank.games.map(\.intro) + SentenceBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
     check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
     check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
@@ -1304,7 +1307,7 @@ test("Graph Garden: every game, 300 seeds, answers worked out from the picture")
 
 test("Brain Bubble widget: questions, one try each, every question before any repeat") {
     let all = BubbleBank.all
-    check(all.count == 59, "59 questions (prime, so stepping by 7 visits them all)")
+    check(all.count == 67, "67 questions (prime, so stepping by 7 visits them all)")
     for q in all {
         check(q.choices.count == 3 && Set(q.choices).count == 3 && q.choices.indices.contains(q.answer), "three different choices: \(q.question)")
         check(!q.fact.isEmpty && !q.emoji.isEmpty, "a fact and a picture: \(q.question)")
@@ -1629,7 +1632,7 @@ test("Keep going, New! ribbons, mixed practice sheets and badge progress (v9.16�
     check(Badges.progress(sky, areas: [area("sky", [3, 2, 1, 0])])! == (2, 4), "badge progress: 2 of 4")
     check(Badges.progress(Badges.all.first { $0.id == "firstHop" }!, areas: []) == nil, "no progress line for other badges")
     check(HatKind.next(badges: 21)! == (.chef, 3) && HatKind.gradCap.badgesNeeded <= Badges.all.count, "new hats unlock with more badges")
-    check(StickerScene.backdrops.count == 8 && FridgeDoor.backdropName("farm") == "on the farm" && FridgeDoor.backdropName("snow") == "in the snow", "farm and snow backdrops")
+    check(StickerScene.backdrops.count >= 8 && FridgeDoor.backdropName("farm") == "on the farm" && FridgeDoor.backdropName("snow") == "in the snow", "farm and snow backdrops")
     check(L10n.spanish("3 of 4 games done") == "3 de 4 juegos listos" && L10n.spanish("Keep going!") == "¡Sigue así!" && L10n.spanish("New!") == "¡Nuevo!", "Spanish for the Learn page")
 }
 
@@ -1696,14 +1699,123 @@ test("Help in quiz rounds (v9.25–v9.28): read the choices, look again, tricky 
     check(QuizHelp.readAloud(spell) == "Spell cat.", "spelling tiles aren't read out")
     check(!QuizHelp.showsHint(wrongPicks: 1) && QuizHelp.showsHint(wrongPicks: 2), "the glow comes after two misses")
     check(QuizHelp.tricky([words, signs, words]).count == 2, "each tricky question once")
-    check(Badges.all.count == 41 && NewPlaces.ids.count == 6, "two more badges, six new places")
-    check(HatKind.captain.badgesNeeded == 36 && HatKind.allCases.last == .captain, "Captain's Hat at 36 badges")
+    check(Badges.all.count >= 41 && NewPlaces.ids.isSuperset(of: ["sounds", "numberline"]), "badges and New! ribbons for the v9.23 places")
+    check(HatKind.captain.badgesNeeded == 36, "Captain's Hat at 36 badges")
     check(L10n.spanish("Answer: 12") == "Respuesta: 12" && L10n.spanish("and 3 more") == "y 3 más" && L10n.spanish("Let's look again") == "Miremos otra vez", "Spanish for the review")
+}
+
+test("Color Lab, Even Steven, Animal Club, Opposite Island, Sentence Station (v9.31–v9.35)") {
+    func runAll(_ games: [QuizGameInfo], _ make: (String, inout SeededRNG) -> [QuizRound], _ verify: (String, QuizRound) -> Void) {
+        for g in games {
+            for seed in 0..<300 {
+                var rng = SeededRNG(state: UInt64(seed))
+                let rounds = make(g.id, &rng)
+                check(rounds.count == 5, "\(g.id): five rounds")
+                for r in rounds {
+                    check((2...3).contains(r.choices.count) && Set(r.choices).count == r.choices.count && r.choices.contains(r.answer), "\(g.id): fair choices (\(r.choices))")
+                    verify(g.id, r)
+                }
+            }
+        }
+    }
+    runAll(ColorBank.games, { ColorBank.rounds(for: $0, using: &$1) }) { id, r in
+        switch id {
+        case "mix":
+            let m = ColorBank.mixes.first { r.say == "Mix \($0.a) and \($0.b). What color do you get?" || r.say == "Mix \($0.b) and \($0.a). What color do you get?" }
+            check(m != nil && r.answer == ColorBank.label(m!.makes), "mix: \(r.say) → \(r.answer)")
+        case "warmcool":
+            let pool = (r.say.contains("warm") ? ColorBank.warm : ColorBank.cool).map(ColorBank.label)
+            check(pool.contains(r.answer) && r.choices.filter { pool.contains($0) }.count == 1, "warm/cool: \(r.choices)")
+        case "rainbow":
+            let after = ColorBank.rainbow.first { r.say.hasSuffix("after \($0)?") }!
+            check(r.answer == ColorBank.label(ColorBank.rainbow[ColorBank.rainbow.firstIndex(of: after)! + 1]), "rainbow: after \(after) → \(r.answer)")
+        default: check(ColorBank.lightDark.contains { $0.say == r.say && $0.answer == r.answer }, "light: \(r.say)")
+        }
+    }
+    check(ColorBank.swatch.keys.count == 11 && ColorBank.mixes.allSatisfy { ColorBank.swatch[$0.a] != nil && ColorBank.swatch[$0.makes] != nil }, "every color has a swatch")
+    runAll(EvenBank.games, { EvenBank.rounds(for: $0, using: &$1) }) { id, r in
+        switch id {
+        case "pairs":
+            guard case .pairs(let n, _) = r.visual else { check(false, "pairs shown"); return }
+            check(r.answer == (n % 2 == 0 ? "even" : "odd") && r.choices == ["even", "odd"], "pairs: \(n) → \(r.answer)")
+        case "which":
+            let n = Int(r.answer)!
+            check((n % 2 == 0) == r.say.contains("even") && r.choices.filter { (Int($0)! % 2 == 0) == (n % 2 == 0) }.count == 1, "which: \(r.choices) → \(n)")
+        case "twos":
+            guard case .text(let t) = r.visual else { check(false, "twos shows numbers"); return }
+            let seq = t.components(separatedBy: ", ").dropLast().map { Int($0)! }
+            check(seq.count == 3 && seq[1] - seq[0] == 2 && Int(r.answer)! == seq[2] + 2, "twos: \(t) → \(r.answer)")
+        default:
+            guard case .pairs(let n, _) = r.visual else { check(false, "share shows the things"); return }
+            check(n % 2 == 0 && Int(r.answer)! * 2 == n, "share: \(n) → \(r.answer)")
+        }
+    }
+    check(QuizVisual.pairs(5, item: "🧦").spoken == "5 socks lined up in pairs, with one left over" && QuizVisual.pairs(4, item: "🍪").spoken == "4 cookies lined up in pairs", "pairs for VoiceOver")
+    runAll(AnimalBank.games, { AnimalBank.rounds(for: $0, using: &$1) }) { id, r in
+        let a = AnimalBank.animals.first { r.say.contains(" \($0.name)") && r.visual == .picture($0.picture) }
+        check(a != nil, "animal found: \(r.say)")
+        guard let a else { return }
+        switch id {
+        case "group": check(r.answer == a.group, "group: \(a.name) → \(r.answer)")
+        case "cover": check(r.answer == a.covering && a.name != "turtle", "cover: \(a.name) → \(r.answer)")
+        case "legs": check(r.answer == "\(a.legs)", "legs: \(a.name) → \(r.answer)")
+        default: check(r.answer == a.eats && r.choices == AnimalBank.diets, "eat: \(a.name) → \(r.answer)")
+        }
+    }
+    check(AnimalBank.a("ant") == "an ant" && AnimalBank.A("eagle") == "An eagle" && AnimalBank.A("dog") == "A dog", "a and an")
+    check(AnimalBank.animals.allSatisfy { AnimalBank.groups.contains($0.group) && AnimalBank.coverings.contains($0.covering) && AnimalBank.diets.contains($0.eats) }, "every animal fits the lists")
+    runAll(OppositeBank.games, { OppositeBank.rounds(for: $0, using: &$1) }) { id, r in
+        switch id {
+        case "opposite":
+            guard case .text(let w) = r.visual else { check(false, "word shown"); return }
+            check(OppositeBank.opposite(w.lowercased()) == r.answer, "opposite: \(w) → \(r.answer)")
+        case "odd":
+            let fams = r.choices.map { OppositeBank.family(of: $0)! }
+            check(fams.filter { $0 == OppositeBank.family(of: r.answer)! }.count == 1 && Set(fams).count == 2, "odd: \(r.choices) → \(r.answer)")
+        case "together":
+            guard case .text(let t) = r.visual else { check(false, "group shown"); return }
+            let shown = t.components(separatedBy: "  ")
+            let fam = OppositeBank.family(of: r.answer)!
+            check(shown.allSatisfy { e in OppositeBank.families[fam]!.contains { $0.hasPrefix(e) } }, "together: \(t) + \(r.answer)")
+            check(r.choices.filter { OppositeBank.family(of: $0) == fam }.count == 1, "together: one match (\(r.choices))")
+        default:
+            let order = r.choices.sorted { OppositeBank.sizes.firstIndex(of: $0)! < OppositeBank.sizes.firstIndex(of: $1)! }
+            check(r.answer == (r.say.contains("biggest") ? order.last! : order.first!), "size: \(r.choices) → \(r.answer)")
+        }
+    }
+    runAll(SentenceBank.games, { SentenceBank.rounds(for: $0, using: &$1) }) { id, r in
+        switch id {
+        case "capital": check(r.answer.first!.isUppercase && r.choices.filter { $0.first!.isUppercase && $0.dropFirst().split(separator: " ").dropFirst().allSatisfy { $0.first!.isLowercase || $0 == "I" } }.count == 1, "capital: \(r.choices)")
+        case "end": check(SentenceBank.endings.contains { r.visual == .text($0.text + " ◻") && $0.mark == r.answer }, "end: \(r.answer)")
+        case "plural": check(SentenceBank.plurals.contains { r.say == "One \($0.one), two what?" && $0.many == r.answer }, "plural: \(r.say)")
+        default: check(SentenceBank.questionWords.contains { r.visual == .text($0.blank) && $0.answer == r.answer }, "qword: \(r.answer)")
+        }
+    }
+    check(QuizHelp.accessible("🔴 red") == "red" && QuizHelp.accessible("?") == "question mark" && QuizHelp.accessible("🐭") == "🐭", "VoiceOver reads the word, not the emoji")
+}
+
+test("Learn subjects, Mystery Mix, new hats and scenes (v9.36–v9.44)") {
+    let placed = LearnSubject.places.values.flatMap { $0 }
+    check(Set(placed).count == placed.count, "a place is in one subject only")
+    check(Set(MysteryMix.quizPlaceIDs).isSubset(of: Set(placed)) && placed.count == MysteryMix.quizPlaceIDs.count + 7, "every place on the grid has a subject")
+    check(LearnSubject.of("evenodd") == .math && LearnSubject.of("colors") == .art && LearnSubject.of("code") == nil && LearnSubject.all.includes("code"), "subjects")
+    let areas = [LearningArea(id: "tenframe", title: "", skills: [SkillProgress(skill: "", best: 3)]),
+                 LearningArea(id: "graphs", title: "", skills: [SkillProgress(skill: "", best: 1)]),
+                 LearningArea(id: "sky", title: "", skills: [SkillProgress(skill: "", best: 2)])]
+    check(LearnSubject.done(.math, areas: areas) == (1, 2) && LearnSubject.done(.science, areas: areas) == (1, 1), "chips count finished places")
+    check(MysteryMix.sources(plays: ["sky": 2, "graphs": 0, "colors": 1, "mystery": 3], shown: { $0 != "colors" }) == ["sky"], "only played places still on the menu")
+    var rng = SeededRNG(state: 3)
+    let plan = MysteryMix.plan(sources: ["sky", "colors", "animals"], games: { _ in ["a", "b"] }, using: &rng)
+    check(plan.count == 5 && Set(plan.prefix(3).map(\.place)).count == 3, "places take turns")
+    check(MysteryMix.plan(sources: [], games: { _ in ["a"] }, using: &rng).isEmpty, "nothing to mix yet")
+    check(HatKind.explorer.badgesNeeded <= Badges.all.count && HatKind.allCases.last == .explorer, "every hat can be earned")
+    check(StickerScene.backdrops.count == 10 && FridgeDoor.backdropName("studio") == "in the art studio", "jungle and art studio scenes")
+    check(L10n.spanish("Your best is still 3 stars.") == "Tu mejor resultado sigue siendo 3 estrellas." && L10n.spanish("World & Me") == "El Mundo y Yo", "Spanish for the new words")
 }
 
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {
     let ids = ["reading", "writing", "market", "clock", "science", "world", "music", "spelling", "fractions", "shapes", "rhyme",
-               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "sounds", "numberline", "code"]
+               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "sounds", "numberline", "colors", "evenodd", "animals", "opposites", "sentences", "code"]
     for id in ids {
         let a = AtHome.byPlace[id]
         check(a != nil, "\(id) has at-home ideas")
