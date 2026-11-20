@@ -485,6 +485,27 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 - The project now says **1.0** (build 3), matching App Store Connect's first version.
 - `.github/workflows/testflight.yml` archives and uploads from a GitHub Mac with Xcode 26, using an App Store Connect API key the owner adds as repo secrets. It runs only when started by hand and never submits for review.
 
+### v9.31–v9.35: Five more places
+- **Color Lab** (Gigi Grape): Mix It!, Warm or Cool, Light and Dark, Rainbow Order.
+- **Even Steven** (Mochi Cat): Buddy Pairs (a new pairs picture with a dashed space for the odd one out), Spot the Even, Count by Twos, Fair Share.
+- **Animal Club** (Lavender Lop): Animal Groups, Fur, Feathers or Scales?, Count the Legs, What's for Dinner? (plants, animals, or both, rather than "meat", which doesn't fit a ladybug eating aphids). Turtles sit out the covering game, because a shell is scales and bone.
+- **Opposite Island** (Avi Avocado): Opposites, Which Doesn't Belong?, What Goes Together?, Biggest and Smallest.
+- **Sentence Station** (Carlos Carrot): Big Letter First, End Marks, One or More (plurals, including mice and feet), Question Words. Items with two fair answers were cut ("What is your birthday?", "We won the game.").
+
+### v9.36–v9.38: Learn page subjects
+- Chips for **All, Words, Math, Science, World & Me, Art & Music**, each showing how many of its places are done. Keep going, Mystery Mix and Code Club show under All.
+
+### v9.37: Mystery Mix
+- Five questions from places the child has already played, places taking turns. It's there any time, and on purpose it is **not** a daily challenge: no streaks and no daily-login rewards (see the design rules above).
+
+### v9.39–v9.41: More Brain Bubble, scenes and hats
+- Brain Bubble has 67 questions (prime). Sticker Scenes adds a jungle and an art studio. New hats: Artist's Beret (40 badges) and Explorer Hat (44).
+
+### v9.42–v9.44: Grown-ups and accessibility
+- Practice sheets start with **All places mix**: ten questions from every place the child has played.
+- The done card says "Your best is still 3 stars." when a run scores lower than the best.
+- VoiceOver reads answer buttons as words: "🔴 red" is read as "red", and end marks as "period", "question mark" and "exclamation mark".
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.
