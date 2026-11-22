@@ -55,13 +55,9 @@ struct MainMenuView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     header
-                    switch tab {
-                    case .home: homePage
-                    case .adventures: adventuresPage
-                    case .games: gamesPage
-                    case .learn: learnPage
-                    case .worlds: worldsPage
-                    }
+                    // Each page is erased to AnyView (v9.64): one switch over five big pages made a
+                    // generic view type so deep that a debug build overflowed the stack on launch.
+                    page
                     Spacer(minLength: 20)
                 }
                 .padding(.horizontal, 16)
@@ -152,6 +148,16 @@ struct MainMenuView: View {
     /// The page shown, kept while the app is open so coming back from a game lands on the same page.
     static var lastTab: MenuTab = .home
     static var lastSubject: LearnSubject = .all
+
+    private var page: AnyView {
+        switch tab {
+        case .home: return AnyView(VStack(spacing: 16) { homePage })
+        case .adventures: return AnyView(VStack(spacing: 16) { adventuresPage })
+        case .games: return AnyView(VStack(spacing: 16) { gamesPage })
+        case .learn: return AnyView(VStack(spacing: 16) { learnPage })
+        case .worlds: return AnyView(VStack(spacing: 16) { worldsPage })
+        }
+    }
 
     @ViewBuilder private var homePage: some View {
         playButton
@@ -269,35 +275,9 @@ struct MainMenuView: View {
                          badge: 0, detail: "\(p?.world.postcards.count ?? 0) of 7 postcards",
                          label: "Around the World, \(p?.world.postcards.count ?? 0) of 7 postcards", action: onWorldTour)
             }
-            placeTile("spelling", art: "icon_spelling", title: "Spelling Bee", color: 0xB7791F, shadow: 0x8A5A12)
-            placeTile("fractions", art: "icon_fractions", title: "Fraction Bakery", color: 0xC2185B, shadow: 0x8E1243)
-            placeTile("shapes", art: "icon_shapes", title: "Shape Studio", color: 0x00796B, shadow: 0x00564C)
-            placeTile("rhyme", art: "icon_rhyme", title: "Rhyme Pond", color: 0x2E8B3E, shadow: 0x1E5E29)
-            placeTile("numbers", art: "icon_numbers", title: "Number Builder", color: 0x6A3FB5, shadow: 0x482A7D)
-            placeTile("times", art: "icon_times", title: "Times Treehouse", color: 0x8A5A2B, shadow: 0x5E3D1D)
-            placeTile("measure", art: "icon_measure", title: "Measure Meadow", color: 0x2F6F9F, shadow: 0x1F4B6C)
-            placeTile("feelings", art: "icon_feelings", title: "Feelings Corner", color: 0xC2185B, shadow: 0x8E1243)
-            placeTile("nature", art: "icon_nature", title: "Nature Trail", color: 0x2E7D32, shadow: 0x1B5E20)
-            placeTile("calendar", art: "icon_calendar", title: "Calendar Corner", color: 0xD35400, shadow: 0x9A3D00)
-            placeTile("compass", art: "icon_compass", title: "Compass Camp", color: 0x1565C0, shadow: 0x0D47A1)
-            placeTile("healthy", art: "icon_healthy", title: "Healthy Hut", color: 0x558B2F, shadow: 0x33691E)
-            placeTile("planet", art: "icon_planet", title: "Earth Helpers", color: 0x00897B, shadow: 0x00695C)
-            placeTile("graphs", art: "icon_graphs", title: "Graph Garden", color: 0x7B1FA2, shadow: 0x4A148C)
-            placeTile("words", art: "icon_words", title: "Word Workshop", color: 0x5D4037, shadow: 0x3E2723)
-            placeTile("tenframe", art: "icon_tenframe", title: "Ten Frame Farm", color: 0xC0392B, shadow: 0x8E2A1F)
-            placeTile("sky", art: "icon_sky", title: "Sky Watch", color: 0x283593, shadow: 0x1A237E)
-            placeTile("helpers", art: "icon_helpers", title: "Helper Town", color: 0x00838F, shadow: 0x005F66)
-            placeTile("sounds", art: "icon_sounds", title: "Sound Shop", color: 0x6A1B9A, shadow: 0x4A148C)
-            placeTile("numberline", art: "icon_numberline", title: "Number Line Lane", color: 0xEF6C00, shadow: 0xB34F00)
-            placeTile("colors", art: "icon_colors", title: "Color Lab", color: 0xAD1457, shadow: 0x810F41)
-            placeTile("evenodd", art: "icon_evenodd", title: "Even Steven", color: 0x00897B, shadow: 0x00665C)
-            placeTile("animals", art: "icon_animals", title: "Animal Club", color: 0x558B2F, shadow: 0x3F6823)
-            placeTile("opposites", art: "icon_opposites", title: "Opposite Island", color: 0x2E7D32, shadow: 0x225D25)
-            placeTile("sentences", art: "icon_sentences", title: "Sentence Station", color: 0xE65100, shadow: 0xAC3C00)
-            placeTile("ocean", art: "icon_ocean", title: "Ocean Cove", color: 0x0277BD, shadow: 0x01598D)
-            placeTile("dinos", art: "icon_dinos", title: "Dino Dig", color: 0x6D4C41, shadow: 0x513930)
-            placeTile("kindness", art: "icon_kindness", title: "Kindness Club", color: 0xC2185B, shadow: 0x911244)
-            placeTile("vehicles", art: "icon_vehicles", title: "On the Move", color: 0x1565C0, shadow: 0x0F4B90)
+            ForEach(Self.placeTiles) { t in
+                placeTile(t.id, art: t.art, title: t.title, color: t.color, shadow: t.shadow)
+            }
             gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
                      badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
                      label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)
@@ -619,6 +599,39 @@ struct MainMenuView: View {
         .accessibilityLabel("\(L10n.tr("Keep going!")) \(L10n.tr(area.title)), \(L10n.tr(KeepGoing.detail(area)))\(PlaceProgress.skillToPractise(area).map { ", \(L10n.tr("Next up:")) \(L10n.tr($0))" } ?? "")")
     }
 
+    /// The quiz-engine places on the Learn page, in menu order (a list, so the grid's view type stays small).
+    static let placeTiles: [PlaceTileInfo] = [
+        PlaceTileInfo(id: "spelling", art: "icon_spelling", title: "Spelling Bee", color: 0xB7791F, shadow: 0x8A5A12),
+        PlaceTileInfo(id: "fractions", art: "icon_fractions", title: "Fraction Bakery", color: 0xC2185B, shadow: 0x8E1243),
+        PlaceTileInfo(id: "shapes", art: "icon_shapes", title: "Shape Studio", color: 0x00796B, shadow: 0x00564C),
+        PlaceTileInfo(id: "rhyme", art: "icon_rhyme", title: "Rhyme Pond", color: 0x2E8B3E, shadow: 0x1E5E29),
+        PlaceTileInfo(id: "numbers", art: "icon_numbers", title: "Number Builder", color: 0x6A3FB5, shadow: 0x482A7D),
+        PlaceTileInfo(id: "times", art: "icon_times", title: "Times Treehouse", color: 0x8A5A2B, shadow: 0x5E3D1D),
+        PlaceTileInfo(id: "measure", art: "icon_measure", title: "Measure Meadow", color: 0x2F6F9F, shadow: 0x1F4B6C),
+        PlaceTileInfo(id: "feelings", art: "icon_feelings", title: "Feelings Corner", color: 0xC2185B, shadow: 0x8E1243),
+        PlaceTileInfo(id: "nature", art: "icon_nature", title: "Nature Trail", color: 0x2E7D32, shadow: 0x1B5E20),
+        PlaceTileInfo(id: "calendar", art: "icon_calendar", title: "Calendar Corner", color: 0xD35400, shadow: 0x9A3D00),
+        PlaceTileInfo(id: "compass", art: "icon_compass", title: "Compass Camp", color: 0x1565C0, shadow: 0x0D47A1),
+        PlaceTileInfo(id: "healthy", art: "icon_healthy", title: "Healthy Hut", color: 0x558B2F, shadow: 0x33691E),
+        PlaceTileInfo(id: "planet", art: "icon_planet", title: "Earth Helpers", color: 0x00897B, shadow: 0x00695C),
+        PlaceTileInfo(id: "graphs", art: "icon_graphs", title: "Graph Garden", color: 0x7B1FA2, shadow: 0x4A148C),
+        PlaceTileInfo(id: "words", art: "icon_words", title: "Word Workshop", color: 0x5D4037, shadow: 0x3E2723),
+        PlaceTileInfo(id: "tenframe", art: "icon_tenframe", title: "Ten Frame Farm", color: 0xC0392B, shadow: 0x8E2A1F),
+        PlaceTileInfo(id: "sky", art: "icon_sky", title: "Sky Watch", color: 0x283593, shadow: 0x1A237E),
+        PlaceTileInfo(id: "helpers", art: "icon_helpers", title: "Helper Town", color: 0x00838F, shadow: 0x005F66),
+        PlaceTileInfo(id: "sounds", art: "icon_sounds", title: "Sound Shop", color: 0x6A1B9A, shadow: 0x4A148C),
+        PlaceTileInfo(id: "numberline", art: "icon_numberline", title: "Number Line Lane", color: 0xEF6C00, shadow: 0xB34F00),
+        PlaceTileInfo(id: "colors", art: "icon_colors", title: "Color Lab", color: 0xAD1457, shadow: 0x810F41),
+        PlaceTileInfo(id: "evenodd", art: "icon_evenodd", title: "Even Steven", color: 0x00897B, shadow: 0x00665C),
+        PlaceTileInfo(id: "animals", art: "icon_animals", title: "Animal Club", color: 0x558B2F, shadow: 0x3F6823),
+        PlaceTileInfo(id: "opposites", art: "icon_opposites", title: "Opposite Island", color: 0x2E7D32, shadow: 0x225D25),
+        PlaceTileInfo(id: "sentences", art: "icon_sentences", title: "Sentence Station", color: 0xE65100, shadow: 0xAC3C00),
+        PlaceTileInfo(id: "ocean", art: "icon_ocean", title: "Ocean Cove", color: 0x0277BD, shadow: 0x01598D),
+        PlaceTileInfo(id: "dinos", art: "icon_dinos", title: "Dino Dig", color: 0x6D4C41, shadow: 0x513930),
+        PlaceTileInfo(id: "kindness", art: "icon_kindness", title: "Kindness Club", color: 0xC2185B, shadow: 0x911244),
+        PlaceTileInfo(id: "vehicles", art: "icon_vehicles", title: "On the Move", color: 0x1565C0, shadow: 0x0F4B90),
+    ]
+
     /// A quiz-engine place's tile, or nothing when a grown-up took the place off the menu (v9.9).
     @ViewBuilder
     private func placeTile(_ id: String, art: String, title: String, color: UInt32, shadow: UInt32) -> some View {
@@ -898,4 +911,13 @@ struct MainMenuView: View {
             if note == text { note = nil }
         }
     }
+}
+
+/// One quiz-engine place tile on the Learn page (v9.64).
+struct PlaceTileInfo: Identifiable {
+    let id: String
+    let art: String
+    let title: String
+    let color: UInt32
+    let shadow: UInt32
 }

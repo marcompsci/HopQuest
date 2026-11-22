@@ -528,6 +528,10 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### TestFlight upload from GitHub
 - `.github/workflows/testflight.yml` also runs when a commit on `feature/hop-village` says `[testflight build N]`. Pushing tags isn't allowed from Claude's environment, and "Run workflow" only appears once the file is on `main`. The first run (build 3) passed the tests and gate, and stopped at the missing API-key secrets.
 
+### v9.64: Launch fix on a real iPhone
+- A debug build on a physical iPhone crashed at launch (EXC_BAD_ACCESS, a stack overflow in `MainMenuView.body`). The menu's five pages sat in one `switch`, and the Learn grid had 37 children in one builder. Together they made one huge generic view type, and its metadata overflowed the main thread's stack.
+- Fix: each page is now erased to `AnyView`, and the 29 quiz-place tiles come from a `PlaceTileInfo` list in a `ForEach`. Nothing a child sees changes.
+
 ### v9.58–v9.63: Practising the shaky parts
 - **Tricky Mix** (on Learn, when anything is at 1 star): a practice round that takes turns between every game still at 1 star, across all places. Spaced practice for the shaky ones, with no pressure and no timer.
 - Mixed questions show a **From:** label (the place in Mystery Mix and Tricky Mix, the game in Mixed Review), so a question about the moon in the middle of a mix makes sense.
