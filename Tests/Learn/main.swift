@@ -799,7 +799,7 @@ test("Story Maker: sentences, titles and saving") {
 }
 
 test("Badges: earned from real progress, never lost") {
-    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 46, "46 unique badges")
+    check(Set(Badges.all.map(\.id)).count == Badges.all.count && Badges.all.count == 51, "51 unique badges")
     check(Badges.earned(BadgeInput()).isEmpty, "nothing at the start")
     var b = BadgeInput()
     b.chaptersDone = [1]; b.lifetimeStars = 160; b.finishedAreas = ["reading", "clock"]
@@ -833,6 +833,7 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + SoundBank.games.map(\.title) + LineBank.games.map(\.title)
         + ColorBank.games.map(\.title) + EvenBank.games.map(\.title) + AnimalBank.games.map(\.title) + OppositeBank.games.map(\.title) + SentenceBank.games.map(\.title)
         + LearnSubject.allCases.map(\.title) + ["Mystery Mix"]
+        + OceanBank.games.map(\.title) + DinoBank.games.map(\.title) + KindBank.games.map(\.title) + MoveBank.games.map(\.title)
         + ReadingGame.allCases.map(\.title) + MarketGame.allCases.map(\.title) + Continent.allCases.map(\.name)
     for t in titles { check(L10n.spanish(t) != nil, "\(t) has Spanish") }
     let intros = WritingGame.allCases.map(\.intro) + ClockGame.allCases.map(\.intro) + WorldGame.allCases.map(\.intro)
@@ -843,6 +844,7 @@ test("Español: the interface table, patterns and the narrator never mixing lang
         + WordBank.games.map(\.intro) + FrameBank.games.map(\.intro) + SkyBank.games.map(\.intro) + HelperBank.games.map(\.intro)
         + SoundBank.games.map(\.intro) + LineBank.games.map(\.intro)
         + ColorBank.games.map(\.intro) + EvenBank.games.map(\.intro) + AnimalBank.games.map(\.intro) + OppositeBank.games.map(\.intro) + SentenceBank.games.map(\.intro)
+        + OceanBank.games.map(\.intro) + DinoBank.games.map(\.intro) + KindBank.games.map(\.intro) + MoveBank.games.map(\.intro)
     for t in intros { check(L10n.spanish(t) != nil, "intro has Spanish: \(t)") }
     check(Set(L10n.table.keys).isDisjoint(with: L10n.more.keys), "no word translated twice")
     check(L10n.spanish("Level 3 done!") == "¡Nivel 3 terminado!" && L10n.spanish("You earned 4 stars in Star Hop!") == "¡Ganaste 4 estrellas en Salto Estelar!", "new patterns")
@@ -1307,7 +1309,7 @@ test("Graph Garden: every game, 300 seeds, answers worked out from the picture")
 
 test("Brain Bubble widget: questions, one try each, every question before any repeat") {
     let all = BubbleBank.all
-    check(all.count == 67, "67 questions (prime, so stepping by 7 visits them all)")
+    check(all.count == 71, "71 questions (prime, so stepping by 7 visits them all)")
     for q in all {
         check(q.choices.count == 3 && Set(q.choices).count == 3 && q.choices.indices.contains(q.answer), "three different choices: \(q.question)")
         check(!q.fact.isEmpty && !q.emoji.isEmpty, "a fact and a picture: \(q.question)")
@@ -1808,14 +1810,97 @@ test("Learn subjects, Mystery Mix, new hats and scenes (v9.36–v9.44)") {
     let plan = MysteryMix.plan(sources: ["sky", "colors", "animals"], games: { _ in ["a", "b"] }, using: &rng)
     check(plan.count == 5 && Set(plan.prefix(3).map(\.place)).count == 3, "places take turns")
     check(MysteryMix.plan(sources: [], games: { _ in ["a"] }, using: &rng).isEmpty, "nothing to mix yet")
-    check(HatKind.explorer.badgesNeeded <= Badges.all.count && HatKind.allCases.last == .explorer, "every hat can be earned")
-    check(StickerScene.backdrops.count == 10 && FridgeDoor.backdropName("studio") == "in the art studio", "jungle and art studio scenes")
+    check(HatKind.allCases.allSatisfy { $0.badgesNeeded <= Badges.all.count }, "every hat can be earned")
+    check(StickerScene.backdrops.count >= 10 && FridgeDoor.backdropName("studio") == "in the art studio", "jungle and art studio scenes")
     check(L10n.spanish("Your best is still 3 stars.") == "Tu mejor resultado sigue siendo 3 estrellas." && L10n.spanish("World & Me") == "El Mundo y Yo", "Spanish for the new words")
+}
+
+test("Ocean Cove, Dino Dig, Kindness Club, On the Move (v9.45–v9.48)") {
+    func runAll(_ games: [QuizGameInfo], _ make: (String, inout SeededRNG) -> [QuizRound], _ verify: (String, QuizRound) -> Void) {
+        for g in games {
+            for seed in 0..<300 {
+                var rng = SeededRNG(state: UInt64(seed))
+                let rounds = make(g.id, &rng)
+                check(rounds.count == 5, "\(g.id): five rounds")
+                for r in rounds {
+                    check((2...3).contains(r.choices.count) && Set(r.choices).count == r.choices.count && r.choices.contains(r.answer), "\(g.id): fair choices (\(r.choices))")
+                    verify(g.id, r)
+                }
+            }
+        }
+    }
+    func jumbleCheck(_ r: QuizRound) {
+        guard case .jumble(let items) = r.visual else { check(false, "a jumble"); return }
+        let counts = Dictionary(grouping: items, by: { $0 }).mapValues(\.count)
+        check(Set(counts.values).count == counts.count, "every kind has a different count")
+        let asked = counts.first { r.say.contains(" \(GraphBank.many($0.key)) ") }
+        check(asked != nil && "\(asked!.value)" == r.answer, "count: \(r.say) → \(r.answer)")
+        check(counts.keys.allSatisfy { GraphBank.words[$0] != nil }, "every picture has a name")
+    }
+    let sea = Set(OceanBank.sea.map { "\($0.picture) \($0.name)" }), land = Set(OceanBank.land.map { "\($0.picture) \($0.name)" })
+    runAll(OceanBank.games, { OceanBank.rounds(for: $0, using: &$1) }) { id, r in
+        switch id {
+        case "who":
+            let pool = r.say.contains("ocean") ? sea : land
+            check(pool.contains(r.answer) && r.choices.filter { pool.contains($0) }.count == 1, "who: \(r.say) \(r.choices)")
+        case "facts": check(OceanBank.facts.contains { $0.say == r.say && $0.answer == r.answer }, "ocean fact: \(r.say)")
+        case "count": jumbleCheck(r)
+        default: check(OceanBank.words.contains { r.visual == .picture($0.picture) && $0.word == r.answer }, "beach word: \(r.answer)")
+        }
+    }
+    runAll(DinoBank.games, { DinoBank.rounds(for: $0, using: &$1) }) { id, r in
+        switch id {
+        case "eat": check(DinoBank.diets.contains { r.say == "What did \($0.name) eat?" && $0.eats == r.answer }, "dino diet: \(r.say)")
+        case "facts": check(DinoBank.facts.contains { $0.say == r.say && $0.answer == r.answer }, "dino fact: \(r.say)")
+        case "size":
+            let order = r.choices.sorted { DinoBank.sizes.firstIndex(of: $0)! < DinoBank.sizes.firstIndex(of: $1)! }
+            check(r.answer == (r.say.contains("biggest") ? order.last! : order.first!), "dino size: \(r.choices)")
+        default: jumbleCheck(r)
+        }
+    }
+    runAll(KindBank.games, { KindBank.rounds(for: $0, using: &$1) }) { id, r in
+        switch id {
+        case "kind": check(KindBank.kind.contains(r.answer) && r.choices.filter { KindBank.kind.contains($0) }.count == 1, "kind: \(r.choices)")
+        default:
+            let bank = id == "words" ? KindBank.manners : id == "help" ? KindBank.helping : KindBank.sport
+            check(bank.contains { $0.say == r.say && $0.answer == r.answer }, "\(id): \(r.say)")
+            check(r.cheer.hasPrefix(KindBank.sentence(r.answer) + " "), "cheer starts with a full sentence: \(r.cheer)")
+        }
+    }
+    check(KindBank.sentence("help clean up") == "Help clean up." && KindBank.sentence("Thank you!") == "Thank you!", "sentences")
+    check(Set(KindBank.kind).isDisjoint(with: KindBank.unkind), "kind and unkind never mix")
+    runAll(MoveBank.games, { MoveBank.rounds(for: $0, using: &$1) }) { id, r in
+        switch id {
+        case "where": check(MoveBank.ways.contains { r.visual == .picture($0.picture) && $0.goes == r.answer }, "where: \(r.say)")
+        case "wheels": check(MoveBank.wheels.contains { r.visual == .picture($0.picture) && "\($0.count)" == r.answer }, "wheels: \(r.say)")
+        case "jobs": check(MoveBank.jobs.contains { $0.say == r.say && $0.answer == r.answer }, "jobs: \(r.say)")
+        default: jumbleCheck(r)
+        }
+    }
+}
+
+test("Next game, place complete, try next, All-Rounder, subject mixes (v9.49–v9.56)") {
+    let games = ["a", "b", "c", "d"]
+    let bests = ["a": 3, "b": 3, "c": 1, "d": 0]
+    check(PlaceProgress.next(after: "a", games: games, best: { bests[$0]! }) == "c", "next skips games already at 3 stars")
+    check(PlaceProgress.next(after: "d", games: games, best: { bests[$0]! }) == "c", "next wraps around")
+    check(PlaceProgress.next(after: "a", games: games, best: { _ in 3 }) == nil, "nothing next when all are at 3 stars")
+    check(PlaceProgress.tryNext(games: games, best: { bests[$0]! }) == "c" && PlaceProgress.tryNext(games: games, best: { _ in 2 }) == nil, "try next: 1 star first, then not played")
+    check(PlaceProgress.isComplete([2, 3, 2, 2]) && !PlaceProgress.isComplete([2, 3, 1, 2]) && !PlaceProgress.isComplete([]), "complete at 2 stars each")
+    let area = LearningArea(id: "sky", title: "Sky Watch", skills: [SkillProgress(skill: "moon", best: 3), SkillProgress(skill: "shadows", best: 0), SkillProgress(skill: "weather", best: 1)])
+    check(PlaceProgress.skillToPractise(area) == "weather", "keep going names the game at 1 star")
+    check(!PlaceProgress.allRounder(["reading", "graphs", "sky", "helpers"]) && PlaceProgress.allRounder(["reading", "graphs", "sky", "helpers", "colors"]), "All-Rounder needs every subject")
+    check(Badges.all.contains { $0.id == "allRounder" } && Badges.all.first { $0.id == "allRounder" }!.earned(BadgeInput(finishedAreas: ["words", "evenodd", "ocean", "kindness", "music"])), "the badge uses the rule")
+    check(MysteryMix.routeID(.all) == "mystery" && MysteryMix.routeID(.math) == "mystery:math", "route ids")
+    check(MysteryMix.subject(fromRoute: "mystery") == .all && MysteryMix.subject(fromRoute: "mystery:science") == .science && MysteryMix.subject(fromRoute: "sky") == nil, "routes back to subjects")
+    check(MysteryMix.sources(plays: ["sky": 1, "graphs": 2, "ocean": 1], shown: { _ in true }, subject: .science) == ["sky", "ocean"], "a subject's mix only uses its places")
+    check(LearnSubject.of("ocean") == .science && LearnSubject.of("kindness") == .world && LearnSubject.of("vehicles") == .world, "new places have subjects")
+    check(L10n.spanish("Place complete! You finished Sky Watch!") == "¡Lugar completado! ¡Terminaste Sky Watch!" && L10n.spanish("Try next") == "Prueba este", "Spanish")
 }
 
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {
     let ids = ["reading", "writing", "market", "clock", "science", "world", "music", "spelling", "fractions", "shapes", "rhyme",
-               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "sounds", "numberline", "colors", "evenodd", "animals", "opposites", "sentences", "code"]
+               "numbers", "times", "measure", "feelings", "nature", "calendar", "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "sounds", "numberline", "colors", "evenodd", "animals", "opposites", "sentences", "ocean", "dinos", "kindness", "vehicles", "code"]
     for id in ids {
         let a = AtHome.byPlace[id]
         check(a != nil, "\(id) has at-home ideas")

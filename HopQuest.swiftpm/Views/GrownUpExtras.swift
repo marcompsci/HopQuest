@@ -178,6 +178,17 @@ struct PracticeSheetsSection: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
+            // one mix per subject (v9.54)
+            ForEach(LearnSubject.allCases.filter { $0 != .all }) { sub in
+                let ids = Self.places.filter { LearnSubject.of($0) == sub }
+                if ids.count >= MysteryMix.minSources {
+                    NavigationLink {
+                        PracticeGamesList(place: .mystery(sources: ids))
+                    } label: {
+                        Label("\(sub.title) mix", systemImage: sub.symbol)
+                    }
+                }
+            }
             ForEach(Self.places, id: \.self) { id in
                 let place = QuizPlace.named(id)
                 NavigationLink {

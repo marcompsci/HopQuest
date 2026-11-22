@@ -215,13 +215,14 @@ struct MainMenuView: View {
         section("Learn")
             .padding(.top, 4)
         subjectChips
+        if subject == .all, let area = KeepGoing.pick(store.learningAreas.filter { store.placeShown($0.id) }) {
+            keepGoingCard(area)
+        }
+        // Mystery Mix for everything, or for just the chosen subject (v9.49)
+        if MysteryMix.sources(plays: (store.profile?.places ?? [:]).mapValues(\.plays), shown: store.placeShown, subject: subject).count >= MysteryMix.minSources {
+            mysteryCard
+        }
         if subject == .all {
-            if let area = KeepGoing.pick(store.learningAreas.filter { store.placeShown($0.id) }) {
-                keepGoingCard(area)
-            }
-            if MysteryMix.sources(plays: (store.profile?.places ?? [:]).mapValues(\.plays), shown: store.placeShown).count >= MysteryMix.minSources {
-                mysteryCard
-            }
             codingLabCard
         }
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
@@ -286,6 +287,10 @@ struct MainMenuView: View {
             placeTile("animals", art: "icon_animals", title: "Animal Club", color: 0x558B2F, shadow: 0x3F6823)
             placeTile("opposites", art: "icon_opposites", title: "Opposite Island", color: 0x2E7D32, shadow: 0x225D25)
             placeTile("sentences", art: "icon_sentences", title: "Sentence Station", color: 0xE65100, shadow: 0xAC3C00)
+            placeTile("ocean", art: "icon_ocean", title: "Ocean Cove", color: 0x0277BD, shadow: 0x01598D)
+            placeTile("dinos", art: "icon_dinos", title: "Dino Dig", color: 0x6D4C41, shadow: 0x513930)
+            placeTile("kindness", art: "icon_kindness", title: "Kindness Club", color: 0xC2185B, shadow: 0x911244)
+            placeTile("vehicles", art: "icon_vehicles", title: "On the Move", color: 0x1565C0, shadow: 0x0F4B90)
             gameTile(art: "icon_story", title: "Story Maker", color: Color(hex: 0x6A4C93), shadow: Color(hex: 0x4A3368),
                      badge: 0, detail: "\(store.profile?.storyMaker.stories.count ?? 0) stories",
                      label: "Story Maker, \(store.profile?.storyMaker.stories.count ?? 0) stories", action: onStoryMaker)
@@ -570,7 +575,7 @@ struct MainMenuView: View {
                         .font(.kid(13, .black))
                         .foregroundStyle(Palette.ink)
                         .padding(.horizontal, 9).padding(.vertical, 3)
-                        .background(Capsule().fill(Color(hex: 0xFFD93D)))
+                        .background(Capsule().fill(ribbon == "Done!" ? Color(hex: 0x8EE3A8) : Color(hex: 0xFFD93D)))
                         .overlay(Capsule().stroke(.white, lineWidth: 2))
                         .rotationEffect(.degrees(-8))
                         .offset(x: -4, y: -8)
@@ -593,6 +598,9 @@ struct MainMenuView: View {
                     Text(L10n.tr("Keep going!")).font(.kid(13, .bold)).foregroundStyle(Palette.ink.opacity(0.6))
                     Text(L10n.tr(area.title)).font(.kid(19, .black)).foregroundStyle(Palette.ink).lineLimit(1).minimumScaleFactor(0.7)
                     Text(L10n.tr(KeepGoing.detail(area))).font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.6)).monospacedDigit()
+                    if let skill = PlaceProgress.skillToPractise(area) {
+                        Text("\(L10n.tr("Next up:")) \(L10n.tr(skill))").font(.kid(13, .bold)).foregroundStyle(Palette.purple).lineLimit(1).minimumScaleFactor(0.7)
+                    }
                 }
                 Spacer()
                 Image(systemName: "play.fill").font(.system(size: 18, weight: .black)).foregroundStyle(Palette.purple)
@@ -601,7 +609,7 @@ struct MainMenuView: View {
             .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.white.opacity(0.9)))
         }
         .buttonStyle(BouncyButtonStyle())
-        .accessibilityLabel("\(L10n.tr("Keep going!")) \(L10n.tr(area.title)), \(L10n.tr(KeepGoing.detail(area)))")
+        .accessibilityLabel("\(L10n.tr("Keep going!")) \(L10n.tr(area.title)), \(L10n.tr(KeepGoing.detail(area)))\(PlaceProgress.skillToPractise(area).map { ", \(L10n.tr("Next up:")) \(L10n.tr($0))" } ?? "")")
     }
 
     /// A quiz-engine place's tile, or nothing when a grown-up took the place off the menu (v9.9).
@@ -611,7 +619,8 @@ struct MainMenuView: View {
             let stars = store.profile?.places[id]?.totalStars ?? 0
             gameTile(art: art, title: title, color: Color(hex: color), shadow: Color(hex: shadow), badge: 0,
                      detail: "\(stars) of 12 stars", label: "\(title), \(stars) of 12 stars",
-                     ribbon: NewPlaces.showRibbon(id, plays: store.profile?.places[id]?.plays ?? 0) ? "New!" : nil) { onQuizPlace(id) }
+                     ribbon: NewPlaces.showRibbon(id, plays: store.profile?.places[id]?.plays ?? 0) ? "New!"
+                        : PlaceProgress.isComplete(QuizPlace.named(id).games.map { store.profile?.places[id]?.best($0.id) ?? 0 }) ? "Done!" : nil) { onQuizPlace(id) }
         }
     }
 
@@ -619,12 +628,13 @@ struct MainMenuView: View {
     private var mysteryCard: some View {
         Button {
             Haptics.tap()
-            onQuizPlace(MysteryMix.id)
+            onQuizPlace(MysteryMix.routeID(subject))
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "questionmark.circle.fill").font(.system(size: 34, weight: .black)).foregroundStyle(Color(hex: 0x5E35B1))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(L10n.tr("Mystery Mix")).font(.kid(19, .black)).foregroundStyle(Palette.ink)
+                    Text(subject == .all ? L10n.tr("Mystery Mix") : "\(L10n.tr("Mystery Mix")): \(L10n.tr(subject.title))")
+                        .font(.kid(19, .black)).foregroundStyle(Palette.ink).lineLimit(1).minimumScaleFactor(0.7)
                     Text(L10n.tr("Five questions from places you've played")).font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.6))
                 }
                 Spacer()
@@ -634,7 +644,7 @@ struct MainMenuView: View {
             .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.white.opacity(0.9)))
         }
         .buttonStyle(BouncyButtonStyle())
-        .accessibilityLabel("\(L10n.tr("Mystery Mix")), \(L10n.tr("Five questions from places you've played"))")
+        .accessibilityLabel("\(L10n.tr("Mystery Mix"))\(subject == .all ? "" : ", " + L10n.tr(subject.title)), \(L10n.tr("Five questions from places you've played"))")
     }
 
     /// A place's tile shows when a grown-up hasn't hidden it and it fits the chosen subject (v9.36).

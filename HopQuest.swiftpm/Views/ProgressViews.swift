@@ -58,6 +58,10 @@ extension GameStore {
             LearningArea(id: "animals", title: "Animal Club", skills: AnimalBank.games.map { SkillProgress(skill: $0.skill, best: p.places["animals"]?.best($0.id) ?? 0) }),
             LearningArea(id: "opposites", title: "Opposite Island", skills: OppositeBank.games.map { SkillProgress(skill: $0.skill, best: p.places["opposites"]?.best($0.id) ?? 0) }),
             LearningArea(id: "sentences", title: "Sentence Station", skills: SentenceBank.games.map { SkillProgress(skill: $0.skill, best: p.places["sentences"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "ocean", title: "Ocean Cove", skills: OceanBank.games.map { SkillProgress(skill: $0.skill, best: p.places["ocean"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "dinos", title: "Dino Dig", skills: DinoBank.games.map { SkillProgress(skill: $0.skill, best: p.places["dinos"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "kindness", title: "Kindness Club", skills: KindBank.games.map { SkillProgress(skill: $0.skill, best: p.places["kindness"]?.best($0.id) ?? 0) }),
+            LearningArea(id: "vehicles", title: "On the Move", skills: MoveBank.games.map { SkillProgress(skill: $0.skill, best: p.places["vehicles"]?.best($0.id) ?? 0) }),
             LearningArea(id: "code", title: "Code Club", skills: CodeChallenge.all.map { SkillProgress(skill: "coding: \($0.topic.lowercased())", best: p.codeBest[$0.id] ?? 0) }),
         ]
     }
@@ -135,6 +139,22 @@ struct ProgressPageView: View {
                 Text("At a glance")
             } footer: {
                 Text("\"Practising\" means a game was played but earned 1 star. Playing it together is the best way to help.")
+            }
+            // By subject (v9.55): places done in each subject, at a glance
+            Section {
+                ForEach(LearnSubject.allCases.filter { $0 != .all }) { sub in
+                    let t = LearnSubject.done(sub, areas: areas)
+                    HStack {
+                        Label(sub.title, systemImage: sub.symbol)
+                        Spacer()
+                        Text("\(t.done) of \(t.total) places done").foregroundStyle(.secondary).monospacedDigit()
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            } header: {
+                Text("By subject")
+            } footer: {
+                Text("A place is done when every game in it has 2 stars or more.")
             }
             AtHomeSection(areas: areas)
             PlayWeekSection()

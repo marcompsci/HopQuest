@@ -52,6 +52,10 @@ enum Badges {
         ("colors", "Color Mixer", "paintpalette.fill", 0xAD1457), ("evenodd", "Pair Pro", "person.2.circle.fill", 0x00897B),
         ("animals", "Animal Expert", "pawprint.fill", 0x558B2F), ("opposites", "Opposite Ace", "arrow.left.arrow.right", 0x2E7D32),
         ("sentences", "Sentence Star", "text.quote", 0xE65100),
+        ("ocean", "Ocean Pal", "water.waves", 0x0277BD),
+        ("dinos", "Fossil Finder", "fossil.shell.fill", 0x6D4C41),
+        ("kindness", "Kindness Hero", "heart.fill", 0xC2185B),
+        ("vehicles", "Road Ranger", "car.fill", 0x1565C0),
     ]
 
     static let all: [Badge] = {
@@ -66,6 +70,8 @@ enum Badges {
             Badge(id: "storyteller", title: "Storyteller", how: "Make 3 stories in Story Maker.", symbol: "book.pages.fill", colorHex: 0x6A4C93) { $0.storiesMade >= 3 },
             Badge(id: "builder", title: "Master Builder", how: "Build 40 pieces on one of your islands.", symbol: "hammer.fill", colorHex: 0xFF9F45) { $0.biggestIsland >= 40 },
             Badge(id: "dash", title: "Quick Feet", how: "Reach the flag in Star Dash.", symbol: "hare.fill", colorHex: 0x4D7CFF) { $0.dashFinished },
+            Badge(id: "allRounder", title: "All-Rounder", how: "Finish a place in every subject: Words, Math, Science, World & Me, and Art & Music.",
+                  symbol: "circle.hexagongrid.fill", colorHex: 0x00897B) { PlaceProgress.allRounder($0.finishedAreas) },
             Badge(id: "puzzler", title: "Robot Whisperer", how: "Solve 10 Code Club puzzles.", symbol: "cpu.fill", colorHex: 0x7C4DFF) { $0.codePuzzles >= 10 },
             Badge(id: "collector", title: "Sticker Collector", how: "Collect 20 buddy stickers.", symbol: "heart.circle.fill", colorHex: 0xFF5A8A) { $0.stickers >= 20 },
             Badge(id: "hopper", title: "Star Hopper", how: "Finish every Star Hop level on the HopQuest widget.", symbol: "star.square.on.square.fill", colorHex: 0x4B3F8F) { $0.hopLevels >= StarHop.levels.count },
@@ -111,6 +117,10 @@ enum Badges {
         case "animals": return "Animal Club"
         case "opposites": return "Opposite Island"
         case "sentences": return "Sentence Station"
+        case "ocean": return "Ocean Cove"
+        case "dinos": return "Dino Dig"
+        case "kindness": return "Kindness Club"
+        case "vehicles": return "On the Move"
         default: return "Code Club"
         }
     }

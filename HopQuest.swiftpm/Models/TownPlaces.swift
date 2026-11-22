@@ -361,7 +361,8 @@ enum KeepGoing {
 
 /// Places that are new in this update get a "New!" ribbon on the menu until they're played once.
 enum NewPlaces {
-    static let ids: Set<String> = ["words", "tenframe", "sky", "helpers", "sounds", "numberline", "colors", "evenodd", "animals", "opposites", "sentences"]
+    static let ids: Set<String> = ["words", "tenframe", "sky", "helpers", "sounds", "numberline", "colors", "evenodd", "animals", "opposites", "sentences",
+                                   "ocean", "dinos", "kindness", "vehicles"]
 
     static func showRibbon(_ id: String, plays: Int) -> Bool { ids.contains(id) && plays == 0 }
 }
@@ -856,8 +857,8 @@ enum LearnSubject: String, CaseIterable, Identifiable {
     static let places: [LearnSubject: [String]] = [
         .words: ["reading", "writing", "spelling", "rhyme", "words", "sounds", "sentences", "opposites"],
         .math: ["market", "clock", "fractions", "shapes", "numbers", "times", "measure", "calendar", "graphs", "tenframe", "numberline", "evenodd"],
-        .science: ["science", "nature", "sky", "planet", "animals", "healthy"],
-        .world: ["world", "feelings", "compass", "helpers"],
+        .science: ["science", "nature", "sky", "planet", "animals", "healthy", "ocean", "dinos"],
+        .world: ["world", "feelings", "compass", "helpers", "kindness", "vehicles"],
         .art: ["music", "colors"],
     ]
 
@@ -883,11 +884,18 @@ enum MysteryMix {
     static let minSources = 2
     static let quizPlaceIDs = ["spelling", "fractions", "shapes", "rhyme", "numbers", "times", "measure", "feelings", "nature", "calendar",
                                "compass", "healthy", "planet", "graphs", "words", "tenframe", "sky", "helpers", "sounds", "numberline",
-                               "colors", "evenodd", "animals", "opposites", "sentences"]
+                               "colors", "evenodd", "animals", "opposites", "sentences", "ocean", "dinos", "kindness", "vehicles"]
 
-    /// Places played at least once and still on the menu.
-    static func sources(plays: [String: Int], shown: (String) -> Bool) -> [String] {
-        quizPlaceIDs.filter { (plays[$0] ?? 0) > 0 && shown($0) }
+    /// Places played at least once and still on the menu, optionally only one subject's (v9.49).
+    static func sources(plays: [String: Int], shown: (String) -> Bool, subject: LearnSubject = .all) -> [String] {
+        quizPlaceIDs.filter { (plays[$0] ?? 0) > 0 && shown($0) && subject.includes($0) }
+    }
+
+    /// The route id for a subject's Mystery Mix: "mystery" or "mystery:math".
+    static func routeID(_ subject: LearnSubject) -> String { subject == .all ? id : "\(id):\(subject.rawValue)" }
+    static func subject(fromRoute route: String) -> LearnSubject? {
+        guard route == id || route.hasPrefix(id + ":") else { return nil }
+        return LearnSubject(rawValue: String(route.dropFirst(id.count + 1))) ?? .all
     }
 
     /// Which place and game each question comes from: places take turns, so five places give five different ones.
@@ -899,5 +907,298 @@ enum MysteryMix {
             guard let game = games(place).randomElement(using: &rng) else { return nil }
             return (place, game)
         }
+    }
+}
+
+// MARK: - Shared: count one kind of thing in a jumble (Ocean Cove, Dino Dig)
+
+enum JumbleCount {
+    /// A jumble of 2–3 kinds of things, with a different number of each; ask how many of one kind.
+    static func round<G: RandomNumberGenerator>(kinds: [String], say: (String) -> String, cheer: String, using rng: inout G) -> QuizRound {
+        let picked = Array(kinds.shuffled(using: &rng).prefix(Int.random(in: 2...3, using: &rng)))
+        let counts = Array(Array(1...7).shuffled(using: &rng).prefix(picked.count))
+        var items: [String] = []
+        for (k, c) in zip(picked, counts) { items += Array(repeating: k, count: c) }
+        items.shuffle(using: &rng)
+        let ask = picked[0], n = counts[0]
+        return QuizRound(visual: .jumble(items), say: say(GraphBank.many(ask)),
+                         choices: GraphBank.numberChoices(n, others: counts.filter { $0 != n } + [n + 1], using: &rng), answer: "\(n)",
+                         cheer: "\(n) \(n == 1 ? GraphBank.one(ask) : GraphBank.many(ask))! \(cheer)")
+    }
+}
+
+// MARK: - Ocean Cove (v9.45)
+
+enum OceanBank {
+    static let sea: [(name: String, picture: String)] = [
+        ("whale", "🐋"), ("octopus", "🐙"), ("shark", "🦈"), ("jellyfish", "🪼"), ("dolphin", "🐬"), ("squid", "🦑"), ("lobster", "🦞"), ("shrimp", "🦐"),
+    ]
+    static let land: [(name: String, picture: String)] = [
+        ("lion", "🦁"), ("cow", "🐄"), ("horse", "🐴"), ("giraffe", "🦒"), ("camel", "🐫"), ("squirrel", "🐿️"), ("fox", "🦊"), ("elephant", "🐘"),
+    ]
+    static let facts: [(say: String, answer: String, wrong: [String])] = [
+        ("How many arms does an octopus have?", "8", ["4", "10"]),
+        ("Whales breathe through a hole on top of their head. What do they breathe?", "air", ["water", "sand"]),
+        ("Is ocean water salty or sweet?", "salty", ["sweet", "spicy"]),
+        ("Fish breathe underwater with special body parts. What are they called?", "gills", ["wings", "elbows"]),
+        ("What do sea turtles lay in the sand on the beach?", "eggs", ["shells", "pearls"]),
+        ("What is the biggest animal that has ever lived?", "the blue whale", ["the shark", "the octopus"]),
+        ("What do we call a big group of fish swimming together?", "a school", ["a herd", "a flock"]),
+    ]
+    static let words: [(picture: String, word: String)] = [
+        ("🌊", "wave"), ("🐚", "shell"), ("🏝️", "island"), ("⛵", "sailboat"), ("🪸", "coral"), ("⚓", "anchor"), ("🏖️", "beach"),
+    ]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "who", title: "Who Lives Here?", symbol: "water.waves", intro: "Some animals live in the ocean, and some live on land. Who's who?", skill: "ocean and land animals"),
+        QuizGameInfo(id: "facts", title: "Ocean Facts", symbol: "fish.fill", intro: "Dive in! How much do you know about the ocean?", skill: "facts about the ocean"),
+        QuizGameInfo(id: "count", title: "Tide Pool Count", symbol: "circle.grid.3x3.fill", intro: "Peek into the tide pool and count carefully!", skill: "counting in a group"),
+        QuizGameInfo(id: "words", title: "Beach Words", symbol: "beach.umbrella.fill", intro: "Waves, shells and sailboats! What's this called?", skill: "ocean words"),
+    ]
+
+    static let cheers = ["Fin-tastic!", "Splash-tastic!", "That's right!", "Ocean explorer!", "Shell yeah!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "who":
+            return (0..<count).map { i -> QuizRound in
+                let wantSea = i % 2 == 0
+                let right = (wantSea ? sea : land).randomElement(using: &rng)!
+                let wrong = Array((wantSea ? land : sea).shuffled(using: &rng).prefix(2)).map { "\($0.picture) \($0.name)" }
+                let answer = "\(right.picture) \(right.name)"
+                return QuizRound(visual: .picture(wantSea ? "🌊" : "🌳"), say: wantSea ? "Who lives in the ocean?" : "Who lives on land?",
+                                 choices: QuizShuffle.choices(answer, wrong, using: &rng), answer: answer,
+                                 cheer: "The \(right.name) lives \(wantSea ? "in the ocean" : "on land")! \(cheer(i))")
+            }
+        case "facts":
+            return SkyBank.pick(facts, count, using: &rng).enumerated().map { i, q in
+                QuizRound(visual: .picture(["🐙", "🐋", "🌊", "🐠", "🐢", "🐟", "🐡"][i % 7]), say: q.say,
+                          choices: QuizShuffle.choices(q.answer, q.wrong, using: &rng), answer: q.answer,
+                          cheer: "Yes: \(q.answer)! \(cheer(i))")
+            }
+        case "count":
+            return (0..<count).map { i in
+                JumbleCount.round(kinds: ["🐚", "🦀", "🐠", "🪨"], say: { "How many \($0) are in the tide pool?" }, cheer: cheer(i), using: &rng)
+            }
+        default: // words
+            return SkyBank.pick(words, count, using: &rng).enumerated().map { i, w in
+                QuizRound(visual: .picture(w.picture), say: "What is this called?",
+                          choices: QuizShuffle.choices(w.word, words.map(\.word).filter { $0 != w.word }, using: &rng), answer: w.word,
+                          cheer: "It's \(AnimalBank.a(w.word))! \(cheer(i))")
+            }
+        }
+    }
+}
+
+// MARK: - Dino Dig (v9.46)
+
+enum DinoBank {
+    static let diets: [(name: String, eats: String)] = [
+        ("T. rex", "meat"), ("Triceratops", "plants"), ("Stegosaurus", "plants"), ("Brachiosaurus", "plants"), ("Velociraptor", "meat"),
+        ("Spinosaurus", "meat"), ("Ankylosaurus", "plants"), ("Diplodocus", "plants"), ("Allosaurus", "meat"),
+    ]
+    static let facts: [(say: String, answer: String, wrong: [String])] = [
+        ("What do we call bones and footprints that turned to stone?", "fossils", ["pebbles", "crayons"]),
+        ("Did people live at the same time as dinosaurs?", "no, dinosaurs lived long before people", ["yes, they were friends", "yes, as pets"]),
+        ("Which animals today are related to dinosaurs?", "birds", ["cats", "fish"]),
+        ("Did baby dinosaurs hatch from eggs?", "yes", ["no", "only on Tuesdays"]),
+        ("What does extinct mean?", "all gone, none left", ["sleeping", "hiding"]),
+        ("Which dinosaur had three horns on its face?", "Triceratops", ["T. rex", "Brachiosaurus"]),
+        ("Which dinosaur had big plates along its back?", "Stegosaurus", ["Velociraptor", "T. rex"]),
+        ("Which dinosaur had a very, very long neck?", "Brachiosaurus", ["Velociraptor", "Triceratops"]),
+    ]
+    /// Smallest to biggest, with big gaps between them.
+    static let sizes = ["Compsognathus (as big as a chicken)", "Velociraptor (as big as a turkey)", "T. rex (as long as a bus)", "Brachiosaurus (as tall as a building)"]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "eat", title: "Plant or Meat Eater?", symbol: "leaf.fill", intro: "Some dinosaurs munched plants. Others hunted for meat!", skill: "what dinosaurs ate"),
+        QuizGameInfo(id: "facts", title: "Dino Facts", symbol: "fossil.shell.fill", intro: "Dig up some dinosaur facts!", skill: "dinosaur facts"),
+        QuizGameInfo(id: "size", title: "Dino Sizes", symbol: "ruler.fill", intro: "Some dinosaurs were tiny. Some were taller than a house!", skill: "comparing dinosaur sizes"),
+        QuizGameInfo(id: "dig", title: "Dig and Count", symbol: "hammer.fill", intro: "Brush away the dirt and count what you find!", skill: "counting in a group"),
+    ]
+
+    static let cheers = ["Dino-mite!", "Roar-some!", "That's right!", "Fossil finder!", "Jurassic genius!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "eat":
+            return SkyBank.pick(diets, count, using: &rng).enumerated().map { i, d in
+                QuizRound(visual: .picture(d.eats == "meat" ? "🦖" : "🦕"), say: "What did \(d.name) eat?",
+                          choices: ["plants", "meat"], answer: d.eats,
+                          cheer: "\(d.name) ate \(d.eats). \(cheer(i))")
+            }
+        case "facts":
+            return SkyBank.pick(facts, count, using: &rng).enumerated().map { i, q in
+                QuizRound(visual: .picture(["🦴", "🦕", "🦖", "🥚", "🌋"][i % 5]), say: q.say,
+                          choices: QuizShuffle.choices(q.answer, q.wrong, using: &rng), answer: q.answer,
+                          cheer: "Yes: \(q.answer)! \(cheer(i))")
+            }
+        case "size":
+            return (0..<count).map { i -> QuizRound in
+                let three = Array(sizes.shuffled(using: &rng).prefix(3))
+                let order = three.sorted { sizes.firstIndex(of: $0)! < sizes.firstIndex(of: $1)! }
+                let biggest = i % 2 == 0
+                let answer = biggest ? order[2] : order[0]
+                return QuizRound(visual: .picture("📏"), say: biggest ? "Which dinosaur was the biggest?" : "Which dinosaur was the smallest?",
+                                 choices: three, answer: answer,
+                                 cheer: "\(answer.components(separatedBy: " (")[0]) was the \(biggest ? "biggest" : "smallest") of these. \(cheer(i))")
+            }
+        default: // dig
+            return (0..<count).map { i in
+                JumbleCount.round(kinds: ["🦴", "🥚", "🪨", "🐚"], say: { "How many \($0) did you dig up?" }, cheer: cheer(i), using: &rng)
+            }
+        }
+    }
+}
+
+// MARK: - Kindness Club (v9.47)
+
+enum KindBank {
+    static let manners: [(say: String, answer: String, wrong: [String])] = [
+        ("Grandma gives you a present. What can you say?", "Thank you!", ["Is that all?", "Give me more!"]),
+        ("You bump into someone by accident. What can you say?", "I'm sorry!", ["Move!", "Watch it!"]),
+        ("You want a turn on the swing. What can you say?", "May I have a turn, please?", ["Get off!", "It's mine now!"]),
+        ("Someone says thank you to you. What can you say?", "You're welcome!", ["Whatever.", "Go away!"]),
+        ("You need to get past someone. What can you say?", "Excuse me, please.", ["Out of my way!", "Move it!"]),
+        ("You meet a new kid at the park. What can you say?", "Hi! Do you want to play?", ["Go away.", "You can't play."]),
+    ]
+    static let kind = ["share your crayons", "help a friend who fell", "let someone go first", "invite a new kid to play", "say something nice", "hold the door"]
+    static let unkind = ["grab a toy", "laugh when someone falls", "push to be first", "leave someone out", "say something mean", "cut in line"]
+    static let helping: [(say: String, answer: String, wrong: [String])] = [
+        ("Your friend dropped all their books. How can you help?", "help pick them up", ["walk away", "laugh"]),
+        ("Someone is sitting alone at lunch. What can you do?", "ask them to sit with you", ["point at them", "ignore them"]),
+        ("Your little brother can't reach a cup. How can you help?", "get it for him or ask a grown-up", ["tell him to stop", "take his cup"]),
+        ("Your friend looks sad. What can you do?", "ask if they're okay", ["tell them to cheer up now", "leave them alone forever"]),
+        ("Toys are all over the floor after playtime. How can you help?", "help clean up", ["hide under the bed", "throw more toys"]),
+    ]
+    static let sport: [(say: String, answer: String, wrong: [String])] = [
+        ("You lost a game. What can you say?", "Good game!", ["That's not fair!", "I quit!"]),
+        ("You won a game! What can you say?", "Good game! Want to play again?", ["I'm the best, you're the worst!", "Ha ha!"]),
+        ("It's someone else's turn. What do you do?", "wait patiently", ["take their turn", "stomp your feet"]),
+        ("Your teammate makes a mistake. What can you say?", "It's okay, let's try again!", ["You ruined it!", "You're bad at this!"]),
+        ("A friend does something great. What can you say?", "Wow, nice job!", ["So what.", "I could do better."]),
+    ]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "words", title: "Magic Words", symbol: "sparkles", intro: "Please, thank you, sorry and excuse me are magic words. Which one fits?", skill: "polite words"),
+        QuizGameInfo(id: "kind", title: "Kind or Not?", symbol: "heart.fill", intro: "Kind choices make everyone feel good. Which one is kind?", skill: "kind choices"),
+        QuizGameInfo(id: "help", title: "Helping Hands", symbol: "hand.raised.fill", intro: "Little helpers make a big difference. How can you help?", skill: "helping others"),
+        QuizGameInfo(id: "sport", title: "Good Sport", symbol: "figure.2.arms.open", intro: "Win or lose, a good sport is kind. What's the good-sport thing to do?", skill: "being a good sport"),
+    ]
+
+    static let cheers = ["Kindness hero!", "Heart of gold!", "That's right!", "So kind!", "What a good friend!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "kind":
+            return (0..<count).map { i -> QuizRound in
+                let right = kind.randomElement(using: &rng)!
+                let wrong = Array(unkind.shuffled(using: &rng).prefix(2))
+                return QuizRound(visual: .picture("💛"), say: "Which one is kind?",
+                                 choices: QuizShuffle.choices(right, wrong, using: &rng), answer: right,
+                                 cheer: "Yes! It's kind to \(right). \(cheer(i))")
+            }
+        default:
+            let bank = id == "words" ? manners : id == "help" ? helping : sport
+            return SkyBank.pick(bank, count, using: &rng).enumerated().map { i, q in
+                QuizRound(visual: .picture(["🎁", "🤝", "🛝", "😊", "🙋"][i % 5]), say: q.say,
+                          choices: QuizShuffle.choices(q.answer, q.wrong, using: &rng), answer: q.answer,
+                          cheer: "\(sentence(q.answer)) \(cheer(i))")
+            }
+        }
+    }
+
+    /// "help clean up" → "Help clean up."; "Thank you!" stays as it is.
+    static func sentence(_ s: String) -> String {
+        let t = s.prefix(1).uppercased() + s.dropFirst()
+        return ".!?".contains(t.last ?? ".") ? t : t + "."
+    }
+}
+
+// MARK: - On the Move (v9.48)
+
+enum MoveBank {
+    static let ways: [(name: String, picture: String, goes: String)] = [
+        ("car", "🚗", "land"), ("train", "🚆", "land"), ("bike", "🚲", "land"), ("tractor", "🚜", "land"),
+        ("sailboat", "⛵", "water"), ("ship", "🚢", "water"), ("canoe", "🛶", "water"), ("speedboat", "🚤", "water"),
+        ("plane", "✈️", "air"), ("helicopter", "🚁", "air"), ("parachute", "🪂", "air"),
+    ]
+    static let wheels: [(name: String, picture: String, count: Int)] = [
+        ("bike", "🚲", 2), ("scooter", "🛴", 2), ("motorcycle", "🏍️", 2), ("auto rickshaw", "🛺", 3),
+        ("car", "🚗", 4), ("skateboard", "🛹", 4), ("shopping cart", "🛒", 4),
+    ]
+    static let jobs: [(say: String, picture: String, answer: String)] = [
+        ("Which one takes sick people to the hospital?", "🏥", "🚑 ambulance"), ("Which one helps put out fires?", "🔥", "🚒 fire truck"),
+        ("Which one takes kids to school?", "🏫", "🚌 school bus"), ("Which one plows the farm fields?", "🌾", "🚜 tractor"),
+        ("Which one flies people far away on a trip?", "🧳", "✈️ plane"), ("Which one runs on tracks?", "🛤️", "🚆 train"),
+    ]
+
+    static let games: [QuizGameInfo] = [
+        QuizGameInfo(id: "where", title: "Land, Water or Air?", symbol: "map.fill", intro: "Some things go on roads, some float on water, and some fly!", skill: "how things travel"),
+        QuizGameInfo(id: "wheels", title: "Count the Wheels", symbol: "circle.circle.fill", intro: "Two wheels, three wheels or four? Count them!", skill: "counting wheels"),
+        QuizGameInfo(id: "jobs", title: "Busy Vehicles", symbol: "box.truck.fill", intro: "Every vehicle has a job. Which one does this job?", skill: "what vehicles do"),
+        QuizGameInfo(id: "count", title: "Traffic Count", symbol: "car.2.fill", intro: "Look at all the traffic! Count carefully.", skill: "counting in a group"),
+    ]
+
+    static let cheers = ["Zoom zoom!", "Beep beep, hooray!", "That's right!", "Full speed ahead!", "Wheel-y good!"]
+
+    static func rounds<G: RandomNumberGenerator>(for id: String, count: Int = 5, using rng: inout G) -> [QuizRound] {
+        let cheer = { (i: Int) in cheers[i % cheers.count] }
+        switch id {
+        case "where":
+            return SkyBank.pick(ways, count, using: &rng).enumerated().map { i, w in
+                QuizRound(visual: .picture(w.picture), say: "Where does \(AnimalBank.a(w.name)) go: on land, on water, or in the air?",
+                          choices: ["land", "water", "air"], answer: w.goes,
+                          cheer: "\(AnimalBank.A(w.name)) goes \(w.goes == "land" ? "on land" : w.goes == "water" ? "on water" : "in the air")! \(cheer(i))")
+            }
+        case "wheels":
+            return SkyBank.pick(wheels, count, using: &rng).enumerated().map { i, w in
+                QuizRound(visual: .picture(w.picture), say: "How many wheels does \(AnimalBank.a(w.name)) have?",
+                          choices: ["2", "3", "4"], answer: "\(w.count)",
+                          cheer: "\(w.count) wheels! \(cheer(i))")
+            }
+        case "jobs":
+            return SkyBank.pick(jobs, count, using: &rng).enumerated().map { i, j in
+                QuizRound(visual: .picture(j.picture), say: j.say,
+                          choices: QuizShuffle.choices(j.answer, jobs.map(\.answer).filter { $0 != j.answer }, using: &rng), answer: j.answer,
+                          cheer: "The \(j.answer.split(separator: " ").dropFirst().joined(separator: " "))! \(cheer(i))")
+            }
+        default: // count
+            return (0..<count).map { i in
+                JumbleCount.round(kinds: ["🚗", "🚌", "🚲", "🚕"], say: { "How many \($0) can you count?" }, cheer: cheer(i), using: &rng)
+            }
+        }
+    }
+}
+
+// MARK: - Place progress helpers (v9.50–v9.56)
+
+enum PlaceProgress {
+    /// A place is complete when every game has 2 stars or more (the same rule as badges and the grown-ups' page).
+    static func isComplete(_ bests: [Int]) -> Bool { !bests.isEmpty && bests.allSatisfy { $0 >= 2 } }
+
+    /// The game to suggest after `current` (v9.51): the next one in order that isn't at 3 stars yet; nil when all are.
+    static func next(after current: String, games: [String], best: (String) -> Int) -> String? {
+        guard let i = games.firstIndex(of: current) else { return nil }
+        let order = Array(games[(i + 1)...] + games[..<i])
+        return order.first { best($0) < 3 }
+    }
+
+    /// The game to try next on a place page (v9.56): one at 1 star first, then the first not played.
+    static func tryNext(games: [String], best: (String) -> Int) -> String? {
+        games.first { best($0) == 1 } ?? games.first { best($0) == 0 }
+    }
+
+    /// The skill to name on the Keep going card (v9.52): a game at 1 star first, then the first not played.
+    static func skillToPractise(_ area: LearningArea) -> String? {
+        (area.skills.first { $0.best == 1 } ?? area.skills.first { $0.best == 0 })?.skill
+    }
+
+    /// All-Rounder (v9.50): at least one finished place in every subject.
+    static func allRounder(_ finished: Set<String>) -> Bool {
+        LearnSubject.allCases.filter { $0 != .all }.allSatisfy { sub in finished.contains { LearnSubject.of($0) == sub } }
     }
 }

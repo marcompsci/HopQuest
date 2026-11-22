@@ -13,7 +13,7 @@ struct BubbleQuestion: Equatable {
 }
 
 enum BubbleBank {
-    /// 67 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
+    /// 71 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
     static let all: [BubbleQuestion] = [
         BubbleQuestion(emoji: "➕", question: "What is 4 + 3?", choices: ["6", "7", "8"], answer: 1, fact: "4 + 3 = 7. So does 3 + 4!"),
         BubbleQuestion(emoji: "➖", question: "What is 9 − 4?", choices: ["5", "4", "6"], answer: 0, fact: "9 take away 4 leaves 5."),
@@ -85,6 +85,11 @@ enum BubbleBank {
         BubbleQuestion(emoji: "🐋", question: "Is a whale a fish or a mammal?", choices: ["Fish", "Mammal", "Bird"], answer: 1, fact: "Whales breathe air and feed milk to their babies."),
         BubbleQuestion(emoji: "🔥", question: "What's the opposite of hot?", choices: ["Cold", "Big", "Wet"], answer: 0, fact: "Hot and cold are opposites."),
         BubbleQuestion(emoji: "🐭", question: "One mouse, two…", choices: ["Mouses", "Mice", "Mousies"], answer: 1, fact: "Some words change completely: mouse → mice."),
+        // v9.57: four more, from Ocean Cove, Dino Dig, Kindness Club and On the Move
+        BubbleQuestion(emoji: "🐙", question: "How many arms does an octopus have?", choices: ["6", "8", "10"], answer: 1, fact: "Octo means eight!"),
+        BubbleQuestion(emoji: "🦕", question: "What do we call dinosaur bones turned to stone?", choices: ["Fossils", "Pebbles", "Shells"], answer: 0, fact: "Fossils help us learn about dinosaurs."),
+        BubbleQuestion(emoji: "💛", question: "You bump into a friend. What can you say?", choices: ["Move!", "I'm sorry!", "Watch it!"], answer: 1, fact: "Sorry is a magic word."),
+        BubbleQuestion(emoji: "🛴", question: "How many wheels does a scooter have?", choices: ["2", "3", "4"], answer: 0, fact: "A scooter has one wheel in front and one in back."),
     ]
     static let step = 7
 }

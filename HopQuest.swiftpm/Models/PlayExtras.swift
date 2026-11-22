@@ -90,7 +90,7 @@ enum MenuPlaces {
 
 /// Hats for your buddy, unlocked by earning badges. Wearing a hat changes nothing in the game: it's just for fun.
 enum HatKind: String, CaseIterable, Codable, Identifiable {
-    case none, party, cap, flower, beanie, crown, wizard, topHat, astronaut, chef, fireHelmet, gradCap, captain, beret, explorer
+    case none, party, cap, flower, beanie, crown, wizard, topHat, astronaut, chef, fireHelmet, gradCap, captain, beret, explorer, snorkel, dinoHood
 
     var id: String { rawValue }
 
@@ -111,6 +111,8 @@ enum HatKind: String, CaseIterable, Codable, Identifiable {
         case .captain: return "Captain's Hat"
         case .beret: return "Artist's Beret"
         case .explorer: return "Explorer Hat"
+        case .snorkel: return "Snorkel Mask"
+        case .dinoHood: return "Dino Hood"
         }
     }
 
@@ -131,6 +133,8 @@ enum HatKind: String, CaseIterable, Codable, Identifiable {
         case .captain: return 36
         case .beret: return 40
         case .explorer: return 44
+        case .snorkel: return 48
+        case .dinoHood: return 51
         }
     }
 
@@ -194,7 +198,7 @@ struct StickerScene: Codable, Equatable, Identifiable {
         var flipped = false
     }
 
-    static let backdrops = ["meadow", "beach", "space", "castle", "ocean", "city", "farm", "snow", "jungle", "studio"]
+    static let backdrops = ["meadow", "beach", "space", "castle", "ocean", "city", "farm", "snow", "jungle", "studio", "dinos", "station"]
     static let maxStickers = 12
     static let minScale = 0.5
     static let maxScale = 2.0
@@ -349,6 +353,8 @@ enum FridgeDoor {
         case "snow": return "in the snow"
         case "jungle": return "in the jungle"
         case "studio": return "in the art studio"
+        case "dinos": return "in dinosaur valley"
+        case "station": return "at the train station"
         default: return "in the meadow"
         }
     }

@@ -471,6 +471,9 @@ enum GraphBank {
         "🍎": ("apple", "apples"), "🍌": ("banana", "bananas"), "🍓": ("strawberry", "strawberries"), "🍊": ("orange", "oranges"), "🍐": ("pear", "pears"),
         "🐶": ("dog", "dogs"), "🐱": ("cat", "cats"), "🐟": ("fish", "fish"), "🐰": ("bunny", "bunnies"), "🐢": ("turtle", "turtles"),
         "🌸": ("flower", "flowers"), "🐞": ("ladybug", "ladybugs"), "🦋": ("butterfly", "butterflies"), "🐝": ("bee", "bees"), "🍄": ("mushroom", "mushrooms"),
+        // v9.45–v9.46 tide pools and dino digs
+        "🐚": ("shell", "shells"), "🦀": ("crab", "crabs"), "🐠": ("fish", "fish"), "🦴": ("bone", "bones"), "🥚": ("egg", "eggs"), "🪨": ("rock", "rocks"),
+        "🚗": ("car", "cars"), "🚌": ("bus", "buses"), "🚲": ("bike", "bikes"), "🚕": ("taxi", "taxis"),
     ]
     static func one(_ e: String) -> String { words[e]?.one ?? e }
     static func many(_ e: String) -> String { words[e]?.many ?? e }

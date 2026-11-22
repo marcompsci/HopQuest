@@ -190,6 +190,11 @@ struct LearnDoneCard: View {
     var practice = false
     /// The best stars ever for this game (v9.43): "Your best is still 3 stars" when this run scored lower.
     var best: Int? = nil
+    /// The place's title when this game finished the whole place (v9.53).
+    var placeDone: String? = nil
+    /// The next game to play, and a way to start it (v9.51).
+    var nextGame: String? = nil
+    var onNext: (() -> Void)? = nil
     /// Questions missed this game, with their answers (v9.26), and a way to play just those again.
     var tricky: [(say: String, answer: String)] = []
     var onTricky: (() -> Void)? = nil
@@ -204,7 +209,7 @@ struct LearnDoneCard: View {
     var body: some View {
         VStack(spacing: 14) {
             // with a review list the host steps aside, so the card still fits a small phone
-            if let host, tricky.isEmpty {
+            if let host, tricky.isEmpty, nextGame == nil, placeDone == nil {
                 CharacterBadge(character: host, size: 96, animated: true).accessibilityHidden(true)
             }
             Text(L10n.tr("\(L10n.tr(title)) done!")).font(.kid(28, .black)).displayTracking(28).foregroundStyle(Palette.ink)
@@ -225,6 +230,10 @@ struct LearnDoneCard: View {
             if earned > 0 {
                 Label(L10n.tr("\(earned) new \(earned == 1 ? "star" : "stars")"), systemImage: "sparkles")
                     .font(.kid(18, .black)).foregroundStyle(Palette.green)
+            }
+            if let placeDone {
+                Label(L10n.tr("Place complete! You finished \(L10n.tr(placeDone))!"), systemImage: "checkmark.seal.fill")
+                    .font(.kid(16, .black)).foregroundStyle(Color(hex: 0x00897B)).multilineTextAlignment(.center)
             }
             if let best, best > stars {
                 Text(L10n.tr("Your best is still \(best) \(best == 1 ? "star" : "stars")."))
@@ -253,6 +262,9 @@ struct LearnDoneCard: View {
                 if let onTricky {
                     BigButton(title: "Practice the tricky ones", color: Color(hex: 0xF29E1F), action: onTricky)
                 }
+            }
+            if let nextGame, let onNext {
+                BigButton(title: L10n.tr("Next: \(L10n.tr(nextGame))"), color: Color(hex: 0x1E88E5), action: onNext)
             }
             BigButton(title: "Play again", color: Palette.green, action: onAgain)
             BigButton(title: "Pick another game", color: Palette.purple, action: onBack)

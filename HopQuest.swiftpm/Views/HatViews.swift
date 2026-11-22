@@ -77,6 +77,21 @@ struct HatView: View {
                     Ellipse().fill(Color(hex: 0xD7B98E)).overlay(Ellipse().stroke(Palette.ink, lineWidth: 2.5)).frame(width: w * 1.05, height: h * 0.22)
                     HatShape.dome.fill(Color(hex: 0xC8A06A)).overlay(HatShape.dome.stroke(Palette.ink, lineWidth: 2.5)).frame(width: w * 0.66, height: h * 0.6).offset(y: -h * 0.16)
                     Rectangle().fill(Color(hex: 0x6D4C41)).frame(width: w * 0.66, height: h * 0.1).offset(y: -h * 0.06)
+                case .snorkel:
+                    Capsule().fill(Color(hex: 0xFFC107)).frame(width: w * 0.95, height: h * 0.12).offset(y: h * 0.42)
+                    RoundedRectangle(cornerRadius: w * 0.14).fill(Color(hex: 0x81D4FA).opacity(0.6))
+                        .overlay(RoundedRectangle(cornerRadius: w * 0.14).stroke(Palette.ink, lineWidth: 2.5))
+                        .frame(width: w * 0.7, height: h * 0.4).offset(y: h * 0.42)
+                    Capsule().fill(Color(hex: 0xFF7043)).overlay(Capsule().stroke(Palette.ink, lineWidth: 2))
+                        .frame(width: w * 0.1, height: h * 0.8).offset(x: w * 0.46, y: -h * 0.04)
+                case .dinoHood:
+                    HatShape.dome.fill(Color(hex: 0x81C784)).overlay(HatShape.dome.stroke(Palette.ink, lineWidth: 2.5)).frame(width: w * 0.9, height: h * 0.75).offset(y: -h * 0.05)
+                    HStack(spacing: w * 0.06) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            Triangle().fill(Color(hex: 0xFFB74D)).overlay(Triangle().stroke(Palette.ink, lineWidth: 2)).frame(width: w * 0.16, height: h * 0.22)
+                        }
+                    }
+                    .offset(y: -h * 0.48)
                 case .gradCap:
                     HatShape.dome.fill(Palette.ink).frame(width: w * 0.6, height: h * 0.45)
                     Rectangle().fill(Palette.ink).frame(width: w * 0.95, height: w * 0.95 * 0.28).rotation3DEffect(.degrees(55), axis: (x: 1, y: 0, z: 0)).offset(y: -h * 0.38)

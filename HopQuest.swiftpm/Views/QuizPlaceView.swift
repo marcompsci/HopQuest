@@ -180,6 +180,34 @@ struct QuizPlace {
                   rounds: { id in var g = SystemRandomNumberGenerator(); return SentenceBank.rounds(for: id, using: &g) })
     }
 
+    static var ocean: QuizPlace {
+        QuizPlace(id: "ocean", title: "Ocean Cove", line: "Fish, waves and tide pools. Let's dive in!",
+                  greeting: "Hi, it's Ocho again! The ocean is my home. Welcome to Ocean Cove!", host: Roster.character(id: "ocho"),
+                  accent: Color(hex: 0x0277BD), background: [Color(hex: 0xE1F5FE), Color(hex: 0xB3E5FC)], games: OceanBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return OceanBank.rounds(for: id, using: &g) })
+    }
+
+    static var dinos: QuizPlace {
+        QuizPlace(id: "dinos", title: "Dino Dig", line: "Fossils, horns and giant necks. Let's dig!",
+                  greeting: "Hi, I'm Star Spark! Grab a brush. Let's dig up some dinosaurs!", host: Roster.character(id: "starspark"),
+                  accent: Color(hex: 0x6D4C41), background: [Color(hex: 0xFBF3E9), Color(hex: 0xEBD9C3)], games: DinoBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return DinoBank.rounds(for: id, using: &g) })
+    }
+
+    static var kindness: QuizPlace {
+        QuizPlace(id: "kindness", title: "Kindness Club", line: "Magic words, helping hands and good sports. Be kind!",
+                  greeting: "Hi, I'm Midnight Mask! My superpower is kindness. Welcome to the Kindness Club!", host: Roster.character(id: "midnight"),
+                  accent: Color(hex: 0xC2185B), background: [Color(hex: 0xFDEDF3), Color(hex: 0xF8CFDE)], games: KindBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return KindBank.rounds(for: id, using: &g) })
+    }
+
+    static var vehicles: QuizPlace {
+        QuizPlace(id: "vehicles", title: "On the Move", line: "Cars, boats and planes. Let's go!",
+                  greeting: "Hi, I'm Pixel Pup! Beep beep! Hop in and let's go On the Move!", host: Roster.character(id: "pixelpup"),
+                  accent: Color(hex: 0x1565C0), background: [Color(hex: 0xE8F0FE), Color(hex: 0xC5D8FA)], games: MoveBank.games,
+                  rounds: { id in var g = SystemRandomNumberGenerator(); return MoveBank.rounds(for: id, using: &g) })
+    }
+
     /// Mystery Mix (v9.37): one question from each of the places a child has played, places taking turns.
     static func mystery(sources: [String]) -> QuizPlace {
         let info = QuizGameInfo(id: "mix", title: "Mystery Mix", symbol: "questionmark.circle.fill",
@@ -226,6 +254,10 @@ struct QuizPlace {
         case "animals": return .animals
         case "opposites": return .opposites
         case "sentences": return .sentences
+        case "ocean": return .ocean
+        case "dinos": return .dinos
+        case "kindness": return .kindness
+        case "vehicles": return .vehicles
         default: return .shapes
         }
     }
@@ -244,14 +276,27 @@ struct QuizPlaceView: View {
     var onBack: () -> Void
 
     @State private var playing: QuizGameInfo?
+    @State private var placeJustDone = false
 
     var body: some View {
         ZStack {
             LinearGradient(colors: place.background, startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             if let game = playing {
-                QuizGameView(place: place, game: game, best: store.profile?.places[place.id]?.best(game.id) ?? 0,
-                             onFinish: { stars in store.recordPlace(place.id, game: game.id, stars: stars) },
-                             onBack: { playing = nil; Narrator.shared.say("Pick another game!") })
+                let save = store.profile?.places[place.id] ?? PlaceSave()
+                let next = PlaceProgress.next(after: game.id, games: place.games.map(\.id), best: { save.best($0) })
+                    .flatMap { id in place.games.first { $0.id == id } }
+                QuizGameView(place: place, game: game, best: save.best(game.id), placeDone: placeJustDone,
+                             nextGame: next?.title,
+                             onFinish: { stars in
+                                 let before = PlaceProgress.isComplete(place.games.map { save.best($0.id) })
+                                 let earned = store.recordPlace(place.id, game: game.id, stars: stars)
+                                 let after = store.profile?.places[place.id] ?? PlaceSave()
+                                 // a place is "done" the moment its last game reaches 2 stars (v9.53); Mystery Mix doesn't count
+                                 placeJustDone = place.id != MysteryMix.id && !before && PlaceProgress.isComplete(place.games.map { after.best($0.id) })
+                                 return earned
+                             },
+                             onNext: next.map { n in { placeJustDone = false; playing = n } },
+                             onBack: { placeJustDone = false; playing = nil; Narrator.shared.say("Pick another game!") })
                     .id(game.id)
                     .transition(.pushIn)
             } else {
@@ -270,10 +315,23 @@ struct QuizPlaceView: View {
                 PlaceHeader(host: place.host, title: place.title, line: place.line,
                             stars: save.totalStars, maxStars: place.games.count * 3, accent: place.accent, onBack: onBack)
                     .padding(.bottom, 4)
+                let suggest = PlaceProgress.tryNext(games: place.games.map(\.id), best: { save.best($0) })
                 ForEach(place.games) { g in
                     LearnGameCard(symbol: g.symbol, title: g.title, blurb: g.intro, stars: save.best(g.id), color: place.accent) {
                         playing = g
                     }
+                    // a gentle pointer to the game to try next (v9.56)
+                    .overlay(alignment: .topTrailing) {
+                        if suggest == g.id {
+                            Text(L10n.tr("Try next"))
+                                .font(.kid(12, .black)).foregroundStyle(.white)
+                                .padding(.horizontal, 9).padding(.vertical, 3)
+                                .background(Capsule().fill(place.accent))
+                                .offset(x: -10, y: -8)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .accessibilityHint(suggest == g.id ? L10n.tr("Try next") : "")
                 }
                 Text("Each game gives up to 3 stars. Beat your best for more.")
                     .font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.55))
@@ -295,7 +353,12 @@ struct QuizGameView: View {
     let game: QuizGameInfo
     /// The best stars saved for this game (v9.43), shown on the done card when this run scored lower.
     var best = 0
+    /// True when this game just finished the whole place (v9.53).
+    var placeDone = false
+    /// The next game's title, and a way to start it (v9.51).
+    var nextGame: String? = nil
     var onFinish: (Int) -> Int
+    var onNext: (() -> Void)? = nil
     var onBack: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
@@ -344,6 +407,8 @@ struct QuizGameView: View {
                     Color.black.opacity(0.25).ignoresSafeArea()
                     LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry, total: rounds.count,
                                   host: place.host, practice: practising, best: practising ? nil : best,
+                                  placeDone: placeDone && !practising ? place.title : nil,
+                                  nextGame: practising ? nil : nextGame, onNext: practising ? nil : onNext,
                                   tricky: QuizHelp.tricky(missedRounds).map { (say: $0.say, answer: QuizHelp.spoken($0.answer)) },
                                   onTricky: missedRounds.isEmpty ? nil : { startTricky() },
                                   onAgain: { start() }, onBack: onBack)

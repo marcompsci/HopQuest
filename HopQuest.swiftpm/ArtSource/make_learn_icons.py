@@ -583,6 +583,52 @@ def icon_sentences():
     return s
 
 
+def icon_ocean():
+    s = ground()
+    # waves, a fish and a shell
+    s += P("M20 120 Q45 100 70 120 Q95 140 120 120 Q145 100 170 120 Q182 128 186 124 L186 176 L20 176 Z", "#4FC3F7", 6)
+    s += P("M20 146 Q45 128 70 146 Q95 164 120 146 Q145 128 170 146 L186 146 L186 176 L20 176 Z", "#0288D1", 5)
+    s += E(92, 76, 30, 18, "#FFB74D", 5) + P("M120 76 L142 60 L142 92 Z", "#FFB74D", 5) + C(80, 72, 4, OUT, False)
+    s += P("M150 40 Q166 30 176 44 Q170 56 156 54 Q146 50 150 40 Z", "#F8BBD0", 4)
+    s += P("M40 44 Q44 34 48 44 M52 34 Q56 24 60 34", "none", 4)
+    return s
+
+
+def icon_dinos():
+    s = ground()
+    # a long-necked dinosaur and a bone
+    s += E(98, 126, 50, 30, "#81C784", 6)
+    s += P("M134 112 Q150 70 160 44 Q168 34 178 42 Q182 52 170 56 Q160 78 150 118 Z", "#81C784", 6)
+    s += C(170, 46, 3, OUT, False)
+    s += P("M50 122 Q26 120 18 106 Q34 112 52 108", "#81C784", 5)
+    s += R(70, 146, 14, 26, 4, "#81C784") + R(110, 146, 14, 26, 4, "#81C784")
+    s += P("M84 108 L96 98 L108 108 L120 98", "none", 4)
+    s += R(30, 46, 56, 12, 6, "#FFF8E1") + C(30, 46, 8, "#FFF8E1", 4) + C(30, 58, 8, "#FFF8E1", 4) + C(86, 46, 8, "#FFF8E1", 4) + C(86, 58, 8, "#FFF8E1", 4)
+    return s
+
+
+def icon_kindness():
+    s = ground()
+    # two hands holding a big heart
+    s += P("M100 150 Q40 110 44 72 Q48 44 76 46 Q92 48 100 66 Q108 48 124 46 Q152 44 156 72 Q160 110 100 150 Z", "#FF6B8A", 6)
+    s += shine(78, 70, 12, 6)
+    s += P("M30 150 Q60 172 100 168 Q140 172 170 150 L170 176 L30 176 Z", "#FFCC80", 5)
+    s += star(160, 40, 10) + star(40, 36, 7)
+    return s
+
+
+def icon_vehicles():
+    s = ground()
+    # a little car under a plane
+    s += R(36, 116, 128, 36, 12, "#42A5F5") + P("M64 116 L80 90 L124 90 L140 116 Z", "#90CAF9", 5)
+    s += C(70, 156, 14, "#455A64", 5) + C(132, 156, 14, "#455A64", 5)
+    s += C(70, 156, 5, "#CFD8DC", False) + C(132, 156, 5, "#CFD8DC", False)
+    s += P("M60 46 L150 46 Q164 46 164 54 Q164 60 150 60 L60 60 Z", "#FFFFFF", 4)
+    s += P("M96 46 L84 26 L100 26 L116 46 Z M96 60 L86 76 L102 76 L116 60 Z", "#FFFFFF", 4)
+    s += P("M60 46 L50 34 L58 34 L70 46 Z", "#FFFFFF", 4)
+    return s
+
+
 ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science": icon_science,
          "icon_music": icon_music, "icon_garden": icon_garden,
          "icon_writing": icon_writing, "icon_clock": icon_clock, "icon_world": icon_world, "icon_dash": icon_dash,
@@ -595,7 +641,8 @@ ICONS = {"icon_reading": icon_reading, "icon_market": icon_market, "icon_science
          "icon_graphs": icon_graphs, "icon_words": icon_words, "icon_tenframe": icon_tenframe, "icon_sky": icon_sky,
          "icon_helpers": icon_helpers, "icon_sounds": icon_sounds, "icon_numberline": icon_numberline,
          "icon_colors": icon_colors, "icon_evenodd": icon_evenodd, "icon_animals": icon_animals, "icon_opposites": icon_opposites,
-         "icon_sentences": icon_sentences}
+         "icon_sentences": icon_sentences, "icon_ocean": icon_ocean, "icon_dinos": icon_dinos, "icon_kindness": icon_kindness,
+         "icon_vehicles": icon_vehicles}
 
 
 if __name__ == "__main__":
