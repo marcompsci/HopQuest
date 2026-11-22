@@ -506,6 +506,28 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 - The done card says "Your best is still 3 stars." when a run scores lower than the best.
 - VoiceOver reads answer buttons as words: "🔴 red" is read as "red", and end marks as "period", "question mark" and "exclamation mark".
 
+### v9.45–v9.48: Four more places
+- **Ocean Cove** (Ocho Octopus, at home in the sea): Who Lives Here?, Ocean Facts, Tide Pool Count, Beach Words.
+- **Dino Dig** (Star Spark): Plant or Meat Eater?, Dino Facts, Dino Sizes (with everyday comparisons: as big as a chicken, as long as a bus), Dig and Count.
+- **Kindness Club** (Midnight Mask): Magic Words, Kind or Not?, Helping Hands, Good Sport.
+- **On the Move** (Pixel Pup): Land, Water or Air?, Count the Wheels, Busy Vehicles, Traffic Count.
+- The counting games share one round builder: each kind of thing in the jumble has a different count, so "how many shells?" never has two right answers.
+
+### v9.49–v9.56: Finding the next thing to do
+- **Mystery Mix per subject:** pick Math and the mix uses only math places.
+- **Next game** on the done card goes straight to the place's next game not yet at 3 stars.
+- **Place complete!** shows the moment the last game in a place reaches 2 stars. The Learn tile then wears a green **Done!** ribbon.
+- The place page tags one game **Try next** (a game at 1 star, then one not played yet).
+- **Keep going** names the skill to practise next.
+- Grown-ups get **subject mixes** on practice sheets and a **By subject** summary on the progress page.
+- **All-Rounder** badge: a finished place in every subject. This rewards breadth, never time or streaks.
+
+### v9.57: Extras
+- Brain Bubble has 71 questions (prime). Sticker Scenes adds dinosaur valley and a train station. New hats: Snorkel Mask (48 badges) and Dino Hood (51).
+
+### TestFlight upload from GitHub
+- `.github/workflows/testflight.yml` also runs when a commit on `feature/hop-village` says `[testflight build N]`. Pushing tags isn't allowed from Claude's environment, and "Run workflow" only appears once the file is on `main`. The first run (build 3) passed the tests and gate, and stopped at the missing API-key secrets.
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.

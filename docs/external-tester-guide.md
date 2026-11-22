@@ -38,7 +38,7 @@ Thanks for testing HopQuest 1.0! Please try:
 3. **Hop Village:**
    - walk around and visit the Reading Nook, Math Market and Coding Lab
    - plant something in the garden, and pick a pet
-4. **Learn:** Reading Nook, Math Market, Science Lab, Music Maker, Writing Desk and the learning places (Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail and more). New in this build: eleven new places (including Color Lab, Animal Club and Sentence Station), subject buttons and a Mystery Mix at the top of Learn, a Keep going card at the top of Learn, and help in every quiz: tap the speaker to hear the choices, see the missed questions at the end, and practise just the tricky ones. Did anything feel too hard or too easy for your child?
+4. **Learn:** Reading Nook, Math Market, Science Lab, Music Maker, Writing Desk and the learning places (Rhyme Pond, Number Builder, Times Treehouse, Measure Meadow, Feelings Corner, Nature Trail and more). New in this build: fifteen new places (including Color Lab, Animal Club, Dino Dig and Kindness Club), a Next game button, subject buttons and a Mystery Mix at the top of Learn, a Keep going card at the top of Learn, and help in every quiz: tap the speaker to hear the choices, see the missed questions at the end, and practise just the tricky ones. Did anything feel too hard or too easy for your child?
 5. **Adventures and Worlds:** play Meadow Street to the end (a short story scene plays), then open a world from the Worlds page.
 6. **Games:**
    - Bubble Kart, Pillow Bop, Fort Friends, Star Dash, Star Hop and Breathe
