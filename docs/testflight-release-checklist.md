@@ -108,6 +108,6 @@ Work through this before **every** TestFlight upload. Tick each box in the pull 
 3. Keep the `.p8` file somewhere safe, or delete it. Never commit it.
 
 **Each upload:**
-1. GitHub → **Actions → TestFlight upload → Run workflow**. Enter a build number higher than any uploaded for this version.
+1. GitHub → **Actions → TestFlight upload → Run workflow** and enter a build number higher than any uploaded for this version. This works once the workflow is on `main`. Before then, push a commit to `feature/hop-village` whose message includes `[testflight build N]`.
 2. The gate job runs the tests and the release check. Any failure stops the upload, except the main-branch privacy-policy check, which is reported as a warning because it only blocks external testing and App Review.
 3. When Apple's "processed" email arrives, the build appears under TestFlight. Then record it in `release/last_uploaded.json`.

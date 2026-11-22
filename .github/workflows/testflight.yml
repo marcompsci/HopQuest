@@ -13,10 +13,10 @@ name: TestFlight upload
 #     ASC_KEY_P8       the full text of the downloaded AuthKey_XXXX.p8 file
 
 on:
-  # Pushing a tag named testflight-<build number> (for example testflight-4) also starts an upload,
-  # from that tag's commit. This works from any branch, before the workflow is on main.
+  # A push to the development branch whose commit message says [testflight build N] also starts an upload
+  # of that commit as build N. Every other push skips both jobs. This works before the workflow is on main.
   push:
-    tags: ["testflight-*"]
+    branches: ["feature/hop-village"]
   workflow_dispatch:
     inputs:
       build_number:
@@ -28,7 +28,8 @@ permissions:
   contents: read
 
 env:
-  BUILD_NUMBER: ${{ inputs.build_number || (startsWith(github.ref_name, 'testflight-') && github.ref_name) || '' }}
+  BUILD_INPUT: ${{ inputs.build_number }}
+  COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
 concurrency:
   group: testflight
@@ -37,6 +38,7 @@ concurrency:
 jobs:
   gate:
     name: Tests and compliance gate
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[testflight build ')
     runs-on: ubuntu-latest
     container: swift:5.10
     steps:
@@ -73,8 +75,9 @@ jobs:
           xcodebuild -version
       - name: Work out the build number
         run: |
-          B="${BUILD_NUMBER#testflight-}"
-          if ! [[ "$B" =~ ^[0-9]+$ ]]; then echo "::error::Build number '$BUILD_NUMBER' isn't a number (use a tag like testflight-4)"; exit 1; fi
+          B="$BUILD_INPUT"
+          if [ -z "$B" ]; then B=$(printf '%s' "$COMMIT_MESSAGE" | sed -nE 's/.*\[testflight build ([0-9]+)\].*/\1/p' | head -n 1); fi
+          if ! [[ "$B" =~ ^[0-9]+$ ]]; then echo "::error::No build number (start by hand, or put [testflight build N] in the commit message)"; exit 1; fi
           echo "BUILD=$B" >> "$GITHUB_ENV"
           echo "Uploading build $B"
       - name: Check the secrets are set
