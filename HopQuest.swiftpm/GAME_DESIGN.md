@@ -528,6 +528,15 @@ All on the shared quiz engine, four games each, tested on 300 seeds per game wit
 ### TestFlight upload from GitHub
 - `.github/workflows/testflight.yml` also runs when a commit on `feature/hop-village` says `[testflight build N]`. Pushing tags isn't allowed from Claude's environment, and "Run workflow" only appears once the file is on `main`. The first run (build 3) passed the tests and gate, and stopped at the missing API-key secrets.
 
+### v9.58–v9.63: Practising the shaky parts
+- **Tricky Mix** (on Learn, when anything is at 1 star): a practice round that takes turns between every game still at 1 star, across all places. Spaced practice for the shaky ones, with no pressure and no timer.
+- Mixed questions show a **From:** label (the place in Mystery Mix and Tricky Mix, the game in Mixed Review), so a question about the moon in the middle of a mix makes sense.
+- **Mix it up!** on every place page: one question from each of its games. Practice only. It never saves stars, because a place's total adds up every saved game.
+- Grown-ups: **Slower voice** (80% speed) under Reading help, with a sample line when it's switched.
+- The badges page is grouped into **Adventures and play** and **Places**, each with a count.
+- The Learn page works out the place areas once per render instead of once per subject chip.
+- Brain Bubble has 73 questions (prime).
+
 ## 7. Next engineering steps
 
 1. Build & run in Xcode on device; tune hop speed, car speed, and gate frequency with real kids.
