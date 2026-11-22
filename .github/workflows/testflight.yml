@@ -13,6 +13,10 @@ name: TestFlight upload
 #     ASC_KEY_P8       the full text of the downloaded AuthKey_XXXX.p8 file
 
 on:
+  # Pushing a tag named testflight-<build number> (for example testflight-4) also starts an upload,
+  # from that tag's commit. This works from any branch, before the workflow is on main.
+  push:
+    tags: ["testflight-*"]
   workflow_dispatch:
     inputs:
       build_number:
@@ -22,6 +26,9 @@ on:
 
 permissions:
   contents: read
+
+env:
+  BUILD_NUMBER: ${{ inputs.build_number || (startsWith(github.ref_name, 'testflight-') && github.ref_name) || '' }}
 
 concurrency:
   group: testflight
@@ -64,6 +71,12 @@ jobs:
           if [ -z "$X" ]; then echo "::error::No Xcode 26 on this runner"; ls /Applications | grep Xcode; exit 1; fi
           sudo xcode-select -s "$X"
           xcodebuild -version
+      - name: Work out the build number
+        run: |
+          B="${BUILD_NUMBER#testflight-}"
+          if ! [[ "$B" =~ ^[0-9]+$ ]]; then echo "::error::Build number '$BUILD_NUMBER' isn't a number (use a tag like testflight-4)"; exit 1; fi
+          echo "BUILD=$B" >> "$GITHUB_ENV"
+          echo "Uploading build $B"
       - name: Check the secrets are set
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -95,7 +108,7 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CURRENT_PROJECT_VERSION="${{ inputs.build_number }}" | tail -n 80
+            CURRENT_PROJECT_VERSION="$BUILD" | tail -n 80
       - name: Both privacy manifests are in the archive
         run: |
           APP="$RUNNER_TEMP/HopQuest.xcarchive/Products/Applications/HopQuest.app"
@@ -129,7 +142,7 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -n 60
-          echo "Uploaded build ${{ inputs.build_number }}. Apple emails when processing finishes (usually 5–30 minutes)."
+          echo "Uploaded build $BUILD. Apple emails when processing finishes (usually 5–30 minutes)."
       - name: Remove the API key
         if: always()
         run: rm -rf "$RUNNER_TEMP/keys"
