@@ -169,6 +169,13 @@ struct RootView: View {
         }
     }
 
+    /// Games still at 1 star, for Tricky Mix (v9.58).
+    private var trickyPicks: [(place: String, game: String)] {
+        TrickyMix.picks(places: MysteryMix.quizPlaceIDs, shown: store.placeShown,
+                        games: { QuizPlace.named($0).games.map(\.id) },
+                        best: { store.profile?.places[$0]?.best($1) ?? 0 })
+    }
+
     @ViewBuilder
     private var content: some View {
         switch route {
@@ -314,7 +321,8 @@ struct RootView: View {
             QuickGameView(onExit: goHome)
 
         case .quizPlace(let id):
-            QuizPlaceView(place: MysteryMix.subject(fromRoute: id).map { sub in
+            QuizPlaceView(place: id == TrickyMix.id ? .tricky(picks: trickyPicks)
+                          : MysteryMix.subject(fromRoute: id).map { sub in
                               .mystery(sources: MysteryMix.sources(plays: (store.profile?.places ?? [:]).mapValues(\.plays), shown: store.placeShown, subject: sub))
                           } ?? .named(id),
                           onBack: goHome)

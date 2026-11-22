@@ -13,7 +13,7 @@ struct BubbleQuestion: Equatable {
 }
 
 enum BubbleBank {
-    /// 71 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
+    /// 73 questions (a prime number, so stepping through them by 7 visits every one before any repeats).
     static let all: [BubbleQuestion] = [
         BubbleQuestion(emoji: "➕", question: "What is 4 + 3?", choices: ["6", "7", "8"], answer: 1, fact: "4 + 3 = 7. So does 3 + 4!"),
         BubbleQuestion(emoji: "➖", question: "What is 9 − 4?", choices: ["5", "4", "6"], answer: 0, fact: "9 take away 4 leaves 5."),
@@ -90,6 +90,9 @@ enum BubbleBank {
         BubbleQuestion(emoji: "🦕", question: "What do we call dinosaur bones turned to stone?", choices: ["Fossils", "Pebbles", "Shells"], answer: 0, fact: "Fossils help us learn about dinosaurs."),
         BubbleQuestion(emoji: "💛", question: "You bump into a friend. What can you say?", choices: ["Move!", "I'm sorry!", "Watch it!"], answer: 1, fact: "Sorry is a magic word."),
         BubbleQuestion(emoji: "🛴", question: "How many wheels does a scooter have?", choices: ["2", "3", "4"], answer: 0, fact: "A scooter has one wheel in front and one in back."),
+        // v9.63: two more
+        BubbleQuestion(emoji: "🦖", question: "When did dinosaurs live?", choices: ["Last year", "Long before people", "With the pirates"], answer: 1, fact: "Dinosaurs lived millions of years before people."),
+        BubbleQuestion(emoji: "🚲", question: "Does a bike go on land, water or in the air?", choices: ["Water", "Air", "Land"], answer: 2, fact: "Bikes roll on land, on two wheels."),
     ]
     static let step = 7
 }

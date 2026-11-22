@@ -43,10 +43,22 @@ struct BadgesView: View {
                             .accessibilityLabel("\(earned.count) of \(Badges.all.count) badges")
                     }
                     HatShelf(badges: earned.count)
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 12)], spacing: 14) {
-
-                        ForEach(Badges.all) { b in
-                            badge(b, got: earned.contains(b.id))
+                    // two groups (v9.62): adventures and play first, then one badge for every place
+                    let groups = BadgeGroups.split(Badges.all)
+                    ForEach([("Adventures and play", groups.other), ("Places", groups.places)], id: \.0) { title, list in
+                        HStack {
+                            Text(L10n.tr(title)).font(.kid(18, .black)).foregroundStyle(Palette.ink)
+                            Spacer()
+                            Text("\(list.filter { earned.contains($0.id) }.count)/\(list.count)")
+                                .font(.kid(14, .bold)).monospacedDigit().foregroundStyle(Palette.ink.opacity(0.6))
+                        }
+                        .padding(.top, 6)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityAddTraits(.isHeader)
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 12)], spacing: 14) {
+                            ForEach(list) { b in
+                                badge(b, got: earned.contains(b.id))
+                            }
                         }
                     }
                     Text("Badges never go away once you earn them.")

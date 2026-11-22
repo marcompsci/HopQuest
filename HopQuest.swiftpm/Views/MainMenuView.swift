@@ -218,6 +218,13 @@ struct MainMenuView: View {
         if subject == .all, let area = KeepGoing.pick(store.learningAreas.filter { store.placeShown($0.id) }) {
             keepGoingCard(area)
         }
+        // Tricky Mix (v9.58): the games still at 1 star, all in one practice round
+        if subject == .all {
+            let tricky = TrickyMix.picks(places: MysteryMix.quizPlaceIDs, shown: store.placeShown,
+                                         games: { QuizPlace.named($0).games.map(\.id) },
+                                         best: { store.profile?.places[$0]?.best($1) ?? 0 })
+            if !tricky.isEmpty { trickyCard(count: tricky.count) }
+        }
         // Mystery Mix for everything, or for just the chosen subject (v9.49)
         if MysteryMix.sources(plays: (store.profile?.places ?? [:]).mapValues(\.plays), shown: store.placeShown, subject: subject).count >= MysteryMix.minSources {
             mysteryCard
@@ -624,6 +631,29 @@ struct MainMenuView: View {
         }
     }
 
+    /// Tricky Mix (v9.58): practise the games at 1 star.
+    private func trickyCard(count: Int) -> some View {
+        Button {
+            Haptics.tap()
+            onQuizPlace(TrickyMix.id)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "target").font(.system(size: 32, weight: .black)).foregroundStyle(Color(hex: 0xF29E1F))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L10n.tr("Tricky Mix")).font(.kid(19, .black)).foregroundStyle(Palette.ink)
+                    Text(L10n.tr(count == 1 ? "Practise the 1 game that's still tricky" : "Practise the \(count) games that are still tricky"))
+                        .font(.kid(13, .semibold)).foregroundStyle(Palette.ink.opacity(0.6)).lineLimit(2)
+                }
+                Spacer()
+                Image(systemName: "play.fill").font(.system(size: 18, weight: .black)).foregroundStyle(Color(hex: 0xF29E1F))
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.white.opacity(0.9)))
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .accessibilityLabel("\(L10n.tr("Tricky Mix")), \(L10n.tr(count == 1 ? "Practise the 1 game that's still tricky" : "Practise the \(count) games that are still tricky"))")
+    }
+
     /// Mystery Mix (v9.37): five questions from places already played, any time.
     private var mysteryCard: some View {
         Button {
@@ -652,10 +682,12 @@ struct MainMenuView: View {
 
     /// Subject chips (v9.36), each with how many of its places are done (v9.38).
     private var subjectChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        // the areas are worked out once, not once per chip (v9.60)
+        let shownAreas = store.learningAreas.filter { store.placeShown($0.id) }
+        return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(LearnSubject.allCases) { sub in
-                    let tally = LearnSubject.done(sub, areas: store.learningAreas.filter { store.placeShown($0.id) })
+                    let tally = LearnSubject.done(sub, areas: shownAreas)
                     Button {
                         Haptics.tap()
                         withAnimation(Motion.snappy) { subject = sub }

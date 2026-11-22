@@ -118,11 +118,16 @@ struct QuizRound: Equatable {
     let choiceVisuals: [QuizVisual]
     let answer: String
     let cheer: String
+    /// Where a mixed-in question comes from ("Sky Watch", "Moon Shapes"), shown above it (v9.59). Nil in a normal game.
+    var from: String? = nil
 
     init(kind: Kind = .choose, visual: QuizVisual, say: String, choices: [String], choiceVisuals: [QuizVisual] = [], answer: String, cheer: String) {
         self.kind = kind; self.visual = visual; self.say = say; self.choices = choices
         self.choiceVisuals = choiceVisuals; self.answer = answer; self.cheer = cheer
     }
+
+    /// The same round, labelled with where it came from.
+    func tagged(_ source: String) -> QuizRound { var r = self; r.from = source; return r }
 }
 
 /// One game in a place.
@@ -225,7 +230,7 @@ enum PracticeMix {
             k += 1
             if pools[g, default: []].isEmpty { pools[g] = make(g) }
             if let next = pools[g]!.firstIndex(where: { r in !out.contains { $0.say == r.say && $0.visual == r.visual } }) {
-                out.append(pools[g]!.remove(at: next))
+                out.append(pools[g]!.remove(at: next).tagged(games[(k - 1) % games.count].title))
                 stuck = 0
             } else {
                 pools[g] = []

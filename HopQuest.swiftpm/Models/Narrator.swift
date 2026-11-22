@@ -58,7 +58,8 @@ final class Narrator: NSObject, AVSpeechSynthesizerDelegate {
         configureSession()
         if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
         let utterance = AVSpeechUtterance(string: clean)
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * rate   // a little slower for kids
+        // a little slower for kids, and slower still when grown-ups ask for it (v9.61)
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * VoiceSpeed.rate(rate, slow: UserDefaults.standard.bool(forKey: VoiceSpeed.key))
         utterance.pitchMultiplier = min(2, max(0.5, pitch))          // a little brighter by default
         utterance.postUtteranceDelay = 0.05
         // the learning content is English, so anything without a Spanish line is read in English

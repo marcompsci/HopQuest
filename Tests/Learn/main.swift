@@ -1359,7 +1359,7 @@ test("Graph Garden: every game, 300 seeds, answers worked out from the picture")
 
 test("Brain Bubble widget: questions, one try each, every question before any repeat") {
     let all = BubbleBank.all
-    check(all.count == 71, "71 questions (prime, so stepping by 7 visits them all)")
+    check(all.count == 73, "73 questions (prime, so stepping by 7 visits them all)")
     for q in all {
         check(q.choices.count == 3 && Set(q.choices).count == 3 && q.choices.indices.contains(q.answer), "three different choices: \(q.question)")
         check(!q.fact.isEmpty && !q.emoji.isEmpty, "a fact and a picture: \(q.question)")
@@ -1946,6 +1946,35 @@ test("Next game, place complete, try next, All-Rounder, subject mixes (v9.49–v
     check(MysteryMix.sources(plays: ["sky": 1, "graphs": 2, "ocean": 1], shown: { _ in true }, subject: .science) == ["sky", "ocean"], "a subject's mix only uses its places")
     check(LearnSubject.of("ocean") == .science && LearnSubject.of("kindness") == .world && LearnSubject.of("vehicles") == .world, "new places have subjects")
     check(L10n.spanish("Place complete! You finished Sky Watch!") == "¡Lugar completado! ¡Terminaste Sky Watch!" && L10n.spanish("Try next") == "Prueba este", "Spanish")
+}
+
+test("Tricky Mix, From labels, Mix it up, slower voice, badge groups (v9.58–v9.63)") {
+    let best: [String: [String: Int]] = ["sky": ["moon": 1, "shadow": 3], "colors": ["mix": 1], "words": ["abc": 2]]
+    let picks = TrickyMix.picks(places: ["words", "sky", "colors", "graphs"], shown: { $0 != "colors" },
+                                games: { p in Array((best[p] ?? [:]).keys).sorted() }, best: { best[$0]?[$1] ?? 0 })
+    check(picks.count == 1 && picks[0] == ("sky", "moon"), "only games at 1 star, only places on the menu")
+    let none = TrickyMix.picks(places: ["words"], shown: { _ in true }, games: { _ in ["abc"] }, best: { _, _ in 2 })
+    check(none.isEmpty && TrickyMix.rounds(picks: [], make: { _, _ in [] }, label: { $0 }).isEmpty, "nothing tricky, no mix")
+    var rng = SeededRNG(state: 9)
+    let made = TrickyMix.rounds(picks: [("sky", "moon"), ("words", "abc")],
+                                make: { p, g in p == "sky" ? SkyBank.rounds(for: g, using: &rng) : WordBank.rounds(for: g, using: &rng) },
+                                label: { $0 == "sky" ? "Sky Watch" : "Word Workshop" })
+    check(made.count == 5 && made[0].from == "Sky Watch" && made[1].from == "Word Workshop", "the tricky games take turns, each labelled")
+    check(Set(made.map { "\($0.say)|\($0.visual)" }).count == made.count, "no question twice")
+    let one = TrickyMix.rounds(picks: [("x", "y")], make: { _, _ in [QuizRound(visual: .none, say: "Only", choices: ["a", "b"], answer: "a", cheer: "")] }, label: { $0 })
+    check(one.count == 1, "stops when there's nothing new")
+
+    let plain = QuizRound(visual: .none, say: "Q", choices: ["a", "b"], answer: "a", cheer: "")
+    check(plain.from == nil && plain.tagged("Ocean Cove").from == "Ocean Cove" && plain.tagged("x").say == "Q", "tagging keeps the round")
+    var r2 = SeededRNG(state: 4)
+    let mix = PracticeMix.rounds(games: SkyBank.games, count: 4) { SkyBank.rounds(for: $0, using: &r2) }
+    check(mix.map(\.from) == SkyBank.games.map(\.title), "Mixed Review says which game each question is from")
+
+    check(VoiceSpeed.rate(0.9, slow: false) == 0.9 && abs(VoiceSpeed.rate(0.9, slow: true) - 0.72) < 0.0001, "slower voice is 80% speed")
+    let groups = BadgeGroups.split(Badges.all)
+    check(groups.places.count == Badges.areaBadges.count && groups.places.count + groups.other.count == Badges.all.count, "every badge in one group")
+    check(L10n.spanish("From: Sky Watch") == "De: Sky Watch" && L10n.spanish("Practise the 3 games that are still tricky") == "Practica los 3 juegos que aún son difíciles", "Spanish")
+    check(L10n.spanish("Tricky Mix") != nil && L10n.spanish("Mix it up!") != nil && L10n.spanish("Places") != nil, "Spanish words")
 }
 
 test("Try at home (v9.7): every place has a plain summary and short ideas, practising places come first") {

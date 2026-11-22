@@ -72,6 +72,7 @@ struct ParentSettingsView: View {
     @AppStorage(Handedness.key) private var leftHanded = false
     @AppStorage(KidType.easyReadKey) private var easyRead = false
     @AppStorage(CalmMotion.key) private var calmMotion = false
+    @AppStorage(VoiceSpeed.key) private var slowVoice = false
     @State private var confirmReset = false
     @State private var soundTick = false
     @State private var confirmStartOver = false
@@ -107,7 +108,9 @@ struct ParentSettingsView: View {
 
             Section("Reading help") {
                 Toggle("Read everything out loud", isOn: binding(\.narration, true))
-                Text("Reads questions, tips, and lessons aloud for kids who are still learning to read. Uses the built-in iPhone voice; no recordings are made.")
+                Toggle("Slower voice", isOn: $slowVoice)
+                    .onChange(of: slowVoice) { _, _ in Narrator.shared.sayAnyway("This is how I'll sound.") }
+                Text("Reads questions, tips, and lessons aloud for kids who are still learning to read. Slower voice gives young listeners more time. Uses the built-in iPhone voice; no recordings are made.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

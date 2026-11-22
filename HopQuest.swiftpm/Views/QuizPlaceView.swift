@@ -220,10 +220,31 @@ struct QuizPlace {
                              var out: [QuizRound] = []
                              for pick in MysteryMix.plan(sources: sources, games: { QuizPlace.named($0).games.map(\.id) }, using: &g) {
                                  if let r = QuizPlace.named(pick.place).rounds(pick.game).first(where: { r in !out.contains { $0.say == r.say && $0.visual == r.visual } }) {
-                                     out.append(r)
+                                     out.append(r.tagged(QuizPlace.named(pick.place).title))
                                  }
                              }
                              return out
+                         })
+    }
+
+    /// Tricky Mix (v9.58): the games still at 1 star, taking turns. Each question says which place it's from.
+    static func tricky(picks: [(place: String, game: String)]) -> QuizPlace {
+        let info = QuizGameInfo(id: "mix", title: "Tricky Mix", symbol: "target",
+                                intro: "These are the games still at 1 star. Practice makes them easier!", skill: "practising the tricky ones")
+        return QuizPlace(id: TrickyMix.id, title: "Tricky Mix", line: "The tricky ones, a little at a time.",
+                         greeting: "Hi, I'm Gemma! Let's practise the tricky ones together. You can do it!", host: Roster.character(id: "gemma"),
+                         accent: Color(hex: 0xF29E1F), background: [Color(hex: 0xFFF4E0), Color(hex: 0xFFE2B3)], games: [info],
+                         rounds: { _ in
+                             TrickyMix.rounds(picks: picks, make: { QuizPlace.named($0).rounds($1) }, label: { QuizPlace.named($0).title })
+                         })
+    }
+
+    /// The place with one more game, Mix it up (v9.60): a round from each of its games, for practice only.
+    var withMix: QuizPlace {
+        let base = self
+        return QuizPlace(id: id, title: title, line: line, greeting: greeting, host: host, accent: accent, background: background,
+                         games: games, rounds: { gid in
+                             gid == PracticeMix.id ? PracticeMix.rounds(games: base.games, count: 5, make: base.rounds) : base.rounds(gid)
                          })
     }
 
@@ -281,7 +302,14 @@ struct QuizPlaceView: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: place.background, startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-            if let game = playing {
+            if let game = playing, game.id == PracticeMix.id {
+                // practice only: stars and progress don't change (v9.60)
+                QuizGameView(place: place.withMix, game: game, practiceOnly: true,
+                             onFinish: { _ in 0 },
+                             onBack: { playing = nil; Narrator.shared.say("Pick another game!") })
+                    .id(game.id)
+                    .transition(.pushIn)
+            } else if let game = playing {
                 let save = store.profile?.places[place.id] ?? PlaceSave()
                 let next = PlaceProgress.next(after: game.id, games: place.games.map(\.id), best: { save.best($0) })
                     .flatMap { id in place.games.first { $0.id == id } }
@@ -333,6 +361,14 @@ struct QuizPlaceView: View {
                     }
                     .accessibilityHint(suggest == g.id ? L10n.tr("Try next") : "")
                 }
+                // Mix it up (v9.60): one question from each game, for practice
+                if place.games.count > 1, place.id != MysteryMix.id, place.id != TrickyMix.id {
+                    let mix = PracticeMix.info(for: place.games)
+                    LearnGameCard(symbol: "shuffle", title: L10n.tr("Mix it up!"), blurb: L10n.tr("A question from every game here, all mixed up. Just for practice."),
+                                  stars: 0, color: place.accent) {
+                        playing = mix
+                    }
+                }
                 Text("Each game gives up to 3 stars. Beat your best for more.")
                     .font(.kid(13, .medium)).foregroundStyle(Palette.ink.opacity(0.55))
                     .padding(.bottom, 20)
@@ -355,6 +391,8 @@ struct QuizGameView: View {
     var best = 0
     /// True when this game just finished the whole place (v9.53).
     var placeDone = false
+    /// A practice game (Mix it up): no stars or progress change (v9.60).
+    var practiceOnly = false
     /// The next game's title, and a way to start it (v9.51).
     var nextGame: String? = nil
     var onFinish: (Int) -> Int
@@ -393,6 +431,14 @@ struct QuizGameView: View {
             }
             RoundDots(done: index, total: max(rounds.count, 1))
             if let r = round, result == nil {
+                // in a mix, where this question comes from (v9.59)
+                if let from = r.from {
+                    Label(L10n.tr("From: \(L10n.tr(from))"), systemImage: "mappin.circle.fill")
+                        .font(.kid(13, .bold)).foregroundStyle(place.accent)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Capsule().fill(place.accent.opacity(0.12)))
+                        .transition(.opacity)
+                }
                 question(r)
                 Spacer(minLength: 0)
             } else {
@@ -406,7 +452,7 @@ struct QuizGameView: View {
                 ZStack {
                     Color.black.opacity(0.25).ignoresSafeArea()
                     LearnDoneCard(title: game.title, stars: result.stars, earned: result.earned, firstTry: firstTry, total: rounds.count,
-                                  host: place.host, practice: practising, best: practising ? nil : best,
+                                  host: place.host, practice: practising || practiceOnly, best: practising || practiceOnly ? nil : best,
                                   placeDone: placeDone && !practising ? place.title : nil,
                                   nextGame: practising ? nil : nextGame, onNext: practising ? nil : onNext,
                                   tricky: QuizHelp.tricky(missedRounds).map { (say: $0.say, answer: QuizHelp.spoken($0.answer)) },
@@ -635,7 +681,7 @@ struct QuizGameView: View {
                 index = rounds.count
                 let stars = LearnScore.stars(firstTry: firstTry, of: rounds.count)
                 // practising the tricky ones never changes stars or progress
-                let earned = practising ? 0 : onFinish(stars)
+                let earned = practising || practiceOnly ? 0 : onFinish(stars)
                 Haptics.success(.fanfare)
                 withAnimation(Motion.present) { result = (stars, earned) }
                 Narrator.shared.say(earned > 0 ? "You did it! \(earned) new stars!" : "You did it! Great work!")

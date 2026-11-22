@@ -1202,3 +1202,45 @@ enum PlaceProgress {
         LearnSubject.allCases.filter { $0 != .all }.allSatisfy { sub in finished.contains { LearnSubject.of($0) == sub } }
     }
 }
+
+// MARK: - Tricky Mix, voice speed, badge groups (v9.58–v9.62)
+
+/// Tricky Mix (v9.58): practise the games still at 1 star, from every place. Spaced practice for the shaky ones.
+enum TrickyMix {
+    static let id = "tricky"
+
+    /// Every (place, game) still at 1 star, among the quiz places on the menu, in menu order.
+    static func picks(places: [String], shown: (String) -> Bool, games: (String) -> [String], best: (String, String) -> Int) -> [(place: String, game: String)] {
+        places.filter(shown).flatMap { place in games(place).filter { best(place, $0) == 1 }.map { (place, $0) } }
+    }
+
+    /// Up to `count` rounds, the tricky games taking turns, no question twice.
+    static func rounds(picks: [(place: String, game: String)], count: Int = 5, make: (String, String) -> [QuizRound], label: (String) -> String) -> [QuizRound] {
+        guard !picks.isEmpty else { return [] }
+        var out: [QuizRound] = []
+        var tries = 0
+        var k = 0
+        while out.count < count && tries < count * 4 {
+            let p = picks[k % picks.count]
+            k += 1; tries += 1
+            if let r = make(p.place, p.game).first(where: { r in !out.contains { $0.say == r.say && $0.visual == r.visual } }) {
+                out.append(r.tagged(label(p.place)))
+            }
+        }
+        return out
+    }
+}
+
+/// A slower voice for young listeners (v9.61), set by grown-ups.
+enum VoiceSpeed {
+    static let key = "hq.slowVoice"
+    static let slowFactor: Float = 0.8
+    static func rate(_ base: Float, slow: Bool) -> Float { slow ? base * slowFactor : base }
+}
+
+/// The badges wall in two groups (v9.62): one badge per place, then everything else.
+enum BadgeGroups {
+    static func split(_ all: [Badge]) -> (places: [Badge], other: [Badge]) {
+        (all.filter { $0.id.hasPrefix("area-") }, all.filter { !$0.id.hasPrefix("area-") })
+    }
+}
